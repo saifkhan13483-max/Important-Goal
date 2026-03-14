@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import type { System, Goal, Checkin } from "@/types/schema";
@@ -10,12 +10,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid,
 } from "recharts";
-import { Flame, Target, Zap, TrendingUp, BarChart2, Calendar, Trophy, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
+import {
+  Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
+  Trophy, AlertCircle, Star,
+} from "lucide-react";
 
 function MetricCard({ label, value, sub, icon: Icon, color }: any) {
   return (
@@ -24,7 +27,12 @@ function MetricCard({ label, value, sub, icon: Icon, color }: any) {
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-sm text-muted-foreground mb-1">{label}</p>
-            <p className="text-2xl font-bold" data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}>{value}</p>
+            <p
+              className="text-2xl font-bold"
+              data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}
+            >
+              {value}
+            </p>
             {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
           </div>
           <div className={`w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 ${color}`}>
@@ -39,10 +47,12 @@ function MetricCard({ label, value, sub, icon: Icon, color }: any) {
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-popover border border-popover-border rounded-md p-3 text-sm shadow-lg">
+      <div className="bg-popover border border-border rounded-md p-3 text-sm shadow-lg">
         <p className="font-medium mb-1">{label}</p>
         {payload.map((p: any) => (
-          <p key={p.name} style={{ color: p.color }}>{p.name}: {p.value}</p>
+          <p key={p.name} style={{ color: p.color }}>
+            {p.name}: {p.value}
+          </p>
         ))}
       </div>
     );
@@ -50,9 +60,12 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+type Period = "daily" | "weekly" | "monthly";
+
 export default function Analytics() {
   const { user } = useAuth();
   const userId = user?.id ?? "";
+  const [period, setPeriod] = useState<Period>("daily");
 
   const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
     queryKey: ["systems", userId],
@@ -95,9 +108,23 @@ export default function Analytics() {
     );
   }
 
-  const { streaks, last30Days, categoryBreakdown, systemStats, goalCompletion } = analytics;
+  const {
+    streaks, bestStreaks, topBestStreak,
+    dailyChart, weeklyChart, monthlyChart,
+    categoryBreakdown, systemStats, goalCompletion,
+    last30Days,
+  } = analytics;
+
+  const chartData = period === "daily" ? dailyChart
+    : period === "weekly" ? weeklyChart
+    : monthlyChart;
 
   const topStreaks = Object.entries(streaks)
+    .filter(([, v]) => (v as number) > 0)
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .slice(0, 5);
+
+  const topBestStreakEntries = Object.entries(bestStreaks)
     .filter(([, v]) => (v as number) > 0)
     .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 5);
@@ -106,16 +133,9 @@ export default function Analytics() {
     ? Math.round(
         last30Days.filter((d: any) => d.total > 0)
           .reduce((sum: number, d: any) => sum + (d.done / d.total) * 100, 0) /
-        last30Days.filter((d: any) => d.total > 0).length
+        last30Days.filter((d: any) => d.total > 0).length,
       )
     : 0;
-
-  const chartData = last30Days.slice(-14).map((d: any) => ({
-    date: format(new Date(d.date), "MMM d"),
-    Done: d.done,
-    Total: d.total,
-    "Completion %": d.total > 0 ? Math.round((d.done / d.total) * 100) : 0,
-  }));
 
   const categoryData = Object.entries(categoryBreakdown).map(([cat, count]) => ({
     category: cat.charAt(0).toUpperCase() + cat.slice(1),
@@ -128,44 +148,87 @@ export default function Analytics() {
     .slice(0, 5);
 
   const mostMissed = [...systemStats]
-    .filter(s => s.totalCheckins >= 3)
+    .filter(s => s.totalCheckins >= 3 && s.missedCount > 0)
     .sort((a, b) => b.missedCount - a.missedCount)
     .slice(0, 5);
 
   const hasData = checkins.length > 0;
 
+  const periodLabel: Record<Period, string> = {
+    daily:   "last 14 days",
+    weekly:  "last 8 weeks",
+    monthly: "last 6 months",
+  };
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Analytics</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Track your consistency and growth over time</p>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          Track your consistency and growth over time
+        </p>
       </div>
 
       {/* Summary metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard icon={Target}    label="Total Goals"    value={analytics.totalGoals}    sub={`${analytics.activeGoals} active`}  color="bg-primary/10 text-primary" />
-        <MetricCard icon={Zap}       label="Total Systems"  value={analytics.totalSystems}  sub={`${analytics.activeSystems} active`} color="bg-chart-2/10 text-chart-2" />
-        <MetricCard icon={Calendar}  label="Total Check-ins" value={analytics.totalCheckins} sub="all time"                           color="bg-chart-3/10 text-chart-3" />
-        <MetricCard icon={TrendingUp} label="Avg Completion" value={`${avgCompletion}%`}    sub="last 30 days"                       color="bg-chart-4/10 text-chart-4" />
+        <MetricCard
+          icon={Target}
+          label="Total Goals"
+          value={analytics.totalGoals}
+          sub={`${analytics.activeGoals} active`}
+          color="bg-primary/10 text-primary"
+        />
+        <MetricCard
+          icon={Zap}
+          label="Total Systems"
+          value={analytics.totalSystems}
+          sub={`${analytics.activeSystems} active`}
+          color="bg-chart-2/10 text-chart-2"
+        />
+        <MetricCard
+          icon={Calendar}
+          label="Total Check-ins"
+          value={analytics.totalCheckins}
+          sub="all time"
+          color="bg-chart-3/10 text-chart-3"
+        />
+        <MetricCard
+          icon={TrendingUp}
+          label="Avg Completion"
+          value={`${avgCompletion}%`}
+          sub="last 30 days"
+          color="bg-chart-4/10 text-chart-4"
+        />
       </div>
 
-      {/* 14-day bar chart */}
+      {/* Daily / Weekly / Monthly completion bar chart */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <BarChart2 className="w-4 h-4 text-primary" />
-            14-Day Check-in History
-          </CardTitle>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <CardTitle className="text-base flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-primary" />
+              Completion Rate — {periodLabel[period]}
+            </CardTitle>
+            <Tabs value={period} onValueChange={v => setPeriod(v as Period)}>
+              <TabsList className="h-8">
+                <TabsTrigger value="daily"   className="text-xs px-3" data-testid="tab-period-daily">Daily</TabsTrigger>
+                <TabsTrigger value="weekly"  className="text-xs px-3" data-testid="tab-period-weekly">Weekly</TabsTrigger>
+                <TabsTrigger value="monthly" className="text-xs px-3" data-testid="tab-period-monthly">Monthly</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardHeader>
         <CardContent>
           {!hasData || chartData.every((d: any) => d.Total === 0) ? (
             <div className="h-48 flex items-center justify-center">
-              <p className="text-muted-foreground text-sm">No data yet — start checking in daily!</p>
+              <p className="text-muted-foreground text-sm">
+                No data yet — start checking in daily!
+              </p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData} barGap={2}>
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} />
                 <Bar dataKey="Done"  fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} />
@@ -176,10 +239,12 @@ export default function Analytics() {
         </CardContent>
       </Card>
 
-      {/* Completion rate trend */}
+      {/* Completion % trend line */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Completion Rate Trend (%)</CardTitle>
+          <CardTitle className="text-base">
+            Completion % Trend — {periodLabel[period]}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {!hasData ? (
@@ -190,7 +255,7 @@ export default function Analytics() {
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} />
                 <Line
@@ -206,8 +271,9 @@ export default function Analytics() {
         </CardContent>
       </Card>
 
-      {/* Streaks + Category breakdown */}
+      {/* Current streaks + Best-ever streaks */}
       <div className="grid md:grid-cols-2 gap-4">
+        {/* Current streaks */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -217,14 +283,20 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             {topStreaks.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No active streaks yet. Keep checking in!</p>
+              <p className="text-muted-foreground text-sm">
+                No active streaks yet. Keep checking in!
+              </p>
             ) : (
               <div className="space-y-3">
                 {topStreaks.map(([systemId, streak]) => {
                   const sys = systems.find(s => s.id === systemId);
                   return (
-                    <div key={systemId} className="flex items-center justify-between gap-3" data-testid={`streak-${systemId}`}>
-                      <span className="text-sm truncate">{sys?.title || "Unknown"}</span>
+                    <div
+                      key={systemId}
+                      className="flex items-center justify-between gap-3"
+                      data-testid={`streak-current-${systemId}`}
+                    >
+                      <span className="text-sm truncate">{sys?.title ?? "Unknown"}</span>
                       <div className="flex items-center gap-1 text-chart-4 font-bold flex-shrink-0">
                         <Flame className="w-3.5 h-3.5" />
                         {streak as number}d
@@ -237,26 +309,84 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
+        {/* Best-ever streaks (streak history) */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Goals by Category</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Star className="w-4 h-4 text-chart-2" />
+              Best Streaks (All-time)
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {categoryData.length === 0 ? (
-              <p className="text-muted-foreground text-sm">Create goals to see categories.</p>
+            {topBestStreakEntries.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                Complete at least one check-in to see best streaks.
+              </p>
             ) : (
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={categoryData} layout="vertical" barSize={12}>
-                  <XAxis type="number" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="category" tick={{ fontSize: 11 }} width={80} axisLine={false} tickLine={false} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="Goals" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                {topBestStreakEntries.map(([systemId, best], idx) => {
+                  const sys = systems.find(s => s.id === systemId);
+                  const current = streaks[systemId] ?? 0;
+                  return (
+                    <div
+                      key={systemId}
+                      className="flex items-center justify-between gap-3"
+                      data-testid={`streak-best-${systemId}`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-bold text-muted-foreground w-4">#{idx + 1}</span>
+                        <span className="text-sm truncate">{sys?.title ?? "Unknown"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {current === best && current > 0 && (
+                          <Badge variant="outline" className="text-chart-3 border-chart-3/30 text-xs">active</Badge>
+                        )}
+                        <div className="flex items-center gap-1 text-chart-2 font-bold">
+                          <Star className="w-3 h-3" />
+                          {best as number}d
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {topBestStreak > 0 && (
+                  <p className="text-xs text-muted-foreground pt-1 border-t border-border">
+                    Your personal record: <span className="font-semibold text-foreground">{topBestStreak} days</span>
+                  </p>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Goals by category */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Goals by Category</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {categoryData.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Create goals to see categories.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={Math.max(120, categoryData.length * 36)}>
+              <BarChart data={categoryData} layout="vertical" barSize={12}>
+                <XAxis type="number" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis
+                  type="category"
+                  dataKey="category"
+                  tick={{ fontSize: 11 }}
+                  width={90}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="Goals" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Most consistent + most missed systems */}
       <div className="grid md:grid-cols-2 gap-4">
@@ -269,7 +399,9 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             {mostConsistent.length === 0 ? (
-              <p className="text-muted-foreground text-sm">Check in to at least 3 times to see rankings.</p>
+              <p className="text-muted-foreground text-sm">
+                Check in at least 3 times to see rankings.
+              </p>
             ) : (
               <div className="space-y-3">
                 {mostConsistent.map((s, i) => (
@@ -284,7 +416,9 @@ export default function Analytics() {
                       </Badge>
                     </div>
                     <Progress value={s.pct} className="h-1.5" />
-                    <p className="text-xs text-muted-foreground mt-1">{s.doneCount} done / {s.totalCheckins} check-ins</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {s.doneCount} done / {s.totalCheckins} check-ins
+                    </p>
                   </div>
                 ))}
               </div>
@@ -300,11 +434,13 @@ export default function Analytics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {mostMissed.length === 0 || mostMissed.every(s => s.missedCount === 0) ? (
-              <p className="text-muted-foreground text-sm">No missed check-ins yet — keep it up!</p>
+            {mostMissed.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                No missed check-ins yet — keep it up!
+              </p>
             ) : (
               <div className="space-y-3">
-                {mostMissed.filter(s => s.missedCount > 0).map((s, i) => (
+                {mostMissed.map((s, i) => (
                   <div key={s.systemId} data-testid={`missed-system-${s.systemId}`}>
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <div className="flex items-center gap-2 min-w-0">
@@ -315,9 +451,10 @@ export default function Analytics() {
                         {s.missedCount} missed
                       </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round((s.missedCount / s.totalCheckins) * 100)}% miss rate across {s.totalCheckins} check-ins
-                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {Math.round((s.missedCount / s.totalCheckins) * 100)}% miss rate across{" "}
+                      {s.totalCheckins} check-ins
+                    </p>
                   </div>
                 ))}
               </div>
@@ -337,20 +474,24 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {goalCompletion
+              {[...goalCompletion]
                 .sort((a, b) => b.avgPct - a.avgPct)
                 .map(gc => (
                   <div key={gc.goalId} data-testid={`goal-completion-${gc.goalId}`}>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <span className="text-sm font-medium truncate">{gc.title}</span>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-muted-foreground">{gc.systemCount} system{gc.systemCount !== 1 ? "s" : ""}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {gc.systemCount} system{gc.systemCount !== 1 ? "s" : ""}
+                        </span>
                         <Badge
                           variant="outline"
                           className={
-                            gc.avgPct >= 80 ? "text-chart-3 border-chart-3/30" :
-                            gc.avgPct >= 50 ? "text-chart-4 border-chart-4/30" :
-                            "text-destructive border-destructive/30"
+                            gc.avgPct >= 80
+                              ? "text-chart-3 border-chart-3/30"
+                              : gc.avgPct >= 50
+                              ? "text-chart-4 border-chart-4/30"
+                              : "text-destructive border-destructive/30"
                           }
                         >
                           {gc.avgPct}%

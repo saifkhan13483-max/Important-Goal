@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
@@ -6,14 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Goal, System, Checkin } from "@/types/schema";
+import type { Goal, System, Checkin, JournalEntry } from "@/types/schema";
 import { getGoals } from "@/services/goals.service";
 import { getSystems } from "@/services/systems.service";
 import { getCheckinsByDate, getCheckins } from "@/services/checkins.service";
+import { getJournals } from "@/services/journal.service";
 import { computeAnalytics } from "@/services/analytics.service";
 import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
-  Calendar, BookOpen, Check, Minus, X, BarChart2
+  Calendar, BookOpen, Check, Minus, X, BarChart2, PenLine,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -41,7 +43,12 @@ function MetricCard({ icon: Icon, label, value, sub, color }: any) {
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-sm text-muted-foreground mb-1">{label}</p>
-            <p className="text-2xl font-bold" data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}>{value}</p>
+            <p
+              className="text-2xl font-bold"
+              data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}
+            >
+              {value}
+            </p>
             {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
           </div>
           <div className={`w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 ${color}`}>
@@ -82,7 +89,16 @@ export default function Dashboard() {
     enabled: !!userId,
   });
 
-  const analytics = computeAnalytics(allCheckins, systems, goals);
+  const { data: journals = [] } = useQuery<JournalEntry[]>({
+    queryKey: ["journals", userId],
+    queryFn: () => getJournals(userId),
+    enabled: !!userId,
+  });
+
+  const analytics = useMemo(
+    () => computeAnalytics(allCheckins, systems, goals),
+    [allCheckins, systems, goals],
+  );
 
   const activeGoals = goals.filter(g => g.status === "active");
   const activeSystems = systems.filter(s => s.active);
@@ -95,15 +111,62 @@ export default function Dashboard() {
     .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 3);
 
+  /* Merge last 5 check-ins and last 5 journals into a unified activity feed */
+  const recentActivity = useMemo(() => {
+    type ActivityItem =
+      | { kind: "checkin"; data: Checkin; sortKey: string }
+      | { kind: "journal"; data: JournalEntry; sortKey: string };
+
+    const checkinItems: ActivityItem[] = [...allCheckins]
+      .sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+      .slice(0, 10)
+      .map(c => ({ kind: "checkin" as const, data: c, sortKey: c.dateKey }));
+
+    const journalItems: ActivityItem[] = [...journals]
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, 10)
+      .map(j => ({ kind: "journal" as const, data: j, sortKey: j.createdAt.split("T")[0] }));
+
+    return [...checkinItems, ...journalItems]
+      .sort((a, b) => b.sortKey.localeCompare(a.sortKey))
+      .slice(0, 5);
+  }, [allCheckins, journals]);
+
+  const hasActivity = recentActivity.length > 0;
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <GreetingBanner name={user?.name || "there"} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard icon={Target} label="Active Goals" value={activeGoals.length} sub="in progress" color="bg-primary/10 text-primary" />
-        <MetricCard icon={Zap} label="Active Systems" value={activeSystems.length} sub="running daily" color="bg-chart-2/10 text-chart-2" />
-        <MetricCard icon={CheckSquare} label="Today Done" value={`${todayDone}/${todayTotal}`} sub={`${completionPct}% complete`} color="bg-chart-3/10 text-chart-3" />
-        <MetricCard icon={Flame} label="Best Streak" value={topStreaks[0]?.[1] ? `${topStreaks[0][1]}d` : "—"} sub="consecutive days" color="bg-chart-4/10 text-chart-4" />
+        <MetricCard
+          icon={Target}
+          label="Active Goals"
+          value={activeGoals.length}
+          sub="in progress"
+          color="bg-primary/10 text-primary"
+        />
+        <MetricCard
+          icon={Zap}
+          label="Active Systems"
+          value={activeSystems.length}
+          sub="running daily"
+          color="bg-chart-2/10 text-chart-2"
+        />
+        <MetricCard
+          icon={CheckSquare}
+          label="Today Done"
+          value={`${todayDone}/${todayTotal}`}
+          sub={`${completionPct}% complete`}
+          color="bg-chart-3/10 text-chart-3"
+        />
+        <MetricCard
+          icon={Flame}
+          label="Best Streak"
+          value={topStreaks[0]?.[1] ? `${topStreaks[0][1]}d` : "—"}
+          sub="consecutive days"
+          color="bg-chart-4/10 text-chart-4"
+        />
       </div>
 
       {activeSystems.length > 0 && (
@@ -129,17 +192,22 @@ export default function Dashboard() {
             <div className="grid gap-2 mt-4">
               {activeSystems.slice(0, 4).map(system => {
                 const checkin = todayCheckins.find(c => c.systemId === system.id);
-                const statusColor = checkin?.status === "done" ? "bg-chart-3/10 text-chart-3 border-chart-3/20" :
+                const statusColor =
+                  checkin?.status === "done"    ? "bg-chart-3/10 text-chart-3 border-chart-3/20" :
                   checkin?.status === "partial" ? "bg-chart-4/10 text-chart-4 border-chart-4/20" :
                   "bg-muted text-muted-foreground border-transparent";
                 return (
-                  <div key={system.id} className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-muted/30" data-testid={`system-today-${system.id}`}>
+                  <div
+                    key={system.id}
+                    className="flex items-center justify-between gap-3 p-2.5 rounded-md bg-muted/30"
+                    data-testid={`system-today-${system.id}`}
+                  >
                     <div className="flex items-center gap-2 min-w-0">
                       <Zap className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                       <span className="text-sm truncate">{system.title}</span>
                     </div>
                     <Badge variant="outline" className={`text-xs flex-shrink-0 ${statusColor}`}>
-                      {checkin?.status || "pending"}
+                      {checkin?.status ?? "pending"}
                     </Badge>
                   </div>
                 );
@@ -150,6 +218,7 @@ export default function Dashboard() {
       )}
 
       <div className="grid md:grid-cols-2 gap-4">
+        {/* Active streaks */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -162,7 +231,9 @@ export default function Dashboard() {
               <div className="text-center py-6">
                 <p className="text-muted-foreground text-sm">Start checking in to build streaks!</p>
                 <Link href="/checkins">
-                  <Button variant="outline" size="sm" className="mt-3" data-testid="button-start-streak">Start today</Button>
+                  <Button variant="outline" size="sm" className="mt-3" data-testid="button-start-streak">
+                    Start today
+                  </Button>
                 </Link>
               </div>
             ) : (
@@ -171,7 +242,7 @@ export default function Dashboard() {
                   const sys = systems.find(s => s.id === systemId);
                   return (
                     <div key={systemId} className="flex items-center justify-between gap-3">
-                      <span className="text-sm truncate">{sys?.title || "Unknown"}</span>
+                      <span className="text-sm truncate">{sys?.title ?? "Unknown"}</span>
                       <div className="flex items-center gap-1 text-chart-4 font-semibold flex-shrink-0">
                         <Flame className="w-3.5 h-3.5" />
                         <span className="text-sm">{streak as number} days</span>
@@ -184,6 +255,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
+        {/* Quick actions */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Quick Actions</CardTitle>
@@ -223,17 +295,25 @@ export default function Dashboard() {
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="text-base">Active Goals</CardTitle>
               <Link href="/goals">
-                <Button variant="ghost" size="sm" data-testid="link-all-goals">See all <ArrowRight className="w-3.5 h-3.5 ml-1" /></Button>
+                <Button variant="ghost" size="sm" data-testid="link-all-goals">
+                  See all <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
               </Link>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-3">
               {activeGoals.slice(0, 4).map(goal => (
-                <div key={goal.id} className="p-3 rounded-md bg-muted/30 border border-border/50" data-testid={`goal-card-${goal.id}`}>
+                <div
+                  key={goal.id}
+                  className="p-3 rounded-md bg-muted/30 border border-border/50"
+                  data-testid={`goal-card-${goal.id}`}
+                >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <p className="text-sm font-medium truncate">{goal.title}</p>
-                    <Badge variant="outline" className="text-xs flex-shrink-0 capitalize">{goal.priority}</Badge>
+                    <Badge variant="outline" className="text-xs flex-shrink-0 capitalize">
+                      {goal.priority}
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="secondary" className="text-xs capitalize">{goal.category}</Badge>
@@ -251,8 +331,8 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Recent check-in activity */}
-      {allCheckins.length > 0 && (
+      {/* Recent activity — check-ins AND journal entries combined */}
+      {hasActivity && (
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between gap-2">
@@ -261,7 +341,7 @@ export default function Dashboard() {
                 Recent Activity
               </CardTitle>
               <Link href="/checkins">
-                <Button variant="ghost" size="sm" data-testid="link-checkins-history">
+                <Button variant="ghost" size="sm" data-testid="link-activity-history">
                   History <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               </Link>
@@ -269,28 +349,67 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {allCheckins.slice(0, 5).map(c => {
-                const sys = systems.find(s => s.id === c.systemId);
-                const statusIcon = c.status === "done" ? Check : c.status === "partial" ? Minus : X;
-                const StatusIcon = statusIcon;
-                const statusColor = c.status === "done"
-                  ? "text-chart-3 bg-chart-3/10"
-                  : c.status === "partial"
-                  ? "text-chart-4 bg-chart-4/10"
-                  : "text-destructive bg-destructive/10";
+              {recentActivity.map((item, idx) => {
+                if (item.kind === "checkin") {
+                  const c = item.data as Checkin;
+                  const sys = systems.find(s => s.id === c.systemId);
+                  const StatusIcon = c.status === "done" ? Check : c.status === "partial" ? Minus : X;
+                  const statusColor =
+                    c.status === "done"    ? "text-chart-3 bg-chart-3/10" :
+                    c.status === "partial" ? "text-chart-4 bg-chart-4/10" :
+                    "text-destructive bg-destructive/10";
+                  return (
+                    <div
+                      key={`checkin-${c.id}`}
+                      className="flex items-center gap-3 p-2.5 rounded-md bg-muted/30"
+                      data-testid={`activity-checkin-${c.id}`}
+                    >
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor}`}>
+                        <StatusIcon className="w-3 h-3" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium truncate">{sys?.title ?? "Unknown system"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.dateKey === today ? "Today" : format(parseISO(c.dateKey), "MMM d")}
+                          {c.note ? ` · "${c.note.slice(0, 40)}${c.note.length > 40 ? "…" : ""}"` : ""}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs flex-shrink-0 capitalize">
+                        {c.status}
+                      </Badge>
+                    </div>
+                  );
+                }
+
+                const j = item.data as JournalEntry;
+                const dateLabel = j.dateKey === today
+                  ? "Today"
+                  : format(parseISO(j.dateKey), "MMM d");
                 return (
-                  <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-md bg-muted/30" data-testid={`activity-item-${c.id}`}>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor}`}>
-                      <StatusIcon className="w-3 h-3" />
+                  <div
+                    key={`journal-${j.id}`}
+                    className="flex items-center gap-3 p-2.5 rounded-md bg-muted/30"
+                    data-testid={`activity-journal-${j.id}`}
+                  >
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-primary bg-primary/10">
+                      <PenLine className="w-3 h-3" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium truncate">{sys?.title ?? "Unknown system"}</p>
+                      <p className="text-xs font-medium truncate">
+                        {j.promptType
+                          ? j.promptType.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())
+                          : "Journal Entry"}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {c.dateKey === today ? "Today" : format(parseISO(c.dateKey), "MMM d")}
-                        {c.note ? ` · "${c.note.slice(0, 40)}${c.note.length > 40 ? "…" : ""}"` : ""}
+                        {dateLabel}
+                        {j.content
+                          ? ` · "${j.content.slice(0, 40)}${j.content.length > 40 ? "…" : ""}"`
+                          : ""}
                       </p>
                     </div>
-                    <Badge variant="secondary" className="text-xs flex-shrink-0 capitalize">{c.status}</Badge>
+                    <Badge variant="secondary" className="text-xs flex-shrink-0">
+                      journal
+                    </Badge>
                   </div>
                 );
               })}
@@ -307,14 +426,17 @@ export default function Dashboard() {
             </div>
             <h3 className="font-semibold text-lg mb-2">Your journey starts here</h3>
             <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
-              Create your first goal and build a system around it. One small action, done consistently, changes everything.
+              Create your first goal and build a system around it. One small action, done
+              consistently, changes everything.
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <Link href="/goals">
                 <Button data-testid="button-create-first-goal">Create a Goal</Button>
               </Link>
               <Link href="/systems/new">
-                <Button variant="outline" data-testid="button-create-first-system">Build a System</Button>
+                <Button variant="outline" data-testid="button-create-first-system">
+                  Build a System
+                </Button>
               </Link>
             </div>
           </CardContent>
