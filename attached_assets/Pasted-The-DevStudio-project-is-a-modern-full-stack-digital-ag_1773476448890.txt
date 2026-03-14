@@ -1,0 +1,23 @@
+The DevStudio project is a modern, full-stack digital agency portfolio built with a React/Vite frontend and a lightweight Express backend. It leverages Firebase for data persistence and authentication, and Cloudinary for image management.
+
+Architecture & Tech Stack
+Frontend: React 18 powered by Vite.
+Routing: wouter for lightweight, hook-based client-side routing.
+Data Fetching: TanStack React Query (v5) handles API interactions, caching, and synchronization.
+Styling: Tailwind CSS with shadcn/ui components for a consistent, accessible design system.
+Backend: A Node.js Express server primarily acting as an API proxy for file uploads.
+Database & Auth: Firebase Firestore provides real-time data storage for services, projects, and team members. Firebase Auth handles user sessions and administrative access.
+Media Storage: Cloudinary is integrated for robust image hosting and transformations.
+Key Features
+Dynamic Portfolio: Projects and services are fetched from Firestore and rendered dynamically.
+Admin Dashboard: A secure area for managing site content (CRUD operations for projects, services, and team).
+Real-time Updates: onSnapshot listeners in the Firebase hooks ensure the UI stays in sync with database changes without manual refreshes.
+Contact Management: A contact form that stores inquiries directly in Firestore.
+Image Uploads: Custom endpoint (/api/upload) using multer and multer-storage-cloudinary for direct-to-cloud uploads.
+Implementation Details for Developers
+Environment Variables: The project relies on several VITE_FIREBASE_* and CLOUDINARY_* variables. Ensure these are set in your environment before starting.
+Firebase Hooks: Instead of raw Firestore calls, use the custom hooks in client/src/hooks/ (e.g., useProjects, useServices). These are already integrated with React Query.
+Port Mapping: The development server is configured to run on port 5000 with allowedHosts: true to ensure visibility within the Replit environment.
+Shared Types: All core data models are defined in client/src/types/index.ts. Always refer to these when extending the data schema.
+Admin Auth: Admin status is checked via a custom isAdmin helper in the AuthContext, which validates the user's role/claims in Firebase.
+This architecture ensures a fast, responsive frontend while offloading heavy lifting (like authentication and real-time data) to managed services, making it highly scalable and easy to maintain.
