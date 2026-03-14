@@ -1,18 +1,29 @@
 # SystemForge
 
-A modern full-stack productivity web app that helps users transform vague goals into powerful, repeatable daily systems.
+A modern productivity web app that helps users transform vague goals into powerful, repeatable daily systems. Fully frontend-only — no backend server required.
 
 ## Architecture
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Radix UI, TanStack Query v5, wouter
-- **Auth**: Firebase Auth (email/password)
-- **Database**: Firestore (Firebase)
-- **Image uploads**: Cloudinary (via `client/src/lib/cloudinary.ts`)
-- **Dev server**: Minimal Express.js used only to host the Vite dev server and serve static files in production
+- **Auth**: Firebase Auth (email/password + Google OAuth)
+- **Database**: Firestore (Firebase) — all data reads/writes happen client-side via Firebase SDK
+- **Image uploads**: Cloudinary (via `client/src/lib/cloudinary.ts`) — optional
+- **Dev server**: Vite dev server only (`npx vite --port 5000 --host 0.0.0.0`)
+- **Production**: Static build output in `dist/` served as a static site
+
+## Running the App
+
+```bash
+# Development
+npx vite --port 5000 --host 0.0.0.0
+
+# Production build
+npm run build   # outputs to dist/
+```
 
 ## Key Features
 
-- **Authentication** — Firebase Auth email/password signup, login, logout, protected routes
+- **Authentication** — Firebase Auth email/password + Google OAuth, protected routes
 - **Onboarding** — Multi-step onboarding wizard for new users
 - **Goal Management** — Full CRUD with categories, priorities, statuses, deadlines
 - **System Builder** — 7-step guided builder for creating habit systems
@@ -50,10 +61,8 @@ client/src/
 └── types/
     └── schema.ts           # Plain TypeScript interfaces for all entities
 
-server/
-├── index.ts    # Minimal Express server (Vite host only)
-├── vite.ts     # Vite dev server middleware
-└── static.ts   # Static file serving for production
+script/
+└── build.ts    # Vite-only build script (frontend only, no server)
 
 firestore.rules   # Firestore security rules (deploy via Firebase CLI)
 ```
@@ -68,7 +77,7 @@ firestore.rules   # Firestore security rules (deploy via Firebase CLI)
 
 ## Environment Variables
 
-All are `VITE_` prefixed so they are available in the frontend via `import.meta.env.*`:
+All are `VITE_` prefixed (safe for frontend use via `import.meta.env.*`):
 
 | Variable | Description |
 |---|---|
@@ -83,7 +92,7 @@ All are `VITE_` prefixed so they are available in the frontend via `import.meta.
 
 ## Firestore Security Rules
 
-Rules are defined in `firestore.rules`. Deploy them with the Firebase CLI:
+Rules are defined in `firestore.rules`. Deploy with the Firebase CLI:
 
 ```bash
 firebase deploy --only firestore:rules
