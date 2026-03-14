@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import type { Goal } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import type { Goal } from "@/types/schema";
+import { getGoals, createGoal, updateGoal, deleteGoal } from "@/services/goals.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Plus, Pencil, Trash2, Filter, Search, Calendar, Check, Archive, Loader2, MoreVertical } from "lucide-react";
+import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -46,7 +47,7 @@ const statusColors: Record<string, string> = {
   paused: "bg-chart-4/10 text-chart-4 border-chart-4/20",
 };
 
-function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
+function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const { toast } = useToast();
 
@@ -65,10 +66,10 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
   const mutation = useMutation({
     mutationFn: (data: z.infer<typeof formSchema>) =>
       goal
-        ? apiRequest("PATCH", `/api/goals/${goal.id}`, data)
-        : apiRequest("POST", "/api/goals", data),
+        ? updateGoal(goal.id, data)
+        : createGoal(userId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/goals"] });
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
       toast({ title: goal ? "Goal updated!" : "Goal created!", description: goal ? "Changes saved." : "Ready to build a system." });
       onClose();
     },
@@ -142,7 +143,13 @@ function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }) {
 }
 
 export default function Goals() {
-  const { data: goals = [], isLoading } = useQuery<Goal[]>({ queryKey: ["/api/goals"] });
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+  const { data: goals = [], isLoading } = useQuery<Goal[]>({
+    queryKey: ["goals", userId],
+    queryFn: () => getGoals(userId),
+    enabled: !!userId,
+  });
   const qc = useQueryClient();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
@@ -150,20 +157,20 @@ export default function Goals() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editGoal, setEditGoal] = useState<Goal | undefined>();
-  const [deleteGoal, setDeleteGoal] = useState<Goal | undefined>();
+  const [deleteGoalItem, setDeleteGoalItem] = useState<Goal | undefined>();
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/goals/${id}`),
+    mutationFn: (id: string) => deleteGoal(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/goals"] });
+      qc.invalidateQueries({ queryKey: ["goals", userId] });
       toast({ title: "Goal deleted" });
-      setDeleteGoal(undefined);
+      setDeleteGoalItem(undefined);
     },
   });
 
   const quickStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => apiRequest("PATCH", `/api/goals/${id}`, { status }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/goals"] }),
+    mutationFn: ({ id, status }: { id: string; status: string }) => updateGoal(id, { status }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
   });
 
   const filtered = goals.filter(g => {
@@ -186,7 +193,6 @@ export default function Goals() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -218,7 +224,6 @@ export default function Goals() {
         </Select>
       </div>
 
-      {/* Goals grid */}
       {isLoading ? (
         <div className="grid md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
@@ -264,7 +269,7 @@ export default function Goals() {
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuItem
-                        onClick={() => setDeleteGoal(goal)}
+                        onClick={() => setDeleteGoalItem(goal)}
                         className="text-destructive"
                         data-testid={`button-delete-goal-${goal.id}`}
                       >
@@ -293,30 +298,28 @@ export default function Goals() {
         </div>
       )}
 
-      {/* Create/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg" data-testid="dialog-goal-form">
           <DialogHeader>
             <DialogTitle>{editGoal ? "Edit Goal" : "Create New Goal"}</DialogTitle>
           </DialogHeader>
-          <GoalForm goal={editGoal} onClose={() => { setDialogOpen(false); setEditGoal(undefined); }} />
+          <GoalForm goal={editGoal} userId={userId} onClose={() => { setDialogOpen(false); setEditGoal(undefined); }} />
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirmation */}
-      <AlertDialog open={!!deleteGoal} onOpenChange={() => setDeleteGoal(undefined)}>
+      <AlertDialog open={!!deleteGoalItem} onOpenChange={() => setDeleteGoalItem(undefined)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Goal</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteGoal?.title}"? This will also delete all associated systems and check-ins. This action cannot be undone.
+              Are you sure you want to delete "{deleteGoalItem?.title}"? This will also delete all associated systems and check-ins. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground"
-              onClick={() => deleteGoal && deleteMutation.mutate(deleteGoal.id)}
+              onClick={() => deleteGoalItem && deleteMutation.mutate(deleteGoalItem.id)}
               data-testid="button-confirm-delete-goal"
             >
               Delete

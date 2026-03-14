@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useRoute } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import type { System, Goal, Template } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import type { System, Goal, Template } from "@/types/schema";
+import { getGoals } from "@/services/goals.service";
+import { getSystem, createSystem, updateSystem } from "@/services/systems.service";
+import { getTemplates } from "@/services/templates.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, ArrowRight, Check, Loader2, Zap, Lightbulb, Target, Clock, Trophy, ShieldCheck, Eye, BookTemplate } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const STEPS = [
   { id: "identity", title: "Identity", icon: Zap, desc: "Who do you become?" },
@@ -59,6 +60,8 @@ type FormData = {
 };
 
 export default function SystemBuilderPage() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/systems/:id/edit");
   const isEdit = match && params?.id;
@@ -72,11 +75,17 @@ export default function SystemBuilderPage() {
     frequency: "daily", preferredTime: "morning",
   });
 
-  const { data: goals = [] } = useQuery<Goal[]>({ queryKey: ["/api/goals"] });
-  const { data: templates = [] } = useQuery<Template[]>({ queryKey: ["/api/templates"] });
-  const { data: editSystem } = useQuery<System>({
-    queryKey: ["/api/systems", params?.id],
-    queryFn: () => fetch(`/api/systems/${params?.id}`).then(r => r.json()),
+  const { data: goals = [] } = useQuery<Goal[]>({
+    queryKey: ["goals", userId],
+    queryFn: () => getGoals(userId),
+    enabled: !!userId,
+  });
+
+  const templates = getTemplates();
+
+  const { data: editSystem } = useQuery<System | null>({
+    queryKey: ["system", params?.id],
+    queryFn: () => getSystem(params!.id),
     enabled: !!isEdit,
   });
 
@@ -102,10 +111,10 @@ export default function SystemBuilderPage() {
   const saveMutation = useMutation({
     mutationFn: (data: FormData) =>
       isEdit
-        ? apiRequest("PATCH", `/api/systems/${params?.id}`, data)
-        : apiRequest("POST", "/api/systems", data),
+        ? updateSystem(params!.id, data)
+        : createSystem(userId, { ...data, active: true }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/systems"] });
+      qc.invalidateQueries({ queryKey: ["systems", userId] });
       toast({ title: isEdit ? "System updated!" : "System created!", description: "Your system is ready to use." });
       navigate("/systems");
     },
@@ -129,8 +138,6 @@ export default function SystemBuilderPage() {
 
   const canProceed = () => {
     if (step === 0) return form.title.length >= 2;
-    if (step === 1) return true;
-    if (step === 2) return true;
     if (step === 3) return form.minimumAction.length >= 2;
     return true;
   };
@@ -140,7 +147,6 @@ export default function SystemBuilderPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/systems")} data-testid="button-back-systems">
           <ArrowLeft className="w-4 h-4" />
@@ -151,7 +157,6 @@ export default function SystemBuilderPage() {
         </div>
       </div>
 
-      {/* Progress */}
       <div className="flex gap-1.5">
         {STEPS.map((s, i) => (
           <button
@@ -165,7 +170,6 @@ export default function SystemBuilderPage() {
         ))}
       </div>
 
-      {/* Templates picker (only on first step, new mode) */}
       {step === 0 && !isEdit && templates.length > 0 && (
         <Card>
           <CardContent className="p-4">
@@ -190,7 +194,6 @@ export default function SystemBuilderPage() {
         </Card>
       )}
 
-      {/* Main step card */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -201,7 +204,6 @@ export default function SystemBuilderPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Tip */}
           <div className="flex gap-2 p-3 rounded-md bg-muted/50">
             <Lightbulb className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground leading-relaxed">{tips[currentStep.id]}</p>
@@ -397,7 +399,6 @@ export default function SystemBuilderPage() {
         </CardContent>
       </Card>
 
-      {/* Navigation */}
       <div className="flex justify-between gap-2">
         {step > 0 ? (
           <Button variant="outline" onClick={() => setStep(s => s - 1)} data-testid="button-step-back">

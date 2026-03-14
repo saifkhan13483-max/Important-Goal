@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import type { System, Goal } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import type { System, Goal, Checkin } from "@/types/schema";
+import { getSystems } from "@/services/systems.service";
+import { getGoals } from "@/services/goals.service";
+import { getCheckins } from "@/services/checkins.service";
+import { computeAnalytics } from "@/services/analytics.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
 import { Flame, Target, Zap, TrendingUp, BarChart2, Calendar } from "lucide-react";
@@ -41,9 +45,28 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function Analytics() {
-  const { data: analytics, isLoading } = useQuery<any>({ queryKey: ["/api/analytics"] });
-  const { data: systems = [] } = useQuery<System[]>({ queryKey: ["/api/systems"] });
-  const { data: goals = [] } = useQuery<Goal[]>({ queryKey: ["/api/goals"] });
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+
+  const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
+    queryKey: ["systems", userId],
+    queryFn: () => getSystems(userId),
+    enabled: !!userId,
+  });
+
+  const { data: goals = [], isLoading: goalsLoading } = useQuery<Goal[]>({
+    queryKey: ["goals", userId],
+    queryFn: () => getGoals(userId),
+    enabled: !!userId,
+  });
+
+  const { data: checkins = [], isLoading: checkinsLoading } = useQuery<Checkin[]>({
+    queryKey: ["checkins", userId],
+    queryFn: () => getCheckins(userId),
+    enabled: !!userId,
+  });
+
+  const isLoading = systemsLoading || goalsLoading || checkinsLoading;
 
   if (isLoading) {
     return (
@@ -57,9 +80,8 @@ export default function Analytics() {
     );
   }
 
-  const streaks = analytics?.streaks || {};
-  const last30Days = analytics?.last30Days || [];
-  const categoryBreakdown = analytics?.categoryBreakdown || {};
+  const analytics = computeAnalytics(checkins, systems, goals);
+  const { streaks, last30Days, categoryBreakdown } = analytics;
 
   const topStreaks = Object.entries(streaks)
     .filter(([, v]) => (v as number) > 0)
@@ -93,15 +115,13 @@ export default function Analytics() {
         <p className="text-muted-foreground text-sm mt-0.5">Track your consistency and growth</p>
       </div>
 
-      {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard icon={Target} label="Total Goals" value={analytics?.totalGoals || 0} sub={`${analytics?.activeGoals || 0} active`} color="bg-primary/10 text-primary" />
-        <MetricCard icon={Zap} label="Total Systems" value={analytics?.totalSystems || 0} sub={`${analytics?.activeSystems || 0} active`} color="bg-chart-2/10 text-chart-2" />
-        <MetricCard icon={Calendar} label="Total Check-ins" value={analytics?.totalCheckins || 0} sub="all time" color="bg-chart-3/10 text-chart-3" />
+        <MetricCard icon={Target} label="Total Goals" value={analytics.totalGoals} sub={`${analytics.activeGoals} active`} color="bg-primary/10 text-primary" />
+        <MetricCard icon={Zap} label="Total Systems" value={analytics.totalSystems} sub={`${analytics.activeSystems} active`} color="bg-chart-2/10 text-chart-2" />
+        <MetricCard icon={Calendar} label="Total Check-ins" value={analytics.totalCheckins} sub="all time" color="bg-chart-3/10 text-chart-3" />
         <MetricCard icon={TrendingUp} label="Avg Completion" value={`${avgCompletion}%`} sub="last 30 days" color="bg-chart-4/10 text-chart-4" />
       </div>
 
-      {/* 14-day completion chart */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -128,7 +148,6 @@ export default function Analytics() {
         </CardContent>
       </Card>
 
-      {/* Completion trend */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Completion Rate Trend (%)</CardTitle>
@@ -159,7 +178,6 @@ export default function Analytics() {
       </Card>
 
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Streaks */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -189,7 +207,6 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        {/* Category breakdown */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Goals by Category</CardTitle>

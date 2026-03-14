@@ -1,14 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
-import type { System, Goal } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
+import type { System, Goal } from "@/types/schema";
+import { getSystems, updateSystem, deleteSystem } from "@/services/systems.service";
+import { getGoals } from "@/services/goals.service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, Plus, Trash2, Pause, Play, MoreVertical, Target, Clock, Repeat, BookTemplate } from "lucide-react";
+import { Zap, Plus, Trash2, Pause, Play, MoreVertical, Target, Clock, Repeat } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 
@@ -28,26 +30,39 @@ const timeLabels: Record<string, string> = {
 };
 
 export default function SystemsPage() {
-  const { data: systems = [], isLoading } = useQuery<System[]>({ queryKey: ["/api/systems"] });
-  const { data: goals = [] } = useQuery<Goal[]>({ queryKey: ["/api/goals"] });
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+
+  const { data: systems = [], isLoading } = useQuery<System[]>({
+    queryKey: ["systems", userId],
+    queryFn: () => getSystems(userId),
+    enabled: !!userId,
+  });
+
+  const { data: goals = [] } = useQuery<Goal[]>({
+    queryKey: ["goals", userId],
+    queryFn: () => getGoals(userId),
+    enabled: !!userId,
+  });
+
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [deleteSystem, setDeleteSystem] = useState<System | undefined>();
+  const [deleteSystemItem, setDeleteSystemItem] = useState<System | undefined>();
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/systems/${id}`),
+    mutationFn: (id: string) => deleteSystem(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/systems"] });
+      qc.invalidateQueries({ queryKey: ["systems", userId] });
       toast({ title: "System deleted" });
-      setDeleteSystem(undefined);
+      setDeleteSystemItem(undefined);
     },
   });
 
   const toggleActive = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
-      apiRequest("PATCH", `/api/systems/${id}`, { active }),
+      updateSystem(id, { active }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/systems"] });
+      qc.invalidateQueries({ queryKey: ["systems", userId] });
       toast({ title: "System updated" });
     },
   });
@@ -124,7 +139,7 @@ export default function SystemsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => setDeleteSystem(system)}
+                          onClick={() => setDeleteSystemItem(system)}
                           data-testid={`button-delete-system-${system.id}`}
                         >
                           <Trash2 className="w-3.5 h-3.5 mr-2" />Delete
@@ -174,19 +189,19 @@ export default function SystemsPage() {
         </div>
       )}
 
-      <AlertDialog open={!!deleteSystem} onOpenChange={() => setDeleteSystem(undefined)}>
+      <AlertDialog open={!!deleteSystemItem} onOpenChange={() => setDeleteSystemItem(undefined)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete System</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteSystem?.title}"? All associated check-ins will also be deleted.
+              Are you sure you want to delete "{deleteSystemItem?.title}"? All associated check-ins will also be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground"
-              onClick={() => deleteSystem && deleteMutation.mutate(deleteSystem.id)}
+              onClick={() => deleteSystemItem && deleteMutation.mutate(deleteSystemItem.id)}
               data-testid="button-confirm-delete-system"
             >
               Delete

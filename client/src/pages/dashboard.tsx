@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Goal, System, Checkin } from "@shared/schema";
+import type { Goal, System, Checkin } from "@/types/schema";
+import { getGoals } from "@/services/goals.service";
+import { getSystems } from "@/services/systems.service";
+import { getCheckinsByDate, getCheckins } from "@/services/checkins.service";
+import { computeAnalytics } from "@/services/analytics.service";
 import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
   Calendar, BookOpen, BarChart2
@@ -51,12 +55,34 @@ function MetricCard({ icon: Icon, label, value, sub, color }: any) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const userId = user?.id ?? "";
   const today = getTodayKey();
 
-  const { data: goals = [], isLoading: goalsLoading } = useQuery<Goal[]>({ queryKey: ["/api/goals"] });
-  const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({ queryKey: ["/api/systems"] });
-  const { data: todayCheckins = [] } = useQuery<Checkin[]>({ queryKey: ["/api/checkins/today"] });
-  const { data: analytics } = useQuery<any>({ queryKey: ["/api/analytics"] });
+  const { data: goals = [], isLoading: goalsLoading } = useQuery<Goal[]>({
+    queryKey: ["goals", userId],
+    queryFn: () => getGoals(userId),
+    enabled: !!userId,
+  });
+
+  const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
+    queryKey: ["systems", userId],
+    queryFn: () => getSystems(userId),
+    enabled: !!userId,
+  });
+
+  const { data: todayCheckins = [] } = useQuery<Checkin[]>({
+    queryKey: ["checkins-today", userId, today],
+    queryFn: () => getCheckinsByDate(userId, today),
+    enabled: !!userId,
+  });
+
+  const { data: allCheckins = [] } = useQuery<Checkin[]>({
+    queryKey: ["checkins", userId],
+    queryFn: () => getCheckins(userId),
+    enabled: !!userId,
+  });
+
+  const analytics = computeAnalytics(allCheckins, systems, goals);
 
   const activeGoals = goals.filter(g => g.status === "active");
   const activeSystems = systems.filter(s => s.active);
@@ -64,7 +90,7 @@ export default function Dashboard() {
   const todayTotal = activeSystems.length;
   const completionPct = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
 
-  const topStreaks = Object.entries(analytics?.streaks || {})
+  const topStreaks = Object.entries(analytics.streaks)
     .filter(([, v]) => (v as number) > 0)
     .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 3);
@@ -73,7 +99,6 @@ export default function Dashboard() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <GreetingBanner name={user?.name || "there"} />
 
-      {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard icon={Target} label="Active Goals" value={activeGoals.length} sub="in progress" color="bg-primary/10 text-primary" />
         <MetricCard icon={Zap} label="Active Systems" value={activeSystems.length} sub="running daily" color="bg-chart-2/10 text-chart-2" />
@@ -81,7 +106,6 @@ export default function Dashboard() {
         <MetricCard icon={Flame} label="Best Streak" value={topStreaks[0]?.[1] ? `${topStreaks[0][1]}d` : "—"} sub="consecutive days" color="bg-chart-4/10 text-chart-4" />
       </div>
 
-      {/* Today's progress */}
       {activeSystems.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -125,9 +149,7 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Streaks + Quick Actions */}
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Streaks */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -162,7 +184,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Quick Actions</CardTitle>
@@ -196,7 +217,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Active Goals */}
       {activeGoals.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -231,7 +251,6 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Empty state */}
       {activeGoals.length === 0 && activeSystems.length === 0 && (
         <Card>
           <CardContent className="p-12 text-center">

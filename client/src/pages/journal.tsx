@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import type { JournalEntry, Goal, System } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import type { JournalEntry, Goal } from "@/types/schema";
+import { getJournals, createJournal, updateJournal, deleteJournal } from "@/services/journal.service";
+import { getGoals } from "@/services/goals.service";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,10 +39,9 @@ function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
-function JournalForm({ entry, onClose }: { entry?: JournalEntry; onClose: () => void }) {
+function JournalForm({ entry, userId, goals, onClose }: { entry?: JournalEntry; userId: string; goals: Goal[]; onClose: () => void }) {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { data: goals = [] } = useQuery<Goal[]>({ queryKey: ["/api/goals"] });
   const [promptType, setPromptType] = useState(entry?.promptType || "daily");
   const [content, setContent] = useState(entry?.content || "");
   const [goalId, setGoalId] = useState(entry?.goalId || "");
@@ -48,10 +49,10 @@ function JournalForm({ entry, onClose }: { entry?: JournalEntry; onClose: () => 
   const mutation = useMutation({
     mutationFn: (data: any) =>
       entry
-        ? apiRequest("PATCH", `/api/journal/${entry.id}`, data)
-        : apiRequest("POST", "/api/journal", data),
+        ? updateJournal(entry.id, data)
+        : createJournal(userId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/journal"] });
+      qc.invalidateQueries({ queryKey: ["journals", userId] });
       toast({ title: entry ? "Entry updated!" : "Entry saved!" });
       onClose();
     },
@@ -125,8 +126,21 @@ function JournalForm({ entry, onClose }: { entry?: JournalEntry; onClose: () => 
 }
 
 export default function Journal() {
-  const { data: entries = [], isLoading } = useQuery<JournalEntry[]>({ queryKey: ["/api/journal"] });
-  const { data: goals = [] } = useQuery<Goal[]>({ queryKey: ["/api/goals"] });
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+
+  const { data: entries = [], isLoading } = useQuery<JournalEntry[]>({
+    queryKey: ["journals", userId],
+    queryFn: () => getJournals(userId),
+    enabled: !!userId,
+  });
+
+  const { data: goals = [] } = useQuery<Goal[]>({
+    queryKey: ["goals", userId],
+    queryFn: () => getGoals(userId),
+    enabled: !!userId,
+  });
+
   const qc = useQueryClient();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -134,9 +148,9 @@ export default function Journal() {
   const [deleteEntry, setDeleteEntry] = useState<JournalEntry | undefined>();
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/journal/${id}`),
+    mutationFn: (id: string) => deleteJournal(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/journal"] });
+      qc.invalidateQueries({ queryKey: ["journals", userId] });
       toast({ title: "Entry deleted" });
       setDeleteEntry(undefined);
     },
@@ -245,7 +259,12 @@ export default function Journal() {
           <DialogHeader>
             <DialogTitle>{editEntry ? "Edit Entry" : "New Journal Entry"}</DialogTitle>
           </DialogHeader>
-          <JournalForm entry={editEntry} onClose={() => { setDialogOpen(false); setEditEntry(undefined); }} />
+          <JournalForm
+            entry={editEntry}
+            userId={userId}
+            goals={goals}
+            onClose={() => { setDialogOpen(false); setEditEntry(undefined); }}
+          />
         </DialogContent>
       </Dialog>
 

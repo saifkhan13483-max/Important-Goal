@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import type { System, Checkin } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import type { System, Checkin } from "@/types/schema";
+import { getSystems } from "@/services/systems.service";
+import { getCheckinsByDate, upsertCheckin } from "@/services/checkins.service";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +24,7 @@ const STATUS_CONFIG = {
   missed: { label: "Missed", icon: X, color: "text-destructive", bg: "bg-destructive/10 border-destructive/20" },
 };
 
-function SystemCheckinCard({ system, existingCheckin }: { system: System; existingCheckin?: Checkin }) {
+function SystemCheckinCard({ system, existingCheckin, userId }: { system: System; existingCheckin?: Checkin; userId: string }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showNote, setShowNote] = useState(false);
@@ -30,16 +32,11 @@ function SystemCheckinCard({ system, existingCheckin }: { system: System; existi
   const today = getTodayKey();
 
   const checkInMutation = useMutation({
-    mutationFn: (status: string) => apiRequest("POST", "/api/checkins", {
-      systemId: system.id,
-      dateKey: today,
-      status,
-      note: note || undefined,
-    }),
+    mutationFn: (status: string) =>
+      upsertCheckin(userId, system.id, today, { status, note: note || undefined }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/checkins/today"] });
-      qc.invalidateQueries({ queryKey: ["/api/checkins"] });
-      qc.invalidateQueries({ queryKey: ["/api/analytics"] });
+      qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
+      qc.invalidateQueries({ queryKey: ["checkins", userId] });
       toast({ title: "Checked in!" });
     },
   });
@@ -82,7 +79,7 @@ function SystemCheckinCard({ system, existingCheckin }: { system: System; existi
                 size="sm"
                 onClick={() => checkInMutation.mutate(status)}
                 disabled={checkInMutation.isPending}
-                className={cn("gap-1.5", isSelected && status === "done" ? "" : "")}
+                className="gap-1.5"
                 data-testid={`button-checkin-${status}-${system.id}`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -138,10 +135,21 @@ function SystemCheckinCard({ system, existingCheckin }: { system: System; existi
 }
 
 export default function Checkins() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
   const today = getTodayKey();
-  const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({ queryKey: ["/api/systems"] });
-  const { data: todayCheckins = [], isLoading: checkinsLoading } = useQuery<Checkin[]>({ queryKey: ["/api/checkins/today"] });
-  const { data: analytics } = useQuery<any>({ queryKey: ["/api/analytics"] });
+
+  const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
+    queryKey: ["systems", userId],
+    queryFn: () => getSystems(userId),
+    enabled: !!userId,
+  });
+
+  const { data: todayCheckins = [], isLoading: checkinsLoading } = useQuery<Checkin[]>({
+    queryKey: ["checkins-today", userId, today],
+    queryFn: () => getCheckinsByDate(userId, today),
+    enabled: !!userId,
+  });
 
   const activeSystems = systems.filter(s => s.active);
   const doneCount = todayCheckins.filter(c => c.status === "done").length;
@@ -157,7 +165,6 @@ export default function Checkins() {
         <p className="text-muted-foreground text-sm mt-0.5">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
@@ -179,7 +186,6 @@ export default function Checkins() {
         </Card>
       </div>
 
-      {/* Completion message */}
       {completionPct === 100 && totalCount > 0 && (
         <div className="p-4 rounded-xl gradient-brand text-white text-center">
           <Flame className="w-8 h-8 mx-auto mb-2" />
@@ -214,6 +220,7 @@ export default function Checkins() {
               key={system.id}
               system={system}
               existingCheckin={getCheckin(system.id)}
+              userId={userId}
             />
           ))}
         </div>
