@@ -1,0 +1,627 @@
+PHASE 0 PROMPT — Product & Architecture Setup
+Prompt:
+
+CopyBuild a modern full-stack-style frontend web app called “SystemForge” using React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui, Radix UI, Firebase Firestore, Firebase Auth, Firebase Web SDK, TanStack Query v5, Zustand, and wouter.
+
+The app’s purpose is to help users convert vague goals into powerful repeatable systems. Instead of only setting goals, users should be able to define:
+- identity statement
+- target outcome
+- trigger
+- minimum action
+- reward loop
+- failure-proof fallback plan
+- daily check-ins
+- streaks and analytics
+
+Technical requirements:
+- Use React 18 + Vite + TypeScript
+- Use Tailwind CSS for styling
+- Use shadcn/ui components where suitable
+- Use Firebase Auth for login/signup
+- Use Firestore as the primary database
+- Use TanStack Query for Firestore data fetching/caching patterns
+- Use Zustand for auth/global UI state
+- Use wouter for routing
+- App must be mobile responsive and clean
+- Use a modern dashboard productivity UI
+- Prepare project structure for scalability
+- Add reusable components and typed models
+- Use environment variables for Firebase and Cloudinary
+- Do not overcomplicate the architecture
+- Keep code modular and production-friendly
+
+Please do the following:
+1. Initialize the app structure
+2. Configure Tailwind
+3. Configure shadcn/ui
+4. Configure routing with wouter
+5. Add Firebase setup file placeholders
+6. Add global layout structure
+7. Add basic pages:
+   - Landing
+   - Login
+   - Signup
+   - Dashboard
+   - Goals
+   - System Builder
+   - Check-ins
+   - Analytics
+   - Settings
+8. Add a clean folder structure
+9. Add placeholder data types and service layers
+10. Add a nice app shell with sidebar + header for authenticated pages
+
+Use best practices for folder structure:
+- components/
+- pages/
+- hooks/
+- lib/
+- services/
+- store/
+- types/
+- constants/
+
+Also generate:
+- a README with setup instructions
+- .env.example
+- comments explaining architectural choices
+
+Do not build all business logic yet. Focus on scalable project setup and core UI shell.
+Copy
+PHASE 1 PROMPT — Authentication
+CopyNow implement authentication for the app using Firebase Auth.
+
+Requirements:
+- Email/password signup
+- Email/password login
+- Logout
+- Forgot password
+- Persistent auth session
+- Optional Google sign-in button placeholder (if not fully configured, scaffold it)
+- Protected routes for authenticated pages
+- Public-only routes for login/signup
+- Zustand store for auth state
+- Show loading state while auth initializes
+- Redirect unauthenticated users to login
+- Redirect authenticated users away from login/signup to dashboard
+
+UI requirements:
+- Use shadcn/ui forms, cards, buttons, inputs, labels, alerts
+- Add validation and friendly error messages
+- Keep the UI modern, clean, and mobile responsive
+
+Code requirements:
+- Strong TypeScript types
+- Firebase auth helpers in a service layer
+- Reusable AuthGuard / ProtectedRoute component
+- Avoid duplicated auth logic
+
+Also create:
+- user profile creation in Firestore on first signup
+- basic profile document schema
+- loading spinner and empty states
+Copy
+PHASE 2 PROMPT — User Onboarding
+CopyImplement first-time user onboarding after signup.
+
+Purpose:
+Help the user define their initial focus and guide them into creating their first system.
+
+Collect:
+- name
+- top focus area (fitness, study, career, business, relationship, mindset, custom)
+- one primary goal
+- target deadline
+- preferred routine time (morning, afternoon, evening, flexible)
+- preferred theme (light/dark/system)
+
+Requirements:
+- If onboardingCompleted is false, redirect authenticated user to onboarding
+- Save onboarding data to Firestore user profile and create initial goal draft
+- Make onboarding multi-step with progress indicator
+- Keep it short, motivational, and clean
+- Mobile responsive
+
+Also include:
+- skip option for some fields
+- completion screen that routes to first system builder
+PHASE 3 PROMPT — Goal Management
+CopyImplement complete goal management.
+
+Goal model fields:
+- title
+- description
+- category
+- priority
+- status
+- deadline
+- createdAt
+- updatedAt
+- userId
+
+Features:
+- Create goal
+- Edit goal
+- Delete goal
+- Archive/complete goal
+- Goal list page
+- Goal detail page
+- Search/filter by category/status/priority
+- Empty states
+- Confirmation modal before delete
+
+UI:
+- Card-based layout
+- Goal badges for category and priority
+- Deadline indicators
+- Nice empty state illustrations/placeholders
+
+Technical:
+- Firestore CRUD
+- TanStack Query integration
+- optimistic UI where safe
+- reusable form component with validation
+- typed Firestore converters if helpful
+Copy
+PHASE 4 PROMPT — Core System Builder
+CopyImplement the core feature of the app: System Builder.
+
+A system belongs to a goal and contains:
+- title
+- identityStatement
+- targetOutcome
+- whyItMatters
+- triggerType (time, action, location)
+- triggerStatement
+- minimumAction
+- rewardPlan
+- fallbackPlan
+- frequency
+- preferredTime
+- active
+
+Features:
+- Create system for a goal
+- Edit system
+- View system detail
+- Pause/reactivate system
+- Duplicate system
+- Delete system
+- Attach multiple systems to one goal
+
+UI/UX:
+- Multi-step form with sections:
+  1. Identity
+  2. Outcome
+  3. Trigger
+  4. Minimum Action
+  5. Reward
+  6. Fallback Plan
+  7. Review & Save
+- Show helpful inline examples
+- Add “good system design tips” in the UI
+- Make it feel like a guided coach, not a boring CRUD form
+
+Important:
+- Add template suggestions such as:
+  - “After I brush, I will do 5 pushups”
+  - “After lunch, I will work 15 minutes on my project”
+  - “Before bed, I will journal for 3 minutes”
+- Add validation to ensure system fields are actionable and specific
+- Add preview card of the final system before save
+Copy
+PHASE 5 PROMPT — Templates Library
+CopyBuild a templates library for prebuilt systems.
+
+Requirements:
+- Public templates collection in Firestore
+- Browse templates by category
+- View template detail
+- Use template to create a personal system
+- Starter templates for:
+  - fitness
+  - reading
+  - meditation
+  - exam preparation
+  - content creation
+  - relationship care
+  - sleep routine
+  - deep work
+
+Template fields:
+- title
+- category
+- description
+- identityStatement
+- triggerStatement
+- minimumAction
+- rewardPlan
+- fallbackPlan
+- isPublic
+
+UI:
+- Search templates
+- Category filters
+- Cards with “Use Template” CTA
+- Nice onboarding for first-time users who don’t know how to create systems
+Copy
+PHASE 6 PROMPT — Daily Check-ins
+CopyImplement daily check-ins for systems.
+
+Each check-in should support:
+- dateKey
+- status: done, partial, missed
+- note
+- moodBefore (1-5)
+- moodAfter (1-5)
+- difficulty (1-5)
+
+Features:
+- Today view showing all active systems
+- Mark done / partial / missed
+- Add a note
+- Prevent duplicate check-ins for same system/date
+- Edit same-day check-in
+- Calendar or list history view
+- Show streak count
+
+UX:
+- Today dashboard should be quick and frictionless
+- One-click completion options
+- Show motivational reinforcement when user checks in
+- If missed, gently show fallback advice instead of guilt
+
+Technical:
+- Firestore CRUD
+- Query by dateKey and userId
+- Derived streak calculations
+- Reusable check-in card component
+Copy
+PHASE 7 PROMPT — Dashboard & Analytics
+CopyBuild a dashboard and analytics system.
+
+Dashboard should show:
+- greeting with user name
+- today’s active systems
+- today’s completion progress
+- current streaks
+- goals in progress
+- recent journal/check-in activity
+- quick actions: create goal, create system, check in
+
+Analytics page should show:
+- daily/weekly/monthly completion rates
+- streak history
+- most consistent systems
+- most missed systems
+- check-in trend chart
+- simple category insights
+- completion by goal
+
+UI:
+- modern productivity dashboard
+- use cards, badges, progress bars, tabs, charts
+- if chart library is not already included, add a lightweight one suitable for React and TypeScript
+
+Technical:
+- compute derived analytics efficiently
+- use memoization/selectors where useful
+- keep charts responsive
+PHASE 8 PROMPT — Journal & Reflection
+CopyImplement a journal and reflection feature.
+
+Features:
+- Daily journal entries
+- Weekly reflection entries
+- Optional linking to goal/system
+- Prompts such as:
+  - What worked today?
+  - What was hard today?
+  - Which trigger worked best?
+  - What should I improve tomorrow?
+- Freeform notes
+- Journal history page
+- Filter by prompt type
+
+UI:
+- calming, clean writing interface
+- save drafts if possible
+- word count optional
+- empty states encouraging reflection
+
+Data model:
+- userId
+- goalId optional
+- systemId optional
+- dateKey
+- promptType
+- content
+- createdAt
+- updatedAt
+Copy
+PHASE 9 PROMPT — Settings, Profile, Theme, and UX Polish
+CopyImplement settings and polish the user experience.
+
+Settings page:
+- update name
+- update profile photo URL
+- preferred theme
+- timezone
+- notification preferences placeholder
+- delete account placeholder with warning UI
+- logout
+
+UX polish:
+- dark mode support
+- loading skeletons
+- empty states
+- toasts for success/error
+- consistent spacing and typography
+- mobile optimization
+- accessibility improvements
+- keyboard-friendly interactions
+- clean transitions/animations without overdoing it
+
+Also:
+- create reusable app components for:
+  - page header
+  - empty state
+  - metric card
+  - confirmation dialog
+  - loading skeleton
+  - streak badge
+Copy
+PHASE 10 PROMPT — Firestore Security, Error States, and Production Readiness
+CopyMake the app production-ready.
+
+Tasks:
+1. Add Firestore data access patterns that are easy to secure
+2. Generate recommended Firestore Security Rules for:
+   - users
+   - goals
+   - systems
+   - checkins
+   - journalEntries
+   - templates
+3. Add robust error handling across the app
+4. Add retry-safe patterns where useful
+5. Ensure forms validate properly
+6. Add not found route
+7. Add global error boundary
+8. Review environment variable usage
+9. Document setup in README
+10. Prepare app for deployment on Vercel/Replit Autoscale
+
+Also provide:
+- Firestore indexes guidance if queries need them
+- sample seeded templates data
+- checklist of what must be configured manually in Firebase console
+9) Bonus Prompt — Landing Page Copy + UX
+CopyCreate a beautiful landing page for the app called “SystemForge”.
+
+The landing page should clearly communicate:
+- Most people set goals. Few build systems.
+- A goal gives direction. A system creates progress.
+- Turn vague goals into repeatable daily systems.
+
+Sections:
+- Hero
+- Problem
+- How it works
+- Features
+- Example system transformation
+- Templates preview
+- Testimonials placeholders
+- Pricing placeholder
+- FAQ
+- CTA footer
+
+Tone:
+- motivational but clear
+- modern productivity + self-improvement vibe
+- not cheesy
+
+Design:
+- premium SaaS feel
+- gradients, clean cards, strong typography
+- responsive
+- use shadcn/ui and Tailwind
+10) Bonus Prompt — AI System Coach Ready Architecture
+Agar future me AI add karna hai to ye prompt use karo:
+
+CopyRefactor the app architecture so it is ready for an AI System Coach in the future.
+
+Prepare:
+- abstraction layer for recommendations
+- system suggestion service interface
+- prompt-ready text generation helper utilities
+- place in UI where AI suggestions can appear later
+- no need to integrate LLM now, just make architecture extensible
+11) Feature List in simple grouped format
+Essential Features
+signup/login
+onboarding
+goal management
+system builder
+templates
+daily check-ins
+dashboard
+analytics
+journaling
+settings
+Delight Features
+streaks
+progress bars
+motivational nudges
+habit stacking suggestions
+fallback rescue prompts
+dark mode
+mobile-first UI
+Admin / Content Features
+manage public templates
+seed starter content
+analytics-ready data structure
+12) Upgrade Features List
+Smart Coaching Upgrades
+AI system suggestions
+AI identity statement rewrites
+AI trigger optimization
+AI fallback plan generator
+AI weekly review
+AI “why am I failing?” diagnosis
+Accountability Upgrades
+buddy mode
+shared systems
+coach review panel
+weekly reports email
+streak challenges
+Automation Upgrades
+reminder notifications
+Google Calendar sync
+recurring schedule engine
+streak freeze
+automatic weekly reset
+Deep Analytics Upgrades
+goal success prediction
+consistency score
+failure pattern detection
+mood vs completion correlation
+best time-of-day insights
+Monetization Upgrades
+freemium plan
+premium templates
+AI coach premium
+expert-created system packs
+coaching sessions booking
+13) Suggested Folder Structure
+Copysrc/
+  components/
+    app/
+    auth/
+    dashboard/
+    goals/
+    systems/
+    checkins/
+    journal/
+    analytics/
+    shared/
+    ui/
+  pages/
+    public/
+    app/
+  hooks/
+  lib/
+    firebase/
+    utils/
+    validators/
+  services/
+    auth/
+    users/
+    goals/
+    systems/
+    checkins/
+    journal/
+    templates/
+  store/
+  types/
+  constants/
+  routes/
+  providers/
+Copy
+14) UX Rules jo prompt me add kar sakte ho
+Ye extra instruction bhi Replit ko de sakte ho:
+
+CopyUX principles for this app:
+- Reduce friction for daily use
+- Prefer guided actions over overwhelming forms
+- Use microcopy that feels supportive, not judgmental
+- Encourage consistency over perfection
+- If user misses a day, suggest restart with minimum action
+- Highlight systems over goals throughout the product
+15) Very Important: Replit ke liye ek compact “all-in-one” prompt
+Agar tum ek hi baar me broad build karwana chahte ho, to ye compact version use kar sakte ho:
+
+CopyBuild a production-friendly React 18 + Vite + TypeScript web app called “SystemForge” using Tailwind CSS, shadcn/ui, Radix UI, Firebase Firestore, Firebase Auth, Firebase Web SDK, TanStack Query v5, Zustand, and wouter.
+
+App purpose:
+Help users transform vague goals into powerful daily systems. Users should be able to create goals, build systems with identity/trigger/minimum action/reward/fallback, check in daily, track streaks, journal, and review analytics.
+
+Main modules:
+- Auth
+- Onboarding
+- Goals CRUD
+- System Builder
+- Templates Library
+- Daily Check-ins
+- Dashboard
+- Analytics
+- Journal
+- Settings
+
+Must-have UX:
+- Clean modern productivity SaaS UI
+- Responsive mobile-first layout
+- Encouraging and supportive copy
+- Sidebar app shell
+- Empty states, loading states, success/error toasts
+- Dark mode
+- Strong TypeScript typing
+- Modular folder structure
+- Firebase service layer
+- Protected routes
+- Firestore-ready schema
+- Scalable architecture
+
+Please implement this in phases with clean commits/clear sections and explain what you create. Start with project setup, routing, layout, Firebase scaffolding, and authentication first.
+Copy
+16) My recommendation: build order
+Best order ye rahega:
+
+Project scaffold
+Auth
+Onboarding
+Goals CRUD
+System Builder
+Templates
+Daily check-ins
+Dashboard
+Analytics
+Journal
+Settings
+Security/deploy
+17) Extra: practical feature ideas based on the video philosophy
+Kyuki tumhara app video ke concept pe based hai, ye features bohot aligned rahenge:
+
+Philosophy-driven features
+Identity First Wizard
+“Tum kya achieve karna chahte ho?” nahi
+“Tum kaun banna chahte ho?”
+Wish to Structure Converter
+vague input ko structured system form me convert kare
+Trigger Builder
+“When X happens, I will do Y”
+Minimum Action Generator
+goal ko tiny action me todna
+Reward Loop Designer
+instant reward choose karwana
+Fallback Planner
+“Agar miss hua to kya karoge?”
+Consistency Score
+Don’t Break the Chain Tracker
+System Health Check
+system actionable hai ya vague?
+Failure Pattern Review
+kaunsi cheez baar-baar break kar rahi hai
+18) Suggested Upgrade Feature Names
+Ye product branding me bhi kaam aayenge:
+
+Identity Engine
+Trigger Lab
+Minimum Action Builder
+Reward Loop Designer
+Safety Net Planner
+Momentum Tracker
+Consistency Score
+System Health Meter
+Reset Mode
+Weekly Reflection Engine
