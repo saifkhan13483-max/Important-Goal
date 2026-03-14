@@ -1,19 +1,3 @@
-/**
- * use-auth.ts — Central authentication hook
- *
- * Architectural choice: This hook is the single integration point between
- * Firebase Auth, Firestore (via TanStack Query), and Zustand.
- *
- *  1. Firebase onAuthStateChanged provides the raw UID.
- *  2. TanStack Query fetches and caches the Firestore user profile.
- *  3. The resolved user (or null) is synced into Zustand via useAppStore,
- *     so any component in the tree can read auth state without calling this hook.
- *  4. Mutations (login, signup, logout) are exposed for use in auth pages.
- *
- * Only call this hook when you need mutations. For read-only auth state,
- * prefer useAppStore() directly to avoid unnecessary re-renders.
- */
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { onAuthStateChanged } from "firebase/auth";
@@ -27,70 +11,56 @@ export function useAuth() {
   const qc = useQueryClient();
   const { setUser, setAuthLoading, clearAuth, setTheme } = useAppStore();
 
-  // Track the Firebase UID locally — drives the Firestore profile query below
   const [firebaseUid, setFirebaseUid] = useState<string | null | undefined>(undefined);
 
-  // Step 1: Subscribe to Firebase auth state changes
+  // Step 1: Subscribe to Firebase auth state changes.
+  // When Firebase resolves with no user, immediately clear auth.
+  // Firebase reads from its local IndexedDB cache so this fires in < 200ms.
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
-      setFirebaseUid(firebaseUser ? firebaseUser.uid : null);
-      if (!firebaseUser) {
-        // No Firebase user → clear Zustand auth state immediately
+      if (firebaseUser) {
+        setFirebaseUid(firebaseUser.uid);
+      } else {
+        setFirebaseUid(null);
         clearAuth();
       }
     });
     return unsub;
   }, [clearAuth]);
 
-  // Hard deadline: if auth is still loading after 5s, force-resolve it.
-  // This prevents the loading screen from hanging forever due to Firebase
-  // connectivity issues or a missing Firestore user profile.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAuthLoading(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [setAuthLoading]);
+  const authStateResolved = firebaseUid !== undefined;
 
-  const authStateLoading = firebaseUid === undefined;
-
-  // Step 2: Fetch Firestore user profile once Firebase UID is known
+  // Step 2: Fetch Firestore user profile once Firebase UID is known.
   const profileQuery = useQuery<User | null>({
     queryKey: ["user", firebaseUid],
     queryFn: () => (firebaseUid ? UserService.getUser(firebaseUid) : null),
-    enabled: !authStateLoading && firebaseUid !== null,
+    enabled: authStateResolved && firebaseUid !== null,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
-  const isLoading =
-    authStateLoading ||
-    (firebaseUid !== null && firebaseUid !== undefined && profileQuery.isLoading);
-
   const user =
-    !authStateLoading && firebaseUid && profileQuery.data
+    authStateResolved && firebaseUid && profileQuery.data
       ? profileQuery.data
       : null;
 
-  // Step 3: Sync resolved auth state into Zustand store.
-  // Also syncs the user's preferred theme so ThemeProvider applies it immediately.
+  // Step 3: Sync resolved user into the Zustand store.
+  // Only ever set loading to false — never back to true.
   useEffect(() => {
-    if (!isLoading) {
-      if (user) {
-        setUser(user);
-        if (user.preferredTheme) {
-          setTheme(user.preferredTheme as Theme);
-        }
-      } else if (firebaseUid === null) {
-        clearAuth();
-      } else {
-        // Firebase has a UID but no Firestore profile was found — still done loading
-        setAuthLoading(false);
+    if (!authStateResolved) return;
+
+    if (user) {
+      setUser(user);
+      if (user.preferredTheme) {
+        setTheme(user.preferredTheme as Theme);
       }
-    } else {
-      setAuthLoading(true);
+    } else if (firebaseUid === null) {
+      clearAuth();
+    } else if (!profileQuery.isLoading) {
+      // Firebase has a UID but profile is done loading (null result or error)
+      setAuthLoading(false);
     }
-  }, [user, isLoading, firebaseUid, setUser, clearAuth, setAuthLoading, setTheme]);
+  }, [user, firebaseUid, authStateResolved, profileQuery.isLoading, setUser, clearAuth, setAuthLoading, setTheme]);
 
   // --- Mutations ---
 
@@ -137,7 +107,7 @@ export function useAuth() {
 
   return {
     user,
-    isLoading,
+    isLoading: !authStateResolved || (!!firebaseUid && profileQuery.isLoading),
     isAuthenticated: !!user,
     login: loginMutation.mutateAsync,
     signup: signupMutation.mutateAsync,
