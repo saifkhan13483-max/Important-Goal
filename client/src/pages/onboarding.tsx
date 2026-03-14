@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, SkipForward } from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, SkipForward, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createGoal } from "@/services/goals.service";
 
@@ -19,6 +19,7 @@ const focusAreas = [
   { value: "mindset", label: "Mindset & Well-being", icon: "🧠" },
   { value: "finance", label: "Finance", icon: "📈" },
   { value: "creativity", label: "Creativity", icon: "🎨" },
+  { value: "custom", label: "Something else…", icon: "✨" },
 ];
 
 const routineTimes = [
@@ -37,6 +38,7 @@ const themes = [
 interface OnboardingData {
   name: string;
   focusArea: string;
+  customFocusArea: string;
   goalTitle: string;
   goalDeadline: string;
   routineTime: string;
@@ -61,6 +63,7 @@ export default function Onboarding() {
   const [data, setData] = useState<OnboardingData>({
     name: user?.name || "",
     focusArea: "",
+    customFocusArea: "",
     goalTitle: "",
     goalDeadline: "",
     routineTime: "",
@@ -70,9 +73,13 @@ export default function Onboarding() {
   const current = STEPS[step];
   const total = STEPS.length;
 
+  const effectiveFocusArea = data.focusArea === "custom"
+    ? (data.customFocusArea.trim() || "")
+    : data.focusArea;
+
   const canProceed = () => {
     if (current.id === "name") return data.name.trim().length >= 2;
-    if (current.id === "focus") return !!data.focusArea;
+    if (current.id === "focus") return !!data.focusArea && (data.focusArea !== "custom" || data.customFocusArea.trim().length >= 2);
     return true;
   };
 
@@ -87,7 +94,7 @@ export default function Onboarding() {
     try {
       await updateProfile({
         name: data.name.trim() || user?.name,
-        focusArea: data.focusArea,
+        focusArea: effectiveFocusArea || data.focusArea,
         routineTime: data.routineTime || null,
         preferredTheme: data.preferredTheme,
         onboardingCompleted: true,
@@ -97,7 +104,7 @@ export default function Onboarding() {
         await createGoal(user.id, {
           title: data.goalTitle.trim(),
           description: "",
-          category: data.focusArea || "other",
+          category: effectiveFocusArea || "other",
           priority: "high",
           status: "active",
           deadline: data.goalDeadline || undefined,
@@ -199,23 +206,46 @@ export default function Onboarding() {
 
             {/* Step 2 — Focus area */}
             {current.id === "focus" && (
-              <div className="grid grid-cols-2 gap-3">
-                {focusAreas.map(area => (
-                  <button
-                    key={area.value}
-                    onClick={() => setData(d => ({ ...d, focusArea: area.value }))}
-                    data-testid={`button-focus-${area.value}`}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-md border text-left transition-all",
-                      data.focusArea === area.value
-                        ? "border-primary bg-primary/10 text-foreground"
-                        : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50"
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {focusAreas.map(area => (
+                    <button
+                      key={area.value}
+                      onClick={() => setData(d => ({ ...d, focusArea: area.value }))}
+                      data-testid={`button-focus-${area.value}`}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-md border text-left transition-all",
+                        data.focusArea === area.value
+                          ? "border-primary bg-primary/10 text-foreground"
+                          : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50"
+                      )}
+                    >
+                      <span className="text-xl">{area.icon}</span>
+                      <span className="text-sm font-medium">{area.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {data.focusArea === "custom" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="ob-custom-focus" className="flex items-center gap-1.5">
+                      <Pencil className="w-3.5 h-3.5" />
+                      Describe your focus area
+                    </Label>
+                    <Input
+                      id="ob-custom-focus"
+                      placeholder="e.g. Language learning, parenting, spirituality…"
+                      value={data.customFocusArea}
+                      onChange={e => setData(d => ({ ...d, customFocusArea: e.target.value }))}
+                      data-testid="input-custom-focus-area"
+                      autoFocus
+                      className="text-base"
+                      onKeyDown={e => { if (e.key === "Enter" && canProceed()) handleNext(); }}
+                    />
+                    {data.customFocusArea.trim().length > 0 && data.customFocusArea.trim().length < 2 && (
+                      <p className="text-xs text-destructive">Please enter at least 2 characters</p>
                     )}
-                  >
-                    <span className="text-xl">{area.icon}</span>
-                    <span className="text-sm font-medium">{area.label}</span>
-                  </button>
-                ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -309,7 +339,7 @@ export default function Onboarding() {
                   </p>
                   <p className="text-muted-foreground text-sm mt-1 leading-relaxed">
                     Your profile is set. You're focused on{" "}
-                    <span className="font-medium text-foreground capitalize">{data.focusArea || "your goals"}</span>.
+                    <span className="font-medium text-foreground capitalize">{effectiveFocusArea || "your goals"}</span>.
                     {data.goalTitle && (
                       <>
                         {" "}Your first goal —{" "}
