@@ -47,7 +47,12 @@ export function PublicOnlyRoute({ component: Component }: RouteProps) {
   const { user, isAuthLoading } = useAppStore();
 
   if (isAuthLoading) return null;
-  if (user && user.onboardingCompleted) return <Redirect to="/dashboard" />;
+
+  // Any authenticated user should be redirected away from public auth pages.
+  // Those who haven't completed onboarding go to /onboarding first.
+  if (user) {
+    return <Redirect to={user.onboardingCompleted ? "/dashboard" : "/onboarding"} />;
+  }
 
   return <Component />;
 }
