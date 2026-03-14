@@ -46,17 +46,9 @@ export function ProtectedRoute({ component: Component }: RouteProps) {
 export function PublicOnlyRoute({ component: Component }: RouteProps) {
   const { user, isAuthLoading } = useAppStore();
 
-  if (isAuthLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Any authenticated user should be redirected away from public auth pages.
-  // Those who haven't completed onboarding go to /onboarding first.
-  if (user) {
+  // Once auth resolves and there IS a user, redirect away from public pages.
+  // While still loading, show the page immediately to avoid a stuck spinner.
+  if (!isAuthLoading && user) {
     return <Redirect to={user.onboardingCompleted ? "/dashboard" : "/onboarding"} />;
   }
 
