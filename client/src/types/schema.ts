@@ -4,6 +4,7 @@ export interface User {
   name: string;
   avatarUrl?: string | null;
   focusArea?: string | null;
+  routineTime?: string | null;
   preferredTheme?: string | null;
   timezone?: string | null;
   onboardingCompleted?: boolean | null;

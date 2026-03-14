@@ -22,7 +22,7 @@ import {
   ArrowLeft, Target, Zap, Calendar, Pencil, Trash2, Check,
   Archive, Plus, Play, Pause, MoreVertical, Clock, Repeat,
 } from "lucide-react";
-import { format, isPast, isWithinInterval, addDays } from "date-fns";
+import { format, isPast, isWithinInterval, addDays, startOfDay } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const categories = ["fitness", "study", "career", "business", "relationship", "mindset", "health", "finance", "creativity", "other"];
@@ -168,13 +168,13 @@ function GoalEditForm({ goal, onClose }: { goal: Goal; onClose: () => void }) {
 }
 
 function DeadlineBadge({ deadline }: { deadline: string }) {
-  const date = new Date(deadline);
+  const date = startOfDay(new Date(deadline));
   const now = new Date();
-  const isOverdue = isPast(date) && !isWithinInterval(now, { start: date, end: date });
-  const isDueSoon = isWithinInterval(date, { start: now, end: addDays(now, 7) });
+  const isOverdue = isPast(date) && !isWithinInterval(now, { start: date, end: new Date(date.getTime() + 86400000 - 1) });
+  const isDueSoon = !isOverdue && isWithinInterval(date, { start: startOfDay(now), end: addDays(startOfDay(now), 7) });
 
   return (
-    <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-destructive" : isDueSoon ? "text-chart-4" : "text-muted-foreground"}`}>
+    <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-destructive font-medium" : isDueSoon ? "text-chart-4 font-medium" : "text-muted-foreground"}`}>
       <Calendar className="w-3 h-3" />
       {isOverdue ? "Overdue · " : isDueSoon ? "Due soon · " : ""}
       {format(date, "MMM d, yyyy")}
@@ -200,6 +200,10 @@ function SystemCard({ system, goalId }: { system: System; goalId: string }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goal-systems", goalId] });
       toast({ title: "System deleted" });
+      setConfirmDelete(false);
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to delete system.", variant: "destructive" });
       setConfirmDelete(false);
     },
   });

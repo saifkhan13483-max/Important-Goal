@@ -88,6 +88,7 @@ export default function Onboarding() {
       await updateProfile({
         name: data.name.trim() || user?.name,
         focusArea: data.focusArea,
+        routineTime: data.routineTime || null,
         preferredTheme: data.preferredTheme,
         onboardingCompleted: true,
       });

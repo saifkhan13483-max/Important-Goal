@@ -18,7 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight } from "lucide-react";
-import { format } from "date-fns";
+import { format, isPast, isWithinInterval, addDays, startOfDay } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link } from "wouter";
 
@@ -47,6 +47,20 @@ const statusColors: Record<string, string> = {
   archived: "bg-muted text-muted-foreground",
   paused: "bg-chart-4/10 text-chart-4 border-chart-4/20",
 };
+
+function DeadlineBadge({ deadline }: { deadline: string }) {
+  const date = startOfDay(new Date(deadline));
+  const now = new Date();
+  const isOverdue = isPast(date) && !isWithinInterval(now, { start: date, end: new Date(date.getTime() + 86400000 - 1) });
+  const isDueSoon = !isOverdue && isWithinInterval(date, { start: startOfDay(now), end: addDays(startOfDay(now), 7) });
+  return (
+    <span className={`text-xs flex items-center gap-1 ml-auto flex-shrink-0 ${isOverdue ? "text-destructive font-medium" : isDueSoon ? "text-chart-4 font-medium" : "text-muted-foreground"}`}>
+      <Calendar className="w-3 h-3" />
+      {isOverdue ? "Overdue · " : isDueSoon ? "Due soon · " : ""}
+      {format(new Date(deadline), "MMM d, yyyy")}
+    </span>
+  );
+}
 
 function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onClose: () => void }) {
   const qc = useQueryClient();
@@ -246,11 +260,13 @@ export default function Goals() {
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Target className="w-7 h-7 text-primary" />
             </div>
-            <h3 className="font-semibold mb-2">{search || filterStatus !== "all" || filterCategory !== "all" ? "No matching goals" : "No goals yet"}</h3>
+            <h3 className="font-semibold mb-2">{search || filterStatus !== "all" || filterCategory !== "all" || filterPriority !== "all" ? "No matching goals" : "No goals yet"}</h3>
             <p className="text-muted-foreground text-sm mb-4">
-              {search ? "Try a different search term." : "Create your first goal to get started."}
+              {search || filterStatus !== "all" || filterCategory !== "all" || filterPriority !== "all" ? "Try adjusting your search or filters." : "Create your first goal to get started."}
             </p>
-            {!search && <Button onClick={() => setDialogOpen(true)} data-testid="button-create-first-goal-empty">Create Goal</Button>}
+            {!search && filterStatus === "all" && filterCategory === "all" && filterPriority === "all" && (
+              <Button onClick={() => setDialogOpen(true)} data-testid="button-create-first-goal-empty">Create Goal</Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -302,12 +318,7 @@ export default function Goals() {
                   <Badge variant="outline" className={`text-xs capitalize ${statusColors[goal.status] || ""}`}>{goal.status}</Badge>
                   <Badge variant="outline" className={`text-xs capitalize ${priorityColors[goal.priority] || ""}`}>{goal.priority}</Badge>
                   <Badge variant="secondary" className="text-xs capitalize">{goal.category}</Badge>
-                  {goal.deadline && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1 ml-auto">
-                      <Calendar className="w-3 h-3" />
-                      {format(new Date(goal.deadline), "MMM d, yyyy")}
-                    </span>
-                  )}
+                  {goal.deadline && <DeadlineBadge deadline={goal.deadline} />}
                 </div>
               </CardContent>
             </Card>
