@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import type { Goal } from "@/types/schema";
 import { getGoals, createGoal, updateGoal, deleteGoal } from "@/services/goals.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -158,7 +158,7 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
 }
 
 export default function Goals() {
-  const { user } = useAuth();
+  const { user } = useAppStore();
   const userId = user?.id ?? "";
   const { data: goals = [], isLoading } = useQuery<Goal[]>({
     queryKey: ["goals", userId],

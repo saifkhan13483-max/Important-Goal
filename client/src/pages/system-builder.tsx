@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useRoute, useSearch } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import type { System, Goal, Template } from "@/types/schema";
 import { getGoals } from "@/services/goals.service";
 import { getSystem, createSystem, updateSystem } from "@/services/systems.service";
@@ -90,7 +90,7 @@ type FormData = {
 };
 
 export default function SystemBuilderPage() {
-  const { user } = useAuth();
+  const { user } = useAppStore();
   const userId = user?.id ?? "";
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/systems/:id/edit");
@@ -351,12 +351,12 @@ export default function SystemBuilderPage() {
               </div>
               <div className="space-y-2">
                 <Label>Linked Goal <span className="text-muted-foreground">(optional)</span></Label>
-                <Select value={form.goalId} onValueChange={v => update("goalId", v)}>
+                <Select value={form.goalId || "none"} onValueChange={v => update("goalId", v === "none" ? "" : v)}>
                   <SelectTrigger data-testid="select-linked-goal">
                     <SelectValue placeholder="Select a goal…" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No goal linked</SelectItem>
+                    <SelectItem value="none">No goal linked</SelectItem>
                     {goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
                   </SelectContent>
                 </Select>

@@ -1,5 +1,5 @@
 import {
-  collection, getDocs, addDoc, query, where, orderBy,
+  collection, getDocs, addDoc, query, where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Template } from "@/types/schema";
@@ -128,15 +128,17 @@ const col = () => collection(db, "templates");
  */
 export async function getPublicTemplates(): Promise<Template[]> {
   try {
-    const q = query(col(), where("isPublic", "==", true), orderBy("category"));
+    const q = query(col(), where("isPublic", "==", true));
     const snap = await getDocs(q);
     if (!snap.empty) {
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as Template));
+      const templates = snap.docs.map(d => ({ id: d.id, ...d.data() } as Template));
+      return templates.sort((a, b) => (a.category ?? "").localeCompare(b.category ?? ""));
     }
     await seedPublicTemplates();
     const snap2 = await getDocs(q);
     if (!snap2.empty) {
-      return snap2.docs.map(d => ({ id: d.id, ...d.data() } as Template));
+      const templates = snap2.docs.map(d => ({ id: d.id, ...d.data() } as Template));
+      return templates.sort((a, b) => (a.category ?? "").localeCompare(b.category ?? ""));
     }
     return STATIC_TEMPLATES;
   } catch {

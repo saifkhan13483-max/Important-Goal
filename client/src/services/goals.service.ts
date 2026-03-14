@@ -1,6 +1,6 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  query, where, orderBy,
+  query, where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Goal } from "@/types/schema";
@@ -8,9 +8,10 @@ import type { Goal } from "@/types/schema";
 const col = () => collection(db, "goals");
 
 export async function getGoals(userId: string): Promise<Goal[]> {
-  const q = query(col(), where("userId", "==", userId), orderBy("createdAt", "desc"));
+  const q = query(col(), where("userId", "==", userId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Goal));
+  const goals = snap.docs.map(d => ({ id: d.id, ...d.data() } as Goal));
+  return goals.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 }
 
 export async function getGoal(id: string): Promise<Goal | null> {

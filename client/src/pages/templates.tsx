@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { getPublicTemplates } from "@/services/templates.service";
 import { getSystems } from "@/services/systems.service";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import type { Template } from "@/types/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ function DetailRow({ icon: Icon, label, value, color = "text-muted-foreground" }
 }
 
 export default function TemplatesPage() {
-  const { user } = useAuth();
+  const { user } = useAppStore();
   const userId = user?.id ?? "";
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");

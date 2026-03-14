@@ -1,6 +1,6 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  query, where, orderBy,
+  query, where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { System } from "@/types/schema";
@@ -8,15 +8,17 @@ import type { System } from "@/types/schema";
 const col = () => collection(db, "systems");
 
 export async function getSystems(userId: string): Promise<System[]> {
-  const q = query(col(), where("userId", "==", userId), orderBy("createdAt", "desc"));
+  const q = query(col(), where("userId", "==", userId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as System));
+  const systems = snap.docs.map(d => ({ id: d.id, ...d.data() } as System));
+  return systems.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 }
 
 export async function getSystemsByGoal(goalId: string): Promise<System[]> {
-  const q = query(col(), where("goalId", "==", goalId), orderBy("createdAt", "desc"));
+  const q = query(col(), where("goalId", "==", goalId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as System));
+  const systems = snap.docs.map(d => ({ id: d.id, ...d.data() } as System));
+  return systems.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 }
 
 export async function getSystem(id: string): Promise<System | null> {

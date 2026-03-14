@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import type { System, Checkin } from "@/types/schema";
 import { getSystems } from "@/services/systems.service";
 import { getCheckinsByDate, getCheckins, upsertCheckin } from "@/services/checkins.service";
@@ -318,7 +318,7 @@ function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems
 }
 
 export default function Checkins() {
-  const { user } = useAuth();
+  const { user } = useAppStore();
   const userId = user?.id ?? "";
   const today = getTodayKey();
 

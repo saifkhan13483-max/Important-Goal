@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import type { JournalEntry, Goal } from "@/types/schema";
 import { getJournals, createJournal, updateJournal, deleteJournal } from "@/services/journal.service";
 import { getGoals } from "@/services/goals.service";
@@ -126,7 +126,7 @@ function JournalForm({ entry, userId, goals, onClose }: { entry?: JournalEntry; 
 }
 
 export default function Journal() {
-  const { user } = useAuth();
+  const { user } = useAppStore();
   const userId = user?.id ?? "";
 
   const { data: entries = [], isLoading } = useQuery<JournalEntry[]>({

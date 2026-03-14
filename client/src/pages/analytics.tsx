@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import type { System, Goal, Checkin } from "@/types/schema";
 import { getSystems } from "@/services/systems.service";
 import { getGoals } from "@/services/goals.service";
@@ -63,7 +63,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 type Period = "daily" | "weekly" | "monthly";
 
 export default function Analytics() {
-  const { user } = useAuth();
+  const { user } = useAppStore();
   const userId = user?.id ?? "";
   const [period, setPeriod] = useState<Period>("daily");
 

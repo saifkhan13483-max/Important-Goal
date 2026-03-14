@@ -1,6 +1,6 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc,
-  query, where, orderBy,
+  query, where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Checkin } from "@/types/schema";
@@ -8,9 +8,10 @@ import type { Checkin } from "@/types/schema";
 const col = () => collection(db, "checkins");
 
 export async function getCheckins(userId: string): Promise<Checkin[]> {
-  const q = query(col(), where("userId", "==", userId), orderBy("createdAt", "desc"));
+  const q = query(col(), where("userId", "==", userId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Checkin));
+  const checkins = snap.docs.map(d => ({ id: d.id, ...d.data() } as Checkin));
+  return checkins.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 }
 
 export async function getCheckinsByDate(userId: string, dateKey: string): Promise<Checkin[]> {

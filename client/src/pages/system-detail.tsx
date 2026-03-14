@@ -1,6 +1,6 @@
 import { useRoute, useLocation, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import type { System, Goal } from "@/types/schema";
 import { getSystem, updateSystem, deleteSystem, createSystem } from "@/services/systems.service";
 import { getGoals } from "@/services/goals.service";
@@ -45,7 +45,7 @@ function FieldRow({ icon: Icon, label, value, color = "text-muted-foreground" }:
 export default function SystemDetailPage() {
   const [, params] = useRoute("/systems/:id");
   const id = params?.id ?? "";
-  const { user } = useAuth();
+  const { user } = useAppStore();
   const userId = user?.id ?? "";
   const [, navigate] = useLocation();
   const { toast } = useToast();

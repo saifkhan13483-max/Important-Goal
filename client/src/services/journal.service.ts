@@ -1,6 +1,6 @@
 import {
   collection, doc, addDoc, getDoc, getDocs, updateDoc, deleteDoc,
-  query, where, orderBy,
+  query, where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { JournalEntry } from "@/types/schema";
@@ -8,9 +8,10 @@ import type { JournalEntry } from "@/types/schema";
 const col = () => collection(db, "journalEntries");
 
 export async function getJournals(userId: string): Promise<JournalEntry[]> {
-  const q = query(col(), where("userId", "==", userId), orderBy("createdAt", "desc"));
+  const q = query(col(), where("userId", "==", userId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as JournalEntry));
+  const entries = snap.docs.map(d => ({ id: d.id, ...d.data() } as JournalEntry));
+  return entries.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 }
 
 export async function getJournalsByDate(userId: string, dateKey: string): Promise<JournalEntry[]> {

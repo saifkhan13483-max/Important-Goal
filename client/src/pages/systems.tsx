@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import type { System, Goal } from "@/types/schema";
 import { getSystems, updateSystem, deleteSystem, createSystem } from "@/services/systems.service";
 import { getGoals } from "@/services/goals.service";
@@ -30,7 +30,7 @@ const timeLabels: Record<string, string> = {
 };
 
 export default function SystemsPage() {
-  const { user } = useAuth();
+  const { user } = useAppStore();
   const userId = user?.id ?? "";
   const [, navigate] = useLocation();
 

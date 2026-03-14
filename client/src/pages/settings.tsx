@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useAppStore } from "@/store/auth.store";
 import { useTheme } from "@/components/theme-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,8 @@ import { Loader2, Sun, Moon, Monitor, LogOut, User, Palette, Globe } from "lucid
 import { useLocation } from "wouter";
 
 export default function Settings() {
-  const { user, updateProfile, updatePending, logout } = useAuth();
+  const { user } = useAppStore();
+  const { updateProfile, updatePending, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [, navigate] = useLocation();
