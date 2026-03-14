@@ -1,3 +1,19 @@
+/**
+ * use-auth.ts — Central authentication hook
+ *
+ * Architectural choice: This hook is the single integration point between
+ * Firebase Auth, Firestore (via TanStack Query), and Zustand.
+ *
+ *  1. Firebase onAuthStateChanged provides the raw UID.
+ *  2. TanStack Query fetches and caches the Firestore user profile.
+ *  3. The resolved user (or null) is synced into Zustand via useAppStore,
+ *     so any component in the tree can read auth state without calling this hook.
+ *  4. Mutations (login, signup, logout) are exposed for use in auth pages.
+ *
+ * Only call this hook when you need mutations. For read-only auth state,
+ * prefer useAppStore() directly to avoid unnecessary re-renders.
+ */
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { onAuthStateChanged } from "firebase/auth";
@@ -5,20 +21,30 @@ import { auth } from "@/lib/firebase";
 import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
 import type { User } from "@/types/schema";
+import { useAppStore } from "@/store/auth.store";
 
 export function useAuth() {
   const qc = useQueryClient();
+  const { setUser, setAuthLoading, clearAuth } = useAppStore();
+
+  // Track the Firebase UID locally — drives the Firestore profile query below
   const [firebaseUid, setFirebaseUid] = useState<string | null | undefined>(undefined);
 
+  // Step 1: Subscribe to Firebase auth state changes
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setFirebaseUid(u ? u.uid : null);
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      setFirebaseUid(firebaseUser ? firebaseUser.uid : null);
+      if (!firebaseUser) {
+        // No Firebase user → clear Zustand auth state immediately
+        clearAuth();
+      }
     });
     return unsub;
-  }, []);
+  }, [clearAuth]);
 
   const authStateLoading = firebaseUid === undefined;
 
+  // Step 2: Fetch Firestore user profile once Firebase UID is known
   const profileQuery = useQuery<User | null>({
     queryKey: ["user", firebaseUid],
     queryFn: () => (firebaseUid ? UserService.getUser(firebaseUid) : null),
@@ -27,8 +53,30 @@ export function useAuth() {
     retry: false,
   });
 
-  const isLoading = authStateLoading || (firebaseUid !== null && firebaseUid !== undefined && profileQuery.isLoading);
-  const user = (!authStateLoading && firebaseUid && profileQuery.data) ? profileQuery.data : null;
+  const isLoading =
+    authStateLoading ||
+    (firebaseUid !== null && firebaseUid !== undefined && profileQuery.isLoading);
+
+  const user =
+    !authStateLoading && firebaseUid && profileQuery.data
+      ? profileQuery.data
+      : null;
+
+  // Step 3: Sync resolved auth state into Zustand store
+  useEffect(() => {
+    if (!isLoading) {
+      if (user) {
+        setUser(user);
+      } else if (firebaseUid === null) {
+        clearAuth();
+      }
+    }
+    if (isLoading) {
+      setAuthLoading(true);
+    }
+  }, [user, isLoading, firebaseUid, setUser, clearAuth, setAuthLoading]);
+
+  // --- Mutations ---
 
   const loginMutation = useMutation({
     mutationFn: (data: { email: string; password: string }) =>
@@ -56,6 +104,7 @@ export function useAuth() {
     mutationFn: () => AuthService.signOut(),
     onSuccess: () => {
       qc.clear();
+      clearAuth();
     },
   });
 
@@ -64,7 +113,10 @@ export function useAuth() {
       if (!firebaseUid) throw new Error("Not authenticated");
       return UserService.updateUser(firebaseUid, data);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["user", firebaseUid] }),
+    onSuccess: (updatedUser) => {
+      qc.invalidateQueries({ queryKey: ["user", firebaseUid] });
+      setUser(updatedUser);
+    },
   });
 
   return {
@@ -79,5 +131,7 @@ export function useAuth() {
     signupPending: signupMutation.isPending,
     logoutPending: logoutMutation.isPending,
     updatePending: updateProfileMutation.isPending,
+    loginError: loginMutation.error,
+    signupError: signupMutation.error,
   };
 }

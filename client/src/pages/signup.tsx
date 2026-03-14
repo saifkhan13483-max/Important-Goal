@@ -2,18 +2,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
+import { useState } from "react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
+import { AuthErrorAlert } from "@/components/auth/auth-error-alert";
 import { Sparkles, Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
-import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const schema = z.object({
@@ -29,8 +29,8 @@ const schema = z.object({
 export default function Signup() {
   const { signup, signupPending } = useAuth();
   const [, navigate] = useLocation();
-  const { toast } = useToast();
   const qc = useQueryClient();
+  const [authError, setAuthError] = useState<Error | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof schema>>({
@@ -39,15 +39,17 @@ export default function Signup() {
   });
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
+    setAuthError(null);
     try {
       await signup({ name: data.name, email: data.email, password: data.password });
       navigate("/onboarding");
     } catch (err: any) {
-      toast({ title: "Signup failed", description: err.message || "Try again", variant: "destructive" });
+      setAuthError(err);
     }
   };
 
   const handleGoogleSignUp = async () => {
+    setAuthError(null);
     setGoogleLoading(true);
     try {
       const cred = await AuthService.signInWithGoogle();
@@ -70,7 +72,7 @@ export default function Signup() {
       }
     } catch (err: any) {
       if (err.code !== "auth/popup-closed-by-user") {
-        toast({ title: "Google sign-up failed", description: err.message || "Try again.", variant: "destructive" });
+        setAuthError(err);
       }
     } finally {
       setGoogleLoading(false);
@@ -94,6 +96,10 @@ export default function Signup() {
             <CardDescription>Free forever. No credit card needed.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+
+            {/* Inline error alert — displayed above inputs for immediate visibility */}
+            <AuthErrorAlert error={authError} />
+
             <Button
               variant="outline"
               className="w-full gap-2"
@@ -137,7 +143,12 @@ export default function Signup() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="you@example.com" data-testid="input-email" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          data-testid="input-email"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -150,7 +161,12 @@ export default function Signup() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="At least 6 characters" data-testid="input-password" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="At least 6 characters"
+                          data-testid="input-password"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -163,13 +179,23 @@ export default function Signup() {
                     <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Repeat your password" data-testid="input-confirm-password" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="Repeat your password"
+                          data-testid="input-confirm-password"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={signupPending || googleLoading} data-testid="button-submit-signup">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={signupPending || googleLoading}
+                  data-testid="button-submit-signup"
+                >
                   {signupPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   {signupPending ? "Creating account..." : "Create Account"}
                 </Button>

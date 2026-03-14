@@ -1,3 +1,18 @@
+/**
+ * firebase.ts — Firebase SDK initialization
+ *
+ * Architectural choice: All Firebase services are initialized once here and
+ * exported as singletons. Service modules (auth.service.ts, user.service.ts,
+ * goals.service.ts, etc.) import from this file — never re-initialize Firebase.
+ *
+ * Configuration is loaded entirely from environment variables (VITE_ prefix)
+ * so no secrets are hardcoded. The .env.example file documents every variable.
+ *
+ * Services initialized here:
+ *   - auth: Firebase Authentication (email/password + Google OAuth)
+ *   - db:   Firestore database (primary data store for all user data)
+ */
+
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
