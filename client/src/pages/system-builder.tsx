@@ -13,35 +13,65 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Check, Loader2, Zap, Lightbulb, Target, Clock, Trophy, ShieldCheck, Eye, LayoutTemplate } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Zap, Lightbulb, Target, Clock, Trophy, ShieldCheck, Eye, LayoutTemplate, Brain, Heart, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/**
+ * 7-step guided system builder matching Phase 4 spec:
+ *  1. Identity      — who you become
+ *  2. Outcome       — the target win + why it matters
+ *  3. Trigger       — what starts the habit
+ *  4. Action        — the minimum step + schedule
+ *  5. Reward        — immediate celebration
+ *  6. Fallback Plan — plan B for hard days
+ *  7. Review & Save — full preview before saving
+ */
 const STEPS = [
-  { id: "identity", title: "Identity", icon: Zap, desc: "Who do you become?" },
-  { id: "outcome", title: "Outcome", icon: Target, desc: "What's the win?" },
-  { id: "trigger", title: "Trigger", icon: Clock, desc: "What starts it?" },
-  { id: "action", title: "Action", icon: Check, desc: "The minimum step" },
-  { id: "reward", title: "Reward", icon: Trophy, desc: "Celebrate progress" },
-  { id: "fallback", title: "Fallback", icon: ShieldCheck, desc: "Plan B" },
-  { id: "review", title: "Review", icon: Eye, desc: "Confirm & save" },
+  { id: "identity", title: "Identity",     icon: Brain,       desc: "Who do you become?" },
+  { id: "outcome",  title: "Outcome",      icon: Target,      desc: "What's the win?" },
+  { id: "trigger",  title: "Trigger",      icon: Zap,         desc: "What starts it?" },
+  { id: "action",   title: "Action",       icon: Check,       desc: "The minimum step" },
+  { id: "reward",   title: "Reward",       icon: Trophy,      desc: "Celebrate progress" },
+  { id: "fallback", title: "Fallback Plan",icon: ShieldCheck, desc: "Plan B" },
+  { id: "review",   title: "Review & Save",icon: Eye,         desc: "Confirm & save" },
 ];
 
 const tips: Record<string, string> = {
-  identity: "Start with identity, not outcome. 'I am a person who...' is more powerful than 'I want to...' — it shifts behavior at a deeper level.",
-  outcome: "Be specific. Instead of 'get healthier', say 'lose 10kg by June' or 'complete a 5K race'. Clarity creates urgency.",
-  trigger: "The best triggers are existing habits. 'After I brush my teeth' or 'after my morning coffee' — stack new actions onto existing routines.",
-  action: "Make the minimum action embarrassingly small. 2 push-ups. 1 page. 1 sentence. The goal is to start — momentum builds automatically.",
+  identity: "Start with identity, not outcome. 'I am a person who…' is more powerful than 'I want to…' — it shifts behavior at a deeper level. Name your system to make it feel real.",
+  outcome: "Be specific. Instead of 'get healthier', say 'complete a 5K race' or 'lose 10kg by June'. Clarity creates urgency. Attaching it to a goal links your effort to a bigger purpose.",
+  trigger: "The best triggers are existing habits. 'After I brush my teeth' or 'after my morning coffee' — stack new actions onto existing routines for near-zero friction.",
+  action: "Make the minimum action embarrassingly small. 2 push-ups. 1 page. 1 sentence. The goal is to start — momentum builds automatically. Set a schedule so your brain expects it.",
   reward: "Rewards should be immediate, not distant. A small celebration after each check-in trains your brain to want to repeat the behavior.",
-  fallback: "A fallback plan is your commitment that you'll do *something* even on the worst days. Even 1% effort beats zero.",
-  review: "Review your system end-to-end. Does it feel realistic? Is the trigger reliable? Is the action truly minimum?",
+  fallback: "A fallback plan is your commitment that you'll do *something* even on the worst days. Even 1% effort beats zero. It keeps your streak alive and identity intact.",
+  review: "Review your system end-to-end. Does it feel realistic? Is the trigger reliable? Is the action truly minimum? A well-designed system should feel almost too easy to start.",
 };
 
 const examples: Record<string, string[]> = {
-  identity: ["I am someone who moves their body every single day.", "I am a consistent reader who learns something new daily.", "I am a person who shows up for their work, even on hard days."],
-  trigger: ["After I brush my teeth each morning...", "At 9am, before I check any messages...", "After lunch, before returning to my desk..."],
-  action: ["Do 5 push-ups — no more required.", "Read just one page of my book.", "Write 100 words, even if they're bad."],
-  reward: ["Make my favourite coffee as a reward.", "Check off my tracker and feel the satisfaction.", "Share my progress with a friend."],
-  fallback: ["If I miss morning, I'll do 10 squats before bed.", "If I can't read, I'll listen to 5 minutes of audiobook.", "If I can't write, I'll save 1 idea in my notes — ideas compound."],
+  identity: [
+    "I am someone who moves their body every single day.",
+    "I am a consistent reader who learns something new daily.",
+    "I am a person who shows up for their work, even on hard days.",
+  ],
+  trigger: [
+    "After I brush my teeth each morning…",
+    "At 9am, before I check any messages…",
+    "After lunch, before returning to my desk…",
+  ],
+  action: [
+    "Do 5 push-ups — no more required.",
+    "Read just one page of my book.",
+    "Write 100 words, even if they're bad.",
+  ],
+  reward: [
+    "Make my favourite coffee as a reward.",
+    "Check off my tracker and feel the satisfaction.",
+    "Share my progress with a friend.",
+  ],
+  fallback: [
+    "If I miss morning, I'll do 10 squats before bed.",
+    "If I can't read, I'll listen to 5 minutes of audiobook.",
+    "If I can't write, I'll save 1 idea in my notes — ideas compound.",
+  ],
 };
 
 type FormData = {
@@ -69,10 +99,18 @@ export default function SystemBuilderPage() {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>({
-    title: "", goalId: "", identityStatement: "", targetOutcome: "",
-    whyItMatters: "", triggerType: "time", triggerStatement: "",
-    minimumAction: "", rewardPlan: "", fallbackPlan: "",
-    frequency: "daily", preferredTime: "morning",
+    title: "",
+    goalId: "",
+    identityStatement: "",
+    targetOutcome: "",
+    whyItMatters: "",
+    triggerType: "time",
+    triggerStatement: "",
+    minimumAction: "",
+    rewardPlan: "",
+    fallbackPlan: "",
+    frequency: "daily",
+    preferredTime: "morning",
   });
 
   const searchStr = useSearch();
@@ -152,12 +190,12 @@ export default function SystemBuilderPage() {
   const applyTemplate = (t: Template) => {
     setForm(prev => ({
       ...prev,
+      title: prev.title || t.title,
       identityStatement: t.identityStatement || "",
       triggerStatement: t.triggerStatement || "",
       minimumAction: t.minimumAction || "",
       rewardPlan: t.rewardPlan || "",
       fallbackPlan: t.fallbackPlan || "",
-      title: prev.title || t.title,
     }));
     toast({ title: "Template applied!", description: "Customize the fields to make it your own." });
   };
@@ -165,14 +203,17 @@ export default function SystemBuilderPage() {
   const update = (field: keyof FormData, val: string) => setForm(prev => ({ ...prev, [field]: val }));
 
   const validationError = (): string | null => {
-    if (step === 0 && form.title.trim().length < 2) return 'Please give your system a title (at least 2 characters).';
-    if (step === 1 && form.identityStatement.trim().length > 0 && !form.identityStatement.toLowerCase().includes('i am') && !form.identityStatement.toLowerCase().includes("i'm")) {
-      return 'Try framing your identity statement starting with "I am..." — this is more powerful.';
-    }
-    if (step === 2 && form.triggerStatement.trim().length > 0 && form.triggerStatement.trim().split(' ').length < 3) {
-      return 'Be more specific — a good trigger describes exactly when and where.';
-    }
-    if (step === 3 && form.minimumAction.trim().length < 5) return 'Describe a specific minimum action (at least 5 characters).';
+    if (step === 0 && form.title.trim().length < 2)
+      return "Please give your system a title (at least 2 characters).";
+    if (step === 0 && form.identityStatement.trim().length > 0
+      && !form.identityStatement.toLowerCase().includes("i am")
+      && !form.identityStatement.toLowerCase().includes("i'm"))
+      return 'Try framing your identity statement starting with "I am…" — this is more powerful.';
+    if (step === 2 && form.triggerStatement.trim().length > 0
+      && form.triggerStatement.trim().split(" ").length < 3)
+      return "Be more specific — a good trigger describes exactly when and where.";
+    if (step === 3 && form.minimumAction.trim().length < 5)
+      return "Describe a specific minimum action (at least 5 characters).";
     return null;
   };
 
@@ -187,21 +228,26 @@ export default function SystemBuilderPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/systems")} data-testid="button-back-systems">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
           <h1 className="text-xl font-bold">{isEdit ? "Edit System" : "Build a System"}</h1>
-          <p className="text-muted-foreground text-sm">Step {step + 1} of {STEPS.length}: {currentStep.desc}</p>
+          <p className="text-muted-foreground text-sm">
+            Step {step + 1} of {STEPS.length}: {currentStep.desc}
+          </p>
         </div>
       </div>
 
+      {/* Progress bar */}
       <div className="flex gap-1.5">
         {STEPS.map((s, i) => (
           <button
             key={s.id}
             onClick={() => i < step + 1 && setStep(i)}
+            title={s.title}
             className={cn(
               "h-1.5 flex-1 rounded-full transition-all",
               i <= step ? "bg-primary" : "bg-muted"
@@ -210,6 +256,7 @@ export default function SystemBuilderPage() {
         ))}
       </div>
 
+      {/* Template picker — shown on Step 0 when creating new */}
       {step === 0 && !isEdit && templates.length > 0 && (
         <Card>
           <CardContent className="p-4">
@@ -234,6 +281,7 @@ export default function SystemBuilderPage() {
         </Card>
       )}
 
+      {/* Step card */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -244,11 +292,13 @@ export default function SystemBuilderPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Coaching tip */}
           <div className="flex gap-2 p-3 rounded-md bg-muted/50">
             <Lightbulb className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-muted-foreground leading-relaxed">{tips[currentStep.id]}</p>
           </div>
 
+          {/* ─── Step 0: Identity — title + identity statement ─── */}
           {step === 0 && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -261,60 +311,25 @@ export default function SystemBuilderPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Linked Goal <span className="text-muted-foreground">(optional)</span></Label>
-                <Select value={form.goalId} onValueChange={v => update("goalId", v)}>
-                  <SelectTrigger data-testid="select-linked-goal">
-                    <SelectValue placeholder="Select a goal..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">No goal linked</SelectItem>
-                    {goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Frequency</Label>
-                  <Select value={form.frequency} onValueChange={v => update("frequency", v)}>
-                    <SelectTrigger data-testid="select-frequency">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["daily", "weekdays", "weekends", "weekly"].map(f => (
-                        <SelectItem key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Preferred Time</Label>
-                  <Select value={form.preferredTime} onValueChange={v => update("preferredTime", v)}>
-                    <SelectTrigger data-testid="select-preferred-time">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["morning", "afternoon", "evening", "flexible"].map(t => (
-                        <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
                 <Label>Identity Statement</Label>
                 <Textarea
-                  placeholder="I am someone who..."
+                  placeholder="I am someone who…"
                   value={form.identityStatement}
                   onChange={e => update("identityStatement", e.target.value)}
                   rows={3}
                   data-testid="input-identity"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Frame it as the person you're becoming, not what you want to achieve.
+                </p>
               </div>
+              <ExamplesPanel examples={examples.identity} onSelect={v => update("identityStatement", v)} />
+            </div>
+          )}
+
+          {/* ─── Step 1: Outcome — target + why + linked goal ─── */}
+          {step === 1 && (
+            <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Target Outcome</Label>
                 <Input
@@ -334,10 +349,22 @@ export default function SystemBuilderPage() {
                   data-testid="input-why-matters"
                 />
               </div>
-              <ExamplesPanel examples={examples.identity} onSelect={v => update("identityStatement", v)} />
+              <div className="space-y-2">
+                <Label>Linked Goal <span className="text-muted-foreground">(optional)</span></Label>
+                <Select value={form.goalId} onValueChange={v => update("goalId", v)}>
+                  <SelectTrigger data-testid="select-linked-goal">
+                    <SelectValue placeholder="Select a goal…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No goal linked</SelectItem>
+                    {goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           )}
 
+          {/* ─── Step 2: Trigger ─── */}
           {step === 2 && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -357,7 +384,7 @@ export default function SystemBuilderPage() {
               <div className="space-y-2">
                 <Label>Trigger Statement</Label>
                 <Textarea
-                  placeholder="After I [existing habit], I will..."
+                  placeholder="After I [existing habit], I will…"
                   value={form.triggerStatement}
                   onChange={e => update("triggerStatement", e.target.value)}
                   rows={3}
@@ -368,6 +395,7 @@ export default function SystemBuilderPage() {
             </div>
           )}
 
+          {/* ─── Step 3: Action — minimum action + schedule ─── */}
           {step === 3 && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -379,12 +407,49 @@ export default function SystemBuilderPage() {
                   rows={3}
                   data-testid="input-minimum-action"
                 />
-                <p className="text-xs text-muted-foreground">Make it so small that you can't say no. You can always do more.</p>
+                <p className="text-xs text-muted-foreground">
+                  Make it so small that you can't say no. You can always do more.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <Repeat className="w-3.5 h-3.5" />
+                    Frequency
+                  </Label>
+                  <Select value={form.frequency} onValueChange={v => update("frequency", v)}>
+                    <SelectTrigger data-testid="select-frequency">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["daily", "weekdays", "weekends", "weekly"].map(f => (
+                        <SelectItem key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    Preferred Time
+                  </Label>
+                  <Select value={form.preferredTime} onValueChange={v => update("preferredTime", v)}>
+                    <SelectTrigger data-testid="select-preferred-time">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["morning", "afternoon", "evening", "flexible"].map(t => (
+                        <SelectItem key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <ExamplesPanel examples={examples.action} onSelect={v => update("minimumAction", v)} />
             </div>
           )}
 
+          {/* ─── Step 4: Reward ─── */}
           {step === 4 && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -401,50 +466,70 @@ export default function SystemBuilderPage() {
             </div>
           )}
 
+          {/* ─── Step 5: Fallback Plan ─── */}
           {step === 5 && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Fallback Plan</Label>
                 <Textarea
-                  placeholder="If I miss my trigger, I will still..."
+                  placeholder="If I miss my trigger, I will still…"
                   value={form.fallbackPlan}
                   onChange={e => update("fallbackPlan", e.target.value)}
                   rows={3}
                   data-testid="input-fallback"
                 />
-                <p className="text-xs text-muted-foreground">A fallback is your safety net. It keeps your streak alive on hard days.</p>
+                <p className="text-xs text-muted-foreground">
+                  A fallback is your safety net. It keeps your streak alive on hard days.
+                </p>
               </div>
               <ExamplesPanel examples={examples.fallback} onSelect={v => update("fallbackPlan", v)} />
             </div>
           )}
 
+          {/* ─── Step 6: Review & Save ─── */}
           {step === 6 && (
             <div className="space-y-3">
-              <h3 className="font-medium text-sm mb-4">Your System Preview</h3>
+              <p className="text-sm text-muted-foreground mb-1">
+                Review your complete system before saving. Every field you've filled in is shown below.
+              </p>
               {[
-                { label: "System", value: form.title, color: "text-foreground" },
-                { label: "Identity", value: form.identityStatement, color: "text-primary" },
-                { label: "Trigger", value: form.triggerStatement, color: "text-chart-2" },
-                { label: "Action", value: form.minimumAction, color: "text-chart-3" },
-                { label: "Reward", value: form.rewardPlan, color: "text-chart-4" },
-                { label: "Fallback", value: form.fallbackPlan, color: "text-chart-5" },
-              ].map(item => item.value ? (
-                <div key={item.label} className="flex gap-3 items-start p-3 rounded-md bg-muted/50">
-                  <span className={`text-xs font-bold uppercase tracking-wide ${item.color} mt-0.5 w-16 flex-shrink-0`}>{item.label}</span>
-                  <p className="text-sm leading-relaxed">{item.value}</p>
-                </div>
-              ) : null)}
+                { label: "System",    value: form.title,               color: "text-foreground",        icon: Zap },
+                { label: "Identity",  value: form.identityStatement,   color: "text-primary",           icon: Brain },
+                { label: "Outcome",   value: form.targetOutcome,       color: "text-chart-2",           icon: Target },
+                { label: "Why",       value: form.whyItMatters,        color: "text-chart-5",           icon: Heart },
+                { label: "Trigger",   value: form.triggerStatement,    color: "text-chart-3",           icon: Zap },
+                { label: "Action",    value: form.minimumAction,       color: "text-chart-4",           icon: Check },
+                { label: "Reward",    value: form.rewardPlan,          color: "text-chart-4",           icon: Trophy },
+                { label: "Fallback",  value: form.fallbackPlan,        color: "text-muted-foreground",  icon: ShieldCheck },
+                { label: "Schedule",  value: form.frequency && form.preferredTime ? `${form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)}, ${form.preferredTime}` : null, color: "text-muted-foreground", icon: Clock },
+              ].filter(item => item.value).map(item => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="flex gap-3 items-start p-3 rounded-md bg-muted/50">
+                    <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${item.color}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-xs font-bold uppercase tracking-wide ${item.color} mb-0.5`}>{item.label}</p>
+                      <p className="text-sm leading-relaxed">{item.value}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Validation hint */}
       {validationError() && (
-        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2" data-testid="text-validation-hint">
+        <p
+          className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2"
+          data-testid="text-validation-hint"
+        >
           💡 {validationError()}
         </p>
       )}
 
+      {/* Navigation */}
       <div className="flex justify-between gap-2">
         {step > 0 ? (
           <Button variant="outline" onClick={() => setStep(s => s - 1)} data-testid="button-step-back">
@@ -462,7 +547,11 @@ export default function SystemBuilderPage() {
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         ) : (
-          <Button onClick={() => saveMutation.mutate(form)} disabled={saveMutation.isPending} data-testid="button-save-system">
+          <Button
+            onClick={() => saveMutation.mutate(form)}
+            disabled={saveMutation.isPending}
+            data-testid="button-save-system"
+          >
             {saveMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
             {isEdit ? "Save Changes" : "Create System"}
           </Button>
