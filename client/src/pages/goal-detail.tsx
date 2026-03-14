@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAppStore } from "@/store/auth.store";
 import type { Goal, System } from "@/types/schema";
 import { getGoal, updateGoal, deleteGoal } from "@/services/goals.service";
 import { getSystemsByGoal, deleteSystem, updateSystem } from "@/services/systems.service";
@@ -298,6 +299,8 @@ export default function GoalDetail() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const goalId = params?.id ?? "";
+  const { user } = useAppStore();
+  const userId = user?.uid ?? "";
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -310,8 +313,8 @@ export default function GoalDetail() {
 
   const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
     queryKey: ["goal-systems", goalId],
-    queryFn: () => getSystemsByGoal(goalId),
-    enabled: !!goalId,
+    queryFn: () => getSystemsByGoal(userId, goalId),
+    enabled: !!goalId && !!userId,
   });
 
   const deleteMutation = useMutation({

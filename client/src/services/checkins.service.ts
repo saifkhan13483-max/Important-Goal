@@ -26,7 +26,12 @@ export async function upsertCheckin(
   dateKey: string,
   data: Partial<Checkin>,
 ): Promise<Checkin> {
-  const q = query(col(), where("systemId", "==", systemId), where("dateKey", "==", dateKey));
+  const q = query(
+    col(),
+    where("userId", "==", userId),
+    where("systemId", "==", systemId),
+    where("dateKey", "==", dateKey),
+  );
   const snap = await getDocs(q);
 
   if (!snap.empty) {

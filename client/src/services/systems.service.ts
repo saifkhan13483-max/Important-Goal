@@ -14,8 +14,8 @@ export async function getSystems(userId: string): Promise<System[]> {
   return systems.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 }
 
-export async function getSystemsByGoal(goalId: string): Promise<System[]> {
-  const q = query(col(), where("goalId", "==", goalId));
+export async function getSystemsByGoal(userId: string, goalId: string): Promise<System[]> {
+  const q = query(col(), where("userId", "==", userId), where("goalId", "==", goalId));
   const snap = await getDocs(q);
   const systems = snap.docs.map(d => ({ id: d.id, ...d.data() } as System));
   return systems.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
