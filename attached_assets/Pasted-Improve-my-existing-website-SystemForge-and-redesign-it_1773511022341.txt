@@ -1,0 +1,384 @@
+Improve my existing website “SystemForge” and redesign it to be significantly more beautiful, more intuitive, and much easier to understand for beginners.
+
+ABOUT THE PRODUCT
+SystemForge is a habit-tracking and goal-achievement platform. Its core philosophy is:
+“Most people set goals. Few build systems.”
+The app helps users convert vague intentions into clear, repeatable daily systems that lead to long-term success.
+
+CURRENT CORE FEATURES
+- System Builder — guided 7-step wizard to turn goals into actionable systems
+- Goal Management — create/edit/delete long-term goals with categories, priorities, and deadlines
+- Daily Check-ins — mark systems as done, partial, or missed, with mood and difficulty tracking
+- Template Library — pre-built systems for fitness, mindset, and productivity
+- Analytics & Streaks — completion charts and streak tracking
+- Reflective Journaling — daily and weekly reflections tied to systems/goals
+- Onboarding Wizard — multi-step setup for new users
+
+DESIGN TOKENS / BRAND SYSTEM
+Use this visual identity consistently across the app:
+
+Color Palette:
+- Primary Brand: Vivid Purple — hsl(258 84% 62%)
+- Brand Gradient: Purple to Pink-Purple — hsl(258 84% 62%) to hsl(280 80% 65%)
+- Text Gradient: Purple to Sky Blue — hsl(258 84% 62%) to hsl(200 80% 56%)
+- Success / Green: Emerald — hsl(150 60% 48%)
+- Info / Blue: Sky Blue — hsl(200 80% 56%)
+- Warning / Orange: Amber — hsl(36 92% 60%)
+- Destructive / Error: Red — hsl(0 84% 60%)
+- Light Background: Gray-Blue — hsl(240 10% 98%)
+- Dark Background: Deep Charcoal — hsl(240 10% 6%)
+
+Typography:
+- Font: Inter
+- Clear hierarchy
+- Large readable headings
+- Comfortable line spacing
+- Beginner-friendly microcopy
+
+UI STACK
+- React 18
+- Vite
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Radix UI
+- Lucide React icons
+- Sidebar-based dashboard
+- Fully responsive mobile-first layout
+- Fully supported dark mode
+
+MAIN OBJECTIVE
+Redesign the app experience so that even a beginner who has never used a productivity tool can instantly understand:
+1. what this app does
+2. how it helps
+3. what to do next
+4. how to build a system
+5. how to track progress without feeling overwhelmed
+
+IMPORTANT UX GOALS
+- Reduce confusion
+- Reduce cognitive overload
+- Make the product feel guided, friendly, and motivating
+- Replace vague labels with simple explanatory language
+- Add helper text, examples, and empty states
+- Make every important section understandable in 5 seconds
+- Keep the interface premium, modern, and minimal
+- Focus on clarity first, beauty second, but achieve both
+
+PLEASE IMPROVE THE APP IN THE FOLLOWING AREAS:
+
+1. DESIGN SYSTEM POLISH
+- Refine spacing, typography, card styles, shadows, and visual hierarchy
+- Use subtle gradients and soft shadows to create premium SaaS feel
+- Make cards more elegant with hover states
+- Use consistent border radius and spacing scale
+- Improve dark mode contrast and readability
+- Add polished section headers with short descriptions
+- Make dashboard feel clean and focused, not cluttered
+
+2. BEGINNER-FRIENDLY COPYWRITING
+Rewrite UI text across the app so it is easier for beginners to understand.
+Examples:
+- Instead of “Identity Statement”, use “Who do you want to become?”
+- Instead of “Trigger”, use “When will this habit happen?”
+- Instead of “Minimum Action”, use “What is the smallest version of this habit?”
+- Instead of “Fallback Plan”, use “If you miss a day, what’s your backup plan?”
+- Instead of “Reward Loop”, use “How will you celebrate this habit right away?”
+
+Add plain-language helper text below form labels and section titles.
+
+3. LANDING PAGE REDESIGN
+Redesign the landing page to clearly explain the product in a very beginner-friendly way.
+
+Sections to include:
+- Hero section with clear headline and subheadline
+- Visual explanation: goal vs system
+- How SystemForge works in 3 simple steps
+- Key features grid
+- Example transformation:
+  “I want to get fit” → “After brushing, I will do 5 pushups”
+- Templates preview
+- Beginner reassurance section
+- Testimonials placeholders
+- FAQ
+- Pricing section
+- Final CTA
+
+Landing page tone:
+- supportive
+- clear
+- motivational
+- not overly technical
+- not overly corporate
+
+4. DASHBOARD REDESIGN
+Improve the authenticated dashboard so it feels instantly understandable.
+
+Dashboard should clearly show:
+- welcome message
+- today’s habits/systems
+- quick check-in buttons
+- active goals
+- current streaks
+- weekly progress
+- beginner tip of the day
+
+Design requirements:
+- clear top summary cards
+- stronger hierarchy
+- more whitespace
+- no visual clutter
+- easy scanning
+- beginner-friendly empty states such as:
+  “You haven’t created your first system yet. Start with one small habit.”
+
+5. SYSTEM BUILDER UX REDESIGN
+This is the most important area.
+
+Redesign the 7-step system builder wizard to feel like a guided coach for beginners.
+Each step should:
+- have a simple title
+- have a one-line explanation
+- show an example
+- explain why this matters
+- avoid jargon
+
+For each step:
+Step 1: Goal
+- Ask what the user wants to achieve
+- Explain that goals give direction
+
+Step 2: Identity
+- Ask who they want to become
+- Example: “I am someone who works out consistently”
+
+Step 3: Trigger
+- Ask when/where the habit will happen
+- Example: “After brushing my teeth…”
+
+Step 4: Minimum Action
+- Ask for the smallest possible action
+- Example: “Do 5 pushups”
+
+Step 5: Reward
+- Ask how they will acknowledge success immediately
+- Example: “Mark it complete and say ‘done’”
+
+Step 6: Backup Plan
+- Ask what they will do on difficult days
+- Example: “Do just 1 pushup”
+
+Step 7: Review
+- Show full system summary in a beautiful card
+- Make it feel satisfying and clear before saving
+
+Also:
+- Add progress indicator
+- Add tips panel
+- Add example chips users can click
+- Add a “Keep it simple” reminder
+- Make the form conversational and visually light
+
+6. EMPTY STATES AND GUIDANCE
+Add excellent empty states throughout the app:
+- No goals yet
+- No systems yet
+- No check-ins yet
+- No journal entries yet
+- No templates used yet
+- No analytics data yet
+
+Each empty state should include:
+- short encouraging message
+- one-line explanation
+- primary CTA
+- optional small example
+
+7. VISUAL IMPROVEMENTS
+Please improve:
+- sidebar visuals
+- icon usage
+- cards and panels
+- forms
+- progress bars
+- tabs
+- modals
+- toasts
+- badge styles
+- chart containers
+- mobile navigation behavior
+
+Use:
+- soft gradients
+- subtle motion
+- hover states
+- elegant shadows
+- clean borders
+- premium spacing
+
+Avoid:
+- heavy clutter
+- too many competing colors
+- gamified childish visuals
+- dense enterprise look
+
+8. PRICING PLANS SECTION
+Add a beautiful pricing section to the landing page and create a pricing page.
+
+Create 4 pricing plans:
+1. Free
+2. Starter
+3. Pro
+4. Team / Coach
+
+Please design the plans with modern SaaS pricing cards and include:
+- plan name
+- price
+- short ideal-for description
+- feature list
+- recommended badge for best plan
+- CTA button
+
+Use the following suggested pricing structure and refine it if needed for product logic:
+
+FREE — $0/month
+Ideal for: beginners trying system-building for the first time
+Features:
+- Up to 2 active goals
+- Up to 3 active systems
+- Daily check-ins
+- Basic streak tracking
+- 3 starter templates
+- Light analytics
+- Basic journaling
+
+STARTER — $9/month
+Ideal for: individuals building consistency
+Features:
+- Up to 10 active goals
+- Unlimited systems
+- Full template library
+- Advanced streak tracking
+- Weekly reflection prompts
+- Better analytics
+- Dark mode customization
+- Export basic reports
+
+PRO — $19/month
+Ideal for: ambitious users who want deeper insights
+Features:
+- Unlimited goals
+- Unlimited systems
+- Advanced analytics dashboard
+- AI-ready coaching placeholders
+- Smart recommendations placeholders
+- Mood and habit correlation insights
+- Premium templates
+- Priority support
+- Advanced journaling
+- CSV/PDF exports
+
+TEAM / COACH — $49/month
+Ideal for: coaches, mentors, or accountability groups
+Features:
+- Everything in Pro
+- Multi-user workspace placeholder
+- Team progress overview placeholder
+- Shared templates placeholder
+- Accountability tracking placeholder
+- Coach dashboard placeholder
+- Group analytics placeholder
+- Priority onboarding support
+
+Please:
+- make the pricing section visually premium
+- include monthly/yearly toggle UI placeholder
+- include FAQ for pricing
+- include comparison table if useful
+- design cards with strong hierarchy and clear value communication
+
+9. BETTER INFORMATION ARCHITECTURE
+Review page labels, navigation labels, and section labels.
+Rename confusing terms into simpler beginner-friendly language where needed.
+
+Examples:
+- “Systems” may be labeled “My Systems”
+- “Check-ins” may be labeled “Today’s Progress”
+- “Analytics” may be labeled “Progress Insights”
+- “Journal” may be labeled “Reflections”
+
+10. MICROCOPY / BEGINNER EXPLANATIONS
+Add beginner-friendly helper copy throughout the app.
+Examples:
+- “Start small. A good system is easy to repeat.”
+- “Your goal gives direction. Your system creates progress.”
+- “On hard days, your backup plan keeps you moving.”
+- “Small actions done consistently beat big plans done rarely.”
+
+11. RESPONSIVE IMPROVEMENTS
+Make sure the redesign works beautifully on:
+- mobile
+- tablet
+- laptop
+- large desktop
+
+Pay extra attention to:
+- landing page mobile stacking
+- sidebar behavior on small screens
+- wizard usability on mobile
+- dashboard card layout
+- pricing cards responsiveness
+
+12. COMPONENT QUALITY
+Create or improve reusable components for:
+- page headers
+- feature cards
+- empty states
+- pricing cards
+- plan comparison table
+- step wizard header
+- system summary card
+- tip card
+- streak badge
+- progress cards
+- beginner helper callout
+
+13. ACCESSIBILITY
+Improve accessibility:
+- semantic headings
+- proper button labels
+- aria-friendly dialogs
+- readable contrast
+- keyboard navigation
+- visible focus states
+
+14. FINAL EXPECTATION
+Please implement the redesign in a structured way and explain the changes made.
+Prioritize actual UI/UX improvements, not only superficial color changes.
+
+I want the final result to feel like:
+- a premium modern SaaS product
+- a friendly beginner-first coaching tool
+- visually elegant
+- emotionally motivating
+- easy to understand in under 1 minute
+
+If helpful, you may:
+- create better section layouts
+- improve spacing scale
+- restructure some pages
+- simplify wording
+- add visual dividers
+- introduce onboarding hints
+- improve CTA hierarchy
+
+Please start by:
+1. auditing the current UI
+2. proposing the redesign approach
+3. implementing the improved landing page
+4. redesigning the dashboard
+5. redesigning the system builder
+6. adding pricing page/section
+7. polishing the rest of the app
+
+Use clean, maintainable React + TypeScript code and preserve the existing tech stack.

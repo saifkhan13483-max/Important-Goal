@@ -13,13 +13,48 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Goals", url: "/goals", icon: Target },
-  { title: "Systems", url: "/systems", icon: Zap },
-  { title: "Templates", url: "/templates", icon: LayoutGrid },
-  { title: "Check-ins", url: "/checkins", icon: CheckSquare },
-  { title: "Analytics", url: "/analytics", icon: BarChart2 },
-  { title: "Journal", url: "/journal", icon: BookOpen },
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+    hint: "Your overview",
+  },
+  {
+    title: "My Goals",
+    url: "/goals",
+    icon: Target,
+    hint: "What you want to achieve",
+  },
+  {
+    title: "My Systems",
+    url: "/systems",
+    icon: Zap,
+    hint: "Your daily habits",
+  },
+  {
+    title: "Templates",
+    url: "/templates",
+    icon: LayoutGrid,
+    hint: "Start from proven habits",
+  },
+  {
+    title: "Today's Progress",
+    url: "/checkins",
+    icon: CheckSquare,
+    hint: "Log today's check-ins",
+  },
+  {
+    title: "Progress Insights",
+    url: "/analytics",
+    icon: BarChart2,
+    hint: "Charts & streaks",
+  },
+  {
+    title: "Reflections",
+    url: "/journal",
+    icon: BookOpen,
+    hint: "Your daily journal",
+  },
 ];
 
 export function AppSidebar() {
@@ -39,20 +74,22 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="px-4 py-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-md gradient-brand flex items-center justify-center flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0 shadow-sm">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-sm text-sidebar-foreground">SystemForge</p>
-            <p className="text-xs text-muted-foreground">Goal to System</p>
+            <p className="font-bold text-sm text-sidebar-foreground leading-tight">SystemForge</p>
+            <p className="text-xs text-muted-foreground leading-tight">Goals → Daily Systems</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-2">
+      <SidebarContent className="py-3">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-3 mb-1">Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase tracking-wider">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
@@ -60,7 +97,11 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
-                      <Link href={item.url} data-testid={`nav-${item.title.toLowerCase().replace(/ /g, "-")}`}>
+                      <Link
+                        href={item.url}
+                        data-testid={`nav-${item.title.toLowerCase().replace(/ /g, "-").replace(/'/g, "")}`}
+                        title={item.hint}
+                      >
                         <item.icon className="w-4 h-4" />
                         <span>{item.title}</span>
                       </Link>
@@ -76,21 +117,30 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-3 px-1 py-2">
           <Avatar className="w-8 h-8 flex-shrink-0">
-            <AvatarFallback className="text-xs bg-primary text-primary-foreground font-semibold">
+            <AvatarFallback className="text-xs bg-primary text-primary-foreground font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-sidebar-foreground">{user?.name || "User"}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            <p className="text-sm font-semibold truncate text-sidebar-foreground leading-tight">
+              {user?.name || "User"}
+            </p>
+            <p className="text-xs text-muted-foreground truncate leading-tight">{user?.email}</p>
           </div>
           <div className="flex gap-1">
             <Link href="/settings">
-              <Button size="icon" variant="ghost" className="w-7 h-7" data-testid="nav-settings">
+              <Button size="icon" variant="ghost" className="w-7 h-7" data-testid="nav-settings" title="Settings">
                 <Settings className="w-3.5 h-3.5" />
               </Button>
             </Link>
-            <Button size="icon" variant="ghost" className="w-7 h-7" onClick={handleLogout} data-testid="button-logout">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-7 h-7"
+              onClick={handleLogout}
+              data-testid="button-logout"
+              title="Sign out"
+            >
               <LogOut className="w-3.5 h-3.5" />
             </Button>
           </div>

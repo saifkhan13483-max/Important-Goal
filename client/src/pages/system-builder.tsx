@@ -12,38 +12,81 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Check, Loader2, Zap, Lightbulb, Target, Clock, Trophy, ShieldCheck, Eye, LayoutTemplate, Brain, Heart, Repeat } from "lucide-react";
+import {
+  ArrowLeft, ArrowRight, Check, Loader2, Zap, Lightbulb, Target,
+  Clock, Trophy, ShieldCheck, Eye, LayoutTemplate, Brain, Heart, Repeat, Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/**
- * 7-step guided system builder matching Phase 4 spec:
- *  1. Identity      — who you become
- *  2. Outcome       — the target win + why it matters
- *  3. Trigger       — what starts the habit
- *  4. Action        — the minimum step + schedule
- *  5. Reward        — immediate celebration
- *  6. Fallback Plan — plan B for hard days
- *  7. Review & Save — full preview before saving
- */
 const STEPS = [
-  { id: "identity", title: "Identity",     icon: Brain,       desc: "Who do you become?" },
-  { id: "outcome",  title: "Outcome",      icon: Target,      desc: "What's the win?" },
-  { id: "trigger",  title: "Trigger",      icon: Zap,         desc: "What starts it?" },
-  { id: "action",   title: "Action",       icon: Check,       desc: "The minimum step" },
-  { id: "reward",   title: "Reward",       icon: Trophy,      desc: "Celebrate progress" },
-  { id: "fallback", title: "Fallback Plan",icon: ShieldCheck, desc: "Plan B" },
-  { id: "review",   title: "Review & Save",icon: Eye,         desc: "Confirm & save" },
+  {
+    id: "identity",
+    title: "Who do you want to become?",
+    shortTitle: "Identity",
+    icon: Brain,
+    desc: "Start with the type of person you're becoming — not just what you want to do.",
+    why: "Research shows that identity-based habits stick longer than outcome-based ones. When you see yourself as 'someone who exercises', you're far more likely to keep going.",
+  },
+  {
+    id: "outcome",
+    title: "What does success look like?",
+    shortTitle: "Your Goal",
+    icon: Target,
+    desc: "Be specific about what you're aiming for and why it matters to you.",
+    why: "Vague goals fade. Specific goals with a clear 'why' create urgency and meaning. Linking your system to a bigger goal keeps you focused when motivation dips.",
+  },
+  {
+    id: "trigger",
+    title: "When will this habit happen?",
+    shortTitle: "Trigger",
+    icon: Zap,
+    desc: "Choose the exact moment or situation that will cue your habit every day.",
+    why: "The best habits are anchored to existing routines. When you say 'after I brush my teeth', your brain connects the new habit to something you already do — zero friction.",
+  },
+  {
+    id: "action",
+    title: "What is the smallest version of this habit?",
+    shortTitle: "Minimum Action",
+    icon: Check,
+    desc: "Define the smallest possible action that still counts as 'done' for today.",
+    why: "Making habits embarrassingly small removes the mental barrier to starting. You can always do more — but the goal is to never say no to starting.",
+  },
+  {
+    id: "reward",
+    title: "How will you celebrate right away?",
+    shortTitle: "Reward",
+    icon: Trophy,
+    desc: "Plan an immediate reward for completing your habit — even a tiny one.",
+    why: "Immediate rewards wire your brain to associate the habit with pleasure. This creates a genuine want to repeat it, not just willpower.",
+  },
+  {
+    id: "fallback",
+    title: "If you miss a day, what's your backup plan?",
+    shortTitle: "Backup Plan",
+    icon: ShieldCheck,
+    desc: "Plan an even smaller version of the habit for hard days — so you never fully break the chain.",
+    why: "The fallback plan is your safety net. It keeps your streak alive on your worst days. One pushup beats zero pushups. Always.",
+  },
+  {
+    id: "review",
+    title: "Your system is ready — let's review it",
+    shortTitle: "Review",
+    icon: Eye,
+    desc: "Look over everything you've built. Does it feel realistic? That's the goal.",
+    why: "",
+  },
 ];
 
 const tips: Record<string, string> = {
-  identity: "Start with identity, not outcome. 'I am a person who…' is more powerful than 'I want to…' — it shifts behavior at a deeper level. Name your system to make it feel real.",
-  outcome: "Be specific. Instead of 'get healthier', say 'complete a 5K race' or 'lose 10kg by June'. Clarity creates urgency. Attaching it to a goal links your effort to a bigger purpose.",
+  identity: "Try starting with 'I am someone who...' — this small shift is surprisingly powerful. It makes the habit part of who you are, not just something you're trying to do.",
+  outcome: "Be specific. 'Get fit' is vague. 'Be able to do 20 pushups in a row by June' is a target you can work toward. Attach it to one of your goals for extra accountability.",
   trigger: "The best triggers are existing habits. 'After I brush my teeth' or 'after my morning coffee' — stack new actions onto existing routines for near-zero friction.",
-  action: "Make the minimum action embarrassingly small. 2 push-ups. 1 page. 1 sentence. The goal is to start — momentum builds automatically. Set a schedule so your brain expects it.",
-  reward: "Rewards should be immediate, not distant. A small celebration after each check-in trains your brain to want to repeat the behavior.",
-  fallback: "A fallback plan is your commitment that you'll do *something* even on the worst days. Even 1% effort beats zero. It keeps your streak alive and identity intact.",
-  review: "Review your system end-to-end. Does it feel realistic? Is the trigger reliable? Is the action truly minimum? A well-designed system should feel almost too easy to start.",
+  action: "Make it embarrassingly small. 2 push-ups. 1 page. 1 sentence. The goal is to never say no to starting — you can always do more once you've begun.",
+  reward: "Your reward should be immediate, not 'I'll buy myself something next month'. A small celebration after each check-in trains your brain to want to repeat the habit.",
+  fallback: "A fallback keeps your streak alive on the worst days. Even 1% effort beats zero. Think of it as your rainy-day plan — your commitment to yourself that something is always better than nothing.",
+  review: "Review your system end-to-end. Does the trigger feel reliable? Is the minimum action truly small enough that you'd do it sick, tired, or unmotivated? That's the test.",
 };
 
 const examples: Record<string, string[]> = {
@@ -70,7 +113,7 @@ const examples: Record<string, string[]> = {
   fallback: [
     "If I miss morning, I'll do 10 squats before bed.",
     "If I can't read, I'll listen to 5 minutes of audiobook.",
-    "If I can't write, I'll save 1 idea in my notes — ideas compound.",
+    "If I can't write, I'll save 1 idea in my notes.",
   ],
 };
 
@@ -88,6 +131,30 @@ type FormData = {
   frequency: string;
   preferredTime: string;
 };
+
+function ExamplesPanel({ examples: exs, onSelect }: { examples: string[]; onSelect: (v: string) => void }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+        <Sparkles className="w-3 h-3" />
+        Example — click to use
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {exs.map((ex) => (
+          <button
+            key={ex}
+            type="button"
+            onClick={() => onSelect(ex)}
+            className="text-xs text-left px-3 py-2 rounded-lg border border-border/60 bg-muted/40 hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all leading-relaxed"
+            data-testid={`example-chip-${ex.slice(0, 20).replace(/\s/g, "-")}`}
+          >
+            {ex}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function SystemBuilderPage() {
   const { user } = useAppStore();
@@ -204,16 +271,16 @@ export default function SystemBuilderPage() {
 
   const validationError = (): string | null => {
     if (step === 0 && form.title.trim().length < 2)
-      return "Please give your system a title (at least 2 characters).";
+      return "Give your system a short name — at least 2 characters. Example: 'Morning Movement'.";
     if (step === 0 && form.identityStatement.trim().length > 0
       && !form.identityStatement.toLowerCase().includes("i am")
       && !form.identityStatement.toLowerCase().includes("i'm"))
-      return 'Try framing your identity statement starting with "I am…" — this is more powerful.';
+      return 'Try framing this starting with "I am…" — it makes it feel more personal and powerful.';
     if (step === 2 && form.triggerStatement.trim().length > 0
       && form.triggerStatement.trim().split(" ").length < 3)
-      return "Be more specific — a good trigger describes exactly when and where.";
+      return "Be more specific — describe exactly when and where this habit will happen.";
     if (step === 3 && form.minimumAction.trim().length < 5)
-      return "Describe a specific minimum action (at least 5 characters).";
+      return "Describe your minimum action in a little more detail (at least 5 characters).";
     return null;
   };
 
@@ -225,45 +292,56 @@ export default function SystemBuilderPage() {
 
   const currentStep = STEPS[step];
   const CurrentIcon = currentStep.icon;
+  const pct = Math.round(((step) / (STEPS.length - 1)) * 100);
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
+    <div className="p-5 md:p-6 max-w-2xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/systems")} data-testid="button-back-systems">
           <ArrowLeft className="w-4 h-4" />
         </Button>
-        <div>
-          <h1 className="text-xl font-bold">{isEdit ? "Edit System" : "Build a System"}</h1>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold leading-tight">{isEdit ? "Edit System" : "Build a New System"}</h1>
           <p className="text-muted-foreground text-sm">
-            Step {step + 1} of {STEPS.length}: {currentStep.desc}
+            Step {step + 1} of {STEPS.length} · {currentStep.shortTitle}
           </p>
         </div>
+        <Badge variant="secondary" className="text-xs flex-shrink-0">{pct}% done</Badge>
       </div>
 
       {/* Progress bar */}
-      <div className="flex gap-1.5">
-        {STEPS.map((s, i) => (
-          <button
-            key={s.id}
-            onClick={() => i < step + 1 && setStep(i)}
-            title={s.title}
-            className={cn(
-              "h-1.5 flex-1 rounded-full transition-all",
-              i <= step ? "bg-primary" : "bg-muted"
-            )}
-          />
-        ))}
+      <div>
+        <div className="flex gap-1">
+          {STEPS.map((s, i) => (
+            <button
+              key={s.id}
+              onClick={() => i <= step && setStep(i)}
+              title={s.shortTitle}
+              className={cn(
+                "h-2 flex-1 rounded-full transition-all",
+                i < step ? "bg-primary cursor-pointer" :
+                i === step ? "bg-primary" :
+                "bg-muted cursor-default",
+              )}
+            />
+          ))}
+        </div>
+        <div className="flex justify-between mt-1.5">
+          <span className="text-xs text-muted-foreground">{currentStep.shortTitle}</span>
+          <span className="text-xs text-muted-foreground">{STEPS.length - step - 1} steps remaining</span>
+        </div>
       </div>
 
-      {/* Template picker — shown on Step 0 when creating new */}
+      {/* Template picker on Step 0 */}
       {step === 0 && !isEdit && templates.length > 0 && (
-        <Card>
+        <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
-            <p className="text-sm font-medium mb-3 flex items-center gap-2">
-              <LayoutTemplate className="w-4 h-4 text-muted-foreground" />
-              Start from a template
+            <p className="text-sm font-semibold mb-1 flex items-center gap-2">
+              <LayoutTemplate className="w-4 h-4 text-primary" />
+              Don't know where to start?
             </p>
+            <p className="text-xs text-muted-foreground mb-3">Pick a template — it will fill in the fields for you. You can customize everything.</p>
             <div className="flex flex-wrap gap-2">
               {templates.slice(0, 6).map(t => (
                 <Button
@@ -271,6 +349,7 @@ export default function SystemBuilderPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => applyTemplate(t)}
+                  className="text-xs h-7"
                   data-testid={`button-template-${t.id}`}
                 >
                   {t.title}
@@ -282,36 +361,48 @@ export default function SystemBuilderPage() {
       )}
 
       {/* Step card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
-              <CurrentIcon className="w-4 h-4 text-primary" />
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3 border-b border-border/50">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <CurrentIcon className="w-5 h-5 text-primary" />
             </div>
-            {currentStep.title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Coaching tip */}
-          <div className="flex gap-2 p-3 rounded-md bg-muted/50">
-            <Lightbulb className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground leading-relaxed">{tips[currentStep.id]}</p>
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base leading-snug">{currentStep.title}</CardTitle>
+              <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{currentStep.desc}</p>
+            </div>
           </div>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-5">
+          {/* Why this matters */}
+          {currentStep.why && (
+            <div className="flex gap-3 p-3.5 rounded-xl bg-amber-500/8 border border-amber-500/15">
+              <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-0.5 uppercase tracking-wide">Why this matters</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{currentStep.why}</p>
+              </div>
+            </div>
+          )}
 
-          {/* ─── Step 0: Identity — title + identity statement ─── */}
+          {/* ── Step 0: Identity ── */}
           {step === 0 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>System Title *</Label>
+                <Label className="font-semibold">
+                  Give your system a name <span className="text-destructive">*</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">Something short and meaningful. You'll see this in your daily check-ins.</p>
                 <Input
-                  placeholder="e.g. Morning Movement Habit"
+                  placeholder="e.g. Morning Movement, Daily Reading, Focus Block"
                   value={form.title}
                   onChange={e => update("title", e.target.value)}
                   data-testid="input-system-title"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Identity Statement</Label>
+                <Label className="font-semibold">Who are you becoming? <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+                <p className="text-xs text-muted-foreground">Start with "I am someone who…" to make this feel personal.</p>
                 <Textarea
                   placeholder="I am someone who…"
                   value={form.identityStatement}
@@ -319,19 +410,17 @@ export default function SystemBuilderPage() {
                   rows={3}
                   data-testid="input-identity"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Frame it as the person you're becoming, not what you want to achieve.
-                </p>
               </div>
               <ExamplesPanel examples={examples.identity} onSelect={v => update("identityStatement", v)} />
             </div>
           )}
 
-          {/* ─── Step 1: Outcome — target + why + linked goal ─── */}
+          {/* ── Step 1: Outcome ── */}
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Target Outcome</Label>
+                <Label className="font-semibold">What does success look like?</Label>
+                <p className="text-xs text-muted-foreground">Be specific. Instead of "get fit", try "do 20 pushups in a row by June".</p>
                 <Input
                   placeholder="What does success look like in 90 days?"
                   value={form.targetOutcome}
@@ -340,17 +429,21 @@ export default function SystemBuilderPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Why It Matters</Label>
+                <Label className="font-semibold">Why does this matter to you?</Label>
+                <p className="text-xs text-muted-foreground">Your "why" is your fuel when motivation fades. Be honest with yourself.</p>
                 <Textarea
-                  placeholder="Why is this important to you?"
+                  placeholder="This matters to me because…"
                   value={form.whyItMatters}
                   onChange={e => update("whyItMatters", e.target.value)}
-                  rows={2}
+                  rows={3}
                   data-testid="input-why-matters"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Linked Goal <span className="text-muted-foreground">(optional)</span></Label>
+                <Label className="font-semibold">
+                  Link to a goal <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">Connect this system to one of your big goals for extra context.</p>
                 <Select value={form.goalId || "none"} onValueChange={v => update("goalId", v === "none" ? "" : v)}>
                   <SelectTrigger data-testid="select-linked-goal">
                     <SelectValue placeholder="Select a goal…" />
@@ -364,27 +457,29 @@ export default function SystemBuilderPage() {
             </div>
           )}
 
-          {/* ─── Step 2: Trigger ─── */}
+          {/* ── Step 2: Trigger ── */}
           {step === 2 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Trigger Type</Label>
+                <Label className="font-semibold">What type of cue will start this habit?</Label>
+                <p className="text-xs text-muted-foreground">Choose the kind of trigger that fits your daily routine.</p>
                 <Select value={form.triggerType} onValueChange={v => update("triggerType", v)}>
                   <SelectTrigger data-testid="select-trigger-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="time">Time-based</SelectItem>
-                    <SelectItem value="action">Action-based</SelectItem>
-                    <SelectItem value="location">Location-based</SelectItem>
-                    <SelectItem value="feeling">Feeling-based</SelectItem>
+                    <SelectItem value="time">Time-based (e.g. "At 7am every morning")</SelectItem>
+                    <SelectItem value="action">Action-based (e.g. "After I brush my teeth")</SelectItem>
+                    <SelectItem value="location">Location-based (e.g. "When I sit at my desk")</SelectItem>
+                    <SelectItem value="feeling">Feeling-based (e.g. "When I feel stressed")</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Trigger Statement</Label>
+                <Label className="font-semibold">Describe your trigger</Label>
+                <p className="text-xs text-muted-foreground">Write the exact situation. The more specific, the better it works.</p>
                 <Textarea
-                  placeholder="After I [existing habit], I will…"
+                  placeholder="After I [existing habit]… / At [time] when I [context]…"
                   value={form.triggerStatement}
                   onChange={e => update("triggerStatement", e.target.value)}
                   rows={3}
@@ -395,27 +490,34 @@ export default function SystemBuilderPage() {
             </div>
           )}
 
-          {/* ─── Step 3: Action — minimum action + schedule ─── */}
+          {/* ── Step 3: Action ── */}
           {step === 3 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Minimum Action *</Label>
+                <Label className="font-semibold">
+                  What's the smallest version of this habit? <span className="text-destructive">*</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Think: what would you still do if you were sick, tired, or having the worst day? That's your minimum. Keep it tiny on purpose.
+                </p>
                 <Textarea
-                  placeholder="The smallest possible action that counts as 'done'"
+                  placeholder="The smallest possible thing that still counts as 'done'…"
                   value={form.minimumAction}
                   onChange={e => update("minimumAction", e.target.value)}
                   rows={3}
                   data-testid="input-minimum-action"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Make it so small that you can't say no. You can always do more.
+              </div>
+              <div className="p-3.5 rounded-xl bg-chart-3/8 border border-chart-3/15">
+                <p className="text-xs font-semibold text-chart-3 mb-0.5 uppercase tracking-wide">Keep it simple</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Small actions done consistently beat big plans done rarely. Start with less than you think you need. You can always do more.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <Repeat className="w-3.5 h-3.5" />
-                    Frequency
+                  <Label className="font-semibold text-sm flex items-center gap-1.5">
+                    <Repeat className="w-3.5 h-3.5" /> How often?
                   </Label>
                   <Select value={form.frequency} onValueChange={v => update("frequency", v)}>
                     <SelectTrigger data-testid="select-frequency">
@@ -429,9 +531,8 @@ export default function SystemBuilderPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    Preferred Time
+                  <Label className="font-semibold text-sm flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> Best time?
                   </Label>
                   <Select value={form.preferredTime} onValueChange={v => update("preferredTime", v)}>
                     <SelectTrigger data-testid="select-preferred-time">
@@ -449,13 +550,14 @@ export default function SystemBuilderPage() {
             </div>
           )}
 
-          {/* ─── Step 4: Reward ─── */}
+          {/* ── Step 4: Reward ── */}
           {step === 4 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Reward Plan</Label>
+                <Label className="font-semibold">How will you celebrate right after completing this?</Label>
+                <p className="text-xs text-muted-foreground">It doesn't have to be big — even a moment of satisfaction counts. Immediate rewards wire your brain to repeat the habit.</p>
                 <Textarea
-                  placeholder="What's your immediate reward after completing this?"
+                  placeholder="Right after I complete this, I will…"
                   value={form.rewardPlan}
                   onChange={e => update("rewardPlan", e.target.value)}
                   rows={3}
@@ -466,49 +568,67 @@ export default function SystemBuilderPage() {
             </div>
           )}
 
-          {/* ─── Step 5: Fallback Plan ─── */}
+          {/* ── Step 5: Fallback Plan ── */}
           {step === 5 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Fallback Plan</Label>
+                <Label className="font-semibold">On your worst day, what's the absolute minimum you'll still do?</Label>
+                <p className="text-xs text-muted-foreground">
+                  This is your safety net. It's not failure — it's commitment. Even 1 pushup beats 0 pushups. One sentence beats nothing.
+                </p>
                 <Textarea
-                  placeholder="If I miss my trigger, I will still…"
+                  placeholder="If I miss my trigger or feel terrible, I will still do at least…"
                   value={form.fallbackPlan}
                   onChange={e => update("fallbackPlan", e.target.value)}
                   rows={3}
                   data-testid="input-fallback"
                 />
-                <p className="text-xs text-muted-foreground">
-                  A fallback is your safety net. It keeps your streak alive on hard days.
-                </p>
               </div>
               <ExamplesPanel examples={examples.fallback} onSelect={v => update("fallbackPlan", v)} />
+              <div className="p-3.5 rounded-xl bg-primary/5 border border-primary/15">
+                <p className="text-xs font-semibold text-primary mb-0.5">Remember</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  "On hard days, your backup plan keeps you moving. Missing one day is not failure. Getting back the next day is success."
+                </p>
+              </div>
             </div>
           )}
 
-          {/* ─── Step 6: Review & Save ─── */}
+          {/* ── Step 6: Review ── */}
           {step === 6 && (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground mb-1">
-                Review your complete system before saving. Every field you've filled in is shown below.
-              </p>
+              <div className="p-4 rounded-xl bg-chart-3/8 border border-chart-3/20 mb-2">
+                <p className="text-sm font-semibold text-chart-3 mb-0.5">🎉 Your system is ready!</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Review what you've built below. Does the trigger feel reliable? Is the action small enough you'd do it on your worst day? If yes, save it!
+                </p>
+              </div>
               {[
-                { label: "System",    value: form.title,               color: "text-foreground",        icon: Zap },
-                { label: "Identity",  value: form.identityStatement,   color: "text-primary",           icon: Brain },
-                { label: "Outcome",   value: form.targetOutcome,       color: "text-chart-2",           icon: Target },
-                { label: "Why",       value: form.whyItMatters,        color: "text-chart-5",           icon: Heart },
-                { label: "Trigger",   value: form.triggerStatement,    color: "text-chart-3",           icon: Zap },
-                { label: "Action",    value: form.minimumAction,       color: "text-chart-4",           icon: Check },
-                { label: "Reward",    value: form.rewardPlan,          color: "text-chart-4",           icon: Trophy },
-                { label: "Fallback",  value: form.fallbackPlan,        color: "text-muted-foreground",  icon: ShieldCheck },
-                { label: "Schedule",  value: form.frequency && form.preferredTime ? `${form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)}, ${form.preferredTime}` : null, color: "text-muted-foreground", icon: Clock },
+                { label: "System Name",       value: form.title,             icon: Zap,         color: "text-foreground" },
+                { label: "Who I'm becoming",  value: form.identityStatement, icon: Brain,       color: "text-primary" },
+                { label: "What success looks like", value: form.targetOutcome, icon: Target,    color: "text-chart-2" },
+                { label: "Why it matters",    value: form.whyItMatters,      icon: Heart,       color: "text-chart-5" },
+                { label: "When it happens",   value: form.triggerStatement,  icon: Zap,         color: "text-chart-3" },
+                { label: "Smallest action",   value: form.minimumAction,     icon: Check,       color: "text-chart-4" },
+                { label: "My reward",         value: form.rewardPlan,        icon: Trophy,      color: "text-chart-4" },
+                { label: "Backup plan",       value: form.fallbackPlan,      icon: ShieldCheck, color: "text-muted-foreground" },
+                {
+                  label: "Schedule",
+                  value: form.frequency && form.preferredTime
+                    ? `${form.frequency.charAt(0).toUpperCase() + form.frequency.slice(1)} · ${form.preferredTime}`
+                    : null,
+                  icon: Clock,
+                  color: "text-muted-foreground",
+                },
               ].filter(item => item.value).map(item => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className="flex gap-3 items-start p-3 rounded-md bg-muted/50">
-                    <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${item.color}`} />
+                  <div key={item.label} className="flex gap-3 items-start p-3.5 rounded-xl bg-muted/30 border border-border/40">
+                    <div className="w-7 h-7 rounded-lg bg-background flex items-center justify-center flex-shrink-0 mt-0.5 border border-border/50">
+                      <Icon className={`w-3.5 h-3.5 ${item.color}`} />
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <p className={`text-xs font-bold uppercase tracking-wide ${item.color} mb-0.5`}>{item.label}</p>
+                      <p className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${item.color}`}>{item.label}</p>
                       <p className="text-sm leading-relaxed">{item.value}</p>
                     </div>
                   </div>
@@ -521,26 +641,28 @@ export default function SystemBuilderPage() {
 
       {/* Validation hint */}
       {validationError() && (
-        <p
-          className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2"
+        <div
+          className="flex gap-2 p-3.5 rounded-xl text-amber-700 dark:text-amber-300 bg-amber-500/8 border border-amber-500/20"
           data-testid="text-validation-hint"
         >
-          💡 {validationError()}
-        </p>
+          <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <p className="text-sm leading-relaxed">{validationError()}</p>
+        </div>
       )}
 
       {/* Navigation */}
-      <div className="flex justify-between gap-2">
+      <div className="flex justify-between gap-2 pb-4">
         {step > 0 ? (
           <Button variant="outline" onClick={() => setStep(s => s - 1)} data-testid="button-step-back">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
         ) : (
-          <Button variant="outline" onClick={() => navigate("/systems")} data-testid="button-cancel-builder">
+          <Button variant="outline" onClick={() => navigate("/systems")} data-testid="button-cancel">
             Cancel
           </Button>
         )}
+
         {step < STEPS.length - 1 ? (
           <Button onClick={() => setStep(s => s + 1)} disabled={!canProceed()} data-testid="button-step-next">
             Continue
@@ -550,32 +672,22 @@ export default function SystemBuilderPage() {
           <Button
             onClick={() => saveMutation.mutate(form)}
             disabled={saveMutation.isPending}
+            className="gradient-brand text-white border-0 min-w-[130px]"
             data-testid="button-save-system"
           >
-            {saveMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            {isEdit ? "Save Changes" : "Create System"}
+            {saveMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                {isEdit ? "Save Changes" : "Save System"}
+              </>
+            )}
           </Button>
         )}
-      </div>
-    </div>
-  );
-}
-
-function ExamplesPanel({ examples, onSelect }: { examples: string[]; onSelect: (v: string) => void }) {
-  return (
-    <div>
-      <p className="text-xs font-medium text-muted-foreground mb-2">Examples — click to use:</p>
-      <div className="space-y-1.5">
-        {examples.map((ex, i) => (
-          <button
-            key={i}
-            onClick={() => onSelect(ex)}
-            className="w-full text-left text-xs p-2.5 rounded-md bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            data-testid={`button-example-${i}`}
-          >
-            {ex}
-          </button>
-        ))}
       </div>
     </div>
   );

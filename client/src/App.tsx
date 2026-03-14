@@ -24,6 +24,7 @@ import { ProtectedRoute, PublicOnlyRoute } from "@/components/auth/protected-rou
 import { useAuth } from "@/hooks/use-auth";
 
 import Landing from "@/pages/landing";
+import Pricing from "@/pages/pricing";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import ForgotPassword from "@/pages/forgot-password";
@@ -57,6 +58,7 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/" component={() => <PublicOnlyRoute component={Landing} />} />
+      <Route path="/pricing" component={Pricing} />
       <Route path="/login" component={() => <PublicOnlyRoute component={Login} />} />
       <Route path="/signup" component={() => <PublicOnlyRoute component={Signup} />} />
       <Route path="/forgot-password" component={() => <PublicOnlyRoute component={ForgotPassword} />} />

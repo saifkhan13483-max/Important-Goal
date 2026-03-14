@@ -26,8 +26,17 @@ npm run build   # outputs to dist/
 - **Authentication** — Firebase Auth email/password + Google OAuth, protected routes
 - **Onboarding** — Multi-step onboarding wizard for new users
 - **Goal Management** — Full CRUD with categories, priorities, statuses, deadlines
-- **System Builder** — 7-step guided builder: Identity → Outcome → Trigger → Action → Reward → Fallback → Review
+- **System Builder** — 7-step guided builder with beginner-friendly language: Identity → Outcome → Trigger → Minimum Action → Reward → Backup Plan → Review
 - **Templates Library** — 9 prebuilt templates with Firestore seeding + category filters + preview dialog
+- **Pricing Page** — `/pricing` page with 4 plans (Free, Starter, Pro, Team/Coach), comparison table, FAQ, monthly/yearly toggle
+
+## Recent Design Changes (v2 Redesign)
+
+- **Landing page** — Major redesign: added nav links, problem section, goal→system transformation example, template preview grid, beginner reassurance section, testimonials, pricing section, full FAQ, improved footer
+- **Dashboard** — Added daily beginner tip, improved empty states with guided nudges, redesigned metric cards and quick actions
+- **System Builder** — All step labels rewritten to beginner-friendly language (e.g. "Who do you want to become?", "When will this habit happen?", "What is the smallest version of this habit?"), clearer "Why this matters" coaching panels, improved example chips
+- **Sidebar nav** — Renamed: "Goals" → "My Goals", "Systems" → "My Systems", "Check-ins" → "Today's Progress", "Analytics" → "Progress Insights", "Journal" → "Reflections"
+- **Pricing page** — New standalone `/pricing` route with 4 plan cards, full feature comparison table, money-back guarantee callout, FAQ accordion
 - **Daily Check-ins** — Today view + history tab; mark done/partial/missed; mood before/after (1-5); difficulty (1-5); inline streak badge; fallback plan shown on miss
 - **Analytics** — 14-day bar chart, completion rate trend, current streaks, goals by category, most consistent systems, most missed systems, completion by goal
 - **Dashboard** — Greeting, today's progress, streaks, active goals, quick actions, recent activity feed
