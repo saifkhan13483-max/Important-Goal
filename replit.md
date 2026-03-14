@@ -15,7 +15,7 @@ A modern productivity web app that helps users transform vague goals into powerf
 
 ```bash
 # Development
-npx vite --port 5000 --host 0.0.0.0
+npm run dev   # runs vite on port 5000
 
 # Production build
 npm run build   # outputs to dist/
