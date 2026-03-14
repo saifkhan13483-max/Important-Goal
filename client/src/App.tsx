@@ -30,6 +30,7 @@ import ForgotPassword from "@/pages/forgot-password";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
 import Goals from "@/pages/goals";
+import GoalDetail from "@/pages/goal-detail";
 import SystemsPage from "@/pages/systems";
 import SystemBuilderPage from "@/pages/system-builder";
 import Checkins from "@/pages/checkins";
@@ -64,6 +65,7 @@ function Router() {
       {/* Protected app routes */}
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/goals" component={() => <ProtectedRoute component={Goals} />} />
+      <Route path="/goals/:id" component={() => <ProtectedRoute component={GoalDetail} />} />
       <Route path="/systems" component={() => <ProtectedRoute component={SystemsPage} />} />
       <Route path="/systems/new" component={() => <ProtectedRoute component={SystemBuilderPage} />} />
       <Route path="/systems/:id/edit" component={() => <ProtectedRoute component={SystemBuilderPage} />} />

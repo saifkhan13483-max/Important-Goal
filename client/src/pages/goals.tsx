@@ -17,9 +17,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical } from "lucide-react";
+import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Link } from "wouter";
 
 const categories = ["fitness", "study", "career", "business", "relationship", "mindset", "health", "finance", "creativity", "other"];
 const priorities = ["low", "medium", "high"];
@@ -155,6 +156,7 @@ export default function Goals() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editGoal, setEditGoal] = useState<Goal | undefined>();
   const [deleteGoalItem, setDeleteGoalItem] = useState<Goal | undefined>();
@@ -174,10 +176,11 @@ export default function Goals() {
   });
 
   const filtered = goals.filter(g => {
-    const matchSearch = !search || g.title.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || g.title.toLowerCase().includes(search.toLowerCase()) || (g.description || "").toLowerCase().includes(search.toLowerCase());
     const matchStatus = filterStatus === "all" || g.status === filterStatus;
     const matchCat = filterCategory === "all" || g.category === filterCategory;
-    return matchSearch && matchStatus && matchCat;
+    const matchPriority = filterPriority === "all" || g.priority === filterPriority;
+    return matchSearch && matchStatus && matchCat && matchPriority;
   });
 
   return (
@@ -222,6 +225,15 @@ export default function Goals() {
             {categories.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={filterPriority} onValueChange={setFilterPriority}>
+          <SelectTrigger className="w-36" data-testid="select-filter-priority">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Priorities</SelectItem>
+            {priorities.map(p => <SelectItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -244,10 +256,15 @@ export default function Goals() {
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {filtered.map(goal => (
-            <Card key={goal.id} className="hover-elevate" data-testid={`goal-card-${goal.id}`}>
+            <Card key={goal.id} className="hover-elevate group" data-testid={`goal-card-${goal.id}`}>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <h3 className="font-semibold text-sm leading-snug">{goal.title}</h3>
+                  <Link href={`/goals/${goal.id}`} className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm leading-snug group-hover:text-primary transition-colors cursor-pointer flex items-center gap-1">
+                      {goal.title}
+                      <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    </h3>
+                  </Link>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button size="icon" variant="ghost" className="w-7 h-7 flex-shrink-0" data-testid={`button-goal-menu-${goal.id}`}>
