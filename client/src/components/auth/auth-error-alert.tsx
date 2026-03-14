@@ -40,6 +40,9 @@ function getFriendlyMessage(error: Error | string): string {
   if (msg.includes("auth/invalid-api-key")) {
     return "App configuration error. Please contact support.";
   }
+  if (msg.includes("offline") || msg.includes("unavailable") || msg.includes("client is offline")) {
+    return "Network error. Please check your connection and try again.";
+  }
 
   return msg || "Something went wrong. Please try again.";
 }

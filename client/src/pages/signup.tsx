@@ -53,17 +53,26 @@ export default function Signup() {
     setGoogleLoading(true);
     try {
       const cred = await AuthService.signInWithGoogle();
-      const existing = await UserService.getUser(cred.user.uid);
+      let existing = null;
+      try {
+        existing = await UserService.getUser(cred.user.uid);
+      } catch {
+        // Firestore offline or unavailable — treat as new user and onboard
+      }
       if (!existing) {
-        await UserService.createUser(cred.user.uid, {
-          id: cred.user.uid,
-          email: cred.user.email || "",
-          name: cred.user.displayName || "User",
-          avatarUrl: cred.user.photoURL || null,
-          onboardingCompleted: false,
-          preferredTheme: "system",
-          timezone: "UTC",
-        });
+        try {
+          await UserService.createUser(cred.user.uid, {
+            id: cred.user.uid,
+            email: cred.user.email || "",
+            name: cred.user.displayName || "User",
+            avatarUrl: cred.user.photoURL || null,
+            onboardingCompleted: false,
+            preferredTheme: "system",
+            timezone: "UTC",
+          });
+        } catch {
+          // If offline, still navigate — user can retry later
+        }
         qc.invalidateQueries({ queryKey: ["user"] });
         navigate("/onboarding");
       } else {
