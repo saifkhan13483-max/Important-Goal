@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, SkipForward, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createGoal } from "@/services/goals.service";
+import { useAppStore } from "@/store/auth.store";
 
 const focusAreas = [
   { value: "fitness", label: "Fitness & Health", icon: "💪" },
@@ -59,6 +60,7 @@ export default function Onboarding() {
   const { user, updateProfile, updatePending } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { setTheme } = useAppStore();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingData>({
     name: user?.name || "",
@@ -307,23 +309,31 @@ export default function Onboarding() {
 
             {/* Step 5 — Theme */}
             {current.id === "theme" && (
-              <div className="grid grid-cols-3 gap-3">
-                {themes.map(t => (
-                  <button
-                    key={t.value}
-                    onClick={() => setData(d => ({ ...d, preferredTheme: t.value }))}
-                    data-testid={`button-theme-${t.value}`}
-                    className={cn(
-                      "flex flex-col items-center gap-2 p-5 rounded-md border transition-all",
-                      data.preferredTheme === t.value
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-muted/30 hover:border-primary/50"
-                    )}
-                  >
-                    <span className="text-2xl">{t.icon}</span>
-                    <span className="text-sm font-medium">{t.label}</span>
-                  </button>
-                ))}
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  {themes.map(t => (
+                    <button
+                      key={t.value}
+                      onClick={() => {
+                        setData(d => ({ ...d, preferredTheme: t.value }));
+                        setTheme(t.value as "light" | "dark" | "system");
+                      }}
+                      data-testid={`button-theme-${t.value}`}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-5 rounded-md border transition-all",
+                        data.preferredTheme === t.value
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-muted/30 hover:border-primary/50"
+                      )}
+                    >
+                      <span className="text-2xl">{t.icon}</span>
+                      <span className="text-sm font-medium">{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  The app updates instantly — you can change this anytime in Settings.
+                </p>
               </div>
             )}
 

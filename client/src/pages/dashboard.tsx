@@ -123,9 +123,9 @@ export default function Dashboard() {
       .map(c => ({ kind: "checkin" as const, data: c, sortKey: c.dateKey }));
 
     const journalItems: ActivityItem[] = [...journals]
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
       .slice(0, 10)
-      .map(j => ({ kind: "journal" as const, data: j, sortKey: j.createdAt.split("T")[0] }));
+      .map(j => ({ kind: "journal" as const, data: j, sortKey: (j.createdAt ?? "").split("T")[0] }));
 
     return [...checkinItems, ...journalItems]
       .sort((a, b) => b.sortKey.localeCompare(a.sortKey))

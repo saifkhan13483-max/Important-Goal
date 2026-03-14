@@ -177,16 +177,38 @@ export default function Goals() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteGoal(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const previous = qc.getQueryData<Goal[]>(["goals", userId]);
+      qc.setQueryData<Goal[]>(["goals", userId], old => (old ?? []).filter(g => g.id !== id));
+      return { previous };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["goals", userId], ctx.previous);
+      toast({ title: "Failed to delete goal", variant: "destructive" });
+    },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["goals", userId] });
       toast({ title: "Goal deleted" });
       setDeleteGoalItem(undefined);
     },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
   });
 
   const quickStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => updateGoal(id, { status }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["goals", userId] });
+      const previous = qc.getQueryData<Goal[]>(["goals", userId]);
+      qc.setQueryData<Goal[]>(["goals", userId], old =>
+        (old ?? []).map(g => g.id === id ? { ...g, status } : g)
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["goals", userId], ctx.previous);
+      toast({ title: "Failed to update goal status", variant: "destructive" });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["goals", userId] }),
   });
 
   const filtered = goals.filter(g => {

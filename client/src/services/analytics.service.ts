@@ -91,11 +91,11 @@ export function computeAnalytics(
     let best = 0;
     let run  = 0;
     let prev: string | null = null;
-    for (const dateKey of [...doneSet].sort()) {
+    for (const dateKey of Array.from(doneSet).sort()) {
       if (prev === null) {
         run = 1;
       } else {
-        const prevDate = new Date(prev);
+        const prevDate: Date = new Date(prev as string);
         prevDate.setDate(prevDate.getDate() + 1);
         if (prevDate.toISOString().split("T")[0] === dateKey) {
           run++;

@@ -21,11 +21,11 @@ import { auth } from "@/lib/firebase";
 import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
 import type { User } from "@/types/schema";
-import { useAppStore } from "@/store/auth.store";
+import { useAppStore, type Theme } from "@/store/auth.store";
 
 export function useAuth() {
   const qc = useQueryClient();
-  const { setUser, setAuthLoading, clearAuth } = useAppStore();
+  const { setUser, setAuthLoading, clearAuth, setTheme } = useAppStore();
 
   // Track the Firebase UID locally — drives the Firestore profile query below
   const [firebaseUid, setFirebaseUid] = useState<string | null | undefined>(undefined);
@@ -62,11 +62,15 @@ export function useAuth() {
       ? profileQuery.data
       : null;
 
-  // Step 3: Sync resolved auth state into Zustand store
+  // Step 3: Sync resolved auth state into Zustand store.
+  // Also syncs the user's preferred theme so ThemeProvider applies it immediately.
   useEffect(() => {
     if (!isLoading) {
       if (user) {
         setUser(user);
+        if (user.preferredTheme) {
+          setTheme(user.preferredTheme as Theme);
+        }
       } else if (firebaseUid === null) {
         clearAuth();
       }
@@ -74,7 +78,7 @@ export function useAuth() {
     if (isLoading) {
       setAuthLoading(true);
     }
-  }, [user, isLoading, firebaseUid, setUser, clearAuth, setAuthLoading]);
+  }, [user, isLoading, firebaseUid, setUser, clearAuth, setAuthLoading, setTheme]);
 
   // --- Mutations ---
 

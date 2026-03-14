@@ -101,6 +101,13 @@ firebase deploy --only firestore:rules
 
 Rules ensure every user can only read and write their own documents.
 
+## Theme System
+
+ThemeProvider reads from and writes to the Zustand store (`useAppStore.theme`), which is persisted via `zustand/persist`. This creates a single source of truth:
+- On login, `use-auth.ts` syncs `user.preferredTheme` from Firestore into the store
+- During onboarding theme selection, the theme is applied immediately for a live preview
+- The header toggle and settings page both update the same Zustand store value
+
 ## Design System
 
 Color palette: Deep indigo primary (HSL 258 84% 62%) with light/dark mode support.
