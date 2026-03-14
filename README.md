@@ -20,7 +20,7 @@ SystemForge helps you convert vague goals into powerful, repeatable daily system
 
 ---
 
-## Getting Started
+## Getting Started (Local Development)
 
 ### 1. Clone the repo
 
@@ -37,43 +37,94 @@ npm install
 
 ### 3. Set up environment variables
 
-Copy `.env.example` to `.env` and fill in your values:
+Copy `.env.example` to `.env.local` and fill in your Firebase values:
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
 Required variables:
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
 
-Optional (for profile photo uploads):
-- `VITE_CLOUDINARY_CLOUD_NAME`
-- `VITE_CLOUDINARY_UPLOAD_PRESET`
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
+Optional (profile photo uploads via Cloudinary):
+
+```env
+VITE_CLOUDINARY_CLOUD_NAME=
+VITE_CLOUDINARY_UPLOAD_PRESET=
+```
 
 ### 4. Configure Firebase
 
 1. Go to [Firebase Console](https://console.firebase.google.com)
-2. Create a new project (or use an existing one)
-3. Enable **Authentication** and turn on Email/Password and Google providers
+2. Create or open your project
+3. Enable **Authentication** → Email/Password + Google providers
 4. Enable **Firestore Database** in production mode
-5. Copy your web app config into `.env`
+5. Paste your web app config values into `.env.local`
 
 ### 5. Deploy Firestore Security Rules
 
-Copy the contents of `firestore.rules` to Firebase Console → Firestore → Rules.
+Copy `firestore.rules` content into Firebase Console → Firestore → Rules tab.
 
-### 6. Run the app
+### 6. Run the dev server
 
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5000`.
+App runs at `http://localhost:5000`.
+
+---
+
+## Deploying to Vercel
+
+This project is a pure static SPA — there is no backend server. It deploys to Vercel as a static site with client-side routing.
+
+### Step 1 — Push to GitHub
+
+Push the project to a GitHub (or GitLab / Bitbucket) repository.
+
+### Step 2 — Import into Vercel
+
+1. Go to [vercel.com](https://vercel.com) → **Add New Project**
+2. Import your GitHub repository
+3. Vercel will auto-detect the `vercel.json` configuration:
+   - **Build command:** `npm run build`
+   - **Output directory:** `dist`
+   - **Install command:** `npm install`
+
+### Step 3 — Set Environment Variables in Vercel
+
+In the Vercel project dashboard → **Settings → Environment Variables**, add each of the following for **Production** (and optionally Preview):
+
+| Variable | Where to find it |
+|---|---|
+| `VITE_FIREBASE_API_KEY` | Firebase Console → Project Settings → General → Your apps |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Same as above |
+| `VITE_FIREBASE_PROJECT_ID` | Same as above |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Same as above |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Same as above |
+| `VITE_FIREBASE_APP_ID` | Same as above |
+| `VITE_CLOUDINARY_CLOUD_NAME` | Cloudinary Dashboard (optional) |
+| `VITE_CLOUDINARY_UPLOAD_PRESET` | Cloudinary Dashboard (optional) |
+
+### Step 4 — Add your Vercel domain to Firebase
+
+In Firebase Console → **Authentication → Settings → Authorized Domains**:
+
+- Add your Vercel production URL (e.g. `systemforge.vercel.app`)
+- Add any preview URLs you want to allow
+
+### Step 5 — Deploy
+
+Click **Deploy** in Vercel. Subsequent pushes to `main` will auto-deploy.
 
 ---
 
@@ -96,50 +147,33 @@ client/src/
 
 ## Features
 
-### Phase 0 — Project Setup
-- React 18 + Vite + TypeScript + Tailwind CSS
-- shadcn/ui + Radix UI components
-- wouter routing
-- Firebase Auth + Firestore setup
-- Sidebar + header app shell for authenticated pages
-- All 8 pages scaffolded: Landing, Login, Signup, Dashboard, Goals, System Builder, Check-ins, Analytics, Settings, Journal
-
-### Phase 1 — Authentication
-- Email/password sign up and sign in
-- Google sign-in (popup flow)
-- Forgot password via Firebase email reset
-- Protected routes — unauthenticated users redirected to login
-- Public-only routes — authenticated users redirected to dashboard
-- Onboarding redirect for new users
-- Persistent auth session via Firebase
-- Zustand store for global UI state
-- Full form validation and friendly error messages
-
----
-
-## Deployment
-
-Deploy to [Vercel](https://vercel.com) or Replit Autoscale:
-
-- Set all `VITE_` environment variables in your deployment environment
-- Add your deployment domain to Firebase Console → Authentication → Authorized Domains
-
----
-
-## Firestore Security Rules
-
-See `firestore.rules` for the recommended security configuration.
+- **Authentication** — Email/password + Google sign-in, persistent sessions, protected routes
+- **Onboarding** — Multi-step wizard, saves to Firestore, routes to System Builder
+- **Goal Management** — Full CRUD, categories, priorities, deadlines, archive
+- **System Builder** — 7-step guided builder: Identity → Outcome → Trigger → Action → Reward → Fallback → Review
+- **Templates Library** — 9 prebuilt templates with search, filters, preview, and one-click use
+- **Daily Check-ins** — Today view + 30-day history; done/partial/missed; mood before/after (1-5); difficulty (1-5); streak badges; fallback advice on miss
+- **Analytics** — Daily/weekly/monthly completion charts, current streaks, all-time best streaks, most consistent systems, most missed systems, completion by goal
+- **Dashboard** — Greeting, today's progress, active goals, streaks, quick actions, combined check-in + journal activity feed
+- **Journal** — Daily/weekly reflections with guided prompts, linked to goals/systems
+- **Settings** — Profile, theme (light/dark/system), timezone
 
 ---
 
 ## Firebase Console Checklist
 
-Before going live, make sure you have:
+Before going live:
 
-- [ ] Created a Firebase project
-- [ ] Enabled Email/Password auth provider
-- [ ] Enabled Google auth provider
-- [ ] Enabled Firestore in production mode
-- [ ] Deployed `firestore.rules`
-- [ ] Added your domain to Authorized Domains
-- [ ] Copied all config values to environment variables
+- [ ] Create a Firebase project
+- [ ] Enable **Email/Password** auth provider
+- [ ] Enable **Google** auth provider
+- [ ] Enable **Firestore** in production mode
+- [ ] Deploy `firestore.rules`
+- [ ] Add your production domain to **Authorized Domains**
+- [ ] Copy all config values to Vercel environment variables
+
+---
+
+## Firestore Security Rules
+
+See `firestore.rules` for the recommended security configuration. Deploy these rules before going live to protect user data.
