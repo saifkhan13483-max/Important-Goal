@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
+import ForgotPassword from "@/pages/forgot-password";
 import Onboarding from "@/pages/onboarding";
 import Dashboard from "@/pages/dashboard";
 import Goals from "@/pages/goals";
@@ -95,6 +96,7 @@ function Router() {
       <Route path="/" component={() => <PublicOnlyRoute component={Landing} />} />
       <Route path="/login" component={() => <PublicOnlyRoute component={Login} />} />
       <Route path="/signup" component={() => <PublicOnlyRoute component={Signup} />} />
+      <Route path="/forgot-password" component={() => <PublicOnlyRoute component={ForgotPassword} />} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path="/goals" component={() => <ProtectedRoute component={Goals} />} />

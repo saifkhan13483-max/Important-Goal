@@ -6,9 +6,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Loader2 } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
+import * as AuthService from "@/services/auth.service";
+import * as UserService from "@/services/user.service";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -19,6 +25,8 @@ export default function Login() {
   const { login, loginPending } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const qc = useQueryClient();
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -31,6 +39,36 @@ export default function Login() {
       navigate("/dashboard");
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message || "Invalid credentials", variant: "destructive" });
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const cred = await AuthService.signInWithGoogle();
+      const existing = await UserService.getUser(cred.user.uid);
+      if (!existing) {
+        await UserService.createUser(cred.user.uid, {
+          id: cred.user.uid,
+          email: cred.user.email || "",
+          name: cred.user.displayName || "User",
+          avatarUrl: cred.user.photoURL || null,
+          onboardingCompleted: false,
+          preferredTheme: "system",
+          timezone: "UTC",
+        });
+        qc.invalidateQueries({ queryKey: ["user"] });
+        navigate("/onboarding");
+      } else {
+        qc.invalidateQueries({ queryKey: ["user"] });
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      if (err.code !== "auth/popup-closed-by-user") {
+        toast({ title: "Google sign-in failed", description: err.message || "Try again.", variant: "destructive" });
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -50,7 +88,28 @@ export default function Login() {
             <CardTitle className="text-lg">Welcome back</CardTitle>
             <CardDescription>Sign in to continue building</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleGoogleSignIn}
+              disabled={googleLoading || loginPending}
+              data-testid="button-google-signin"
+            >
+              {googleLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <SiGoogle className="w-4 h-4" />
+              )}
+              {googleLoading ? "Signing in..." : "Continue with Google"}
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">or</span>
+              <Separator className="flex-1" />
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -71,7 +130,16 @@ export default function Login() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <Link
+                          href="/forgot-password"
+                          className="text-xs text-primary hover:underline"
+                          data-testid="link-forgot-password"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
                       <FormControl>
                         <Input type="password" placeholder="••••••••" data-testid="input-password" {...field} />
                       </FormControl>
@@ -79,14 +147,14 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={loginPending} data-testid="button-submit-login">
+                <Button type="submit" className="w-full" disabled={loginPending || googleLoading} data-testid="button-submit-login">
                   {loginPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   {loginPending ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
             </Form>
 
-            <div className="mt-5 pt-4 border-t border-border text-center">
+            <div className="pt-2 border-t border-border text-center">
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{" "}
                 <Link href="/signup" className="text-primary font-medium" data-testid="link-signup">

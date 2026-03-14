@@ -6,9 +6,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles, Loader2 } from "lucide-react";
+import { SiGoogle } from "react-icons/si";
+import * as AuthService from "@/services/auth.service";
+import * as UserService from "@/services/user.service";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -24,6 +30,8 @@ export default function Signup() {
   const { signup, signupPending } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const qc = useQueryClient();
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -36,6 +44,36 @@ export default function Signup() {
       navigate("/onboarding");
     } catch (err: any) {
       toast({ title: "Signup failed", description: err.message || "Try again", variant: "destructive" });
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setGoogleLoading(true);
+    try {
+      const cred = await AuthService.signInWithGoogle();
+      const existing = await UserService.getUser(cred.user.uid);
+      if (!existing) {
+        await UserService.createUser(cred.user.uid, {
+          id: cred.user.uid,
+          email: cred.user.email || "",
+          name: cred.user.displayName || "User",
+          avatarUrl: cred.user.photoURL || null,
+          onboardingCompleted: false,
+          preferredTheme: "system",
+          timezone: "UTC",
+        });
+        qc.invalidateQueries({ queryKey: ["user"] });
+        navigate("/onboarding");
+      } else {
+        qc.invalidateQueries({ queryKey: ["user"] });
+        navigate("/dashboard");
+      }
+    } catch (err: any) {
+      if (err.code !== "auth/popup-closed-by-user") {
+        toast({ title: "Google sign-up failed", description: err.message || "Try again.", variant: "destructive" });
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -55,7 +93,28 @@ export default function Signup() {
             <CardTitle className="text-lg">Create your account</CardTitle>
             <CardDescription>Free forever. No credit card needed.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleGoogleSignUp}
+              disabled={googleLoading || signupPending}
+              data-testid="button-google-signup"
+            >
+              {googleLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <SiGoogle className="w-4 h-4" />
+              )}
+              {googleLoading ? "Signing up..." : "Continue with Google"}
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">or</span>
+              <Separator className="flex-1" />
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -110,14 +169,14 @@ export default function Signup() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={signupPending} data-testid="button-submit-signup">
+                <Button type="submit" className="w-full" disabled={signupPending || googleLoading} data-testid="button-submit-signup">
                   {signupPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   {signupPending ? "Creating account..." : "Create Account"}
                 </Button>
               </form>
             </Form>
 
-            <div className="mt-5 pt-4 border-t border-border text-center">
+            <div className="pt-2 border-t border-border text-center">
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link href="/login" className="text-primary font-medium" data-testid="link-login">
