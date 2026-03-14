@@ -42,6 +42,16 @@ export function useAuth() {
     return unsub;
   }, [clearAuth]);
 
+  // Hard deadline: if auth is still loading after 5s, force-resolve it.
+  // This prevents the loading screen from hanging forever due to Firebase
+  // connectivity issues or a missing Firestore user profile.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAuthLoading(false);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [setAuthLoading]);
+
   const authStateLoading = firebaseUid === undefined;
 
   // Step 2: Fetch Firestore user profile once Firebase UID is known
