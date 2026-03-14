@@ -3,7 +3,11 @@ import { db } from "@/lib/firebase";
 import type { User } from "@/types/schema";
 
 export async function getUser(uid: string): Promise<User | null> {
-  const snap = await getDoc(doc(db, "users", uid));
+  const fetchPromise = getDoc(doc(db, "users", uid));
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("Firestore timeout")), 8000)
+  );
+  const snap = await Promise.race([fetchPromise, timeoutPromise]);
   if (!snap.exists()) return null;
   return { id: snap.id, ...snap.data() } as User;
 }
