@@ -1,40 +1,56 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { getTemplates } from "@/services/templates.service";
+import { getPublicTemplates } from "@/services/templates.service";
+import { getSystems } from "@/services/systems.service";
+import { useAuth } from "@/hooks/use-auth";
 import type { Template } from "@/types/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, LayoutGrid, Brain, Target, Zap, CheckSquare, Trophy, ShieldCheck, BookOpen } from "lucide-react";
+import {
+  Search, LayoutGrid, Brain, Zap, CheckSquare, Trophy, ShieldCheck,
+  BookOpen, Sparkles, ArrowRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ALL_CATEGORIES = [
   { value: "all", label: "All" },
   { value: "fitness", label: "Fitness" },
-  { value: "study", label: "Study" },
-  { value: "career", label: "Career" },
-  { value: "business", label: "Business" },
-  { value: "mindset", label: "Mindset" },
-  { value: "health", label: "Health" },
+  { value: "reading", label: "Reading" },
+  { value: "meditation", label: "Meditation" },
+  { value: "exam-prep", label: "Exam Prep" },
+  { value: "content-creation", label: "Content" },
   { value: "relationship", label: "Relationship" },
   { value: "sleep", label: "Sleep" },
+  { value: "deep-work", label: "Deep Work" },
+  { value: "mindset", label: "Mindset" },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
   fitness: "bg-chart-3/15 text-chart-3 border-chart-3/30",
-  study: "bg-chart-2/15 text-chart-2 border-chart-2/30",
-  career: "bg-primary/15 text-primary border-primary/30",
-  business: "bg-chart-4/15 text-chart-4 border-chart-4/30",
-  mindset: "bg-chart-5/15 text-chart-5 border-chart-5/30",
-  health: "bg-chart-3/15 text-chart-3 border-chart-3/30",
+  reading: "bg-chart-2/15 text-chart-2 border-chart-2/30",
+  meditation: "bg-chart-5/15 text-chart-5 border-chart-5/30",
+  "exam-prep": "bg-amber-500/15 text-amber-500 border-amber-500/30",
+  "content-creation": "bg-chart-4/15 text-chart-4 border-chart-4/30",
   relationship: "bg-rose-500/15 text-rose-500 border-rose-500/30",
   sleep: "bg-indigo-500/15 text-indigo-500 border-indigo-500/30",
+  "deep-work": "bg-primary/15 text-primary border-primary/30",
+  mindset: "bg-chart-5/15 text-chart-5 border-chart-5/30",
+  career: "bg-primary/15 text-primary border-primary/30",
+  business: "bg-chart-4/15 text-chart-4 border-chart-4/30",
+  health: "bg-chart-3/15 text-chart-3 border-chart-3/30",
 };
 
 function categoryColor(cat: string) {
   return CATEGORY_COLORS[cat] ?? "bg-muted text-muted-foreground border-border";
+}
+
+function categoryLabel(cat: string) {
+  return ALL_CATEGORIES.find(c => c.value === cat)?.label ?? cat;
 }
 
 type DetailRowProps = { icon: React.ElementType; label: string; value?: string | null; color?: string };
@@ -52,12 +68,25 @@ function DetailRow({ icon: Icon, label, value, color = "text-muted-foreground" }
 }
 
 export default function TemplatesPage() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
 
-  const templates = useMemo(() => getTemplates(), []);
+  const { data: templates = [], isLoading } = useQuery<Template[]>({
+    queryKey: ["public-templates"],
+    queryFn: () => getPublicTemplates(),
+  });
+
+  const { data: systems = [] } = useQuery({
+    queryKey: ["systems", userId],
+    queryFn: () => getSystems(userId),
+    enabled: !!userId,
+  });
+
+  const isFirstTime = systems.length === 0;
 
   const filtered = useMemo(() => {
     return templates.filter(t => {
@@ -82,6 +111,32 @@ export default function TemplatesPage() {
           Start with a proven system blueprint and make it your own.
         </p>
       </div>
+
+      {/* First-time user onboarding banner */}
+      {isFirstTime && !isLoading && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-sm mb-1">New to building systems?</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                  Templates are your shortcut. Each one is a battle-tested system built by habit experts.
+                  Pick one that fits your goal, hit <strong>Use Template</strong>, and you'll have a
+                  personalised system ready in minutes — no blank-page anxiety.
+                </p>
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  {["👆 Pick a category below", "🔍 Preview the full blueprint", "⚡ Customise and save"].map(s => (
+                    <span key={s} className="bg-muted/60 px-2 py-1 rounded-md">{s}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search + Filters */}
       <div className="space-y-3">
@@ -114,87 +169,97 @@ export default function TemplatesPage() {
         </div>
       </div>
 
-      {/* Template count */}
-      <p className="text-xs text-muted-foreground">
-        {filtered.length} template{filtered.length !== 1 ? "s" : ""}
-        {activeCategory !== "all" ? ` in ${ALL_CATEGORIES.find(c => c.value === activeCategory)?.label}` : ""}
-        {search ? ` matching "${search}"` : ""}
-      </p>
-
-      {/* Grid */}
-      {filtered.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <LayoutGrid className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">No templates found</h3>
-            <p className="text-muted-foreground text-sm mb-4">Try a different search or category.</p>
-            <Button variant="outline" onClick={() => { setSearch(""); setActiveCategory("all"); }}>
-              Clear filters
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
+      {/* Loading skeletons */}
+      {isLoading ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(t => (
-            <Card
-              key={t.id}
-              className="hover-elevate flex flex-col"
-              data-testid={`template-card-${t.id}`}
-            >
-              <CardContent className="p-5 flex flex-col flex-1">
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <h3 className="font-semibold text-sm leading-snug flex-1">{t.title}</h3>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs capitalize flex-shrink-0 ${categoryColor(t.category)}`}
-                    data-testid={`badge-category-${t.id}`}
-                  >
-                    {t.category}
-                  </Badge>
-                </div>
+          {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-56 rounded-xl" />)}
+        </div>
+      ) : (
+        <>
+          {/* Template count */}
+          <p className="text-xs text-muted-foreground">
+            {filtered.length} template{filtered.length !== 1 ? "s" : ""}
+            {activeCategory !== "all" ? ` in ${ALL_CATEGORIES.find(c => c.value === activeCategory)?.label}` : ""}
+            {search ? ` matching "${search}"` : ""}
+          </p>
 
-                {t.description && (
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2 flex-1">
-                    {t.description}
-                  </p>
-                )}
-
-                {t.identityStatement && (
-                  <p className="text-xs italic text-muted-foreground border-l-2 border-primary/40 pl-2 mb-3 line-clamp-2">
-                    "{t.identityStatement}"
-                  </p>
-                )}
-
-                {t.minimumAction && (
-                  <div className="flex items-start gap-2 bg-muted/40 rounded-md px-2.5 py-2 mb-4">
-                    <CheckSquare className="w-3 h-3 text-chart-3 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-foreground leading-relaxed line-clamp-2">{t.minimumAction}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-2 mt-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setSelectedTemplate(t)}
-                    data-testid={`button-view-template-${t.id}`}
-                  >
-                    Preview
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleUseTemplate(t)}
-                    data-testid={`button-use-template-${t.id}`}
-                  >
-                    Use Template
-                  </Button>
-                </div>
+          {/* Empty state */}
+          {filtered.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <LayoutGrid className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold mb-2">No templates found</h3>
+                <p className="text-muted-foreground text-sm mb-4">Try a different search or category.</p>
+                <Button variant="outline" onClick={() => { setSearch(""); setActiveCategory("all"); }}>
+                  Clear filters
+                </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map(t => (
+                <Card
+                  key={t.id}
+                  className="hover-elevate flex flex-col"
+                  data-testid={`template-card-${t.id}`}
+                >
+                  <CardContent className="p-5 flex flex-col flex-1">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <h3 className="font-semibold text-sm leading-snug flex-1">{t.title}</h3>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs flex-shrink-0 ${categoryColor(t.category)}`}
+                        data-testid={`badge-category-${t.id}`}
+                      >
+                        {categoryLabel(t.category)}
+                      </Badge>
+                    </div>
+
+                    {t.description && (
+                      <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2 flex-1">
+                        {t.description}
+                      </p>
+                    )}
+
+                    {t.identityStatement && (
+                      <p className="text-xs italic text-muted-foreground border-l-2 border-primary/40 pl-2 mb-3 line-clamp-2">
+                        "{t.identityStatement}"
+                      </p>
+                    )}
+
+                    {t.minimumAction && (
+                      <div className="flex items-start gap-2 bg-muted/40 rounded-md px-2.5 py-2 mb-4">
+                        <CheckSquare className="w-3 h-3 text-chart-3 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-foreground leading-relaxed line-clamp-2">{t.minimumAction}</p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 mt-auto">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setSelectedTemplate(t)}
+                        data-testid={`button-view-template-${t.id}`}
+                      >
+                        Preview
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleUseTemplate(t)}
+                        data-testid={`button-use-template-${t.id}`}
+                      >
+                        Use Template
+                        <ArrowRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {/* Template Detail Dialog */}
@@ -206,9 +271,9 @@ export default function TemplatesPage() {
               {selectedTemplate && (
                 <Badge
                   variant="outline"
-                  className={`text-xs capitalize ${categoryColor(selectedTemplate.category)}`}
+                  className={`text-xs ${categoryColor(selectedTemplate.category)}`}
                 >
-                  {selectedTemplate.category}
+                  {categoryLabel(selectedTemplate.category)}
                 </Badge>
               )}
             </DialogTitle>
@@ -242,6 +307,7 @@ export default function TemplatesPage() {
                   data-testid="button-use-template-dialog"
                 >
                   Use This Template
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </div>

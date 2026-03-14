@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { System, Goal, Template } from "@/types/schema";
 import { getGoals } from "@/services/goals.service";
 import { getSystem, createSystem, updateSystem } from "@/services/systems.service";
-import { getTemplates } from "@/services/templates.service";
+import { getPublicTemplates } from "@/services/templates.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Check, Loader2, Zap, Lightbulb, Target, Clock, Trophy, ShieldCheck, Eye, BookTemplate } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Zap, Lightbulb, Target, Clock, Trophy, ShieldCheck, Eye, LayoutTemplate } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -84,13 +84,19 @@ export default function SystemBuilderPage() {
     enabled: !!userId,
   });
 
-  const templates = useMemo(() => getTemplates(), []);
+  const { data: templates = [] } = useQuery<Template[]>({
+    queryKey: ["public-templates"],
+    queryFn: () => getPublicTemplates(),
+    staleTime: 1000 * 60 * 10,
+  });
 
   const { data: editSystem } = useQuery<System | null>({
     queryKey: ["system", params?.id],
     queryFn: () => getSystem(params!.id),
     enabled: !!isEdit,
   });
+
+  const [templateApplied, setTemplateApplied] = useState(false);
 
   useEffect(() => {
     if (editSystem) {
@@ -112,7 +118,7 @@ export default function SystemBuilderPage() {
   }, [editSystem]);
 
   useEffect(() => {
-    if (!isEdit && templateIdFromQuery) {
+    if (!isEdit && templateIdFromQuery && templates.length > 0 && !templateApplied) {
       const t = templates.find(tmpl => tmpl.id === templateIdFromQuery);
       if (t) {
         setForm(prev => ({
@@ -124,12 +130,11 @@ export default function SystemBuilderPage() {
           rewardPlan: t.rewardPlan || "",
           fallbackPlan: t.fallbackPlan || "",
         }));
+        setTemplateApplied(true);
         toast({ title: `Template applied: ${t.title}`, description: "Customize the fields to make it your own." });
       }
     }
-  // Only run once on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [templateIdFromQuery, templates.length]);
+  }, [templateIdFromQuery, templates, isEdit, templateApplied, toast]);
 
   const saveMutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -159,9 +164,21 @@ export default function SystemBuilderPage() {
 
   const update = (field: keyof FormData, val: string) => setForm(prev => ({ ...prev, [field]: val }));
 
+  const validationError = (): string | null => {
+    if (step === 0 && form.title.trim().length < 2) return 'Please give your system a title (at least 2 characters).';
+    if (step === 1 && form.identityStatement.trim().length > 0 && !form.identityStatement.toLowerCase().includes('i am') && !form.identityStatement.toLowerCase().includes("i'm")) {
+      return 'Try framing your identity statement starting with "I am..." — this is more powerful.';
+    }
+    if (step === 2 && form.triggerStatement.trim().length > 0 && form.triggerStatement.trim().split(' ').length < 3) {
+      return 'Be more specific — a good trigger describes exactly when and where.';
+    }
+    if (step === 3 && form.minimumAction.trim().length < 5) return 'Describe a specific minimum action (at least 5 characters).';
+    return null;
+  };
+
   const canProceed = () => {
-    if (step === 0) return form.title.length >= 2;
-    if (step === 3) return form.minimumAction.length >= 2;
+    if (step === 0) return form.title.trim().length >= 2;
+    if (step === 3) return form.minimumAction.trim().length >= 5;
     return true;
   };
 
@@ -197,7 +214,7 @@ export default function SystemBuilderPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm font-medium mb-3 flex items-center gap-2">
-              <BookTemplate className="w-4 h-4 text-muted-foreground" />
+              <LayoutTemplate className="w-4 h-4 text-muted-foreground" />
               Start from a template
             </p>
             <div className="flex flex-wrap gap-2">
@@ -421,6 +438,12 @@ export default function SystemBuilderPage() {
           )}
         </CardContent>
       </Card>
+
+      {validationError() && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2" data-testid="text-validation-hint">
+          💡 {validationError()}
+        </p>
+      )}
 
       <div className="flex justify-between gap-2">
         {step > 0 ? (
