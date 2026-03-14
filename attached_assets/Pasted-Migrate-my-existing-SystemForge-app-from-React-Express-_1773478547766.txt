@@ -1,0 +1,63 @@
+Migrate my existing SystemForge app from React + Express + PostgreSQL + Drizzle + Passport/session auth to a frontend-only architecture using Firebase Auth, Firestore, and Cloudinary.
+
+Current app details:
+- React 18 + Vite + TypeScript
+- wouter routing
+- TanStack Query v5
+- Tailwind + shadcn/ui + Radix UI
+- Recharts for analytics
+- Express REST API backend
+- PostgreSQL + Drizzle ORM
+- shared/schema.ts used for DB schema, zod validation, and TS types
+- session-based auth with Passport and express-session
+- analytics currently computed on /api/analytics from raw check-ins
+
+Target:
+- remove traditional backend entirely
+- remove PostgreSQL, Drizzle, Passport, sessions, and REST API usage
+- use Firebase Auth for auth
+- use Firestore for users, goals, systems, checkins, journalEntries, templates
+- use Cloudinary for image uploads
+- keep the current UI and flows as much as possible
+- replace shared schema usage with frontend TypeScript models and zod validators
+- keep TanStack Query and refactor it to wrap Firebase service functions
+- keep Zustand for auth/global state if useful
+- keep wouter routing
+- make app frontend-only, Vercel-friendly, and production-ready
+
+Main product modules to preserve:
+- auth
+- onboarding
+- goals CRUD
+- system builder 7-step wizard
+- daily check-ins
+- analytics dashboard
+- journal
+- settings
+- templates
+
+Migration requirements:
+1. Audit and identify all files tied to backend/server/db/session architecture
+2. Provide a file-by-file plan: delete / refactor / replace / keep / create
+3. Remove legacy backend dependencies safely
+4. Create Firebase setup and env placeholders
+5. Migrate auth to Firebase Auth
+6. Migrate all app data to Firestore service layers
+7. Replace frontend REST API calls with Firebase SDK service calls
+8. Migrate analytics to client-side derived calculations
+9. Add Cloudinary upload helper
+10. Add recommended Firestore security rules and README setup instructions
+11. Ensure the app builds and runs without any backend folder
+
+Important constraints:
+- preserve current UX and page structure as much as possible
+- no visual rewrite unless necessary
+- no backend server should remain required
+- use only frontend-safe env vars via import.meta.env.VITE_*
+- do not hardcode secrets
+- do not use Firebase Admin SDK
+- do not reintroduce serverless APIs unless absolutely required
+- keep code modular and typed
+- explain major decisions
+
+Start by auditing the codebase and generating the migration plan before destructive changes.
