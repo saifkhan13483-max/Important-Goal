@@ -262,6 +262,133 @@ function SystemCheckinCard({
   );
 }
 
+function HistoryDayCard({
+  dateKey, dayCheckins, systems, isToday,
+}: {
+  dateKey: string;
+  dayCheckins: Checkin[];
+  systems: System[];
+  isToday: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const done    = dayCheckins.filter(c => c.status === "done").length;
+  const total   = dayCheckins.length;
+  const pct     = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  const label = isToday
+    ? "Today"
+    : dateKey === new Date(Date.now() - 86400000).toISOString().split("T")[0]
+    ? "Yesterday"
+    : format(parseISO(dateKey), "EEEE, MMMM d");
+
+  return (
+    <Card data-testid={`history-day-${dateKey}`}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm font-semibold">{label}</CardTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{done}/{total} done</span>
+            <Badge
+              variant="outline"
+              className={
+                pct === 100 ? "text-chart-3 border-chart-3/30 bg-chart-3/10" :
+                pct >= 50   ? "text-chart-4 border-chart-4/30 bg-chart-4/10" :
+                "text-destructive border-destructive/30 bg-destructive/10"
+              }
+            >
+              {pct}%
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs gap-1"
+              onClick={() => setExpanded(e => !e)}
+              data-testid={`button-history-view-${dateKey}`}
+            >
+              {expanded ? (
+                <><ChevronUp className="w-3 h-3" /> Hide</>
+              ) : (
+                <><ChevronDown className="w-3 h-3" /> View</>
+              )}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+
+      {/* Compact summary — always visible */}
+      <CardContent className="pb-3">
+        <div className="space-y-1.5">
+          {dayCheckins.map(c => {
+            const sys = systems.find(s => s.id === c.systemId);
+            const cfg = STATUS_CONFIG[c.status as keyof typeof STATUS_CONFIG];
+            const Icon = cfg?.icon ?? Check;
+            return (
+              <div
+                key={c.id}
+                className={cn(
+                  "flex items-start justify-between gap-3 py-1.5 border-b border-border/40 last:border-0",
+                  expanded && "pb-3",
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium">{sys?.title ?? "Unknown system"}</p>
+
+                  {/* Collapsed: show truncated note */}
+                  {!expanded && c.note && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 italic">"{c.note}"</p>
+                  )}
+
+                  {/* Expanded: show full note + all ratings */}
+                  {expanded && (
+                    <div className="mt-2 space-y-2">
+                      {c.note && (
+                        <div className="bg-muted/40 rounded-md px-3 py-2">
+                          <p className="text-xs text-muted-foreground font-medium mb-0.5">Note</p>
+                          <p className="text-xs leading-relaxed">{c.note}</p>
+                        </div>
+                      )}
+                      {(c.moodBefore || c.moodAfter || c.difficulty) && (
+                        <div className="grid grid-cols-3 gap-2">
+                          {c.moodBefore != null && (
+                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
+                              <p className="text-xs font-bold">{c.moodBefore}/5</p>
+                              <p className="text-[10px] text-muted-foreground">Mood before</p>
+                            </div>
+                          )}
+                          {c.moodAfter != null && (
+                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
+                              <p className="text-xs font-bold">{c.moodAfter}/5</p>
+                              <p className="text-[10px] text-muted-foreground">Mood after</p>
+                            </div>
+                          )}
+                          {c.difficulty != null && (
+                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
+                              <p className="text-xs font-bold">{c.difficulty}/5</p>
+                              <p className="text-[10px] text-muted-foreground">Difficulty</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {!c.note && !c.moodBefore && !c.moodAfter && !c.difficulty && (
+                        <p className="text-xs text-muted-foreground italic">No note or ratings recorded.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <Badge variant="outline" className={`text-xs flex-shrink-0 ${cfg?.bg ?? ""}`}>
+                  <Icon className="w-3 h-3 mr-1" />
+                  {cfg?.label ?? c.status}
+                </Badge>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
   const grouped = useMemo(() => {
     const map: Record<string, Checkin[]> = {};
@@ -290,66 +417,15 @@ function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems
 
   return (
     <div className="space-y-4">
-      {grouped.map(([dateKey, dayCheckins]) => {
-        const done    = dayCheckins.filter(c => c.status === "done").length;
-        const partial = dayCheckins.filter(c => c.status === "partial").length;
-        const missed  = dayCheckins.filter(c => c.status === "missed").length;
-        const total   = dayCheckins.length;
-        const pct     = total > 0 ? Math.round((done / total) * 100) : 0;
-        const isToday = dateKey === today;
-        return (
-          <Card key={dateKey} data-testid={`history-day-${dateKey}`}>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-sm font-semibold">
-                  {isToday ? "Today" : format(parseISO(dateKey), "EEEE, MMMM d")}
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{done}/{total} done</span>
-                  <Badge
-                    variant="outline"
-                    className={
-                      pct === 100 ? "text-chart-3 border-chart-3/30 bg-chart-3/10" :
-                      pct >= 50   ? "text-chart-4 border-chart-4/30 bg-chart-4/10" :
-                      "text-destructive border-destructive/30 bg-destructive/10"
-                    }
-                  >
-                    {pct}%
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pb-3">
-              <div className="space-y-1.5">
-                {dayCheckins.map(c => {
-                  const sys = systems.find(s => s.id === c.systemId);
-                  const cfg = STATUS_CONFIG[c.status as keyof typeof STATUS_CONFIG];
-                  const Icon = cfg?.icon ?? Check;
-                  return (
-                    <div key={c.id} className="flex items-start justify-between gap-3 py-1.5 border-b border-border/40 last:border-0">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium truncate">{sys?.title ?? "Unknown system"}</p>
-                        {c.note && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">"{c.note}"</p>}
-                        {(c.moodBefore || c.moodAfter || c.difficulty) && (
-                          <div className="flex gap-3 mt-1">
-                            {c.moodBefore  && <span className="text-xs text-muted-foreground">Mood before: {c.moodBefore}/5</span>}
-                            {c.moodAfter   && <span className="text-xs text-muted-foreground">Mood after: {c.moodAfter}/5</span>}
-                            {c.difficulty  && <span className="text-xs text-muted-foreground">Difficulty: {c.difficulty}/5</span>}
-                          </div>
-                        )}
-                      </div>
-                      <Badge variant="outline" className={`text-xs flex-shrink-0 ${cfg?.bg ?? ""}`}>
-                        <Icon className="w-3 h-3 mr-1" />
-                        {cfg?.label ?? c.status}
-                      </Badge>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+      {grouped.map(([dateKey, dayCheckins]) => (
+        <HistoryDayCard
+          key={dateKey}
+          dateKey={dateKey}
+          dayCheckins={dayCheckins}
+          systems={systems}
+          isToday={dateKey === today}
+        />
+      ))}
     </div>
   );
 }
