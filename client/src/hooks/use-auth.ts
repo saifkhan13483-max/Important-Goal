@@ -73,9 +73,11 @@ export function useAuth() {
         }
       } else if (firebaseUid === null) {
         clearAuth();
+      } else {
+        // Firebase has a UID but no Firestore profile was found — still done loading
+        setAuthLoading(false);
       }
-    }
-    if (isLoading) {
+    } else {
       setAuthLoading(true);
     }
   }, [user, isLoading, firebaseUid, setUser, clearAuth, setAuthLoading, setTheme]);
