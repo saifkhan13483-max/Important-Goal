@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import type { System, Goal, Checkin } from "@/types/schema";
@@ -6,9 +7,14 @@ import { getGoals } from "@/services/goals.service";
 import { getCheckins } from "@/services/checkins.service";
 import { computeAnalytics } from "@/services/analytics.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
-import { Flame, Target, Zap, TrendingUp, BarChart2, Calendar } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  LineChart, Line, CartesianGrid,
+} from "recharts";
+import { Flame, Target, Zap, TrendingUp, BarChart2, Calendar, Trophy, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
 function MetricCard({ label, value, sub, icon: Icon, color }: any) {
@@ -18,7 +24,7 @@ function MetricCard({ label, value, sub, icon: Icon, color }: any) {
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-sm text-muted-foreground mb-1">{label}</p>
-            <p className="text-2xl font-bold">{value}</p>
+            <p className="text-2xl font-bold" data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}>{value}</p>
             {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
           </div>
           <div className={`w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 ${color}`}>
@@ -30,7 +36,7 @@ function MetricCard({ label, value, sub, icon: Icon, color }: any) {
   );
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const ChartTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-popover border border-popover-border rounded-md p-3 text-sm shadow-lg">
@@ -68,6 +74,11 @@ export default function Analytics() {
 
   const isLoading = systemsLoading || goalsLoading || checkinsLoading;
 
+  const analytics = useMemo(
+    () => computeAnalytics(checkins, systems, goals),
+    [checkins, systems, goals],
+  );
+
   if (isLoading) {
     return (
       <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -76,12 +87,15 @@ export default function Analytics() {
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
         </div>
         <Skeleton className="h-64 rounded-xl" />
+        <div className="grid md:grid-cols-2 gap-4">
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
+        </div>
       </div>
     );
   }
 
-  const analytics = computeAnalytics(checkins, systems, goals);
-  const { streaks, last30Days, categoryBreakdown } = analytics;
+  const { streaks, last30Days, categoryBreakdown, systemStats, goalCompletion } = analytics;
 
   const topStreaks = Object.entries(streaks)
     .filter(([, v]) => (v as number) > 0)
@@ -108,20 +122,34 @@ export default function Analytics() {
     Goals: count as number,
   }));
 
+  const mostConsistent = [...systemStats]
+    .filter(s => s.totalCheckins >= 3)
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 5);
+
+  const mostMissed = [...systemStats]
+    .filter(s => s.totalCheckins >= 3)
+    .sort((a, b) => b.missedCount - a.missedCount)
+    .slice(0, 5);
+
+  const hasData = checkins.length > 0;
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Analytics</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Track your consistency and growth</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Track your consistency and growth over time</p>
       </div>
 
+      {/* Summary metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard icon={Target} label="Total Goals" value={analytics.totalGoals} sub={`${analytics.activeGoals} active`} color="bg-primary/10 text-primary" />
-        <MetricCard icon={Zap} label="Total Systems" value={analytics.totalSystems} sub={`${analytics.activeSystems} active`} color="bg-chart-2/10 text-chart-2" />
-        <MetricCard icon={Calendar} label="Total Check-ins" value={analytics.totalCheckins} sub="all time" color="bg-chart-3/10 text-chart-3" />
-        <MetricCard icon={TrendingUp} label="Avg Completion" value={`${avgCompletion}%`} sub="last 30 days" color="bg-chart-4/10 text-chart-4" />
+        <MetricCard icon={Target}    label="Total Goals"    value={analytics.totalGoals}    sub={`${analytics.activeGoals} active`}  color="bg-primary/10 text-primary" />
+        <MetricCard icon={Zap}       label="Total Systems"  value={analytics.totalSystems}  sub={`${analytics.activeSystems} active`} color="bg-chart-2/10 text-chart-2" />
+        <MetricCard icon={Calendar}  label="Total Check-ins" value={analytics.totalCheckins} sub="all time"                           color="bg-chart-3/10 text-chart-3" />
+        <MetricCard icon={TrendingUp} label="Avg Completion" value={`${avgCompletion}%`}    sub="last 30 days"                       color="bg-chart-4/10 text-chart-4" />
       </div>
 
+      {/* 14-day bar chart */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
@@ -130,7 +158,7 @@ export default function Analytics() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {chartData.length === 0 || chartData.every((d: any) => d.Total === 0) ? (
+          {!hasData || chartData.every((d: any) => d.Total === 0) ? (
             <div className="h-48 flex items-center justify-center">
               <p className="text-muted-foreground text-sm">No data yet — start checking in daily!</p>
             </div>
@@ -139,21 +167,22 @@ export default function Analytics() {
               <BarChart data={chartData} barGap={2}>
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="Done" fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Total" fill="hsl(var(--muted))" radius={[3, 3, 0, 0]} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="Done"  fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Total" fill="hsl(var(--muted))"   radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </CardContent>
       </Card>
 
+      {/* Completion rate trend */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Completion Rate Trend (%)</CardTitle>
         </CardHeader>
         <CardContent>
-          {chartData.length === 0 ? (
+          {!hasData ? (
             <div className="h-48 flex items-center justify-center">
               <p className="text-muted-foreground text-sm">No data yet.</p>
             </div>
@@ -163,7 +192,7 @@ export default function Analytics() {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="date" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<ChartTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="Completion %"
@@ -177,6 +206,7 @@ export default function Analytics() {
         </CardContent>
       </Card>
 
+      {/* Streaks + Category breakdown */}
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -219,7 +249,7 @@ export default function Analytics() {
                 <BarChart data={categoryData} layout="vertical" barSize={12}>
                   <XAxis type="number" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis type="category" dataKey="category" tick={{ fontSize: 11 }} width={80} axisLine={false} tickLine={false} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<ChartTooltip />} />
                   <Bar dataKey="Goals" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -227,6 +257,113 @@ export default function Analytics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Most consistent + most missed systems */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-chart-3" />
+              Most Consistent Systems
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mostConsistent.length === 0 ? (
+              <p className="text-muted-foreground text-sm">Check in to at least 3 times to see rankings.</p>
+            ) : (
+              <div className="space-y-3">
+                {mostConsistent.map((s, i) => (
+                  <div key={s.systemId} data-testid={`consistent-system-${s.systemId}`}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
+                        <span className="text-sm truncate">{s.title}</span>
+                      </div>
+                      <Badge variant="outline" className="text-chart-3 border-chart-3/30 flex-shrink-0">
+                        {s.pct}%
+                      </Badge>
+                    </div>
+                    <Progress value={s.pct} className="h-1.5" />
+                    <p className="text-xs text-muted-foreground mt-1">{s.doneCount} done / {s.totalCheckins} check-ins</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-destructive" />
+              Most Missed Systems
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mostMissed.length === 0 || mostMissed.every(s => s.missedCount === 0) ? (
+              <p className="text-muted-foreground text-sm">No missed check-ins yet — keep it up!</p>
+            ) : (
+              <div className="space-y-3">
+                {mostMissed.filter(s => s.missedCount > 0).map((s, i) => (
+                  <div key={s.systemId} data-testid={`missed-system-${s.systemId}`}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
+                        <span className="text-sm truncate">{s.title}</span>
+                      </div>
+                      <Badge variant="outline" className="text-destructive border-destructive/30 flex-shrink-0">
+                        {s.missedCount} missed
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {Math.round((s.missedCount / s.totalCheckins) * 100)}% miss rate across {s.totalCheckins} check-ins
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Completion by goal */}
+      {goalCompletion.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary" />
+              Completion by Goal
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {goalCompletion
+                .sort((a, b) => b.avgPct - a.avgPct)
+                .map(gc => (
+                  <div key={gc.goalId} data-testid={`goal-completion-${gc.goalId}`}>
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-sm font-medium truncate">{gc.title}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-muted-foreground">{gc.systemCount} system{gc.systemCount !== 1 ? "s" : ""}</span>
+                        <Badge
+                          variant="outline"
+                          className={
+                            gc.avgPct >= 80 ? "text-chart-3 border-chart-3/30" :
+                            gc.avgPct >= 50 ? "text-chart-4 border-chart-4/30" :
+                            "text-destructive border-destructive/30"
+                          }
+                        >
+                          {gc.avgPct}%
+                        </Badge>
+                      </div>
+                    </div>
+                    <Progress value={gc.avgPct} className="h-2" />
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

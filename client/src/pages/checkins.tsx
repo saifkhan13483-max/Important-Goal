@@ -1,17 +1,22 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import type { System, Checkin } from "@/types/schema";
 import { getSystems } from "@/services/systems.service";
-import { getCheckinsByDate, upsertCheckin } from "@/services/checkins.service";
-import { Card, CardContent } from "@/components/ui/card";
+import { getCheckinsByDate, getCheckins, upsertCheckin } from "@/services/checkins.service";
+import { computeAnalytics } from "@/services/analytics.service";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { CheckSquare, Check, Minus, X, Flame, Zap, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
-import { format } from "date-fns";
+import {
+  CheckSquare, Check, Minus, X, Flame, MessageSquare,
+  ChevronDown, ChevronUp, History, CalendarDays,
+} from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 
 function getTodayKey() {
@@ -19,36 +24,113 @@ function getTodayKey() {
 }
 
 const STATUS_CONFIG = {
-  done: { label: "Done", icon: Check, color: "text-chart-3", bg: "bg-chart-3/10 border-chart-3/20" },
-  partial: { label: "Partial", icon: Minus, color: "text-chart-4", bg: "bg-chart-4/10 border-chart-4/20" },
-  missed: { label: "Missed", icon: X, color: "text-destructive", bg: "bg-destructive/10 border-destructive/20" },
+  done:    { label: "Done",    icon: Check, color: "text-chart-3",     bg: "bg-chart-3/10 border-chart-3/20" },
+  partial: { label: "Partial", icon: Minus, color: "text-chart-4",     bg: "bg-chart-4/10 border-chart-4/20" },
+  missed:  { label: "Missed",  icon: X,     color: "text-destructive",  bg: "bg-destructive/10 border-destructive/20" },
 };
 
-function SystemCheckinCard({ system, existingCheckin, userId }: { system: System; existingCheckin?: Checkin; userId: string }) {
+function RatingRow({
+  label, value, onChange,
+}: { label: string; value: number | null | undefined; onChange: (v: number) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-xs text-muted-foreground w-24 flex-shrink-0">{label}</span>
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map(n => (
+          <button
+            key={n}
+            onClick={() => onChange(n)}
+            className={cn(
+              "w-7 h-7 rounded text-xs font-medium border transition-all",
+              value === n
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/40 border-border text-muted-foreground hover:border-primary/50"
+            )}
+            data-testid={`rating-${label.toLowerCase().replace(/ /g, "-")}-${n}`}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SystemCheckinCard({
+  system, existingCheckin, userId, streakDays,
+}: {
+  system: System;
+  existingCheckin?: Checkin;
+  userId: string;
+  streakDays: number;
+}) {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [showNote, setShowNote] = useState(false);
-  const [note, setNote] = useState(existingCheckin?.note || "");
   const today = getTodayKey();
+
+  const [showNote, setShowNote]         = useState(false);
+  const [note, setNote]                 = useState(existingCheckin?.note || "");
+  const [moodBefore, setMoodBefore]     = useState<number | null>(existingCheckin?.moodBefore ?? null);
+  const [moodAfter, setMoodAfter]       = useState<number | null>(existingCheckin?.moodAfter ?? null);
+  const [difficulty, setDifficulty]     = useState<number | null>(existingCheckin?.difficulty ?? null);
 
   const checkInMutation = useMutation({
     mutationFn: (status: string) =>
-      upsertCheckin(userId, system.id, today, { status, note: note || undefined }),
+      upsertCheckin(userId, system.id, today, {
+        status,
+        note: note || undefined,
+        moodBefore: moodBefore ?? undefined,
+        moodAfter: moodAfter ?? undefined,
+        difficulty: difficulty ?? undefined,
+      }),
+    onSuccess: (_, status) => {
+      qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
+      qc.invalidateQueries({ queryKey: ["checkins", userId] });
+      const msgs: Record<string, string> = {
+        done: "Great job! Keep the streak going 🔥",
+        partial: "Partial progress still counts. Well done.",
+        missed: "Missed today — your fallback plan is shown below.",
+      };
+      toast({ title: msgs[status] ?? "Checked in!" });
+    },
+  });
+
+  const saveRatingsMutation = useMutation({
+    mutationFn: () =>
+      upsertCheckin(userId, system.id, today, {
+        status: existingCheckin?.status ?? "done",
+        note: note || undefined,
+        moodBefore: moodBefore ?? undefined,
+        moodAfter: moodAfter ?? undefined,
+        difficulty: difficulty ?? undefined,
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
-      toast({ title: "Checked in!" });
+      toast({ title: "Note & ratings saved." });
     },
   });
 
   const current = existingCheckin?.status as keyof typeof STATUS_CONFIG | undefined;
 
   return (
-    <Card className={cn("transition-all", current === "done" ? "ring-1 ring-chart-3/30" : "")} data-testid={`checkin-card-${system.id}`}>
+    <Card
+      className={cn("transition-all", current === "done" ? "ring-1 ring-chart-3/30" : "")}
+      data-testid={`checkin-card-${system.id}`}
+    >
       <CardContent className="p-4">
+        {/* Title row */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
-            <p className="font-medium text-sm">{system.title}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-medium text-sm">{system.title}</p>
+              {streakDays > 0 && (
+                <span className="flex items-center gap-0.5 text-chart-4 text-xs font-semibold" data-testid={`streak-badge-${system.id}`}>
+                  <Flame className="w-3 h-3" />
+                  {streakDays}d
+                </span>
+              )}
+            </div>
             {system.triggerStatement && (
               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{system.triggerStatement}</p>
             )}
@@ -60,6 +142,7 @@ function SystemCheckinCard({ system, existingCheckin, userId }: { system: System
           )}
         </div>
 
+        {/* Today's minimum action */}
         {system.minimumAction && (
           <div className="bg-muted/40 rounded-md px-3 py-2 mb-3">
             <p className="text-xs text-muted-foreground font-medium">Today's action</p>
@@ -67,6 +150,7 @@ function SystemCheckinCard({ system, existingCheckin, userId }: { system: System
           </div>
         )}
 
+        {/* Status buttons */}
         <div className="flex gap-2 flex-wrap">
           {(Object.keys(STATUS_CONFIG) as (keyof typeof STATUS_CONFIG)[]).map(status => {
             const cfg = STATUS_CONFIG[status];
@@ -95,13 +179,14 @@ function SystemCheckinCard({ system, existingCheckin, userId }: { system: System
             data-testid={`button-checkin-note-${system.id}`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            Note
+            Note & ratings
             {showNote ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
         </div>
 
+        {/* Note + mood/difficulty panel */}
         {showNote && (
-          <div className="mt-3 space-y-2">
+          <div className="mt-3 space-y-3 border-t border-border/50 pt-3">
             <Textarea
               placeholder="How did it go? What did you notice?"
               value={note}
@@ -110,27 +195,125 @@ function SystemCheckinCard({ system, existingCheckin, userId }: { system: System
               className="text-sm"
               data-testid={`input-checkin-note-${system.id}`}
             />
-            {current && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => checkInMutation.mutate(current)}
-                data-testid={`button-save-note-${system.id}`}
-              >
-                Save note
-              </Button>
-            )}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Rate this session (1 = low, 5 = high)</p>
+              <RatingRow label="Mood before" value={moodBefore} onChange={setMoodBefore} />
+              <RatingRow label="Mood after"  value={moodAfter}  onChange={setMoodAfter} />
+              <RatingRow label="Difficulty"  value={difficulty} onChange={setDifficulty} />
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => saveRatingsMutation.mutate()}
+              disabled={saveRatingsMutation.isPending}
+              data-testid={`button-save-note-${system.id}`}
+            >
+              Save note & ratings
+            </Button>
           </div>
         )}
 
+        {/* Fallback advice when missed */}
         {current === "missed" && system.fallbackPlan && (
           <div className="mt-3 p-3 rounded-md bg-chart-4/10 border border-chart-4/20">
-            <p className="text-xs font-medium text-chart-4 mb-0.5">Fallback plan</p>
+            <p className="text-xs font-medium text-chart-4 mb-0.5">Your fallback plan</p>
             <p className="text-xs text-foreground">{system.fallbackPlan}</p>
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
+  const grouped = useMemo(() => {
+    const map: Record<string, Checkin[]> = {};
+    for (const c of allCheckins) {
+      if (!map[c.dateKey]) map[c.dateKey] = [];
+      map[c.dateKey].push(c);
+    }
+    return Object.entries(map)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 30);
+  }, [allCheckins]);
+
+  if (grouped.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-12 text-center">
+          <History className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+          <h3 className="font-semibold mb-1">No check-in history yet</h3>
+          <p className="text-muted-foreground text-sm">Check in for today to start building your history.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const today = getTodayKey();
+
+  return (
+    <div className="space-y-4">
+      {grouped.map(([dateKey, dayCheckins]) => {
+        const done    = dayCheckins.filter(c => c.status === "done").length;
+        const partial = dayCheckins.filter(c => c.status === "partial").length;
+        const missed  = dayCheckins.filter(c => c.status === "missed").length;
+        const total   = dayCheckins.length;
+        const pct     = total > 0 ? Math.round((done / total) * 100) : 0;
+        const isToday = dateKey === today;
+        return (
+          <Card key={dateKey} data-testid={`history-day-${dateKey}`}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm font-semibold">
+                  {isToday ? "Today" : format(parseISO(dateKey), "EEEE, MMMM d")}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">{done}/{total} done</span>
+                  <Badge
+                    variant="outline"
+                    className={
+                      pct === 100 ? "text-chart-3 border-chart-3/30 bg-chart-3/10" :
+                      pct >= 50   ? "text-chart-4 border-chart-4/30 bg-chart-4/10" :
+                      "text-destructive border-destructive/30 bg-destructive/10"
+                    }
+                  >
+                    {pct}%
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pb-3">
+              <div className="space-y-1.5">
+                {dayCheckins.map(c => {
+                  const sys = systems.find(s => s.id === c.systemId);
+                  const cfg = STATUS_CONFIG[c.status as keyof typeof STATUS_CONFIG];
+                  const Icon = cfg?.icon ?? Check;
+                  return (
+                    <div key={c.id} className="flex items-start justify-between gap-3 py-1.5 border-b border-border/40 last:border-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium truncate">{sys?.title ?? "Unknown system"}</p>
+                        {c.note && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">"{c.note}"</p>}
+                        {(c.moodBefore || c.moodAfter || c.difficulty) && (
+                          <div className="flex gap-3 mt-1">
+                            {c.moodBefore  && <span className="text-xs text-muted-foreground">Mood before: {c.moodBefore}/5</span>}
+                            {c.moodAfter   && <span className="text-xs text-muted-foreground">Mood after: {c.moodAfter}/5</span>}
+                            {c.difficulty  && <span className="text-xs text-muted-foreground">Difficulty: {c.difficulty}/5</span>}
+                          </div>
+                        )}
+                      </div>
+                      <Badge variant="outline" className={`text-xs flex-shrink-0 ${cfg?.bg ?? ""}`}>
+                        <Icon className="w-3 h-3 mr-1" />
+                        {cfg?.label ?? c.status}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
@@ -145,18 +328,28 @@ export default function Checkins() {
     enabled: !!userId,
   });
 
-  const { data: todayCheckins = [], isLoading: checkinsLoading } = useQuery<Checkin[]>({
+  const { data: todayCheckins = [], isLoading: todayLoading } = useQuery<Checkin[]>({
     queryKey: ["checkins-today", userId, today],
     queryFn: () => getCheckinsByDate(userId, today),
     enabled: !!userId,
   });
 
-  const activeSystems = systems.filter(s => s.active);
-  const doneCount = todayCheckins.filter(c => c.status === "done").length;
-  const totalCount = activeSystems.length;
-  const completionPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const { data: allCheckins = [], isLoading: allLoading } = useQuery<Checkin[]>({
+    queryKey: ["checkins", userId],
+    queryFn: () => getCheckins(userId),
+    enabled: !!userId,
+  });
 
-  const getCheckin = (systemId: string) => todayCheckins.find(c => c.systemId === systemId);
+  const analytics = useMemo(
+    () => computeAnalytics(allCheckins, systems, []),
+    [allCheckins, systems],
+  );
+
+  const activeSystems  = systems.filter(s => s.active);
+  const doneCount      = todayCheckins.filter(c => c.status === "done").length;
+  const totalCount     = activeSystems.length;
+  const completionPct  = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const getCheckin     = (systemId: string) => todayCheckins.find(c => c.systemId === systemId);
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
@@ -165,66 +358,97 @@ export default function Checkins() {
         <p className="text-muted-foreground text-sm mt-0.5">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-chart-3">{doneCount}</p>
-            <p className="text-xs text-muted-foreground">Done</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold">{totalCount}</p>
-            <p className="text-xs text-muted-foreground">Total</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">{completionPct}%</p>
-            <p className="text-xs text-muted-foreground">Complete</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="today">
+        <TabsList className="w-full">
+          <TabsTrigger value="today" className="flex-1 gap-2" data-testid="tab-today">
+            <CalendarDays className="w-3.5 h-3.5" />
+            Today
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex-1 gap-2" data-testid="tab-history">
+            <History className="w-3.5 h-3.5" />
+            History
+          </TabsTrigger>
+        </TabsList>
 
-      {completionPct === 100 && totalCount > 0 && (
-        <div className="p-4 rounded-xl gradient-brand text-white text-center">
-          <Flame className="w-8 h-8 mx-auto mb-2" />
-          <p className="font-bold text-lg">Perfect day!</p>
-          <p className="text-white/80 text-sm">You completed all your systems today. Keep the streak going!</p>
-        </div>
-      )}
+        {/* ─── TODAY TAB ─── */}
+        <TabsContent value="today" className="mt-6 space-y-6">
+          {/* Summary cards */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-chart-3" data-testid="metric-done-today">{doneCount}</p>
+                <p className="text-xs text-muted-foreground">Done</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold">{totalCount}</p>
+                <p className="text-xs text-muted-foreground">Total</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-primary" data-testid="metric-completion-pct">{completionPct}%</p>
+                <p className="text-xs text-muted-foreground">Complete</p>
+              </CardContent>
+            </Card>
+          </div>
 
-      {systemsLoading || checkinsLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
-        </div>
-      ) : activeSystems.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <CheckSquare className="w-7 h-7 text-primary" />
+          {/* Perfect day banner */}
+          {completionPct === 100 && totalCount > 0 && (
+            <div className="p-4 rounded-xl gradient-brand text-white text-center" data-testid="banner-perfect-day">
+              <Flame className="w-8 h-8 mx-auto mb-2" />
+              <p className="font-bold text-lg">Perfect day!</p>
+              <p className="text-white/80 text-sm">You completed all your systems today. Keep the streak going!</p>
             </div>
-            <h3 className="font-semibold mb-2">No active systems</h3>
-            <p className="text-muted-foreground text-sm mb-4">
-              Build your first system to start tracking your daily actions.
-            </p>
-            <Button asChild>
-              <a href="/systems/new" data-testid="button-go-build-system">Build a System</a>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {activeSystems.map(system => (
-            <SystemCheckinCard
-              key={system.id}
-              system={system}
-              existingCheckin={getCheckin(system.id)}
-              userId={userId}
-            />
-          ))}
-        </div>
-      )}
+          )}
+
+          {/* System cards */}
+          {systemsLoading || todayLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
+            </div>
+          ) : activeSystems.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <CheckSquare className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">No active systems</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Build your first system to start tracking your daily actions.
+                </p>
+                <Button asChild>
+                  <a href="/systems/new" data-testid="button-go-build-system">Build a System</a>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {activeSystems.map(system => (
+                <SystemCheckinCard
+                  key={system.id}
+                  system={system}
+                  existingCheckin={getCheckin(system.id)}
+                  userId={userId}
+                  streakDays={analytics.streaks[system.id] ?? 0}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ─── HISTORY TAB ─── */}
+        <TabsContent value="history" className="mt-6">
+          {allLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}
+            </div>
+          ) : (
+            <HistoryView allCheckins={allCheckins} systems={systems} />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

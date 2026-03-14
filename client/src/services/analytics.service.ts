@@ -4,6 +4,22 @@ function getTodayKey(): string {
   return new Date().toISOString().split("T")[0];
 }
 
+export interface SystemStat {
+  systemId: string;
+  title: string;
+  doneCount: number;
+  missedCount: number;
+  totalCheckins: number;
+  pct: number;
+}
+
+export interface GoalCompletion {
+  goalId: string;
+  title: string;
+  systemCount: number;
+  avgPct: number;
+}
+
 export interface AnalyticsData {
   totalGoals: number;
   activeGoals: number;
@@ -14,6 +30,8 @@ export interface AnalyticsData {
   streaks: Record<string, number>;
   last30Days: { date: string; done: number; total: number }[];
   categoryBreakdown: Record<string, number>;
+  systemStats: SystemStat[];
+  goalCompletion: GoalCompletion[];
 }
 
 export function computeAnalytics(
@@ -65,6 +83,39 @@ export function computeAnalytics(
     return acc;
   }, {});
 
+  const systemStats: SystemStat[] = systems.map(system => {
+    const sc = checkins.filter(c => c.systemId === system.id);
+    const done = sc.filter(c => c.status === "done").length;
+    const missed = sc.filter(c => c.status === "missed").length;
+    const total = sc.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    return {
+      systemId: system.id,
+      title: system.title,
+      doneCount: done,
+      missedCount: missed,
+      totalCheckins: total,
+      pct,
+    };
+  }).filter(s => s.totalCheckins > 0);
+
+  const goalCompletion: GoalCompletion[] = goals.map(goal => {
+    const linkedSystems = systems.filter(s => s.goalId === goal.id);
+    if (linkedSystems.length === 0) return null;
+    const pcts = linkedSystems.map(sys => {
+      const sc = checkins.filter(c => c.systemId === sys.id);
+      const done = sc.filter(c => c.status === "done").length;
+      return sc.length > 0 ? (done / sc.length) * 100 : 0;
+    });
+    const avgPct = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
+    return {
+      goalId: goal.id,
+      title: goal.title,
+      systemCount: linkedSystems.length,
+      avgPct,
+    };
+  }).filter(Boolean) as GoalCompletion[];
+
   return {
     totalGoals: goals.length,
     activeGoals: goals.filter(g => g.status === "active").length,
@@ -75,5 +126,7 @@ export function computeAnalytics(
     streaks,
     last30Days,
     categoryBreakdown,
+    systemStats,
+    goalCompletion,
   };
 }

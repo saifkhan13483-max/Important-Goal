@@ -26,10 +26,11 @@ npm run build   # outputs to dist/
 - **Authentication** — Firebase Auth email/password + Google OAuth, protected routes
 - **Onboarding** — Multi-step onboarding wizard for new users
 - **Goal Management** — Full CRUD with categories, priorities, statuses, deadlines
-- **System Builder** — 7-step guided builder for creating habit systems
-- **Templates Library** — Static pre-built system templates (no DB fetch required)
-- **Daily Check-ins** — Mark systems done/partial/missed, add notes
-- **Analytics** — 14-day charts, streak tracking, category breakdown (all client-side computed)
+- **System Builder** — 7-step guided builder: Identity → Outcome → Trigger → Action → Reward → Fallback → Review
+- **Templates Library** — 9 prebuilt templates with Firestore seeding + category filters + preview dialog
+- **Daily Check-ins** — Today view + history tab; mark done/partial/missed; mood before/after (1-5); difficulty (1-5); inline streak badge; fallback plan shown on miss
+- **Analytics** — 14-day bar chart, completion rate trend, current streaks, goals by category, most consistent systems, most missed systems, completion by goal
+- **Dashboard** — Greeting, today's progress, streaks, active goals, quick actions, recent activity feed
 - **Journal** — Daily reflection entries linked to goals/systems
 - **Settings** — Profile, theme (light/dark/system), timezone
 

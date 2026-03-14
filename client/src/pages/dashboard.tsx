@@ -13,9 +13,9 @@ import { getCheckinsByDate, getCheckins } from "@/services/checkins.service";
 import { computeAnalytics } from "@/services/analytics.service";
 import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
-  Calendar, BookOpen, BarChart2
+  Calendar, BookOpen, Check, Minus, X, BarChart2
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
@@ -246,6 +246,54 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent check-in activity */}
+      {allCheckins.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-muted-foreground" />
+                Recent Activity
+              </CardTitle>
+              <Link href="/checkins">
+                <Button variant="ghost" size="sm" data-testid="link-checkins-history">
+                  History <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {allCheckins.slice(0, 5).map(c => {
+                const sys = systems.find(s => s.id === c.systemId);
+                const statusIcon = c.status === "done" ? Check : c.status === "partial" ? Minus : X;
+                const StatusIcon = statusIcon;
+                const statusColor = c.status === "done"
+                  ? "text-chart-3 bg-chart-3/10"
+                  : c.status === "partial"
+                  ? "text-chart-4 bg-chart-4/10"
+                  : "text-destructive bg-destructive/10";
+                return (
+                  <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-md bg-muted/30" data-testid={`activity-item-${c.id}`}>
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${statusColor}`}>
+                      <StatusIcon className="w-3 h-3" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium truncate">{sys?.title ?? "Unknown system"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {c.dateKey === today ? "Today" : format(parseISO(c.dateKey), "MMM d")}
+                        {c.note ? ` · "${c.note.slice(0, 40)}${c.note.length > 40 ? "…" : ""}"` : ""}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs flex-shrink-0 capitalize">{c.status}</Badge>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
