@@ -5,6 +5,7 @@
  *  - QueryClientProvider: wraps the entire app with TanStack Query for async state
  *  - ThemeProvider: manages light/dark/system theme via CSS class on <html>
  *  - TooltipProvider: enables shadcn/ui tooltips app-wide
+ *  - AuthInitializer: sets up Firebase onAuthStateChanged listener at app level
  *  - Router: handles all client-side routing via wouter
  *
  * Route types:
@@ -20,6 +21,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ProtectedRoute, PublicOnlyRoute } from "@/components/auth/protected-route";
+import { useAuth } from "@/hooks/use-auth";
 
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -35,6 +37,17 @@ import Analytics from "@/pages/analytics";
 import Journal from "@/pages/journal";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
+
+/**
+ * AuthInitializer — Sets up the Firebase onAuthStateChanged listener at the
+ * top of the component tree, ensuring auth state is initialized regardless
+ * of which route the user lands on. Without this, isAuthLoading would stay
+ * true forever on pages that don't themselves call useAuth().
+ */
+function AuthInitializer() {
+  useAuth();
+  return null;
+}
 
 function Router() {
   return (
@@ -70,6 +83,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
+          <AuthInitializer />
           <Router />
           <Toaster />
         </TooltipProvider>
