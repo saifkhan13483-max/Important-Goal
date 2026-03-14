@@ -68,50 +68,68 @@ function SystemCheckinCard({
   const { toast } = useToast();
   const today = getTodayKey();
 
-  const [showNote, setShowNote]         = useState(false);
-  const [note, setNote]                 = useState(existingCheckin?.note || "");
-  const [moodBefore, setMoodBefore]     = useState<number | null>(existingCheckin?.moodBefore ?? null);
-  const [moodAfter, setMoodAfter]       = useState<number | null>(existingCheckin?.moodAfter ?? null);
-  const [difficulty, setDifficulty]     = useState<number | null>(existingCheckin?.difficulty ?? null);
+  const [showNote, setShowNote]     = useState(false);
+  const [note, setNote]             = useState(existingCheckin?.note || "");
+  const [moodBefore, setMoodBefore] = useState<number | null>(existingCheckin?.moodBefore ?? null);
+  const [moodAfter, setMoodAfter]   = useState<number | null>(existingCheckin?.moodAfter ?? null);
+  const [difficulty, setDifficulty] = useState<number | null>(existingCheckin?.difficulty ?? null);
 
+  const current = existingCheckin?.status as keyof typeof STATUS_CONFIG | undefined;
+
+  // Single mutation that always sends status + note + ratings together
   const checkInMutation = useMutation({
     mutationFn: (status: string) =>
       upsertCheckin(userId, system.id, today, {
         status,
         note: note || undefined,
         moodBefore: moodBefore ?? undefined,
-        moodAfter: moodAfter ?? undefined,
+        moodAfter:  moodAfter  ?? undefined,
         difficulty: difficulty ?? undefined,
       }),
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
       const msgs: Record<string, string> = {
-        done: "Great job! Keep the streak going 🔥",
+        done:    "Great job! Keep the streak going 🔥",
         partial: "Partial progress still counts. Well done.",
-        missed: "Missed today — your fallback plan is shown below.",
+        missed:  "Missed today — your fallback plan is shown below.",
       };
       toast({ title: msgs[status] ?? "Checked in!" });
     },
+    onError: (err: any) => {
+      toast({ title: "Couldn't save check-in", description: err?.message ?? "Please try again.", variant: "destructive" });
+    },
   });
 
-  const saveRatingsMutation = useMutation({
-    mutationFn: () =>
-      upsertCheckin(userId, system.id, today, {
-        status: existingCheckin?.status ?? "done",
+  // Save only note + ratings on an EXISTING check-in (status already set)
+  const saveNotesMutation = useMutation({
+    mutationFn: () => {
+      if (!current) throw new Error("no-status");
+      return upsertCheckin(userId, system.id, today, {
+        status: current,
         note: note || undefined,
         moodBefore: moodBefore ?? undefined,
-        moodAfter: moodAfter ?? undefined,
+        moodAfter:  moodAfter  ?? undefined,
         difficulty: difficulty ?? undefined,
-      }),
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
       toast({ title: "Note & ratings saved." });
     },
+    onError: (err: any) => {
+      if ((err as Error).message === "no-status") {
+        toast({
+          title: "Pick a status first",
+          description: "Tap Done, Partial, or Missed above — then your note & ratings will be saved together.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Couldn't save", description: err?.message ?? "Please try again.", variant: "destructive" });
+      }
+    },
   });
-
-  const current = existingCheckin?.status as keyof typeof STATUS_CONFIG | undefined;
 
   return (
     <Card
@@ -187,6 +205,16 @@ function SystemCheckinCard({
         {/* Note + mood/difficulty panel */}
         {showNote && (
           <div className="mt-3 space-y-3 border-t border-border/50 pt-3">
+            {/* Helper hint when no status chosen yet */}
+            {!current && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
+                <MessageSquare className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                  <strong>Tap Done, Partial, or Missed first</strong> — your note and ratings will be saved together with your check-in.
+                </p>
+              </div>
+            )}
+
             <Textarea
               placeholder="How did it go? What did you notice?"
               value={note}
@@ -201,15 +229,24 @@ function SystemCheckinCard({
               <RatingRow label="Mood after"  value={moodAfter}  onChange={setMoodAfter} />
               <RatingRow label="Difficulty"  value={difficulty} onChange={setDifficulty} />
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => saveRatingsMutation.mutate()}
-              disabled={saveRatingsMutation.isPending}
-              data-testid={`button-save-note-${system.id}`}
-            >
-              Save note & ratings
-            </Button>
+
+            {current ? (
+              // Has status — save note & ratings update
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => saveNotesMutation.mutate()}
+                disabled={saveNotesMutation.isPending}
+                data-testid={`button-save-note-${system.id}`}
+              >
+                {saveNotesMutation.isPending ? "Saving…" : "Save note & ratings"}
+              </Button>
+            ) : (
+              // No status picked — clicking the status buttons will save everything
+              <p className="text-xs text-muted-foreground">
+                Your note & ratings will be saved automatically when you tap Done, Partial, or Missed above.
+              </p>
+            )}
           </div>
         )}
 
