@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import type { System, Goal } from "@/types/schema";
-import { getSystems, updateSystem, deleteSystem } from "@/services/systems.service";
+import { getSystems, updateSystem, deleteSystem, createSystem } from "@/services/systems.service";
 import { getGoals } from "@/services/goals.service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, Plus, Trash2, Pause, Play, MoreVertical, Target, Clock, Repeat } from "lucide-react";
+import { Zap, Plus, Trash2, Pause, Play, MoreVertical, Target, Clock, Repeat, Copy } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 
@@ -32,6 +32,7 @@ const timeLabels: Record<string, string> = {
 export default function SystemsPage() {
   const { user } = useAuth();
   const userId = user?.id ?? "";
+  const [, navigate] = useLocation();
 
   const { data: systems = [], isLoading } = useQuery<System[]>({
     queryKey: ["systems", userId],
@@ -64,6 +65,18 @@ export default function SystemsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["systems", userId] });
       toast({ title: "System updated" });
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: (system: System) => {
+      const { id: _id, createdAt: _c, updatedAt: _u, ...rest } = system;
+      return createSystem(userId, { ...rest, title: `${system.title} (copy)` });
+    },
+    onSuccess: (dup) => {
+      qc.invalidateQueries({ queryKey: ["systems", userId] });
+      toast({ title: "System duplicated", description: "A copy has been created." });
+      navigate(`/systems/${dup.id}`);
     },
   });
 
@@ -120,7 +133,11 @@ export default function SystemsPage() {
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${system.active ? "bg-chart-3" : "bg-muted-foreground"}`} />
-                      <h3 className="font-semibold text-sm truncate">{system.title}</h3>
+                      <Link href={`/systems/${system.id}`}>
+                        <h3 className="font-semibold text-sm truncate hover:underline cursor-pointer" data-testid={`link-system-${system.id}`}>
+                          {system.title}
+                        </h3>
+                      </Link>
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -130,12 +147,24 @@ export default function SystemsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
+                          <Link href={`/systems/${system.id}`} data-testid={`button-view-system-${system.id}`}>
+                            View details
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
                           <Link href={`/systems/${system.id}/edit`} data-testid={`button-edit-system-${system.id}`}>
                             Edit system
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => toggleActive.mutate({ id: system.id, active: !system.active })}>
                           {system.active ? <><Pause className="w-3.5 h-3.5 mr-2" />Pause</> : <><Play className="w-3.5 h-3.5 mr-2" />Reactivate</>}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => duplicateMutation.mutate(system)}
+                          disabled={duplicateMutation.isPending}
+                          data-testid={`button-duplicate-system-${system.id}`}
+                        >
+                          <Copy className="w-3.5 h-3.5 mr-2" />Duplicate
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive"

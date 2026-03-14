@@ -50,3 +50,6 @@ VITE_FIREBASE_PROJECT_ID = "systembuilder-2febb"
 VITE_FIREBASE_STORAGE_BUCKET = "systembuilder-2febb.firebasestorage.app"
 VITE_FIREBASE_MESSAGING_SENDER_ID = "1010368150408"
 VITE_FIREBASE_APP_ID = "1:1010368150408:web:d07da3147729d370bc183d"
+
+[agent]
+expertMode = true

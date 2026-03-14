@@ -33,6 +33,8 @@ import Goals from "@/pages/goals";
 import GoalDetail from "@/pages/goal-detail";
 import SystemsPage from "@/pages/systems";
 import SystemBuilderPage from "@/pages/system-builder";
+import SystemDetailPage from "@/pages/system-detail";
+import TemplatesPage from "@/pages/templates";
 import Checkins from "@/pages/checkins";
 import Analytics from "@/pages/analytics";
 import Journal from "@/pages/journal";
@@ -69,6 +71,8 @@ function Router() {
       <Route path="/systems" component={() => <ProtectedRoute component={SystemsPage} />} />
       <Route path="/systems/new" component={() => <ProtectedRoute component={SystemBuilderPage} />} />
       <Route path="/systems/:id/edit" component={() => <ProtectedRoute component={SystemBuilderPage} />} />
+      <Route path="/systems/:id" component={() => <ProtectedRoute component={SystemDetailPage} />} />
+      <Route path="/templates" component={() => <ProtectedRoute component={TemplatesPage} />} />
       <Route path="/checkins" component={() => <ProtectedRoute component={Checkins} />} />
       <Route path="/analytics" component={() => <ProtectedRoute component={Analytics} />} />
       <Route path="/journal" component={() => <ProtectedRoute component={Journal} />} />

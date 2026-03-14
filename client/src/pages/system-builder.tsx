@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useRoute } from "wouter";
+import { useLocation, useRoute, useSearch } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import type { System, Goal, Template } from "@/types/schema";
 import { getGoals } from "@/services/goals.service";
@@ -75,13 +75,16 @@ export default function SystemBuilderPage() {
     frequency: "daily", preferredTime: "morning",
   });
 
+  const searchStr = useSearch();
+  const templateIdFromQuery = useMemo(() => new URLSearchParams(searchStr).get("template") ?? "", [searchStr]);
+
   const { data: goals = [] } = useQuery<Goal[]>({
     queryKey: ["goals", userId],
     queryFn: () => getGoals(userId),
     enabled: !!userId,
   });
 
-  const templates = getTemplates();
+  const templates = useMemo(() => getTemplates(), []);
 
   const { data: editSystem } = useQuery<System | null>({
     queryKey: ["system", params?.id],
@@ -107,6 +110,26 @@ export default function SystemBuilderPage() {
       });
     }
   }, [editSystem]);
+
+  useEffect(() => {
+    if (!isEdit && templateIdFromQuery) {
+      const t = templates.find(tmpl => tmpl.id === templateIdFromQuery);
+      if (t) {
+        setForm(prev => ({
+          ...prev,
+          title: prev.title || t.title,
+          identityStatement: t.identityStatement || "",
+          triggerStatement: t.triggerStatement || "",
+          minimumAction: t.minimumAction || "",
+          rewardPlan: t.rewardPlan || "",
+          fallbackPlan: t.fallbackPlan || "",
+        }));
+        toast({ title: `Template applied: ${t.title}`, description: "Customize the fields to make it your own." });
+      }
+    }
+  // Only run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateIdFromQuery, templates.length]);
 
   const saveMutation = useMutation({
     mutationFn: (data: FormData) =>

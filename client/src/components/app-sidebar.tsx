@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, Target, Zap, CheckSquare, BarChart2, BookOpen, Settings,
-  Sparkles, ChevronRight, LogOut,
+  Sparkles, LogOut, LayoutGrid,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,7 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 const navItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Goals", url: "/goals", icon: Target },
-  { title: "System Builder", url: "/systems", icon: Zap },
+  { title: "Systems", url: "/systems", icon: Zap },
+  { title: "Templates", url: "/templates", icon: LayoutGrid },
   { title: "Check-ins", url: "/checkins", icon: CheckSquare },
   { title: "Analytics", url: "/analytics", icon: BarChart2 },
   { title: "Journal", url: "/journal", icon: BookOpen },
