@@ -87,6 +87,38 @@ Timing: `cubic-bezier(0.22, 1, 0.36, 1)` for entrances; `ease-out` for hover; `e
 ### Border Radius
 `rounded-xl` = 12px, `rounded-2xl` = 16px, `rounded-3xl` = 24px
 
+## Phase 6 — Behavioral Prompts & Engagement (implemented)
+All 7 behavioral prompt features are fully implemented across the app.
+
+### Identity Affirmation (Prompt 1)
+- Shown in Dashboard and Check-in Today tab after the user's identity statement is set
+- Also appears inside the Celebration Ritual modal and SystemCheckinCard after marking done
+
+### Goal Wizard — Structure Preview (Prompt 2)
+- 5-step Goal Wizard (goal → trigger → minimum action → backup plan → **preview**)
+- Step 5 renders a read-only "Structure Preview" card showing all fields before saving
+- `ExampleHint` component on steps 1–3 shows `CATEGORY_EXAMPLES` suggestions per category
+
+### Hype Drop Warning (Prompt 3)
+- **Dashboard**: `HypeDropWarning` component shows contextual consistency alerts (days 1–7, days 8–21 "Hype Drop Zone", days 22–65, streak break) with fallbackPlan / minimumAction from the top system. Dismissible per-stage via localStorage.
+- **Check-in page (Today tab)**: `CheckinConsistencyBanner` component renders the same stage-aware messages after the identity banner. Computed from `analytics.streaks` + yesterday's checkins.
+
+### Chain Calendar (Prompt 4)
+- **System Detail page**: `ChainCalendar` shows "🔗 Your chain: X days. Don't break it!" when active; "⛓️ Chain broken at X days" when broken. Uses `lastStreak` computation.
+- **Check-in Calendar tab**: Global chain computed from all checkins across all systems. Shows active/broken banner at top. Calendar cells in the current unbroken chain highlighted with `ring-1 ring-primary/60`.
+
+### Celebration Ritual (Prompt 5)
+- `CelebrationRitualModal` with confetti overlay triggered on perfect-day completion
+- Includes streak display, identity affirmation replay, mood emoji picker, and gratitude note
+
+### Recovery Flow (Prompt 6)
+- Triggered when a missed day is detected on next sign-in
+- Guides user through: what happened → what helped → minimum action for tomorrow
+- Stores `tomorrowIntention` in the checkin Firestore document
+
+### Goal Health Check (Prompt 7)
+- `TomorrowIntentionCard` on Dashboard surfaces yesterday's stored `tomorrowIntention` from the recovery flow, reminding users of their pre-committed next action
+
 ## Phase 5 — Accessibility & Usability (implemented)
 All changes follow WCAG 2.1 AA guidelines.
 

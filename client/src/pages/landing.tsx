@@ -38,8 +38,8 @@ const allFeatures = [
   },
   {
     icon: Flame,
-    title: "Stay motivated with visible consistency",
-    desc: "See how many days in a row you've shown up. Streaks build pride and momentum.",
+    title: "Stay consistent — even when motivation drops",
+    desc: "Chain Calendar shows your unbroken run of days. Consistency alerts warn you before a slump hits, so your system carries you when motivation doesn't.",
     color: "bg-chart-4/10 text-chart-4",
   },
   {
@@ -61,9 +61,9 @@ const allFeatures = [
     color: "bg-chart-2/10 text-chart-2",
   },
   {
-    icon: UserCircle2,
-    title: "Get a setup that matches your life",
-    desc: "Personalized onboarding based on your goals, schedule, and experience level.",
+    icon: RefreshCw,
+    title: "Bounce back when life gets in the way",
+    desc: "Recovery Flow guides you after a missed day. Tomorrow Intention lets you pre-commit to the next one. Broken streaks don't have to become broken habits.",
     color: "bg-chart-3/10 text-chart-3",
   },
 ];
@@ -140,7 +140,7 @@ const faqs = [
   },
   {
     q: "How is this different from other habit trackers?",
-    a: "Most habit apps just let you check boxes. SystemForge guides you to build a real system — with an identity statement, a specific trigger, a minimum action, and a backup plan. It's designed to survive real life, not just work when you're motivated.",
+    a: "Most habit apps just let you check boxes. SystemForge builds real systems — with an identity statement, a trigger, a minimum action, and a fallback plan. It also warns you before motivation slumps hit (Hype Drop alerts), visualises your unbroken chain on a Calendar, and guides you through a Recovery Flow when you miss a day. It's designed to survive real life, not just work when you're motivated.",
   },
 ];
 
@@ -508,7 +508,7 @@ const TAB_META: Record<string, { heading: string; body: string; caption: string 
   },
   "system-builder": {
     heading: "Build any habit, step by step",
-    body: "A guided 7-step wizard turns a vague intention into a concrete, scheduled daily action. No guesswork, no blank slate.",
+    body: "A guided 5-step wizard turns a vague intention into a concrete daily action — complete with identity statement, trigger, minimum action, and a Structure Preview before you commit. No guesswork, no blank slate.",
     caption: "A guided wizard that builds your habit step by step.",
   },
   checkin: {
