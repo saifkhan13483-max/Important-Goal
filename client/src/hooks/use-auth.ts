@@ -51,8 +51,20 @@ export function useAuth() {
 
     if (user) {
       setUser(user);
+      // Only apply preferredTheme from the server profile if this device has
+      // no explicit local preference stored yet (i.e. first login on a new device).
+      // Once the user has a locally-persisted theme, that takes priority so
+      // navigating between pages never resets the theme.
       if (user.preferredTheme) {
-        setTheme(user.preferredTheme as Theme);
+        try {
+          const stored = localStorage.getItem("sf-app-store");
+          const hasLocalTheme = stored && JSON.parse(stored)?.state?.theme;
+          if (!hasLocalTheme) {
+            setTheme(user.preferredTheme as Theme);
+          }
+        } catch {
+          setTheme(user.preferredTheme as Theme);
+        }
       }
     } else if (firebaseUid === null) {
       clearAuth();
