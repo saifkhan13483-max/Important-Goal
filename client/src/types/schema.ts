@@ -10,6 +10,8 @@ export interface User {
   timezone?: string | null;
   onboardingCompleted?: boolean | null;
   createdAt?: string | null;
+  reminderEnabled?: boolean | null;
+  reminderTime?: string | null;
 }
 
 export interface GoalMilestone {

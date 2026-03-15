@@ -6,6 +6,7 @@ import { getSystems, updateSystem, deleteSystem, createSystem } from "@/services
 import { getGoals } from "@/services/goals.service";
 import { getCheckins } from "@/services/checkins.service";
 import { computeSystemHealthScore, computeAnalytics } from "@/services/analytics.service";
+import { STATIC_TEMPLATES } from "@/services/templates.service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import {
   Zap, Plus, Trash2, Pause, Play, MoreVertical, Target, Clock, Repeat, Copy,
-  ArrowRight, Sparkles, ChevronRight, Activity,
+  ArrowRight, Sparkles, ChevronRight, Activity, LayoutGrid, Brain, BookOpen,
+  Dumbbell, Sunset, PenLine,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMemo, useState } from "react";
@@ -323,30 +325,80 @@ export default function SystemsPage() {
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-44 rounded-xl" />)}
         </div>
       ) : systems.length === 0 ? (
-        <Card className="border-primary/20 bg-primary/3">
-          <CardContent className="p-12 text-center">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-7 h-7 text-primary" />
-            </div>
-            <h3 className="font-semibold text-lg mb-2">No systems yet</h3>
-            <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto leading-relaxed">
-              Build your first system in minutes. Answer 7 simple questions and we'll create your personalized daily habit.
+        <div className="space-y-6">
+          <div className="text-center py-4">
+            <p className="text-lg font-semibold mb-1">Start with a proven system</p>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto">
+              Pick a template that fits your goal — you can customise everything, or use it as-is and start right away.
             </p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <Link href="/systems/new">
-                <Button className="gap-2" data-testid="button-create-first-system">
-                  <Zap className="w-4 h-4" />
-                  Build Your First System
-                </Button>
-              </Link>
-              <Link href="/templates">
-                <Button variant="outline" className="gap-2" data-testid="button-browse-templates">
-                  Browse Templates
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {STATIC_TEMPLATES.slice(0, 6).map(t => {
+              const CATEGORY_ICONS: Record<string, any> = {
+                fitness: Dumbbell,
+                reading: BookOpen,
+                "deep-work": Brain,
+                mindset: PenLine,
+                meditation: Sunset,
+                "content-creation": PenLine,
+              };
+              const Icon = CATEGORY_ICONS[t.category] ?? Sparkles;
+              return (
+                <Link key={t.id} href={`/systems/new?template=${t.id}`}>
+                  <Card
+                    className="cursor-pointer hover-elevate border-border/60 h-full"
+                    data-testid={`template-card-${t.id}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Icon className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm leading-snug">{t.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">
+                            {t.description}
+                          </p>
+                        </div>
+                      </div>
+                      {t.triggerStatement && (
+                        <p className="text-xs text-muted-foreground mt-3 pl-12 italic line-clamp-1">
+                          "{t.triggerStatement}"
+                        </p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-3 pl-12">
+                        <span className="text-xs font-medium text-primary">Use this template</span>
+                        <ArrowRight className="w-3 h-3 text-primary" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground flex-shrink-0">or build from scratch</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <div className="flex gap-3 justify-center flex-wrap">
+            <Link href="/systems/new">
+              <Button variant="outline" className="gap-2" data-testid="button-create-first-system">
+                <Zap className="w-4 h-4" />
+                Build Your Own System
+              </Button>
+            </Link>
+            <Link href="/templates">
+              <Button variant="ghost" className="gap-2" data-testid="button-browse-templates">
+                <LayoutGrid className="w-4 h-4" />
+                Browse All Templates
+              </Button>
+            </Link>
+          </div>
+        </div>
       ) : (
         <div className="space-y-6">
           {/* Active systems */}

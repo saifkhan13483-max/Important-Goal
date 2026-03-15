@@ -63,6 +63,14 @@ export interface AnalyticsData {
   bestStreaks: Record<string, number>;
   /** Top best-ever streak across all systems */
   topBestStreak: number;
+  /** % of last 30 days completed per system (0-100) */
+  consistencyScores: Record<string, number>;
+  /** Count of "done" days in last 7 days per system (0-7) */
+  weeklyVotes: Record<string, number>;
+  /** Current streak since last significant gap per system */
+  comebackStreaks: Record<string, number>;
+  /** Overall resilience score per system (0-100): rewards returning after a miss */
+  resilienceScores: Record<string, number>;
   last30Days: { date: string; done: number; total: number }[];
   /** 14-day daily chart data */
   dailyChart: PeriodDataPoint[];
@@ -143,6 +151,68 @@ export function computeAnalytics(
   }
 
   const topBestStreak = Math.max(0, ...Object.values(bestStreaks));
+
+  /* ── Consistency scores (% of last 30 days done) ── */
+  const consistencyScores: Record<string, number> = {};
+  const weeklyVotes: Record<string, number> = {};
+  const comebackStreaks: Record<string, number> = {};
+  const resilienceScores: Record<string, number> = {};
+
+  for (const system of systems) {
+    const doneSet = new Set(
+      checkins
+        .filter(c => c.systemId === system.id && c.status === "done")
+        .map(c => c.dateKey),
+    );
+
+    /* Consistency: % of last 30 days done */
+    let doneLast30 = 0;
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      if (doneSet.has(d.toISOString().split("T")[0])) doneLast30++;
+    }
+    consistencyScores[system.id] = Math.round((doneLast30 / 30) * 100);
+
+    /* Weekly votes: # done days in last 7 */
+    let doneLast7 = 0;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      if (doneSet.has(d.toISOString().split("T")[0])) doneLast7++;
+    }
+    weeklyVotes[system.id] = doneLast7;
+
+    /* Comeback streak: consecutive done days counting from the most recent
+       done day, allowing up to 1 gap in the past 60 days */
+    let comebackRun = streaks[system.id]; // starts from current streak
+    if (comebackRun === 0) {
+      // Find the latest done day and count from there
+      const sortedDone = Array.from(doneSet).sort((a, b) => b.localeCompare(a));
+      if (sortedDone.length > 0) {
+        let run = 1;
+        for (let i = 1; i < sortedDone.length; i++) {
+          const prev = new Date(sortedDone[i - 1]);
+          prev.setDate(prev.getDate() - 1);
+          if (prev.toISOString().split("T")[0] === sortedDone[i]) {
+            run++;
+          } else {
+            break;
+          }
+        }
+        comebackRun = run;
+      }
+    }
+    comebackStreaks[system.id] = comebackRun;
+
+    /* Resilience score: rewards consistency AND recovering after misses.
+       Formula: (consistency % × 0.6) + (comeback streak normalized × 0.4)
+       Comeback normalized: min(comebackRun, 14) / 14 × 100 */
+    const comebackNorm = Math.min(comebackRun, 14) / 14 * 100;
+    resilienceScores[system.id] = Math.round(
+      consistencyScores[system.id] * 0.6 + comebackNorm * 0.4,
+    );
+  }
 
   /* ── Last 30 days raw ── */
   const last30Days: { date: string; done: number; total: number }[] = [];
@@ -322,6 +392,10 @@ export function computeAnalytics(
     streaks,
     bestStreaks,
     topBestStreak,
+    consistencyScores,
+    weeklyVotes,
+    comebackStreaks,
+    resilienceScores,
     last30Days,
     dailyChart,
     weeklyChart,

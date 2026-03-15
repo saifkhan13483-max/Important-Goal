@@ -89,30 +89,6 @@ const steps = [
   },
 ];
 
-const testimonials = [
-  {
-    name: "Priya M.",
-    role: "Freelance Designer, 28",
-    avatar: "PM",
-    quote: "I finally understand what to do every day. The system builder showed me exactly which steps to take — no more guessing.",
-    rating: 5,
-  },
-  {
-    name: "James O.",
-    role: "Software Engineer, 24",
-    avatar: "JO",
-    quote: "It's so much simpler than other apps I've tried. I set up my first habit in 5 minutes and it's been 30 days straight.",
-    rating: 5,
-  },
-  {
-    name: "Fatima K.",
-    role: "Teacher, 31",
-    avatar: "FK",
-    quote: "I've been consistent for 30 days for the first time ever. SystemForge held my hand through every step.",
-    rating: 5,
-  },
-];
-
 const faqs = [
   {
     q: "What is a 'system' in SystemForge?",

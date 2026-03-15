@@ -87,6 +87,46 @@ Timing: `cubic-bezier(0.22, 1, 0.36, 1)` for entrances; `ease-out` for hover; `e
 ### Border Radius
 `rounded-xl` = 12px, `rounded-2xl` = 16px, `rounded-3xl` = 24px
 
+## Phase 7 — Product Improvement Pass (implemented)
+
+### Priority 1: Quick Start onboarding (already implemented)
+- System builder defaults to 3-step Quick Mode (Identity → Trigger → Action)
+- Full 7-step mode available via toggle for advanced users
+
+### Priority 2: Retention Engine
+- `User` type now includes `reminderEnabled` and `reminderTime` fields
+- Settings page: functional browser Notification API integration replacing the "Coming soon" placeholder
+- Requests permission, toggles reminder on/off, sets time — saves to Firestore and localStorage
+- `ReminderChecker` component in App.tsx fires browser notifications once per day at the configured time
+- Missed-day comeback message shown in notification if `sf_missed_yesterday` localStorage flag is set
+
+### Priority 3: Trigger validation (already implemented)
+- `TriggerWarning` component in system builder validates for vague triggers
+- Checks: "morning" (bare), "whenever", "when I feel motivated", "someday", "daily" alone, etc.
+
+### Priority 4: Identity reinforcement in daily loop
+- `CelebrationRitualModal` now uses a pool of 6 varied identity messages instead of a single static one
+- Messages rotate based on streak day: "You showed up as...", "This is a vote for...", "You kept the system alive for X days...", etc.
+- Check-in cards now also track missed days via localStorage (`sf_missed_yesterday`) for the retention engine
+
+### Priority 5: Redesigned streak logic
+- `AnalyticsData` now includes: `consistencyScores`, `weeklyVotes`, `comebackStreaks`, `resilienceScores`
+- `consistencyScore` per system: % of last 30 days completed (0-100)
+- `weeklyVotes` per system: count of "done" days in last 7 days (shown as X/7)
+- `comebackStreak` per system: consecutive done days since last gap (rewards returning after miss)
+- `resilienceScore`: weighted formula (consistency 60% + comeback normalized 40%) — rewards showing up over time, not just unbroken runs
+- New "Consistency Metrics" section in Analytics page with progress bars, resilience scores, and explanation
+- Check-in cards now show "X/7 this week" and "X% consistent" inline badges per system
+
+### Priority 6: Templates by default
+- Systems page empty state now shows a 6-template gallery with category icons and one-click "Use this template" links
+- Separator divides the template gallery from the "build from scratch" option
+- Templates link directly to `/systems/new?template=ID` pre-filling the builder
+
+### Priority 7: Remove fake proof
+- Removed the `testimonials` array (fake user quotes) from landing.tsx — it was dead code but is now fully cleaned up
+- The existing "Built honestly, from scratch" section with "No fake social proof" card remains
+
 ## Phase 6 — Behavioral Prompts & Engagement (implemented)
 All 7 behavioral prompt features are fully implemented across the app.
 

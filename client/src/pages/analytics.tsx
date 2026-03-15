@@ -102,6 +102,7 @@ export default function Analytics() {
 
   const {
     streaks, bestStreaks, topBestStreak,
+    consistencyScores, weeklyVotes, comebackStreaks, resilienceScores,
     dailyChart, weeklyChart, monthlyChart,
     categoryBreakdown, systemStats, goalCompletion,
     last30Days, dayOfWeekStats, moodBuckets, difficultyBuckets,
@@ -392,6 +393,66 @@ export default function Analytics() {
           color="bg-chart-4/10 text-chart-4"
         />
       </div>
+
+      {/* Per-system consistency metrics */}
+      {hasData && systems.filter(s => s.active).length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-chart-2" />
+              Consistency Metrics
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Beyond raw streaks — how consistently you show up over time</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {systems.filter(s => s.active).map(sys => {
+                const consistency = consistencyScores[sys.id] ?? 0;
+                const votes = weeklyVotes[sys.id] ?? 0;
+                const comeback = comebackStreaks[sys.id] ?? 0;
+                const resilience = resilienceScores[sys.id] ?? 0;
+                const consistencyColor = consistency >= 70 ? "bg-chart-3" : consistency >= 40 ? "bg-chart-4" : "bg-destructive/60";
+                return (
+                  <div key={sys.id} className="p-3 rounded-xl border border-border/50 bg-muted/20 space-y-2" data-testid={`consistency-row-${sys.id}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium truncate">{sys.title}</p>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className="text-xs text-muted-foreground">{votes}/7 this week</span>
+                        <span className={cn(
+                          "text-xs font-semibold px-2 py-0.5 rounded-full",
+                          resilience >= 70 ? "bg-chart-3/15 text-chart-3" :
+                          resilience >= 40 ? "bg-chart-4/15 text-chart-4" :
+                          "bg-muted text-muted-foreground",
+                        )}>
+                          Resilience: {resilience}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={cn("h-full rounded-full transition-all", consistencyColor)}
+                          style={{ width: `${consistency}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium w-12 text-right flex-shrink-0">{consistency}%</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Last 30 days · Comeback run: {comeback} day{comeback !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/40">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Resilience score</strong> rewards you for showing up consistently over time and for coming back after a miss — not just for unbroken streaks.
+                A score of 70+ means you're reliably building this habit.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Daily / Weekly / Monthly completion bar chart */}
       <Card>

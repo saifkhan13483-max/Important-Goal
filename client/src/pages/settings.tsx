@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppStore } from "@/store/auth.store";
 import { useTheme } from "@/components/theme-provider";
@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Sun, Moon, Monitor, LogOut, User, Palette, Globe,
   Bell, Shield, HelpCircle, Sparkles, Zap, Target, BookOpen,
-  ChevronRight, ExternalLink, Heart,
+  ChevronRight, ExternalLink, Heart, BellRing, BellOff,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -71,11 +72,53 @@ export default function Settings() {
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [timezone, setTimezone] = useState(user?.timezone || "UTC");
   const [identityStatement, setIdentityStatement] = useState(user?.identityStatement || "");
+  const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled ?? false);
+  const [reminderTime, setReminderTime] = useState(user?.reminderTime || "08:00");
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
+    typeof Notification !== "undefined" ? Notification.permission : "default",
+  );
+
+  useEffect(() => {
+    if (typeof Notification !== "undefined") {
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestNotifPermission = async () => {
+    if (typeof Notification === "undefined") {
+      toast({ title: "Notifications not supported", description: "Your browser doesn't support notifications.", variant: "destructive" });
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    setNotifPermission(perm);
+    if (perm === "granted") {
+      setReminderEnabled(true);
+      toast({ title: "Reminders enabled!", description: "You'll get a daily nudge at your chosen time." });
+    } else {
+      toast({ title: "Permission denied", description: "Enable notifications in your browser settings to use reminders.", variant: "destructive" });
+    }
+  };
 
   const handleSaveProfile = async () => {
     try {
       await updateProfile({ name, avatarUrl: avatarUrl || undefined, timezone, preferredTheme: theme, identityStatement: identityStatement.trim() || null } as any);
       toast({ title: "Profile saved!", description: "Your changes have been applied." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleSaveReminder = async () => {
+    try {
+      await updateProfile({ reminderEnabled, reminderTime } as any);
+      if (reminderEnabled) {
+        localStorage.setItem("sf_reminder_enabled", "true");
+        localStorage.setItem("sf_reminder_time", reminderTime);
+      } else {
+        localStorage.removeItem("sf_reminder_enabled");
+        localStorage.removeItem("sf_reminder_time");
+      }
+      toast({ title: "Reminder saved!", description: reminderEnabled ? `You'll be reminded daily at ${reminderTime}.` : "Daily reminder turned off." });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -239,29 +282,87 @@ export default function Settings() {
         </div>
       </SectionCard>
 
-      {/* Notifications (coming soon placeholder) */}
+      {/* Notifications */}
       <SectionCard
         icon={Bell}
-        title="Notifications"
-        description="Configure daily reminders and check-in alerts"
-        badge="Coming soon"
+        title="Daily Reminder"
+        description="Get a nudge to check in with your habits each day"
       >
-        <div className="space-y-3">
-          {[
-            { label: "Daily check-in reminder", desc: "A gentle nudge to log your habits", soon: true },
-            { label: "Weekly review summary", desc: "Get a summary of your week every Sunday", soon: true },
-            { label: "Streak alerts", desc: "Alert when you're about to break a streak", soon: true },
-          ].map(item => (
-            <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/40">
-              <div>
-                <p className="text-sm font-medium">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
-              </div>
-              <Badge variant="secondary" className="text-[10px] text-muted-foreground flex-shrink-0">
-                Soon
-              </Badge>
+        <div className="space-y-4">
+          {notifPermission === "denied" && (
+            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-destructive/8 border border-destructive/20">
+              <BellOff className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-destructive leading-relaxed">
+                Notifications are blocked in your browser. To enable reminders, update your browser's notification settings for this site, then return here.
+              </p>
             </div>
-          ))}
+          )}
+
+          {notifPermission === "default" && (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
+              <BellRing className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium mb-0.5">Enable browser reminders</p>
+                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                  Allow notifications so SystemForge can send you a daily check-in reminder at your chosen time. No sign-up required.
+                </p>
+                <Button size="sm" onClick={requestNotifPermission} data-testid="button-enable-notifications">
+                  <BellRing className="w-3.5 h-3.5 mr-1.5" />
+                  Enable Reminders
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {notifPermission === "granted" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/40">
+                <div>
+                  <p className="text-sm font-medium">Daily check-in reminder</p>
+                  <p className="text-xs text-muted-foreground">A gentle nudge to log your habits</p>
+                </div>
+                <Switch
+                  checked={reminderEnabled}
+                  onCheckedChange={setReminderEnabled}
+                  data-testid="switch-reminder-enabled"
+                />
+              </div>
+
+              {reminderEnabled && (
+                <div className="space-y-2">
+                  <Label htmlFor="reminder-time">Reminder time</Label>
+                  <Input
+                    id="reminder-time"
+                    type="time"
+                    value={reminderTime}
+                    onChange={e => setReminderTime(e.target.value)}
+                    className="w-40"
+                    data-testid="input-reminder-time"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    You'll get a browser notification at this time each day you haven't checked in yet.
+                  </p>
+                </div>
+              )}
+
+              <div className="p-3 rounded-lg bg-muted/20 border border-border/30">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">Comeback message</strong> — if you miss a day, your next reminder will say: "Missed yesterday? Restart tiny. Your system only needs the minimum version today."
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveReminder}
+                disabled={updatePending}
+                data-testid="button-save-reminder"
+              >
+                {updatePending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
+                Save Reminder
+              </Button>
+            </div>
+          )}
         </div>
       </SectionCard>
 

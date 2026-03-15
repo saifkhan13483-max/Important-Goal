@@ -102,6 +102,29 @@ function CelebrationOverlay({ show, onDismiss }: { show: boolean; onDismiss: () 
   );
 }
 
+const IDENTITY_MESSAGES = [
+  (identity: string | null | undefined, name: string, streak: number) =>
+    identity
+      ? `You showed up as a person who ${identity}. That's who you're becoming.`
+      : `You showed up for ${name}. That's who you're becoming.`,
+  (_identity: string | null | undefined, name: string, _streak: number) =>
+    `This is a vote for becoming consistent. Each vote adds up.`,
+  (identity: string | null | undefined, _name: string, _streak: number) =>
+    identity
+      ? `I AM a person who ${identity}. I proved it again today.`
+      : `I AM consistent. I showed up today.`,
+  (_identity: string | null | undefined, name: string, streak: number) =>
+    streak > 1
+      ? `You kept the ${name} system alive for ${streak} days. That's real.`
+      : `You started. Every streak begins with day one.`,
+  (_identity: string | null | undefined, _name: string, _streak: number) =>
+    `Even the minimum version counts. You chose to show up.`,
+  (identity: string | null | undefined, name: string, _streak: number) =>
+    identity
+      ? `Every person who ${identity} did exactly what you just did.`
+      : `Every consistent person did exactly what you just did.`,
+];
+
 /* --- Celebration Ritual Modal (Prompt 5) --- */
 function CelebrationRitualModal({
   show, systemName, streakDays, identityStatement, onDismiss,
@@ -112,6 +135,9 @@ function CelebrationRitualModal({
   identityStatement?: string | null;
   onDismiss: () => void;
 }) {
+  const msgIndex = streakDays % IDENTITY_MESSAGES.length;
+  const message = IDENTITY_MESSAGES[msgIndex](identityStatement, systemName, streakDays);
+
   if (!show) return null;
   return (
     <div
@@ -131,11 +157,9 @@ function CelebrationRitualModal({
           </p>
         </div>
         <div className="bg-primary/8 border border-primary/20 rounded-xl p-4 mb-6">
-          <p className="text-sm text-muted-foreground mb-3">Take 3 seconds to celebrate. Say it out loud:</p>
+          <p className="text-sm text-muted-foreground mb-3">Take 3 seconds to feel this:</p>
           <p className="text-base font-bold text-primary leading-snug">
-            "{identityStatement
-              ? `I AM a person who ${identityStatement}.`
-              : "I AM consistent. I showed up today."}"
+            "{message}"
           </p>
         </div>
         <Button
@@ -144,7 +168,7 @@ function CelebrationRitualModal({
           data-testid="button-dismiss-celebration-ritual"
         >
           <Sparkles className="w-4 h-4 mr-2" />
-          I said it — keep going!
+          I felt it — keep going!
         </Button>
         <p
           className="text-xs text-muted-foreground mt-3 cursor-pointer hover:text-foreground transition-colors"
@@ -388,6 +412,7 @@ const STATUS_CONFIG = {
 /* ─── Individual check-in card ──────────────────────────────────── */
 function SystemCheckinCard({
   system, existingCheckin, userId, streakDays, onPerfectDay, identityStatement,
+  consistencyScore, weeklyVotes,
 }: {
   system: System;
   existingCheckin?: Checkin;
@@ -395,6 +420,8 @@ function SystemCheckinCard({
   streakDays: number;
   onPerfectDay?: () => void;
   identityStatement?: string | null;
+  consistencyScore?: number;
+  weeklyVotes?: number;
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -426,11 +453,13 @@ function SystemCheckinCard({
       qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
       if (status === "done") {
+        localStorage.removeItem("sf_missed_yesterday");
         if (pulseDoneTimer.current) clearTimeout(pulseDoneTimer.current);
         setJustDone(true);
         pulseDoneTimer.current = setTimeout(() => setJustDone(false), 600);
         setShowRitual(true);
       } else if (status === "skipped" || status === "partial") {
+        localStorage.setItem("sf_missed_yesterday", "true");
         setRecoveryStatus(status as "skipped" | "partial");
         setShowRecovery(true);
       } else {
@@ -499,6 +528,29 @@ function SystemCheckinCard({
                   {STREAK_MILESTONES.has(streakDays) && (
                     <Trophy className="w-3 h-3 ml-0.5 text-chart-4" aria-label="Streak milestone reached!" />
                   )}
+                </span>
+              )}
+              {weeklyVotes !== undefined && (
+                <span
+                  className="text-xs text-muted-foreground font-medium"
+                  title="Days done this week"
+                  data-testid={`weekly-votes-${system.id}`}
+                >
+                  {weeklyVotes}/7 this week
+                </span>
+              )}
+              {consistencyScore !== undefined && consistencyScore > 0 && (
+                <span
+                  className={cn(
+                    "text-xs font-medium px-1.5 py-0.5 rounded-full",
+                    consistencyScore >= 70 ? "bg-chart-3/15 text-chart-3" :
+                    consistencyScore >= 40 ? "bg-chart-4/15 text-chart-4" :
+                    "bg-muted text-muted-foreground",
+                  )}
+                  title="Consistency over last 30 days"
+                  data-testid={`consistency-score-${system.id}`}
+                >
+                  {consistencyScore}% consistent
                 </span>
               )}
             </div>
@@ -1263,6 +1315,8 @@ export default function Checkins() {
                   streakDays={analytics.streaks[system.id] ?? 0}
                   onPerfectDay={() => setShowCelebration(true)}
                   identityStatement={user?.identityStatement}
+                  consistencyScore={analytics.consistencyScores[system.id]}
+                  weeklyVotes={analytics.weeklyVotes[system.id]}
                 />
               ))}
             </div>
