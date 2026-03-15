@@ -291,7 +291,7 @@ function JournalEntryCard({
   onDelete: (e: JournalEntry) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const promptInfo = getPromptInfo(entry.promptType);
+  const promptInfo = getPromptInfo(entry.promptType ?? "free");
   const goalTitle = goals.find(g => g.id === entry.goalId)?.title;
   const wordCount = entry.content.trim().split(/\s+/).filter(Boolean).length;
   const isLong = entry.content.length > 300;

@@ -4,8 +4,7 @@ import {
   signOut as firebaseSignOut,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   type UserCredential,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -26,12 +25,8 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
   return firebaseSendPasswordResetEmail(auth, email);
 }
 
-export async function signInWithGoogle(): Promise<void> {
+export async function signInWithGoogle(): Promise<UserCredential> {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  await signInWithRedirect(auth, provider);
-}
-
-export async function getGoogleRedirectResult(): Promise<UserCredential | null> {
-  return getRedirectResult(auth);
+  return signInWithPopup(auth, provider);
 }

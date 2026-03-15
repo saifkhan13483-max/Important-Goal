@@ -300,7 +300,7 @@ export default function GoalDetail() {
   const qc = useQueryClient();
   const goalId = params?.id ?? "";
   const { user } = useAppStore();
-  const userId = user?.uid ?? "";
+  const userId = user?.id ?? "";
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);

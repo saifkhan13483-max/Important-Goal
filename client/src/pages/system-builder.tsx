@@ -702,6 +702,50 @@ export default function SystemBuilderPage() {
           </Button>
         )}
       </div>
+        </div>
+
+        {/* ── Right: Coach tips sidebar ── */}
+        <div className="hidden lg:block w-72 flex-shrink-0">
+          <div className="sticky top-6 space-y-4">
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4 space-y-3">
+                <p className="text-xs font-semibold text-primary uppercase tracking-wide flex items-center gap-1.5">
+                  <Lightbulb className="w-3.5 h-3.5" />
+                  Coach tip
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {tips[currentStep.id] ?? "Keep going — you're building something that will actually stick."}
+                </p>
+              </CardContent>
+            </Card>
+
+            {previewFields.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-sm flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                    Your system so far
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 space-y-2">
+                  {previewFields.map(f => {
+                    const Icon = f.icon;
+                    return (
+                      <div key={f.label} className="flex gap-2 items-start">
+                        <Icon className={`w-3 h-3 mt-1 flex-shrink-0 ${f.color}`} />
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-muted-foreground">{f.label}</p>
+                          <p className="text-xs leading-relaxed line-clamp-2">{f.value}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
