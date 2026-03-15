@@ -769,6 +769,97 @@ function HistoryDayCard({
   );
 }
 
+/* ─── Checkin Consistency Banner (Hype Drop) ────────────────────── */
+function CheckinConsistencyBanner({
+  bestStreak, activeSystems, yesterdayCheckins,
+}: {
+  bestStreak: number;
+  activeSystems: System[];
+  yesterdayCheckins: Checkin[];
+}) {
+  const dismissedKey = `checkin-hype-drop-dismissed-${Math.floor(bestStreak / 7)}`;
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(dismissedKey) === "true"; } catch { return false; }
+  });
+
+  const hadStreakBreak = activeSystems.some(s =>
+    yesterdayCheckins.find(c => c.systemId === s.id)?.status === "skipped"
+  );
+
+  if (dismissed || bestStreak < 1) return null;
+
+  const dismiss = () => {
+    try { localStorage.setItem(dismissedKey, "true"); } catch {}
+    setDismissed(true);
+  };
+
+  const topSystem = activeSystems[0];
+
+  if (hadStreakBreak) {
+    return (
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-2/8 border border-chart-2/20" data-testid="checkin-hype-drop-streak-break">
+        <span className="text-lg flex-shrink-0">💪</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold mb-1">Streaks break. Systems don't.</p>
+          <p className="text-xs text-muted-foreground mb-2">What's your minimum action today? One rep counts. One page counts. One minute counts.</p>
+          {topSystem?.minimumAction && (
+            <p className="text-xs font-medium text-foreground bg-background/50 rounded px-2 py-1 inline-block">
+              Your minimum: {topSystem.minimumAction}
+            </p>
+          )}
+        </div>
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0" aria-label="Dismiss">×</button>
+      </div>
+    );
+  }
+
+  if (bestStreak >= 1 && bestStreak <= 7) {
+    return (
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/20" data-testid="checkin-hype-drop-early">
+        <span className="text-lg flex-shrink-0">🚀</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold mb-0.5">Building momentum! Day {bestStreak}.</p>
+          <p className="text-xs text-muted-foreground">The first week is the hardest. Your system is doing the heavy lifting — not your motivation. Keep going!</p>
+        </div>
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0" aria-label="Dismiss">×</button>
+      </div>
+    );
+  }
+
+  if (bestStreak >= 8 && bestStreak <= 21) {
+    return (
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-4/8 border border-chart-4/25" data-testid="checkin-hype-drop-warning">
+        <span className="text-lg flex-shrink-0">⚠️</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-chart-4 mb-1">Week 2–3 Alert: Hype Drop Zone</p>
+          <p className="text-xs text-muted-foreground mb-2">Motivation naturally drops here. This is normal — your SYSTEM carries you, not your mood. Keep your minimum action going!</p>
+          {topSystem?.minimumAction && (
+            <p className="text-xs font-medium text-foreground bg-background/50 rounded px-2 py-1 inline-block">
+              Minimum action: {topSystem.minimumAction}
+            </p>
+          )}
+        </div>
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0" aria-label="Dismiss">×</button>
+      </div>
+    );
+  }
+
+  if (bestStreak >= 22 && bestStreak <= 65) {
+    return (
+      <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/8 border border-primary/20" data-testid="checkin-hype-drop-zone">
+        <span className="text-lg flex-shrink-0">🧠</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold mb-0.5">You're in the habit-building zone.</p>
+          <p className="text-xs text-muted-foreground">Science says 66 days builds automaticity — you're on day {bestStreak}. Your brain is rewiring itself. Stay consistent.</p>
+        </div>
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0" aria-label="Dismiss">×</button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 /* ─── Calendar view ─────────────────────────────────────────────── */
 function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
   const [viewDate, setViewDate] = useState(() => new Date());
@@ -777,6 +868,35 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
   const monthStart  = startOfMonth(viewDate);
   const daysInMonth = getDaysInMonth(viewDate);
   const startDow    = getDay(monthStart);
+
+  const { globalChain, lastGlobalChain, chainDateSet } = useMemo(() => {
+    const chainDateSet = new Set<string>();
+    let globalChain = 0;
+    let lastGlobalChain = 0;
+    let finishedCurrentChain = false;
+    const todayStr = new Date().toISOString().split("T")[0];
+    for (let i = 0; i < 120; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateKey = d.toISOString().split("T")[0];
+      const dayC = allCheckins.filter(c => c.dateKey === dateKey);
+      const hasDone = dayC.some(c => c.status === "done" || c.status === "partial");
+      if (!finishedCurrentChain) {
+        if (hasDone) {
+          globalChain++;
+          chainDateSet.add(dateKey);
+        } else if (dateKey === todayStr) {
+          continue;
+        } else {
+          finishedCurrentChain = true;
+        }
+      } else {
+        if (hasDone) lastGlobalChain++;
+        else break;
+      }
+    }
+    return { globalChain, lastGlobalChain, chainDateSet };
+  }, [allCheckins]);
 
   const dayMap = useMemo(() => {
     const map: Record<string, { done: number; total: number; status: string }> = {};
@@ -820,6 +940,24 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
   const days   = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
+    <div className="space-y-3">
+      {globalChain > 0 ? (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary/10 border border-primary/25" data-testid="chain-calendar-active-banner">
+          <span className="text-xl">🔗</span>
+          <div>
+            <p className="text-sm font-bold text-primary">Your chain: {globalChain} day{globalChain !== 1 ? "s" : ""}. Don't break it!</p>
+            <p className="text-xs text-muted-foreground">Every day you show up strengthens the chain.</p>
+          </div>
+        </div>
+      ) : lastGlobalChain > 0 ? (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-chart-4/10 border border-chart-4/25" data-testid="chain-calendar-broken-banner">
+          <span className="text-xl">⛓️</span>
+          <div>
+            <p className="text-sm font-bold text-chart-4">Chain broken at {lastGlobalChain} day{lastGlobalChain !== 1 ? "s" : ""} — Start a new one today!</p>
+            <p className="text-xs text-muted-foreground">Streaks break. Systems don't. Log today to begin again.</p>
+          </div>
+        </div>
+      ) : null}
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-4">
@@ -862,6 +1000,7 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
                     ? cellColor(info.status)
                     : "bg-muted/20 text-muted-foreground",
                   isToday && "ring-2 ring-primary ring-offset-1",
+                  !isToday && chainDateSet.has(dateKey) && "ring-1 ring-primary/60",
                 )}
                 data-testid={`calendar-day-${dateKey}`}
               >
@@ -910,6 +1049,7 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
         })()}
       </CardContent>
     </Card>
+    </div>
   );
 }
 
@@ -988,6 +1128,17 @@ export default function Checkins() {
   const completionPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
   const getCheckin    = (systemId: string) => todayCheckins.find(c => c.systemId === systemId);
 
+  const bestStreak = useMemo(
+    () => Math.max(0, ...Object.values(analytics.streaks).map(Number)),
+    [analytics.streaks],
+  );
+  const yesterdayCheckins = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const yk = d.toISOString().split("T")[0];
+    return allCheckins.filter(c => c.dateKey === yk);
+  }, [allCheckins]);
+
   /* Show celebration the moment we hit 100% */
   useEffect(() => {
     const isPerfect = completionPct === 100 && totalCount > 0;
@@ -1058,6 +1209,13 @@ export default function Checkins() {
               </p>
             </div>
           )}
+
+          {/* Hype Drop Consistency Banner */}
+          <CheckinConsistencyBanner
+            bestStreak={bestStreak}
+            activeSystems={activeSystems}
+            yesterdayCheckins={yesterdayCheckins}
+          />
 
           {/* Perfect day banner (inline, shown even after celebrating) */}
           {completionPct === 100 && totalCount > 0 && (
