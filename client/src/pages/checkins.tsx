@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   CheckSquare, Check, Minus, X, Flame, MessageSquare,
   ChevronDown, ChevronUp, History, CalendarDays, Grid3x3, Trophy,
+  ArrowRight, ClipboardList, Sparkles, RefreshCw,
 } from "lucide-react";
 import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -96,6 +97,206 @@ function CelebrationOverlay({ show, onDismiss }: { show: boolean; onDismiss: () 
           <Trophy className="w-4 h-4 mr-2" />
           Keep the momentum going!
         </Button>
+      </div>
+    </div>
+  );
+}
+
+/* --- Celebration Ritual Modal (Prompt 5) --- */
+function CelebrationRitualModal({
+  show, systemName, streakDays, identityStatement, onDismiss,
+}: {
+  show: boolean;
+  systemName: string;
+  streakDays: number;
+  identityStatement?: string | null;
+  onDismiss: () => void;
+}) {
+  if (!show) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+      data-testid="celebration-ritual-overlay"
+    >
+      <div
+        className="relative bg-background rounded-2xl p-8 text-center shadow-2xl max-w-sm w-full border border-primary/20"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="text-6xl mb-4" style={{ animation: "bounce 1s infinite" }}>✅</div>
+        <div className="space-y-2 mb-6">
+          <p className="text-2xl font-extrabold text-foreground">YOU DID IT!</p>
+          <p className="text-primary font-semibold text-lg leading-snug">{systemName}</p>
+          <p className="text-muted-foreground text-sm">
+            Day <span className="font-bold text-foreground text-xl">{streakDays}</span> Complete
+          </p>
+        </div>
+        <div className="bg-primary/8 border border-primary/20 rounded-xl p-4 mb-6">
+          <p className="text-sm text-muted-foreground mb-3">Take 3 seconds to celebrate. Say it out loud:</p>
+          <p className="text-base font-bold text-primary leading-snug">
+            "{identityStatement
+              ? `I AM a person who ${identityStatement}.`
+              : "I AM consistent. I showed up today."}"
+          </p>
+        </div>
+        <Button
+          className="w-full gradient-brand text-white border-0 font-semibold"
+          onClick={onDismiss}
+          data-testid="button-dismiss-celebration-ritual"
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          I said it — keep going!
+        </Button>
+        <p
+          className="text-xs text-muted-foreground mt-3 cursor-pointer hover:text-foreground transition-colors"
+          onClick={onDismiss}
+        >
+          Tap to continue
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* --- Recovery Flow Modal (Prompt 6) --- */
+function RecoveryFlowModal({
+  show, system, checkinStatus, onDismiss,
+}: {
+  show: boolean;
+  system: System;
+  checkinStatus: "skipped" | "partial";
+  onDismiss: (intention?: string) => void;
+}) {
+  const [step, setStep] = useState(0);
+  const [intention, setIntention] = useState<string>("");
+  const [customNote, setCustomNote] = useState("");
+
+  useEffect(() => {
+    if (show) { setStep(0); setIntention(""); setCustomNote(""); }
+  }, [show]);
+
+  if (!show) return null;
+
+  const handleSelectIntention = (val: string) => {
+    setIntention(val);
+    setStep(3);
+  };
+
+  const handleFinish = () => {
+    const finalIntention = intention === "custom" ? customNote : intention;
+    onDismiss(finalIntention || undefined);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" data-testid="recovery-flow-overlay">
+      <div className="relative bg-background rounded-2xl shadow-2xl max-w-sm w-full border" onClick={e => e.stopPropagation()}>
+        <div className="p-6">
+          <div className="flex gap-1.5 mb-6">
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className={cn("h-1 flex-1 rounded-full transition-all", i <= step ? "bg-primary" : "bg-muted")} />
+            ))}
+          </div>
+
+          {step === 0 && (
+            <div className="space-y-4">
+              <p className="text-lg font-bold">
+                {checkinStatus === "skipped" ? "No worries — let's reset." : "Partial still counts!"}
+              </p>
+              {system.fallbackPlan && (
+                <div className="bg-chart-4/8 border border-chart-4/20 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <ClipboardList className="w-3.5 h-3.5 text-chart-4" />
+                    <p className="text-xs font-semibold text-chart-4 uppercase tracking-wide">Your Recovery Plan</p>
+                  </div>
+                  <p className="text-sm text-foreground leading-relaxed">{system.fallbackPlan}</p>
+                </div>
+              )}
+              {system.minimumAction && (
+                <div className="bg-primary/8 border border-primary/20 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Check className="w-3.5 h-3.5 text-primary" />
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">Your Minimum Action</p>
+                  </div>
+                  <p className="text-sm text-foreground leading-relaxed">{system.minimumAction}</p>
+                </div>
+              )}
+              {!system.fallbackPlan && !system.minimumAction && (
+                <p className="text-sm text-muted-foreground">Missing one day never derailed anyone. The key is showing up tomorrow.</p>
+              )}
+              <Button className="w-full" onClick={() => setStep(1)} data-testid="button-recovery-next-1">
+                Got it — what about tomorrow? <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className="space-y-4">
+              <p className="text-lg font-bold">What's your plan for tomorrow?</p>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleSelectIntention("I'll do my minimum action")}
+                  className="w-full text-left p-4 rounded-xl border hover:border-primary/50 hover:bg-primary/5 transition-all text-sm font-medium"
+                  data-testid="button-intention-minimum"
+                >
+                  ✓ I'll do my minimum action
+                </button>
+                <button
+                  onClick={() => handleSelectIntention("I'll do my full action")}
+                  className="w-full text-left p-4 rounded-xl border hover:border-chart-3/50 hover:bg-chart-3/5 transition-all text-sm font-medium"
+                  data-testid="button-intention-full"
+                >
+                  ✓ I'll do my full action
+                </button>
+                <button
+                  onClick={() => { setIntention("custom"); setStep(2); }}
+                  className="w-full text-left p-4 rounded-xl border hover:border-chart-2/50 hover:bg-chart-2/5 transition-all text-sm font-medium"
+                  data-testid="button-intention-custom"
+                >
+                  ✏️ Write a custom note…
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <p className="text-lg font-bold">What exactly will you do?</p>
+              <Textarea
+                placeholder="e.g. I'll do just 5 minutes after breakfast…"
+                value={customNote}
+                onChange={e => setCustomNote(e.target.value)}
+                rows={3}
+                className="text-sm"
+                data-testid="input-recovery-custom-note"
+                autoFocus
+              />
+              <Button className="w-full" onClick={() => setStep(3)} disabled={!customNote.trim()} data-testid="button-recovery-next-3">
+                Confirm <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4 text-center">
+              <div className="text-5xl">🔁</div>
+              <p className="text-lg font-bold text-foreground">System saved.</p>
+              <div className="text-sm text-muted-foreground leading-relaxed space-y-1">
+                <p>Missing one day never derailed anyone.</p>
+                <p className="font-semibold text-foreground">Missing two days starts a pattern.</p>
+                <p>See you tomorrow.</p>
+              </div>
+              {(intention && intention !== "custom" ? intention : customNote) && (
+                <div className="bg-primary/8 border border-primary/20 rounded-xl p-3 text-left">
+                  <p className="text-xs font-semibold text-primary mb-1">Your intention for tomorrow:</p>
+                  <p className="text-sm text-foreground">{intention === "custom" ? customNote : intention}</p>
+                </div>
+              )}
+              <Button className="w-full" onClick={handleFinish} data-testid="button-recovery-finish">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                I'll be back tomorrow
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -186,25 +387,29 @@ const STATUS_CONFIG = {
 
 /* ─── Individual check-in card ──────────────────────────────────── */
 function SystemCheckinCard({
-  system, existingCheckin, userId, streakDays, onPerfectDay,
+  system, existingCheckin, userId, streakDays, onPerfectDay, identityStatement,
 }: {
   system: System;
   existingCheckin?: Checkin;
   userId: string;
   streakDays: number;
   onPerfectDay?: () => void;
+  identityStatement?: string | null;
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const today = getTodayKey();
 
-  const [showNote, setShowNote]     = useState(false);
-  const [note, setNote]             = useState(existingCheckin?.note || "");
-  const [moodBefore, setMoodBefore] = useState<number | null>(existingCheckin?.moodBefore ?? null);
-  const [moodAfter, setMoodAfter]   = useState<number | null>(existingCheckin?.moodAfter ?? null);
-  const [difficulty, setDifficulty] = useState<number | null>(existingCheckin?.difficulty ?? null);
-  const [justDone, setJustDone]     = useState(false);
-  const pulseDoneTimer              = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showNote, setShowNote]         = useState(false);
+  const [note, setNote]                 = useState(existingCheckin?.note || "");
+  const [moodBefore, setMoodBefore]     = useState<number | null>(existingCheckin?.moodBefore ?? null);
+  const [moodAfter, setMoodAfter]       = useState<number | null>(existingCheckin?.moodAfter ?? null);
+  const [difficulty, setDifficulty]     = useState<number | null>(existingCheckin?.difficulty ?? null);
+  const [justDone, setJustDone]         = useState(false);
+  const [showRitual, setShowRitual]     = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryStatus, setRecoveryStatus] = useState<"skipped" | "partial">("skipped");
+  const pulseDoneTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const current = existingCheckin?.status as keyof typeof STATUS_CONFIG | undefined;
 
@@ -220,16 +425,16 @@ function SystemCheckinCard({
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
-      const msgs: Record<string, string> = {
-        done:    "Great job! Keep the streak going 🔥",
-        partial: "Partial progress still counts. Well done.",
-        missed:  "Missed today — your fallback plan is shown below.",
-      };
-      toast({ title: msgs[status] ?? "Checked in!" });
       if (status === "done") {
         if (pulseDoneTimer.current) clearTimeout(pulseDoneTimer.current);
         setJustDone(true);
         pulseDoneTimer.current = setTimeout(() => setJustDone(false), 600);
+        setShowRitual(true);
+      } else if (status === "skipped" || status === "partial") {
+        setRecoveryStatus(status as "skipped" | "partial");
+        setShowRecovery(true);
+      } else {
+        toast({ title: "Checked in!" });
       }
     },
     onError: (err: any) => {
@@ -418,6 +623,21 @@ function SystemCheckinCard({
           </div>
         )}
       </CardContent>
+
+      <CelebrationRitualModal
+        show={showRitual}
+        systemName={system.title}
+        streakDays={streakDays + 1}
+        identityStatement={identityStatement}
+        onDismiss={() => { setShowRitual(false); onPerfectDay?.(); }}
+      />
+
+      <RecoveryFlowModal
+        show={showRecovery}
+        system={system}
+        checkinStatus={recoveryStatus}
+        onDismiss={() => setShowRecovery(false)}
+      />
     </Card>
   );
 }
@@ -829,6 +1049,16 @@ export default function Checkins() {
             </Card>
           </div>
 
+          {/* Identity Statement banner */}
+          {user?.identityStatement && (
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/8 border border-primary/20" data-testid="identity-banner">
+              <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+              <p className="text-sm font-semibold text-foreground">
+                Remember: You are a person who {user.identityStatement}.
+              </p>
+            </div>
+          )}
+
           {/* Perfect day banner (inline, shown even after celebrating) */}
           {completionPct === 100 && totalCount > 0 && (
             <div className="p-4 rounded-xl gradient-brand text-white text-center" data-testid="banner-perfect-day">
@@ -874,6 +1104,7 @@ export default function Checkins() {
                   userId={userId}
                   streakDays={analytics.streaks[system.id] ?? 0}
                   onPerfectDay={() => setShowCelebration(true)}
+                  identityStatement={user?.identityStatement}
                 />
               ))}
             </div>

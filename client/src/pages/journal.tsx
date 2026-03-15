@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
   BookOpen, Plus, Trash2, Pencil, Loader2, X, PenLine,
-  ChevronDown, ChevronUp, Lightbulb, Check,
+  ChevronDown, ChevronUp, Lightbulb, Check, Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -432,6 +432,21 @@ export default function Journal() {
           </Button>
         )}
       </div>
+
+      {/* Identity motivational card */}
+      {user?.identityStatement && (
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/8 border border-primary/20" data-testid="identity-journal-card">
+          <Sparkles className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-foreground mb-0.5">
+              You are a person who {user.identityStatement}.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Use your journal to build evidence for this identity — one reflection at a time.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* What reflection is for — shown only when no entries */}
       {entries.length === 0 && !showNewForm && (

@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   avatarUrl?: string | null;
+  identityStatement?: string | null;
   focusArea?: string | null;
   routineTime?: string | null;
   preferredTheme?: string | null;
@@ -11,11 +12,18 @@ export interface User {
   createdAt?: string | null;
 }
 
+export interface GoalMilestone {
+  month: string;
+  target: string;
+}
+
 export interface Goal {
   id: string;
   userId: string;
   title: string;
   description?: string | null;
+  measurableOutcome?: string | null;
+  milestones?: GoalMilestone[] | null;
   category: string;
   priority: string;
   status: string;
@@ -54,6 +62,7 @@ export interface Checkin {
   moodBefore?: number | null;
   moodAfter?: number | null;
   difficulty?: number | null;
+  tomorrowIntention?: string | null;
   createdAt?: string | null;
 }
 

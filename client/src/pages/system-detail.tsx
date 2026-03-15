@@ -15,10 +15,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Zap, Target, Clock, CheckSquare, Trophy, ShieldCheck, Brain, Heart, Repeat,
-  MoreVertical, Pencil, Pause, Play, Copy, Trash2, ExternalLink, Activity,
+  MoreVertical, Pencil, Pause, Play, Copy, Trash2, ExternalLink, Activity, Flame, CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { format, subDays } from "date-fns";
 
 const frequencyLabels: Record<string, string> = {
   daily: "Daily", weekdays: "Weekdays", weekends: "Weekends", weekly: "Weekly",
@@ -27,6 +28,89 @@ const frequencyLabels: Record<string, string> = {
 const timeLabels: Record<string, string> = {
   morning: "Morning", afternoon: "Afternoon", evening: "Evening", flexible: "Flexible",
 };
+
+function ChainCalendar({ checkins }: { checkins: Checkin[] }) {
+  const today = new Date();
+  const DAYS = 56;
+  const checkinMap = new Map(checkins.map(c => [c.dateKey, c.status]));
+
+  const cells: { dateKey: string; label: string; status: string | undefined; isToday: boolean }[] = [];
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const d = subDays(today, i);
+    const dateKey = format(d, "yyyy-MM-dd");
+    cells.push({
+      dateKey,
+      label: format(d, "MMM d"),
+      status: checkinMap.get(dateKey),
+      isToday: i === 0,
+    });
+  }
+
+  const currentStreak = (() => {
+    let streak = 0;
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[cells.length - 1 - i];
+      if (cell.status === "done" || cell.status === "partial") streak++;
+      else if (cell.isToday && !cell.status) continue;
+      else break;
+    }
+    return streak;
+  })();
+
+  const cellColor = (status: string | undefined, isToday: boolean) => {
+    if (status === "done")    return "bg-primary border-primary/40";
+    if (status === "partial") return "bg-chart-4/70 border-chart-4/40";
+    if (status === "skipped") return "bg-muted-foreground/20 border-muted-foreground/30";
+    if (status === "missed")  return "bg-destructive/20 border-destructive/30";
+    if (isToday)              return "border-2 border-primary/60 bg-transparent";
+    return "bg-muted/40 border-transparent";
+  };
+
+  const weeks: typeof cells[] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    weeks.push(cells.slice(i, i + 7));
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+            <CalendarDays className="w-4 h-4" />
+            Chain Calendar · 8 Weeks
+          </CardTitle>
+          {currentStreak > 0 && (
+            <div className="flex items-center gap-1.5 text-primary">
+              <Flame className="w-4 h-4" />
+              <span className="text-sm font-bold">{currentStreak} day streak</span>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-1 flex-wrap justify-start">
+          {cells.map(cell => (
+            <div
+              key={cell.dateKey}
+              title={`${cell.label}: ${cell.status || "no check-in"}`}
+              className={cn(
+                "w-5 h-5 rounded-sm border transition-all",
+                cellColor(cell.status, cell.isToday),
+                cell.isToday && "ring-1 ring-primary ring-offset-1"
+              )}
+            />
+          ))}
+        </div>
+        <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-primary inline-block" /> Done</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-chart-4/70 inline-block" /> Partial</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-muted-foreground/20 inline-block" /> Skipped</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-muted/40 border inline-block" /> None</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 type FieldRowProps = { icon: React.ElementType; label: string; value?: string | null; color?: string };
 
@@ -251,6 +335,8 @@ export default function SystemDetailPage() {
           <FieldRow icon={ShieldCheck} label="Fallback Plan" value={system.fallbackPlan} color="text-muted-foreground" />
         </CardContent>
       </Card>
+
+      <ChainCalendar checkins={systemCheckins} />
 
       <div className="flex gap-3">
         <Link href={`/systems/${id}/edit`} className="flex-1">

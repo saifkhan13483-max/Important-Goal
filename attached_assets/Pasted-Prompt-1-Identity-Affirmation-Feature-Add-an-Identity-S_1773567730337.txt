@@ -1,0 +1,125 @@
+Prompt 1 — Identity Affirmation Feature:
+
+Add an "Identity Statement" feature to the app. 
+
+During onboarding (and in Settings > Profile), ask the user: "Who are you 
+becoming? Complete this sentence: I AM a person who ___." 
+
+Store this as their Identity Statement. Display it:
+- At the top of the Dashboard as a personalized greeting: 
+  "Good morning, [Name]. Remember: You are [Identity Statement]."
+- As the first line on the Check-in page before they log their habits.
+- As a motivational card in the Journal prompts.
+
+Style it prominently with large, bold typography. This is the Identity 
+Shift concept from atomic habits / the video's Step 1.
+Prompt 2 — Structured Goal Creation (Wishes → Structure):
+
+Redesign the Goal creation form into a guided 4-field wizard:
+
+Step 1 - Target: "What exactly do you want to achieve?" (specific, not vague)
+Step 2 - Measurable Outcome: "How will you know you've succeeded? 
+         What does the result look like in numbers or facts?"
+Step 3 - Deadline: Date picker (already exists, make it required)
+Step 4 - Monthly Milestones: Allow users to add 2-4 monthly checkpoints 
+         with specific mini-targets (e.g., "Month 1: Complete Python course", 
+         "Month 2: Build first project").
+
+Show inline example suggestions for each field based on common goal 
+categories (Fitness, Career, Learning, Relationship). Display a "Structure 
+Preview" card at the end showing the full goal summary before saving.
+Prompt 3 — Hype Drop Warning System:
+
+Add a smart "Consistency Alert" system to the Dashboard and Check-in pages.
+
+Logic:
+- Days 1–7: Show "Building momentum! 🚀 The first week is the hardest."
+- Days 8–21: Show a Hype Drop Warning card: 
+  "⚠️ Week 2-3 Alert: Motivation naturally drops here. 
+  This is normal — your SYSTEM carries you, not your mood. 
+  Keep your minimum action going!"
+- Days 22–66: Show "You're in the habit-building zone. 
+  Science says 66 days builds automaticity. You're on track."
+- After a streak break: Show "Streaks break. Systems don't. 
+  What's your minimum action today?" with their recovery plan displayed.
+
+Display these as dismissible insight cards on the Dashboard.
+Prompt 4 — Visual Chain Calendar (Don't Break the Chain):
+
+Add a "Chain View" to the Check-in History tab and System Detail page.
+
+Design a monthly calendar heatmap (similar to GitHub's contribution graph):
+- Each day is a small square
+- Green = Done, Yellow = Partial, Red = Skipped, Gray = No check-in
+- Show the current unbroken chain highlighted with a bold border
+- Display the message: "Your chain: [X] days. Don't break it! 🔗"
+- When the user views a broken chain, show: 
+  "Chain broken at [X] days — Start a new one today!"
+
+Make this the primary visual on the System Detail page, more prominent 
+than the streak number.
+Prompt 5 — Active Celebration Ritual Prompt:
+
+After a user marks a check-in as "Done", instead of just showing confetti 
+automatically, add a 2-second "Celebration Moment" screen that says:
+
+"✅ YOU DID IT!
+[System Name] — Day [X] Complete
+
+Take 3 seconds to celebrate.
+Say it out loud: 'I AM consistent. I showed up today.'
+
+[Tap to continue]"
+
+This should be a full-screen modal overlay (not just a toast) that the 
+user must actively dismiss. Include a small animated emoji or illustration.
+The goal is to make the brain associate the action with an active reward 
+(dopamine hack from the video).
+Prompt 6 — Recovery Plan Auto-Surface on Skip:
+
+When a user marks a check-in as "Skipped" or "Partial", immediately 
+trigger a Recovery Flow modal:
+
+Step 1 - Show their pre-written Recovery Plan from the System Builder:
+  "📋 Your Recovery Plan: [recovery plan text]"
+
+Step 2 - Show a Minimum Action reminder:
+  "💪 Your Minimum Action: [minimum action text]"
+
+Step 3 - Ask: "What's your plan for tomorrow?"
+  - Option A: "I'll do my minimum action ✓" 
+  - Option B: "I'll do my full action ✓"
+  - Option C: Write a custom note
+
+Step 4 - Confirm with: "System saved. Missing one day never derailed 
+anyone. Missing two days starts a pattern. See you tomorrow. 🔁"
+
+Store the tomorrow intention and show it as a reminder notification/card 
+the next day at the top of the Dashboard.
+Prompt 7 — "Wish vs. Structure" Diagnostic Tool:
+
+Add a "Goal Health Check" feature accessible from each Goal's detail page.
+
+It analyzes the user's goal and scores it on 4 dimensions:
+1. Specificity (Is the target measurable?) — checks if numbers/metrics exist
+2. Deadline (Is there a deadline set?) — checks date field
+3. Action Plan (Are there linked systems?) — counts linked systems
+4. Recovery Plan (Do the linked systems have recovery plans?) 
+
+Show a "Goal Strength Score" (0–100%) with specific suggestions:
+- "Your goal lacks a measurable outcome. Add what success looks like 
+   in numbers." 
+- "No linked systems found. A goal without a system is just a wish. 
+   Create a system for this goal."
+- "2 of 3 systems are missing recovery plans. Add backup plans to 
+   make your system failure-proof."
+Priority Order:
+If you implement these in order of impact relative to the video's message, the priority should be:
+
+Prompt 6 (Recovery auto-surface) — highest retention impact
+Prompt 1 (Identity affirmation) — most aligned with the video's #1 concept
+Prompt 4 (Chain calendar) — strongest visual dopamine trigger
+Prompt 3 (Hype drop warnings) — prevents the most common dropout point
+Prompt 2 (Structured goal creation) — improves goal quality
+Prompt 5 (Active celebration ritual) — deepens reward loop
+Prompt 7 (Goal health check) — advanced quality feature

@@ -131,18 +131,20 @@ interface OnboardingData {
   remindersEnabled: boolean;
   reminderTime: string;
   preferredTheme: string;
+  identityStatement: string;
 }
 
 const STEPS = [
-  { id: "welcome",    title: "Welcome to SystemForge!",    skippable: false },
-  { id: "name",       title: "What should we call you?",   skippable: false },
-  { id: "focus",      title: "What's your primary focus?", skippable: false },
-  { id: "motivation", title: "What motivates you most?",   skippable: true  },
-  { id: "experience", title: "How experienced are you?",   skippable: false },
-  { id: "goal",       title: "Set your first goal",        skippable: true  },
-  { id: "time",       title: "When do you like to work?",  skippable: true  },
-  { id: "reminders",  title: "Would you like daily reminders?", skippable: true },
-  { id: "done",       title: "You're all set! 🎉",         skippable: false },
+  { id: "welcome",    title: "Welcome to SystemForge!",         skippable: false },
+  { id: "name",       title: "What should we call you?",        skippable: false },
+  { id: "identity",   title: "Who are you becoming?",           skippable: true  },
+  { id: "focus",      title: "What's your primary focus?",      skippable: false },
+  { id: "motivation", title: "What motivates you most?",        skippable: true  },
+  { id: "experience", title: "How experienced are you?",        skippable: false },
+  { id: "goal",       title: "Set your first goal",             skippable: true  },
+  { id: "time",       title: "When do you like to work?",       skippable: true  },
+  { id: "reminders",  title: "Would you like daily reminders?", skippable: true  },
+  { id: "done",       title: "You're all set! 🎉",              skippable: false },
 ];
 
 export default function Onboarding() {
@@ -153,17 +155,18 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [data, setData] = useState<OnboardingData>({
-    name:             user?.name || "",
-    focusArea:        "",
-    customFocusArea:  "",
-    motivator:        "",
-    experience:       "",
-    goalTitle:        "",
-    goalDeadline:     "",
-    routineTime:      "",
-    remindersEnabled: false,
-    reminderTime:     "08:00",
-    preferredTheme:   "system",
+    name:              user?.name || "",
+    focusArea:         "",
+    customFocusArea:   "",
+    motivator:         "",
+    experience:        "",
+    goalTitle:         "",
+    goalDeadline:      "",
+    routineTime:       "",
+    remindersEnabled:  false,
+    reminderTime:      "08:00",
+    preferredTheme:    "system",
+    identityStatement: "",
   });
 
   const current = STEPS[step];
@@ -203,6 +206,7 @@ export default function Onboarding() {
         focusArea:         effectiveFocusArea || data.focusArea,
         routineTime:       data.routineTime || null,
         preferredTheme:    data.preferredTheme,
+        identityStatement: data.identityStatement.trim() || null,
         onboardingCompleted: true,
       } as any);
 
@@ -230,6 +234,7 @@ export default function Onboarding() {
   const subtitleMap: Record<string, string> = {
     welcome:    user ? `Great to have you, ${(user.name || "there").split(" ")[0]}!` : "Let's get started",
     name:       "This is how we'll greet you in the app",
+    identity:   "Your identity is the foundation of every system you build",
     focus:      "Choose the area where you want to build systems first",
     motivation: "This helps us tailor your daily prompts and check-in questions",
     experience: "Be honest — there's no wrong answer! We'll adjust the guidance to fit you",
@@ -318,7 +323,66 @@ export default function Onboarding() {
               </div>
             )}
 
-            {/* Step 2 — Focus area */}
+            {/* Step 2 — Identity Statement */}
+            {current.id === "identity" && (
+              <div className="space-y-5">
+                <div className="bg-primary/8 rounded-xl p-4 border border-primary/20">
+                  <p className="text-sm font-semibold text-primary mb-1">Why this matters</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Research shows that people who build habits around <strong className="text-foreground">identity</strong> — not just outcomes — are far more consistent. 
+                    "I am a runner" outlasts "I want to run more."
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ob-identity" className="text-base font-semibold">
+                    Complete this sentence:
+                  </Label>
+                  <p className="text-sm text-muted-foreground">I AM a person who ___</p>
+                  <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                    <span className="text-sm font-medium text-muted-foreground flex-shrink-0">I AM a person who</span>
+                    <input
+                      id="ob-identity"
+                      placeholder="shows up every day, no matter what."
+                      value={data.identityStatement}
+                      onChange={e => setData(d => ({ ...d, identityStatement: e.target.value }))}
+                      data-testid="input-onboarding-identity"
+                      autoFocus
+                      className="flex-1 bg-transparent border-none outline-none text-sm font-medium placeholder:text-muted-foreground/50"
+                      onKeyDown={e => { if (e.key === "Enter") handleNext(); }}
+                    />
+                  </div>
+                </div>
+                {data.identityStatement.trim() && (
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-1">Your Identity Statement</p>
+                    <p className="text-lg font-bold text-foreground leading-snug">
+                      "I AM a person who {data.identityStatement.trim()}."
+                    </p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground font-medium">Examples:</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[
+                      "exercises every morning, even if just for 5 minutes",
+                      "reads every day and keeps learning",
+                      "shows up consistently and follows through",
+                      "takes care of their body and their mind",
+                    ].map(example => (
+                      <button
+                        key={example}
+                        onClick={() => setData(d => ({ ...d, identityStatement: example }))}
+                        className="text-left text-xs p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                      >
+                        "I AM a person who {example}."
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3 — Focus area */}
             {current.id === "focus" && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">

@@ -70,10 +70,11 @@ export default function Settings() {
   const [name, setName] = useState(user?.name || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [timezone, setTimezone] = useState(user?.timezone || "UTC");
+  const [identityStatement, setIdentityStatement] = useState(user?.identityStatement || "");
 
   const handleSaveProfile = async () => {
     try {
-      await updateProfile({ name, avatarUrl: avatarUrl || undefined, timezone, preferredTheme: theme });
+      await updateProfile({ name, avatarUrl: avatarUrl || undefined, timezone, preferredTheme: theme, identityStatement: identityStatement.trim() || null } as any);
       toast({ title: "Profile saved!", description: "Your changes have been applied." });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -141,6 +142,33 @@ export default function Settings() {
               data-testid="input-settings-avatar"
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="identity-statement" className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              Identity Statement
+            </Label>
+            <p className="text-xs text-muted-foreground">Complete the sentence: "I AM a person who ___"</p>
+            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+              <span className="text-sm text-muted-foreground flex-shrink-0">I AM a person who</span>
+              <Input
+                id="identity-statement"
+                value={identityStatement}
+                onChange={e => setIdentityStatement(e.target.value)}
+                placeholder="shows up every day, no matter what."
+                className="border-none bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 focus-visible:ring-offset-0"
+                data-testid="input-settings-identity"
+              />
+            </div>
+            {identityStatement.trim() && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <p className="text-sm font-semibold text-foreground">
+                  "I AM a person who {identityStatement.trim()}."
+                </p>
+              </div>
+            )}
+          </div>
+
           <Button onClick={handleSaveProfile} disabled={updatePending} data-testid="button-save-profile">
             {updatePending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
             Save Profile

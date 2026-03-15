@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAppStore } from "@/store/auth.store";
-import type { Goal } from "@/types/schema";
+import type { Goal, GoalMilestone } from "@/types/schema";
 import { getGoals, createGoal, updateGoal, deleteGoal } from "@/services/goals.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight, Zap, Lightbulb } from "lucide-react";
+import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight, Zap, Lightbulb, ArrowLeft, ArrowRight, Flag, CheckCircle2, Milestone } from "lucide-react";
 import { format, isPast, isWithinInterval, addDays, startOfDay } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link } from "wouter";
@@ -62,24 +62,32 @@ function DeadlineBadge({ deadline }: { deadline: string }) {
   );
 }
 
+const WIZARD_STEPS = [
+  { label: "Target",     icon: Target   },
+  { label: "Outcome",    icon: CheckCircle2 },
+  { label: "Deadline",   icon: Flag     },
+  { label: "Milestones", icon: Milestone },
+];
+
 function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: goal?.title || "",
-      description: goal?.description || "",
-      category: goal?.category || "other",
-      priority: goal?.priority || "medium",
-      status: goal?.status || "active",
-      deadline: goal?.deadline || "",
-    },
-  });
+  const isEdit = !!goal;
+  const [step, setStep] = useState(isEdit ? 4 : 0);
+
+  const [title, setTitle]                     = useState(goal?.title || "");
+  const [category, setCategory]               = useState(goal?.category || "other");
+  const [priority, setPriority]               = useState(goal?.priority || "medium");
+  const [measurableOutcome, setMeasurableOutcome] = useState(goal?.measurableOutcome || "");
+  const [deadline, setDeadline]               = useState(goal?.deadline || "");
+  const [status, setStatus]                   = useState(goal?.status || "active");
+  const [milestones, setMilestones]           = useState<GoalMilestone[]>(
+    goal?.milestones?.length ? goal.milestones : [{ month: "Month 1", target: "" }]
+  );
 
   const mutation = useMutation({
-    mutationFn: (data: z.infer<typeof formSchema>) =>
+    mutationFn: (data: Record<string, any>) =>
       goal
         ? updateGoal(goal.id, data)
         : createGoal(userId, data),
@@ -91,69 +99,240 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(d => mutation.mutate(d))} className="space-y-4">
-        <FormField control={form.control} name="title" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Goal Title</FormLabel>
-            <FormControl><Input placeholder="e.g. Get fit and build strength" data-testid="input-goal-title" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="description" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Description <span className="text-muted-foreground">(optional)</span></FormLabel>
-            <FormControl><Textarea placeholder="What does success look like?" rows={3} data-testid="input-goal-description" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <div className="grid grid-cols-2 gap-4">
-          <FormField control={form.control} name="category" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger data-testid="select-category"><SelectValue /></SelectTrigger></FormControl>
-                <SelectContent>{categories.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}</SelectContent>
-              </Select>
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="priority" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Priority</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger data-testid="select-priority"><SelectValue /></SelectTrigger></FormControl>
-                <SelectContent>{priorities.map(p => <SelectItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>)}</SelectContent>
-              </Select>
-            </FormItem>
-          )} />
+  const handleSubmit = () => {
+    mutation.mutate({
+      title,
+      category,
+      priority,
+      status,
+      deadline: deadline || undefined,
+      measurableOutcome: measurableOutcome || undefined,
+      milestones: milestones.filter(m => m.target),
+    });
+  };
+
+  const addMilestone = () => {
+    if (milestones.length >= 4) return;
+    setMilestones(ms => [...ms, { month: `Month ${ms.length + 1}`, target: "" }]);
+  };
+
+  const removeMilestone = (i: number) => {
+    setMilestones(ms => ms.filter((_, idx) => idx !== i));
+  };
+
+  const updateMilestone = (i: number, field: keyof GoalMilestone, value: string) => {
+    setMilestones(ms => ms.map((m, idx) => idx === i ? { ...m, [field]: value } : m));
+  };
+
+  if (isEdit) {
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Goal Title</label>
+          <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Get fit and build strength" data-testid="input-goal-title" />
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <FormField control={form.control} name="status" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger></FormControl>
-                <SelectContent>{statuses.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}</SelectContent>
-              </Select>
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="deadline" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Deadline <span className="text-muted-foreground">(optional)</span></FormLabel>
-              <FormControl><Input type="date" data-testid="input-goal-deadline" {...field} /></FormControl>
-            </FormItem>
-          )} />
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Category</label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger data-testid="select-category"><SelectValue /></SelectTrigger>
+              <SelectContent>{categories.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Priority</label>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger data-testid="select-priority"><SelectValue /></SelectTrigger>
+              <SelectContent>{priorities.map(p => <SelectItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Status</label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger>
+              <SelectContent>{statuses.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Deadline</label>
+            <Input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} data-testid="input-goal-deadline" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Measurable Outcome <span className="text-muted-foreground">(optional)</span></label>
+          <Input value={measurableOutcome} onChange={e => setMeasurableOutcome(e.target.value)} placeholder="e.g. Run 5km under 30 min" data-testid="input-measurable-outcome" />
         </div>
         <DialogFooter>
-          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={mutation.isPending} data-testid="button-save-goal">
-            {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            {goal ? "Save Changes" : "Create Goal"}
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={mutation.isPending} data-testid="button-save-goal">
+            {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}Save Changes
           </Button>
         </DialogFooter>
-      </form>
-    </Form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Step progress */}
+      <div className="flex items-center gap-2">
+        {WIZARD_STEPS.map((s, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${i < step ? "bg-primary border-primary text-primary-foreground" : i === step ? "border-primary text-primary" : "border-muted-foreground/30 text-muted-foreground"}`}>
+              {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
+            </div>
+            <span className={`text-xs hidden sm:block ${i === step ? "text-primary font-medium" : "text-muted-foreground"}`}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Step 0: Target */}
+      {step === 0 && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-base mb-0.5">What's your goal?</h3>
+            <p className="text-xs text-muted-foreground">Give your goal a clear, inspiring title.</p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Goal Title</label>
+            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Run my first marathon" autoFocus data-testid="input-goal-title" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger data-testid="select-category"><SelectValue /></SelectTrigger>
+                <SelectContent>{categories.map(c => <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Priority</label>
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger data-testid="select-priority"><SelectValue /></SelectTrigger>
+                <SelectContent>{priorities.map(p => <SelectItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button onClick={() => setStep(1)} disabled={!title.trim()} data-testid="button-next-step">
+              Next <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </DialogFooter>
+        </div>
+      )}
+
+      {/* Step 1: Measurable Outcome */}
+      {step === 1 && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-base mb-0.5">How will you know you've won?</h3>
+            <p className="text-xs text-muted-foreground">Define a specific, measurable result. Numbers are best.</p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Measurable Outcome</label>
+            <Input
+              value={measurableOutcome}
+              onChange={e => setMeasurableOutcome(e.target.value)}
+              placeholder="e.g. Complete 5km run in under 30 minutes"
+              autoFocus
+              data-testid="input-measurable-outcome"
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {["Lose 10 lbs", "Read 12 books", "Save $5,000"].map(ex => (
+              <button key={ex} type="button" onClick={() => setMeasurableOutcome(ex)}
+                className="text-xs px-2 py-1.5 rounded-md border border-dashed border-muted-foreground/40 text-muted-foreground hover:border-primary hover:text-primary transition-colors text-left">
+                {ex}
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setStep(0)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+            <Button onClick={() => setStep(2)} data-testid="button-next-step">
+              Next <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </DialogFooter>
+        </div>
+      )}
+
+      {/* Step 2: Deadline */}
+      {step === 2 && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-base mb-0.5">When will you finish?</h3>
+            <p className="text-xs text-muted-foreground">A deadline creates urgency. Pick a real date.</p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Target Date</label>
+            <Input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} autoFocus data-testid="input-goal-deadline" />
+          </div>
+          {deadline && (
+            <div className="p-3 rounded-lg bg-primary/8 border border-primary/20 flex items-center gap-2">
+              <Flag className="w-4 h-4 text-primary flex-shrink-0" />
+              <p className="text-sm text-foreground">
+                You have <strong>{Math.max(0, Math.round((new Date(deadline).getTime() - Date.now()) / 86400000))} days</strong> to achieve this.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setStep(1)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+            <Button onClick={() => setStep(3)} disabled={!deadline} data-testid="button-next-step">
+              Next <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </DialogFooter>
+        </div>
+      )}
+
+      {/* Step 3: Milestones */}
+      {step === 3 && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-base mb-0.5">Break it into monthly wins</h3>
+            <p className="text-xs text-muted-foreground">Add 2–4 checkpoints to track your progress along the way.</p>
+          </div>
+          <div className="space-y-2">
+            {milestones.map((m, i) => (
+              <div key={i} className="flex gap-2 items-start">
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <Input
+                    value={m.month}
+                    onChange={e => updateMilestone(i, "month", e.target.value)}
+                    placeholder="Month 1"
+                    data-testid={`input-milestone-month-${i}`}
+                  />
+                  <Input
+                    value={m.target}
+                    onChange={e => updateMilestone(i, "target", e.target.value)}
+                    placeholder="e.g. Run 2km without stopping"
+                    data-testid={`input-milestone-target-${i}`}
+                  />
+                </div>
+                {milestones.length > 1 && (
+                  <Button type="button" variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeMilestone(i)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+          {milestones.length < 4 && (
+            <Button type="button" variant="outline" size="sm" onClick={addMilestone} className="w-full" data-testid="button-add-milestone">
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add Milestone
+            </Button>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setStep(2)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+            <Button onClick={handleSubmit} disabled={mutation.isPending} data-testid="button-save-goal">
+              {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Create Goal 🎯
+            </Button>
+          </DialogFooter>
+        </div>
+      )}
+    </div>
   );
 }
 

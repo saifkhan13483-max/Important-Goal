@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
 import { Link } from "wouter";
@@ -254,8 +254,8 @@ function OneInsight({
   );
 }
 
-function GreetingBanner({ name, completionPct, todayDone, todayTotal }: {
-  name: string; completionPct: number; todayDone: number; todayTotal: number;
+function GreetingBanner({ name, identityStatement, completionPct, todayDone, todayTotal }: {
+  name: string; identityStatement?: string | null; completionPct: number; todayDone: number; todayTotal: number;
 }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -264,16 +264,27 @@ function GreetingBanner({ name, completionPct, todayDone, todayTotal }: {
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
       <div className="absolute top-0 right-0 w-48 h-48 opacity-10 bg-white rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-white/70 text-sm font-medium mb-1">{format(new Date(), "EEEE, MMMM d")}</p>
           <h1 className="text-2xl md:text-3xl font-bold mb-1">{greeting}, {name.split(" ")[0]}! 👋</h1>
-          <p className="text-white/80 text-sm">
-            {todayTotal === 0
-              ? "Ready to start building your systems?"
-              : todayDone === todayTotal
-              ? "Perfect day! All habits complete. 🔥"
-              : `${todayTotal - todayDone} habit${todayTotal - todayDone !== 1 ? "s" : ""} left for today.`}
-          </p>
+          {identityStatement ? (
+            <p className="text-white/90 text-sm font-semibold mt-1 leading-snug">
+              Remember: You are a person who {identityStatement}.
+            </p>
+          ) : (
+            <p className="text-white/80 text-sm">
+              {todayTotal === 0
+                ? "Ready to start building your systems?"
+                : todayDone === todayTotal
+                ? "Perfect day! All habits complete. 🔥"
+                : `${todayTotal - todayDone} habit${todayTotal - todayDone !== 1 ? "s" : ""} left for today.`}
+            </p>
+          )}
+          {identityStatement && todayTotal > 0 && (
+            <p className="text-white/70 text-xs mt-1.5">
+              {todayDone === todayTotal ? "Perfect day! All habits complete. 🔥" : `${todayTotal - todayDone} habit${todayTotal - todayDone !== 1 ? "s" : ""} left for today.`}
+            </p>
+          )}
         </div>
         {todayTotal > 0 && (
           <div className="flex-shrink-0 text-right">
@@ -295,6 +306,97 @@ function GreetingBanner({ name, completionPct, todayDone, todayTotal }: {
       )}
     </div>
   );
+}
+
+/* ─── Hype Drop Warning ──────────────────────────────────────────── */
+function HypeDropWarning({
+  bestStreak, hadStreakBreak, fallbackPlan, minimumAction, dismissedKey,
+}: {
+  bestStreak: number;
+  hadStreakBreak: boolean;
+  fallbackPlan?: string | null;
+  minimumAction?: string | null;
+  dismissedKey: string;
+}) {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(dismissedKey) === "true"; } catch { return false; }
+  });
+
+  if (dismissed) return null;
+
+  const dismiss = () => {
+    try { localStorage.setItem(dismissedKey, "true"); } catch {}
+    setDismissed(true);
+  };
+
+  if (hadStreakBreak) {
+    return (
+      <div className="relative flex items-start gap-3 p-4 rounded-xl bg-chart-2/8 border border-chart-2/20" data-testid="hype-drop-streak-break">
+        <button onClick={dismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors text-lg leading-none" aria-label="Dismiss">×</button>
+        <RefreshCw className="w-4 h-4 text-chart-2 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 pr-4">
+          <p className="text-sm font-semibold text-foreground mb-1">Streaks break. Systems don't. 🔁</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Missing one day never derailed anyone. Missing two days starts a pattern.
+          </p>
+          {(minimumAction || fallbackPlan) && (
+            <div className="mt-2 space-y-1">
+              {minimumAction && <p className="text-xs font-medium text-foreground">💪 Your minimum action: <span className="text-muted-foreground">{minimumAction}</span></p>}
+              {fallbackPlan && <p className="text-xs font-medium text-foreground">📋 Your recovery plan: <span className="text-muted-foreground">{fallbackPlan}</span></p>}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (bestStreak >= 1 && bestStreak <= 7) {
+    return (
+      <div className="relative flex items-start gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/20" data-testid="hype-drop-early">
+        <button onClick={dismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors text-lg leading-none" aria-label="Dismiss">×</button>
+        <Flame className="w-4 h-4 text-chart-3 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 pr-4">
+          <p className="text-sm font-semibold text-foreground mb-1">Building momentum! 🚀</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Day {bestStreak} — the first week is the hardest. Your system is doing the heavy lifting, not your motivation. Keep going!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (bestStreak >= 8 && bestStreak <= 21) {
+    return (
+      <div className="relative flex items-start gap-3 p-4 rounded-xl bg-chart-4/8 border border-chart-4/25" data-testid="hype-drop-warning">
+        <button onClick={dismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors text-lg leading-none" aria-label="Dismiss">×</button>
+        <AlertCircle className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 pr-4">
+          <p className="text-sm font-semibold text-foreground mb-1">⚠️ Week 2–3 Alert: Hype Drop Zone</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Motivation naturally drops around now — this is completely normal. Your SYSTEM carries you, not your mood.
+            Keep your minimum action going. Just show up.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (bestStreak >= 22 && bestStreak <= 65) {
+    return (
+      <div className="relative flex items-start gap-3 p-4 rounded-xl bg-primary/8 border border-primary/20" data-testid="hype-drop-zone">
+        <button onClick={dismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors text-lg leading-none" aria-label="Dismiss">×</button>
+        <Brain className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 pr-4">
+          <p className="text-sm font-semibold text-foreground mb-1">You're in the habit-building zone.</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Science says 66 days builds automaticity — and you're on day {bestStreak}. Your brain is rewiring itself. Stay consistent.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function RecoveryBanner({ missedSystems }: { missedSystems: System[] }) {
@@ -560,10 +662,34 @@ export default function Dashboard() {
     <div className="p-5 md:p-6 max-w-5xl mx-auto space-y-5">
       <GreetingBanner
         name={user?.name || "there"}
+        identityStatement={user?.identityStatement}
         completionPct={completionPct}
         todayDone={todayDone}
         todayTotal={todayTotal}
       />
+
+      {/* Hype Drop Warning */}
+      {activeSystems.length > 0 && (() => {
+        const bestStreak = Math.max(0, ...Object.values(analytics.streaks));
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayKey = yesterday.toISOString().split("T")[0];
+        const hadStreakBreak = activeSystems.some(s => {
+          const yCheckin = allCheckins.find(c => c.systemId === s.id && c.dateKey === yesterdayKey);
+          return yCheckin?.status === "skipped";
+        });
+        const topSystem = activeSystems[0];
+        const dismissedKey = `hype-drop-dismissed-${Math.floor(bestStreak / 7)}`;
+        return (
+          <HypeDropWarning
+            bestStreak={bestStreak}
+            hadStreakBreak={hadStreakBreak}
+            fallbackPlan={topSystem?.fallbackPlan}
+            minimumAction={topSystem?.minimumAction}
+            dismissedKey={dismissedKey}
+          />
+        );
+      })()}
 
       {/* Recovery banner */}
       <RecoveryBanner missedSystems={missedYesterday} />

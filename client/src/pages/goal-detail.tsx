@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   ArrowLeft, Target, Zap, Calendar, Pencil, Trash2, Check,
   Archive, Plus, Play, Pause, MoreVertical, Clock, Repeat,
+  Heart, AlertTriangle, CheckCircle2, TrendingUp,
 } from "lucide-react";
 import { format, isPast, isWithinInterval, addDays, startOfDay } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -51,6 +52,75 @@ const editSchema = z.object({
   status: z.string().default("active"),
   deadline: z.string().optional(),
 });
+
+function GoalHealthCheck({ goal, systemsCount }: { goal: Goal; systemsCount: number }) {
+  const checks = [
+    {
+      label: "Measurable outcome defined",
+      met: !!(goal as any).measurableOutcome,
+      tip: "Add a specific, measurable target so you know exactly when you've won.",
+    },
+    {
+      label: "Deadline set",
+      met: !!goal.deadline,
+      tip: "Set a target date to create urgency and focus.",
+    },
+    {
+      label: "Monthly milestones planned",
+      met: !!(goal as any).milestones?.length,
+      tip: "Break your goal into monthly checkpoints to track progress.",
+    },
+    {
+      label: "At least one active system",
+      met: systemsCount > 0,
+      tip: "Build a daily system tied to this goal to make progress every day.",
+    },
+  ];
+
+  const score = Math.round((checks.filter(c => c.met).length / checks.length) * 100);
+
+  const { color, label, bg } = score >= 75
+    ? { color: "text-chart-3", label: "Healthy", bg: "bg-chart-3/10 border-chart-3/20" }
+    : score >= 50
+    ? { color: "text-chart-4", label: "Needs Work", bg: "bg-chart-4/10 border-chart-4/20" }
+    : { color: "text-destructive", label: "At Risk", bg: "bg-destructive/10 border-destructive/20" };
+
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm">Goal Health Check</h3>
+          </div>
+          <div className={`text-xs font-bold px-2.5 py-1 rounded-full border ${bg} ${color}`}>
+            {score}% · {label}
+          </div>
+        </div>
+        <div className="w-full h-2 rounded-full bg-muted mb-4 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${score >= 75 ? "bg-chart-3" : score >= 50 ? "bg-chart-4" : "bg-destructive"}`}
+            style={{ width: `${score}%` }}
+          />
+        </div>
+        <div className="space-y-2.5">
+          {checks.map((check, i) => (
+            <div key={i} className="flex items-start gap-2.5">
+              {check.met
+                ? <CheckCircle2 className="w-4 h-4 text-chart-3 flex-shrink-0 mt-0.5" />
+                : <AlertTriangle className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
+              }
+              <div className="flex-1">
+                <p className={`text-xs font-medium ${check.met ? "text-foreground" : "text-muted-foreground"}`}>{check.label}</p>
+                {!check.met && <p className="text-xs text-muted-foreground/80 mt-0.5">{check.tip}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function GoalEditForm({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   const qc = useQueryClient();
@@ -455,6 +525,9 @@ export default function GoalDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Goal Health Check */}
+      <GoalHealthCheck goal={goal} systemsCount={systems.length} />
 
       {/* Systems section */}
       <div>
