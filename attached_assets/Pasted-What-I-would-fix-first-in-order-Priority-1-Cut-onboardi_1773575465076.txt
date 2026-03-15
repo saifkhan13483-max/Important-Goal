@@ -1,0 +1,109 @@
+What I would fix first, in order
+Priority 1: Cut onboarding radically
+You should have two modes:
+
+Mode A: Quick Start
+User creates a working system in under 60 seconds:
+
+Who do you want to become?
+What tiny action will you do?
+After what trigger?
+Then:
+
+activate system
+dashboard appears
+first win happens immediately
+Mode B: Full Build
+Advanced users can add:
+
+reward
+fallback
+success outcome
+deeper reflection after activation
+This one change alone could massively improve usefulness.
+
+Priority 2: Build a retention engine
+Before anything fancy, implement at least one return system:
+
+email reminders
+browser push
+scheduled check-in prompt
+missed-day comeback message
+Even simple reminders tied to the chosen trigger would help.
+
+Example:
+
+“After brushing tonight: do your 2-minute stretch.”
+“Your system only needs the minimum version today.”
+“Missed yesterday? Restart tiny.”
+Priority 3: Validate trigger quality
+Do not allow vague triggers.
+
+If user types:
+
+“morning” show:
+Make it more specific. Try “After I make coffee” or “At 7:00 AM after brushing.”
+
+If user types:
+
+“when I feel motivated” show:
+A system should work without motivation. Choose a reliable moment that already happens.
+
+This is one of the most powerful improvements you can make.
+
+Priority 4: Reinforce identity in the daily loop
+Every daily action should connect to identity.
+
+Examples:
+
+“You showed up as a writer today.”
+“This is a vote for becoming consistent.”
+“You kept your athlete system alive.”
+“Even the minimum version counts.”
+The user should not just feel:
+
+“I checked a box”
+They should feel:
+
+“I became the kind of person I chose.”
+Priority 5: Redesign streak logic
+Instead of only raw streaks, consider:
+
+consistency score
+comeback streak
+resilience score
+weekly identity votes
+5 of 7 days success
+grace day / protected day
+Because the current streak reset may punish exactly the people you are trying to support.
+
+Priority 6: Surface templates by default
+Templates should probably be the default for many users.
+
+Why? Because your current target user is:
+
+inconsistent
+unclear
+overwhelmed
+That user often does better with:
+
+“start with a proven system” than
+“design your perfect system from scratch”
+Template examples:
+
+Daily Reader
+Beginner Workout
+Deep Work Starter
+Calm Evening Reset
+Job Search System
+Study Sprint System
+Priority 7: Remove fake proof and replace with honest trust
+Replace:
+
+“10,000+ users” with:
+honest product explanation
+founder note
+clear screenshot
+“built around behavioral science”
+maybe one real beta quote
+privacy and trust links

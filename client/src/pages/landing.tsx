@@ -627,26 +627,26 @@ export default function Landing() {
             </a>
           </div>
           <p className="text-xs text-muted-foreground">
-            Free forever · No credit card needed · Join 10,000+ people building better daily habits
+            Free forever · No credit card needed · Built on behavioral science, not motivation
           </p>
         </div>
 
         <ProductPreview />
       </section>
 
-      {/* ── Social proof strip ── */}
+      {/* ── Why this exists strip ── */}
       <section className="py-8 sm:py-10 px-4 border-t border-border bg-muted/20">
         <div className="max-w-4xl mx-auto">
-          <p className="text-center text-xs text-muted-foreground mb-5 sm:mb-6 uppercase tracking-widest font-medium">Trusted by habit-builders around the world</p>
+          <p className="text-center text-xs text-muted-foreground mb-5 sm:mb-6 uppercase tracking-widest font-medium">Built on real behavioral science</p>
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
             {[
-              { value: "12,000+", label: "Active users" },
-              { value: "98,000+", label: "Habits tracked" },
-              { value: "4.9★", label: "Average rating" },
-              { value: "47 days", label: "Avg streak" },
+              { value: "Identity", label: "Not just goals" },
+              { value: "Triggers", label: "Anchored to real life" },
+              { value: "Fallbacks", label: "Designed to survive bad days" },
+              { value: "Recovery", label: "Miss a day, not a week" },
             ].map(s => (
               <div key={s.label} className="text-center">
-                <p className="text-xl sm:text-2xl font-bold gradient-text">{s.value}</p>
+                <p className="text-base sm:text-lg font-bold gradient-text">{s.value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
               </div>
             ))}
@@ -954,36 +954,48 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
+      {/* ── Honest trust section ── */}
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-8 md:mb-12">
-            <Badge variant="secondary" className="mb-3 text-xs">What people are saying</Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Real results from real people</h2>
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8 md:mb-10">
+            <Badge variant="secondary" className="mb-3 text-xs">Why we built this</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Built honestly, from scratch</h2>
           </div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
-            {testimonials.map((t) => (
-              <Card key={t.name} className="hover-elevate border-l-4 border-l-primary border-border/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-1 mb-4">
-                    {[...Array(t.rating)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-chart-4 text-chart-4" />
-                    ))}
+          <div className="grid md:grid-cols-2 gap-5">
+            <Card className="border-primary/20 bg-primary/4">
+              <CardContent className="p-6">
+                <Quote className="w-5 h-5 text-primary/40 mb-3" />
+                <p className="text-sm text-foreground leading-relaxed mb-4">
+                  "Most apps let you track habits. We wanted to build something that helps you design why a habit will actually stick — the trigger, the minimum action, the fallback. That's the whole idea."
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-white" />
                   </div>
-                  <Quote className="w-5 h-5 text-primary/30 mb-2" />
-                  <p className="text-sm text-foreground leading-relaxed mb-5">"{t.quote}"</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-white">{t.avatar}</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.role}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm font-semibold">The SystemForge Team</p>
+                    <p className="text-xs text-muted-foreground">Independent product, early stage</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              </CardContent>
+            </Card>
+            <div className="space-y-4">
+              {[
+                { icon: Shield, title: "No fake social proof", body: "We're early. We'd rather be honest about that than show inflated numbers." },
+                { icon: Brain, title: "Grounded in research", body: "The builder is based on BJ Fogg's Tiny Habits, identity theory, and implementation intentions." },
+                { icon: Heart, title: "Privacy-first", body: "Your habits and journals are private to you. We don't sell data or show ads." },
+              ].map(item => (
+                <div key={item.title} className="flex gap-3 p-4 rounded-xl border bg-background/60">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <item.icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold mb-0.5">{item.title}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{item.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

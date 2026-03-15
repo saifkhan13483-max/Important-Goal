@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STEPS = [
+const STEPS_FULL = [
   {
     id: "identity",
     title: "Who do you want to become?",
@@ -77,6 +77,33 @@ const STEPS = [
     icon: Eye,
     desc: "Look over everything you've built. Does it feel realistic? That's the goal.",
     why: "",
+  },
+];
+
+const STEPS_QUICK = [
+  {
+    id: "identity",
+    title: "Who do you want to become?",
+    shortTitle: "Identity",
+    icon: Brain,
+    desc: "Name your system and the person you're becoming.",
+    why: "Identity-based habits stick. 'I am someone who exercises' outlasts 'I want to get fit.'",
+  },
+  {
+    id: "trigger",
+    title: "After what moment will you do this?",
+    shortTitle: "Trigger",
+    icon: Zap,
+    desc: "Anchor your habit to something that already happens every day.",
+    why: "The best triggers are existing habits — they create automatic cues with zero friction.",
+  },
+  {
+    id: "action",
+    title: "What's the tiniest action that counts?",
+    shortTitle: "Action",
+    icon: Check,
+    desc: "Pick something so small you'd do it sick, tired, or on your worst day.",
+    why: "Embarrassingly small actions are nearly impossible to skip. You can always do more — but never skip starting.",
   },
 ];
 
@@ -171,6 +198,31 @@ function ExamplesPanel({ examples: exs, onSelect }: { examples: string[]; onSele
   );
 }
 
+function TriggerWarning({ value }: { value: string }) {
+  const lower = value.toLowerCase().trim();
+  if (!lower) return null;
+
+  const vaguePatterns = [
+    { test: /\bmorning\b(?!\s+coffee|\s+run|\s+shower|\s+commute|\s+walk|\s+routine|\s+workout)/i, message: 'Too vague. Try "After I make my morning coffee" or "At 7:00 AM after brushing."' },
+    { test: /^(at night|tonight|evening|later|soon|someday|sometime)$/i, message: 'Too vague. Try "After dinner, before I sit on the couch" or "At 9 PM after washing up."' },
+    { test: /when\s+i\s+(feel|get|am)\s+(motivated|inspired|in the mood|ready|free)/i, message: 'A good system works without motivation. Choose a moment that already happens — like "after coffee" or "before lunch."' },
+    { test: /whenever|anytime|as soon as i can|if i remember/i, message: 'Flexible triggers rarely fire. Pick a specific, reliable moment that happens every day.' },
+    { test: /^(daily|every day|each day)$/i, message: 'More specific helps. Try "After I brush my teeth" or "At 8 AM after breakfast."' },
+  ];
+
+  for (const p of vaguePatterns) {
+    if (p.test.test(lower)) {
+      return (
+        <div className="flex gap-2.5 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20 mt-2">
+          <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">{p.message}</p>
+        </div>
+      );
+    }
+  }
+  return null;
+}
+
 export default function SystemBuilderPage() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
@@ -181,6 +233,9 @@ export default function SystemBuilderPage() {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [quickMode, setQuickMode] = useState(!isEdit);
+  const STEPS = quickMode ? STEPS_QUICK : STEPS_FULL;
+
   const [form, setForm] = useState<FormData>({
     title: "",
     goalId: "",
@@ -285,24 +340,26 @@ export default function SystemBuilderPage() {
 
   const update = (field: keyof FormData, val: string) => setForm(prev => ({ ...prev, [field]: val }));
 
+  const currentStepId = STEPS[step]?.id;
+
   const validationError = (): string | null => {
-    if (step === 0 && form.title.trim().length < 2)
+    if (currentStepId === "identity" && form.title.trim().length < 2)
       return "Give your system a short name — at least 2 characters. Example: 'Morning Movement'.";
-    if (step === 0 && form.identityStatement.trim().length > 0
+    if (currentStepId === "identity" && form.identityStatement.trim().length > 0
       && !form.identityStatement.toLowerCase().includes("i am")
       && !form.identityStatement.toLowerCase().includes("i'm"))
       return 'Try framing this starting with "I am…" — it makes it feel more personal and powerful.';
-    if (step === 2 && form.triggerStatement.trim().length > 0
+    if (currentStepId === "trigger" && form.triggerStatement.trim().length > 0
       && form.triggerStatement.trim().split(" ").length < 3)
       return "Be more specific — describe exactly when and where this habit will happen.";
-    if (step === 3 && form.minimumAction.trim().length < 5)
+    if (currentStepId === "action" && form.minimumAction.trim().length < 5)
       return "Describe your minimum action in a little more detail (at least 5 characters).";
     return null;
   };
 
   const canProceed = () => {
-    if (step === 0) return form.title.trim().length >= 2;
-    if (step === 3) return form.minimumAction.trim().length >= 5;
+    if (currentStepId === "identity") return form.title.trim().length >= 2;
+    if (currentStepId === "action") return form.minimumAction.trim().length >= 5;
     return true;
   };
 
@@ -338,6 +395,39 @@ export default function SystemBuilderPage() {
         </div>
         <Badge variant="secondary" className="text-xs flex-shrink-0">{pct}% done</Badge>
       </div>
+
+      {/* Quick Start / Full Build mode toggle */}
+      {!isEdit && (
+        <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/50 border border-border/50 self-start">
+          <button
+            onClick={() => { setQuickMode(true); setStep(0); }}
+            data-testid="button-mode-quick"
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              quickMode
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Zap className="w-3.5 h-3.5" />
+            Quick Start
+            <span className="text-[10px] font-normal opacity-70">~60s</span>
+          </button>
+          <button
+            onClick={() => { setQuickMode(false); setStep(0); }}
+            data-testid="button-mode-full"
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              !quickMode
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <LayoutTemplate className="w-3.5 h-3.5" />
+            Full Build
+          </button>
+        </div>
+      )}
 
       {/* Phase 5 — Screen reader announcement for wizard step changes */}
       <div
@@ -380,8 +470,8 @@ export default function SystemBuilderPage() {
         </div>
       </div>
 
-      {/* Template picker on Step 0 */}
-      {step === 0 && !isEdit && templates.length > 0 && (
+      {/* Template picker on identity step */}
+      {currentStepId === "identity" && !isEdit && templates.length > 0 && (
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
             <p className="text-sm font-semibold mb-1 flex items-center gap-2">
@@ -435,7 +525,7 @@ export default function SystemBuilderPage() {
           )}
 
           {/* ── Step 0: Identity ── */}
-          {step === 0 && (
+          {currentStepId === "identity" && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="field-system-title" className="font-semibold">
@@ -471,7 +561,7 @@ export default function SystemBuilderPage() {
           )}
 
           {/* ── Step 1: Outcome ── */}
-          {step === 1 && (
+          {currentStepId === "outcome" && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="font-semibold">What does success look like?</Label>
@@ -513,7 +603,7 @@ export default function SystemBuilderPage() {
           )}
 
           {/* ── Step 2: Trigger ── */}
-          {step === 2 && (
+          {currentStepId === "trigger" && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="font-semibold">What type of cue will start this habit?</Label>
@@ -542,11 +632,12 @@ export default function SystemBuilderPage() {
                 />
               </div>
               <ExamplesPanel examples={examples.trigger} onSelect={v => update("triggerStatement", v)} />
+              <TriggerWarning value={form.triggerStatement} />
             </div>
           )}
 
           {/* ── Step 3: Action ── */}
-          {step === 3 && (
+          {currentStepId === "action" && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="font-semibold">
@@ -606,7 +697,7 @@ export default function SystemBuilderPage() {
           )}
 
           {/* ── Step 4: Reward ── */}
-          {step === 4 && (
+          {currentStepId === "reward" && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="font-semibold">How will you celebrate right after completing this?</Label>
@@ -624,7 +715,7 @@ export default function SystemBuilderPage() {
           )}
 
           {/* ── Step 5: Fallback Plan ── */}
-          {step === 5 && (
+          {currentStepId === "fallback" && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="font-semibold">On your worst day, what's the absolute minimum you'll still do?</Label>
@@ -650,7 +741,7 @@ export default function SystemBuilderPage() {
           )}
 
           {/* ── Step 6: Review ── */}
-          {step === 6 && (
+          {currentStepId === "review" && (
             <div className="space-y-3">
               <div className="p-4 rounded-xl bg-chart-3/8 border border-chart-3/20 mb-2">
                 <p className="text-sm font-semibold text-chart-3 mb-0.5">🎉 Your system is ready!</p>
@@ -740,12 +831,26 @@ export default function SystemBuilderPage() {
             ) : (
               <>
                 <Check className="w-4 h-4 mr-2" />
-                {isEdit ? "Save Changes" : "Save System"}
+                {isEdit ? "Save Changes" : quickMode ? "Activate System" : "Save System"}
               </>
             )}
           </Button>
         )}
       </div>
+
+      {/* Quick mode upsell to Full Build */}
+      {quickMode && step === STEPS.length - 1 && (
+        <p className="text-xs text-center text-muted-foreground -mt-1 pb-2">
+          Want to add a reward, fallback plan, or link a goal?{" "}
+          <button
+            onClick={() => { setQuickMode(false); setStep(0); }}
+            className="text-primary underline underline-offset-2 hover:no-underline"
+            data-testid="button-switch-to-full"
+          >
+            Switch to Full Build
+          </button>
+        </p>
+      )}
         </div>
 
         {/* ── Right: Coach tips sidebar ── */}

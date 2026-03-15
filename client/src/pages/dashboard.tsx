@@ -526,12 +526,15 @@ function QuickCheckinRow({
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
+      const identityLine = system.identityStatement
+        ? `You're becoming a person who ${system.identityStatement}.`
+        : "You showed up. That vote counts.";
       const msgs: Record<string, string> = {
-        done:    "Keep it up! 🔥",
-        partial: "Partial progress counts.",
-        missed:  "Tomorrow is another chance.",
+        done:    identityLine,
+        partial: "Partial still counts — you showed up.",
+        missed:  "Tomorrow is another chance. Use the minimum version.",
       };
-      toast({ title: msgs[status] ?? "Saved!" });
+      toast({ title: status === "done" ? "Done! 🔥" : status === "partial" ? "Partial saved" : "Noted", description: msgs[status] ?? "Saved!" });
     },
     onError: () => toast({ title: "Couldn't save", variant: "destructive" }),
   });
@@ -558,7 +561,14 @@ function QuickCheckinRow({
           ? <Check className="w-3.5 h-3.5 text-chart-3" />
           : <Zap className="w-3.5 h-3.5 text-primary" />}
       </div>
-      <span className="text-sm font-medium flex-1 truncate">{system.title}</span>
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium block truncate">{system.title}</span>
+        {system.identityStatement && current !== "done" && (
+          <span className="text-[11px] text-muted-foreground/70 truncate block leading-tight">
+            I am a person who {system.identityStatement}
+          </span>
+        )}
+      </div>
       {system.minimumAction && (
         <span className="text-xs text-muted-foreground truncate max-w-24 hidden sm:block">{system.minimumAction}</span>
       )}
@@ -766,12 +776,38 @@ export default function Dashboard() {
         />
         <MetricCard
           icon={Flame}
-          label="Best Streak"
+          label="Streak"
           value={topStreaks[0]?.[1] ? `${topStreaks[0][1]}d` : "—"}
           sub={topStreaks[0]?.[1] ? "consecutive days" : "Check in to start"}
           color="bg-chart-4/10 text-chart-4"
         />
       </div>
+
+      {/* Weekly consistency score */}
+      {activeSystems.length > 0 && (() => {
+        const last7 = analytics.last30Days.slice(-7);
+        const weekDone  = last7.filter(d => d.done > 0).length;
+        const weekLabel = weekDone >= 6 ? "Excellent week" : weekDone >= 4 ? "Solid week" : weekDone >= 2 ? "Getting started" : "Let's build a streak";
+        const weekColor = weekDone >= 6 ? "bg-chart-3/10 border-chart-3/20 text-chart-3" : weekDone >= 4 ? "bg-primary/8 border-primary/20 text-primary" : "bg-muted/50 border-border/50 text-muted-foreground";
+        return (
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${weekColor}`} data-testid="weekly-consistency">
+            <TrendingUp className="w-4 h-4 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide mb-1">{weekLabel} · {weekDone} of 7 days active</p>
+              <div className="flex gap-1">
+                {last7.map((d, i) => (
+                  <div
+                    key={i}
+                    title={d.done > 0 ? `${d.date}: ${d.done} done` : `${d.date}: nothing`}
+                    className={`h-2 flex-1 rounded-full transition-all ${d.done > 0 ? "bg-current opacity-80" : "bg-current opacity-15"}`}
+                  />
+                ))}
+              </div>
+            </div>
+            <span className="text-lg font-extrabold flex-shrink-0">{Math.round((weekDone / 7) * 100)}%</span>
+          </div>
+        );
+      })()}
 
       {/* Next Milestone + One Insight row */}
       {!isNewUser && (
