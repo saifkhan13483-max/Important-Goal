@@ -71,21 +71,21 @@ const allFeatures = [
 const steps = [
   {
     step: "1",
-    title: "Set a Goal",
-    desc: "Choose what you want to improve.",
-    icon: Flag,
+    title: "Choose who you're becoming",
+    desc: "Pick an identity to build through repetition — consistent, focused, fit, calm. Not a goal, a persona.",
+    icon: UserCircle2,
   },
   {
     step: "2",
-    title: "Build a System",
-    desc: "Turn your goal into simple daily actions.",
-    icon: Cog,
+    title: "Set your worst-day minimum",
+    desc: "Define the smallest version that still counts. This is what keeps the system alive when full effort isn't possible.",
+    icon: Zap,
   },
   {
     step: "3",
-    title: "Check In & Improve",
-    desc: "Track your progress and grow every day.",
-    icon: TrendingUp,
+    title: "Keep going without restarting",
+    desc: "On good days, do more. On hard days, do the minimum. If you miss, the recovery flow guides you back without guilt.",
+    icon: RefreshCw,
   },
 ];
 
@@ -580,19 +580,24 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto text-center">
           <Badge variant="secondary" className="mb-4 sm:mb-6 px-3 py-1.5 text-xs font-medium gap-1.5">
             <Sparkles className="w-3 h-3" />
-            The habit system that actually works
+            For people who keep starting over
           </Badge>
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 leading-[1.1]">
-            Turn goals into daily systems{" "}
-            <span className="gradient-text block sm:inline">you can actually follow.</span>
+            Stop starting over.{" "}
+            <span className="gradient-text block sm:inline">Build something that survives hard days.</span>
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-7 sm:mb-10 leading-relaxed">
-            SystemForge helps you create a goal, break it into repeatable daily actions, track your progress, and stay consistent — no complexity, no overwhelm.
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-5 sm:mb-7 leading-relaxed">
+            SystemForge helps inconsistent people turn one goal into a daily system with a minimum action, a fallback plan, and a recovery path — so progress continues even when motivation doesn't.
           </p>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm text-muted-foreground mb-7 sm:mb-10">
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3" /> No perfect routines</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3" /> No guilt spirals</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3" /> No "start again Monday"</span>
+          </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-5 sm:mb-6">
             <Link href="/signup">
               <Button size="lg" className="btn-scale gap-2 h-11 sm:h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full sm:w-auto" data-testid="button-hero-cta">
-                Start Free
+                Build My System in 60 Seconds
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -610,20 +615,51 @@ export default function Landing() {
         <ProductPreview />
       </section>
 
-      {/* ── Why this exists strip ── */}
-      <section className="py-8 sm:py-10 px-4 border-t border-border bg-muted/20">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-center text-xs text-muted-foreground mb-5 sm:mb-6 uppercase tracking-widest font-medium">Built on real behavioral science</p>
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
+      {/* ── What is a system strip ── */}
+      <section className="py-10 sm:py-14 px-4 border-t border-border bg-muted/20">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-xs text-muted-foreground mb-4 uppercase tracking-widest font-medium">What is a system?</p>
+          <p className="text-base sm:text-lg text-foreground font-medium mb-6 max-w-2xl mx-auto leading-relaxed">
+            A goal says what you want. A habit says what to repeat. A system makes it easier to keep going.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {[
-              { value: "Identity", label: "Not just goals" },
-              { value: "Triggers", label: "Anchored to real life" },
-              { value: "Fallbacks", label: "Designed to survive bad days" },
-              { value: "Recovery", label: "Miss a day, not a week" },
-            ].map(s => (
-              <div key={s.label} className="text-center">
-                <p className="text-base sm:text-lg font-bold gradient-text">{s.value}</p>
-                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+              { icon: UserCircle2, label: "An identity", sub: "Who you're becoming", color: "text-primary bg-primary/10" },
+              { icon: Zap, label: "A minimum action", sub: "What still counts on your worst day", color: "text-chart-4 bg-chart-4/10" },
+              { icon: RefreshCw, label: "A recovery plan", sub: "How the system adapts when life gets messy", color: "text-chart-3 bg-chart-3/10" },
+            ].map(item => (
+              <div key={item.label} className="flex flex-col items-center gap-2 p-5 rounded-xl border bg-background/60">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <p className="font-semibold text-sm">{item.label}</p>
+                <p className="text-xs text-muted-foreground text-center">{item.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Why other tools fail ── */}
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
+        <div className="max-w-3xl mx-auto text-center">
+          <Badge variant="secondary" className="mb-3 text-xs">The problem with most habit apps</Badge>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Most habit tools help you track perfect days.</h2>
+          <p className="text-muted-foreground text-base md:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+            But real progress depends on what happens on imperfect ones. When motivation drops, most people don't need more reminders. They need a smaller action, a better fallback, and a system that doesn't collapse after one miss.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-4 text-left">
+            {[
+              { icon: Zap, title: "A smaller action", body: "Your minimum action is what keeps the system alive when full effort isn't possible.", color: "text-primary bg-primary/10" },
+              { icon: Shield, title: "A better fallback", body: "Every system includes a recovery plan for when life gets messy — not as failure insurance, but as built-in intelligence.", color: "text-chart-4 bg-chart-4/10" },
+              { icon: RefreshCw, title: "A recovery path", body: "Missing a day doesn't break the system. The recovery flow guides you back without shame or losing momentum.", color: "text-chart-3 bg-chart-3/10" },
+            ].map(item => (
+              <div key={item.title} className="p-5 rounded-xl border bg-background/60 space-y-2">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${item.color}`}>
+                  <item.icon className="w-4 h-4" />
+                </div>
+                <p className="font-semibold text-sm">{item.title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{item.body}</p>
               </div>
             ))}
           </div>
@@ -631,7 +667,7 @@ export default function Landing() {
       </section>
 
       {/* ── Section 3: Why Systems Work Better Than Goals ── */}
-      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
             <Badge variant="secondary" className="mb-3 text-xs">The core idea</Badge>
@@ -724,7 +760,7 @@ export default function Landing() {
           <div className="text-center mb-10 md:mb-16">
             <Badge variant="secondary" className="mb-3 text-xs">Simple as 1-2-3</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">How SystemForge works</h2>
-            <p className="text-muted-foreground text-base md:text-lg">It only takes 2 minutes to set up. No complicated setup.</p>
+            <p className="text-muted-foreground text-base md:text-lg">Set up in 60 seconds. Designed to keep working when motivation disappears.</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
             {steps.map((s, i) => (
@@ -1071,10 +1107,10 @@ export default function Landing() {
             <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 -translate-y-1/2 pointer-events-none" />
             <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 sm:mb-4 opacity-80" />
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 leading-tight">
-              Your goals deserve a system.
+              You do not need a better mood.
             </h2>
             <p className="text-white/80 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed">
-              It's free, it's simple, and it takes less than 2 minutes to begin.
+              You need a system that still works in a bad one. Build yours in 60 seconds — free, no credit card needed.
             </p>
             <Link href="/signup">
               <Button
@@ -1082,11 +1118,11 @@ export default function Landing() {
                 className="btn-scale bg-white text-primary hover:bg-white/90 gap-2 h-12 px-8 text-base font-semibold shadow-lg rounded-full"
                 data-testid="button-final-cta"
               >
-                Start Free
+                Build My First System
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
-            <p className="text-white/60 text-xs mt-4">No credit card required · Takes 2 minutes</p>
+            <p className="text-white/60 text-xs mt-4">No credit card required · Takes 60 seconds</p>
           </div>
         </div>
       </section>
@@ -1103,7 +1139,7 @@ export default function Landing() {
                 <span className="font-bold text-sm">SystemForge</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Turn your goals into daily systems you can actually follow.
+                Built for people who are tired of starting over.
               </p>
             </div>
             <div>
@@ -1133,7 +1169,7 @@ export default function Landing() {
           </div>
           <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">© 2026 SystemForge. All rights reserved.</p>
-            <p className="text-xs text-muted-foreground">Built for people who want to actually change.</p>
+            <p className="text-xs text-muted-foreground">Not another habit tracker. A system that survives real life.</p>
           </div>
         </div>
       </footer>

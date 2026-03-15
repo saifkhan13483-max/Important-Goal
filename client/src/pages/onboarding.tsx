@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Pencil } from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Zap, RefreshCw, CheckSquare, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/auth.store";
 
@@ -59,30 +59,36 @@ function Confetti({ active }: { active: boolean }) {
   );
 }
 
-const focusAreas = [
-  { value: "fitness",      label: "Fitness & Health",     icon: "💪" },
-  { value: "study",        label: "Study & Learning",     icon: "📚" },
-  { value: "career",       label: "Career Growth",        icon: "🚀" },
-  { value: "business",     label: "Business",             icon: "💼" },
-  { value: "relationship", label: "Relationships",        icon: "🤝" },
-  { value: "mindset",      label: "Mindset & Well-being", icon: "🧠" },
-  { value: "finance",      label: "Finance",              icon: "📈" },
-  { value: "creativity",   label: "Creativity",           icon: "🎨" },
-  { value: "custom",       label: "Something else…",      icon: "✨" },
+const IDENTITY_PRESETS = [
+  { value: "consistent", label: "Consistent", emoji: "🔁", desc: "Shows up every day, no matter what" },
+  { value: "focused",    label: "Focused",    emoji: "🎯", desc: "Directs energy at what matters most" },
+  { value: "calm",       label: "Calm",       emoji: "🌿", desc: "Stays grounded in chaos" },
+  { value: "fit",        label: "Fit",        emoji: "💪", desc: "Takes care of their body regularly" },
+  { value: "disciplined",label: "Disciplined",emoji: "⚡", desc: "Follows through even when they don't feel like it" },
+  { value: "creative",   label: "Creative",   emoji: "✨", desc: "Makes time for creative work consistently" },
+];
+
+const MINIMUM_ACTION_EXAMPLES = [
+  "Read 1 page",
+  "Do 5 push-ups",
+  "Write 1 sentence",
+  "Walk for 2 minutes",
+  "Open the app and study for 3 minutes",
+  "Drink one glass of water",
 ];
 
 interface OnboardingData {
   name: string;
-  focusArea: string;
-  customFocusArea: string;
-  identityStatement: string;
+  identityPreset: string;
+  customIdentity: string;
+  minimumAction: string;
 }
 
 const STEPS = [
-  { id: "name",     title: "Welcome! What should we call you?", skippable: false },
-  { id: "identity", title: "Who are you becoming?",             skippable: true  },
-  { id: "focus",    title: "What's your primary focus?",        skippable: false },
-  { id: "done",     title: "You're all set! 🎉",               skippable: false },
+  { id: "name",          title: "What should we call you?",       skippable: false },
+  { id: "identity",      title: "Who are you becoming?",          skippable: false },
+  { id: "minimumAction", title: "What still counts on your worst day?", skippable: false },
+  { id: "done",          title: "Your system is live.",           skippable: false },
 ];
 
 export default function Onboarding() {
@@ -93,18 +99,18 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [data, setData] = useState<OnboardingData>({
-    name:              user?.name || "",
-    focusArea:         "",
-    customFocusArea:   "",
-    identityStatement: "",
+    name:            user?.name || "",
+    identityPreset:  "",
+    customIdentity:  "",
+    minimumAction:   "",
   });
 
   const current = STEPS[step];
   const total   = STEPS.length;
 
-  const effectiveFocusArea = data.focusArea === "custom"
-    ? (data.customFocusArea.trim() || "")
-    : data.focusArea;
+  const selectedPreset = IDENTITY_PRESETS.find(p => p.value === data.identityPreset);
+  const identityLabel  = selectedPreset?.label ?? (data.customIdentity.trim() || "");
+  const identityDesc   = selectedPreset?.desc ?? (data.customIdentity.trim() ? `someone who ${data.customIdentity.trim()}` : "");
 
   useEffect(() => {
     if (current.id === "done") {
@@ -115,8 +121,9 @@ export default function Onboarding() {
   }, [current.id]);
 
   const canProceed = () => {
-    if (current.id === "name")  return data.name.trim().length >= 2;
-    if (current.id === "focus") return !!data.focusArea && (data.focusArea !== "custom" || data.customFocusArea.trim().length >= 2);
+    if (current.id === "name")          return data.name.trim().length >= 2;
+    if (current.id === "identity")      return !!data.identityPreset && (data.identityPreset !== "custom" || data.customIdentity.trim().length >= 2);
+    if (current.id === "minimumAction") return data.minimumAction.trim().length >= 3;
     return true;
   };
 
@@ -127,14 +134,14 @@ export default function Onboarding() {
     }
 
     try {
+      const minActionParam = encodeURIComponent(data.minimumAction.trim());
       await updateProfile({
         name:              data.name.trim() || user?.name,
-        focusArea:         effectiveFocusArea || data.focusArea,
-        identityStatement: data.identityStatement.trim() || null,
+        identityStatement: identityDesc || null,
         onboardingCompleted: true,
       } as any);
 
-      navigate("/systems/new");
+      navigate(`/systems/new?minimumAction=${minActionParam}&identity=${encodeURIComponent(identityDesc)}`);
     } catch {
       toast({
         title:       "Error",
@@ -144,11 +151,24 @@ export default function Onboarding() {
     }
   };
 
+  const handleGoDashboard = async () => {
+    try {
+      await updateProfile({
+        name:              data.name.trim() || user?.name,
+        identityStatement: identityDesc || null,
+        onboardingCompleted: true,
+      } as any);
+      navigate("/dashboard");
+    } catch {
+      navigate("/dashboard");
+    }
+  };
+
   const subtitleMap: Record<string, string> = {
-    name:     "This is how we'll greet you in the app.",
-    identity: "The foundation of every system you'll build.",
-    focus:    "Choose the area where you want to build systems first.",
-    done:     "Let's build your first system — it takes under 60 seconds.",
+    name:          "This is how we'll greet you in the app.",
+    identity:      "This is who you're building toward — one day at a time.",
+    minimumAction: "This is the action that keeps your system alive on hard days.",
+    done:          "Even this counts today.",
   };
 
   return (
@@ -203,95 +223,106 @@ export default function Onboarding() {
             )}
 
             {current.id === "identity" && (
-              <div className="space-y-5">
-                <div className="bg-primary/8 rounded-xl p-4 border border-primary/20">
-                  <p className="text-sm font-semibold text-primary mb-1">Why this matters</p>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  People who build habits around <strong className="text-foreground">who they are</strong> — not just what they want — stay consistent much longer. Pick one identity to build through repetition.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {IDENTITY_PRESETS.map(preset => (
+                    <button
+                      key={preset.value}
+                      onClick={() => setData(d => ({ ...d, identityPreset: preset.value, customIdentity: "" }))}
+                      data-testid={`button-identity-${preset.value}`}
+                      className={cn(
+                        "flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all",
+                        data.identityPreset === preset.value
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-muted/30 hover:border-primary/50"
+                      )}
+                    >
+                      <span className="text-lg">{preset.emoji}</span>
+                      <span className="text-sm font-semibold text-foreground">{preset.label}</span>
+                      <span className="text-[10px] text-muted-foreground leading-tight">{preset.desc}</span>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setData(d => ({ ...d, identityPreset: "custom" }))}
+                    data-testid="button-identity-custom"
+                    className={cn(
+                      "flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all col-span-2",
+                      data.identityPreset === "custom"
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-muted/30 hover:border-primary/50"
+                    )}
+                  >
+                    <span className="text-sm font-semibold text-foreground">✏️ Something else…</span>
+                  </button>
+                </div>
+                {data.identityPreset === "custom" && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
+                      <span className="text-sm font-medium text-muted-foreground flex-shrink-0">I want to become someone who</span>
+                      <input
+                        placeholder="exercises consistently…"
+                        value={data.customIdentity}
+                        onChange={e => setData(d => ({ ...d, customIdentity: e.target.value }))}
+                        data-testid="input-custom-identity"
+                        autoFocus
+                        className="flex-1 bg-transparent border-none outline-none text-sm font-medium placeholder:text-muted-foreground/50"
+                        onKeyDown={e => { if (e.key === "Enter" && canProceed()) handleNext(); }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {data.identityPreset && data.identityPreset !== "custom" && (
+                  <div className="bg-primary/8 border border-primary/20 rounded-xl p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Your identity</p>
+                    <p className="text-sm font-bold text-primary">"{selectedPreset?.desc}"</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {current.id === "minimumAction" && (
+              <div className="space-y-4">
+                <div className="bg-primary/8 border border-primary/20 rounded-xl p-4">
+                  <p className="text-sm font-semibold text-primary mb-1">Why this is the most important step</p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    People who build habits around <strong className="text-foreground">identity</strong> — not just outcomes — are far more consistent.
-                    "I am a runner" outlasts "I want to run more."
+                    Small is not cheating. This is what makes the system survivable. Your minimum action is the version you can still do on your worst day — when you're tired, busy, or low on motivation.
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ob-identity" className="text-base font-semibold">Complete this sentence:</Label>
-                  <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
-                    <span className="text-sm font-medium text-muted-foreground flex-shrink-0">I AM a person who</span>
-                    <input
-                      id="ob-identity"
-                      placeholder="shows up every day, no matter what."
-                      value={data.identityStatement}
-                      onChange={e => setData(d => ({ ...d, identityStatement: e.target.value }))}
-                      data-testid="input-onboarding-identity"
-                      autoFocus
-                      className="flex-1 bg-transparent border-none outline-none text-sm font-medium placeholder:text-muted-foreground/50"
-                      onKeyDown={e => { if (e.key === "Enter") handleNext(); }}
-                    />
-                  </div>
+                  <Label htmlFor="ob-minimum">Your minimum action</Label>
+                  <Input
+                    id="ob-minimum"
+                    placeholder="e.g. Read 1 page, Do 5 push-ups, Write 1 sentence…"
+                    value={data.minimumAction}
+                    onChange={e => setData(d => ({ ...d, minimumAction: e.target.value }))}
+                    data-testid="input-onboarding-minimum-action"
+                    autoFocus
+                    className="text-base"
+                    onKeyDown={e => { if (e.key === "Enter" && canProceed()) handleNext(); }}
+                  />
                 </div>
-                {data.identityStatement.trim() && (
-                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 border border-primary/20">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-1">Your Identity Statement</p>
-                    <p className="text-lg font-bold text-foreground leading-snug">
-                      "I AM a person who {data.identityStatement.trim()}."
-                    </p>
-                  </div>
-                )}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <p className="text-xs text-muted-foreground font-medium">Examples — click to use:</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {[
-                      "exercises every morning, even if just for 5 minutes",
-                      "reads every day and keeps learning",
-                      "shows up consistently and follows through",
-                    ].map(example => (
+                  <div className="flex flex-wrap gap-2">
+                    {MINIMUM_ACTION_EXAMPLES.map(ex => (
                       <button
-                        key={example}
-                        onClick={() => setData(d => ({ ...d, identityStatement: example }))}
-                        className="text-left text-xs p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                        key={ex}
+                        onClick={() => setData(d => ({ ...d, minimumAction: ex }))}
+                        className="text-xs px-2.5 py-1.5 rounded-full border bg-muted/50 hover:bg-muted hover:border-primary/40 transition-colors text-muted-foreground hover:text-foreground"
+                        data-testid={`button-example-${ex.slice(0, 10).replace(/\s/g, "-").toLowerCase()}`}
                       >
-                        "I AM a person who {example}."
+                        {ex}
                       </button>
                     ))}
                   </div>
                 </div>
-              </div>
-            )}
-
-            {current.id === "focus" && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {focusAreas.map(area => (
-                    <button
-                      key={area.value}
-                      onClick={() => setData(d => ({ ...d, focusArea: area.value }))}
-                      data-testid={`button-focus-${area.value}`}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-md border text-left transition-all",
-                        data.focusArea === area.value
-                          ? "border-primary bg-primary/10 text-foreground"
-                          : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50"
-                      )}
-                    >
-                      <span className="text-xl">{area.icon}</span>
-                      <span className="text-sm font-medium">{area.label}</span>
-                    </button>
-                  ))}
-                </div>
-                {data.focusArea === "custom" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="ob-custom-focus" className="flex items-center gap-1.5">
-                      <Pencil className="w-3.5 h-3.5" />
-                      Describe your focus area
-                    </Label>
-                    <Input
-                      id="ob-custom-focus"
-                      placeholder="e.g. Language learning, parenting, spirituality…"
-                      value={data.customFocusArea}
-                      onChange={e => setData(d => ({ ...d, customFocusArea: e.target.value }))}
-                      data-testid="input-custom-focus-area"
-                      autoFocus
-                      className="text-base"
-                      onKeyDown={e => { if (e.key === "Enter" && canProceed()) handleNext(); }}
-                    />
+                {data.minimumAction.trim() && (
+                  <div className="bg-chart-3/8 border border-chart-3/20 rounded-xl p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Even on your worst day, this counts:</p>
+                    <p className="text-sm font-bold text-chart-3">"{data.minimumAction.trim()}"</p>
                   </div>
                 )}
               </div>
@@ -304,31 +335,47 @@ export default function Onboarding() {
                 </div>
                 <div>
                   <p className="font-bold text-xl">
-                    Ready, {(data.name || user?.name || "there").split(" ")[0]}!
+                    {(data.name || user?.name || "there").split(" ")[0]}, your system is ready.
                   </p>
-                  {data.identityStatement && (
-                    <div className="mt-3 p-3 rounded-xl bg-primary/8 border border-primary/20">
-                      <p className="text-sm font-bold text-primary leading-snug">
-                        "I AM a person who {data.identityStatement}."
-                      </p>
+                  {data.minimumAction.trim() && (
+                    <div className="mt-3 p-3 rounded-xl bg-chart-3/8 border border-chart-3/20">
+                      <p className="text-xs text-muted-foreground mb-1">On hard days, this still counts:</p>
+                      <p className="text-sm font-bold text-chart-3 leading-snug">"{data.minimumAction.trim()}"</p>
+                    </div>
+                  )}
+                  {identityLabel && (
+                    <div className="mt-2 p-3 rounded-xl bg-primary/8 border border-primary/20">
+                      <p className="text-xs text-muted-foreground mb-1">Today you're showing up as</p>
+                      <p className="text-sm font-bold text-primary leading-snug">{identityLabel}</p>
                     </div>
                   )}
                   <p className="text-muted-foreground text-sm mt-3 leading-relaxed">
-                    Next: build your first system in under 60 seconds.
-                    Three questions — then you're live.
+                    Now build your first system in under 60 seconds — your minimum action will be pre-filled.
                   </p>
                 </div>
-                <div className="grid grid-cols-3 gap-3 text-center text-xs text-muted-foreground">
-                  {[
-                    { icon: "⚡", label: "Pick a trigger" },
-                    { icon: "✅", label: "Set tiny action" },
-                    { icon: "🔥", label: "Start building" },
-                  ].map(item => (
-                    <div key={item.label} className="p-3 rounded-xl bg-muted/50">
-                      <div className="text-lg mb-1">{item.icon}</div>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <Button
+                    className="w-full gap-2"
+                    onClick={handleNext}
+                    disabled={updatePending}
+                    data-testid="button-ob-build-system"
+                  >
+                    {updatePending ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</>
+                    ) : (
+                      <><Zap className="w-4 h-4" /> Build my first system</>
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full gap-2 text-muted-foreground"
+                    onClick={handleGoDashboard}
+                    disabled={updatePending}
+                    data-testid="button-ob-explore-dashboard"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Explore dashboard first
+                  </Button>
                 </div>
               </div>
             )}
@@ -336,56 +383,30 @@ export default function Onboarding() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-between mt-5">
-          {step > 0 ? (
-            <Button
-              variant="ghost"
-              onClick={() => setStep(s => s - 1)}
-              data-testid="button-ob-back"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-          ) : (
-            <div />
-          )}
-
-          <div className="flex items-center gap-3">
-            {current.skippable && current.id !== "done" && (
-              <button
-                onClick={() => setStep(s => s + 1)}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-                data-testid="button-ob-skip"
+        {current.id !== "done" && (
+          <div className="flex justify-between mt-5">
+            {step > 0 ? (
+              <Button
+                variant="ghost"
+                onClick={() => setStep(s => s - 1)}
+                data-testid="button-ob-back"
               >
-                Skip
-              </button>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            ) : (
+              <div />
             )}
             <Button
               onClick={handleNext}
-              disabled={!canProceed() || (current.id === "done" && updatePending)}
+              disabled={!canProceed()}
               data-testid="button-ob-next"
             >
-              {current.id === "done" ? (
-                updatePending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Saving…
-                  </>
-                ) : (
-                  <>
-                    Build my first system
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
-                )
-              ) : (
-                <>
-                  Continue
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
-              )}
+              Continue
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -399,6 +399,108 @@ function HypeDropWarning({
   return null;
 }
 
+/* ─── Day 2 / 3 / 7 Retention Banners ──────────────────────────── */
+function RetentionBanner({
+  allCheckins, activeSystems, systemsWithMinAction,
+}: {
+  allCheckins: Checkin[];
+  activeSystems: System[];
+  systemsWithMinAction: System[];
+}) {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem("sf_retention_dismissed_" + new Date().toISOString().split("T")[0]) === "true"; } catch { return false; }
+  });
+
+  if (dismissed || activeSystems.length === 0) return null;
+
+  const sortedDates = [...new Set(allCheckins.map(c => c.dateKey))].sort();
+  if (sortedDates.length === 0) return null;
+
+  const firstDate   = new Date(sortedDates[0] + "T00:00:00");
+  const today       = new Date(new Date().toISOString().split("T")[0] + "T00:00:00");
+  const daysSince   = Math.round((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+  const dismiss     = () => {
+    try { localStorage.setItem("sf_retention_dismissed_" + new Date().toISOString().split("T")[0], "true"); } catch {}
+    setDismissed(true);
+  };
+
+  const firstMinAction = systemsWithMinAction[0]?.minimumAction;
+
+  if (daysSince === 1) {
+    return (
+      <div className="relative flex items-start gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/20" data-testid="retention-banner-day2">
+        <button onClick={dismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors text-lg leading-none" aria-label="Dismiss">×</button>
+        <Sparkles className="w-4 h-4 text-chart-3 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 pr-4">
+          <p className="text-sm font-semibold text-foreground mb-1">Day 2 — this is how systems work.</p>
+          <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+            You didn't need motivation yesterday. You needed a low enough bar to keep going. That's the whole idea.
+          </p>
+          {firstMinAction && (
+            <p className="text-xs font-medium text-foreground">
+              Even this counts today: <span className="text-chart-3">"{firstMinAction}"</span>
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (daysSince === 2) {
+    return (
+      <div className="relative flex items-start gap-3 p-4 rounded-xl bg-chart-4/8 border border-chart-4/20" data-testid="retention-banner-day3">
+        <button onClick={dismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors text-lg leading-none" aria-label="Dismiss">×</button>
+        <AlertCircle className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 pr-4">
+          <p className="text-sm font-semibold text-foreground mb-1">Day 3 is where most people start negotiating.</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Don't go bigger. Go smaller. The system that survives day 3 is the one that actually sticks.
+          </p>
+          <Link href="/checkins">
+            <Button size="sm" variant="outline" className="mt-2 h-7 text-xs gap-1.5" data-testid="button-day3-checkin">
+              <CheckSquare className="w-3 h-3" />
+              Do today's minimum
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (daysSince === 6) {
+    const uniqueDaysChecked = new Set(allCheckins.filter(c => c.status !== "missed").map(c => c.dateKey)).size;
+    const survivalRate = sortedDates.length > 0
+      ? Math.round((uniqueDaysChecked / Math.min(7, sortedDates.length)) * 100)
+      : 0;
+
+    return (
+      <div className="relative flex items-start gap-3 p-4 rounded-xl bg-primary/8 border border-primary/20" data-testid="retention-banner-day7">
+        <button onClick={dismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors text-lg leading-none" aria-label="Dismiss">×</button>
+        <Trophy className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0 pr-4">
+          <p className="text-sm font-semibold text-foreground mb-1">One week. That's not nothing.</p>
+          <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+            Seven days ago you decided to build something different. Here's what that looked like:
+          </p>
+          <div className="flex gap-4 flex-wrap">
+            <div className="text-center">
+              <p className="text-lg font-extrabold text-primary">{uniqueDaysChecked}<span className="text-xs text-muted-foreground font-normal">/7</span></p>
+              <p className="text-[10px] text-muted-foreground">days active</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-extrabold text-chart-3">{survivalRate}%</p>
+              <p className="text-[10px] text-muted-foreground">survival rate</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 italic">What helped you keep going this week?</p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 function RecoveryBanner({ missedSystems }: { missedSystems: System[] }) {
   if (missedSystems.length === 0) return null;
   return (
@@ -527,12 +629,12 @@ function QuickCheckinRow({
       qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
       const identityLine = system.identityStatement
-        ? `You're becoming a person who ${system.identityStatement}.`
-        : "You showed up. That vote counts.";
+        ? `${system.identityStatement.charAt(0).toUpperCase() + system.identityStatement.slice(1)}. You just proved it.`
+        : "You showed up. You just proved it.";
       const msgs: Record<string, string> = {
         done:    identityLine,
-        partial: "Partial still counts — you showed up.",
-        missed:  "Tomorrow is another chance. Use the minimum version.",
+        partial: "Partial is not failure. You kept the system alive.",
+        missed:  "It's paused, not broken. See you tomorrow.",
       };
       toast({ title: status === "done" ? "Done! 🔥" : status === "partial" ? "Partial saved" : "Noted", description: msgs[status] ?? "Saved!" });
     },
@@ -698,6 +800,8 @@ export default function Dashboard() {
     );
   }
 
+  const systemsWithMinAction = activeSystems.filter(s => s.minimumAction);
+
   return (
     <div className="p-5 md:p-6 max-w-5xl mx-auto space-y-5">
       <GreetingBanner
@@ -706,6 +810,13 @@ export default function Dashboard() {
         completionPct={completionPct}
         todayDone={todayDone}
         todayTotal={todayTotal}
+      />
+
+      {/* Day 2 / 3 / 7 Retention Banner */}
+      <RetentionBanner
+        allCheckins={allCheckins}
+        activeSystems={activeSystems}
+        systemsWithMinAction={systemsWithMinAction}
       />
 
       {/* Hype Drop Warning */}

@@ -103,26 +103,26 @@ function CelebrationOverlay({ show, onDismiss }: { show: boolean; onDismiss: () 
 }
 
 const IDENTITY_MESSAGES = [
-  (identity: string | null | undefined, name: string, streak: number) =>
-    identity
-      ? `You showed up as a person who ${identity}. That's who you're becoming.`
-      : `You showed up for ${name}. That's who you're becoming.`,
-  (_identity: string | null | undefined, name: string, _streak: number) =>
-    `This is a vote for becoming consistent. Each vote adds up.`,
   (identity: string | null | undefined, _name: string, _streak: number) =>
     identity
-      ? `I AM a person who ${identity}. I proved it again today.`
-      : `I AM consistent. I showed up today.`,
+      ? `${identity.charAt(0).toUpperCase() + identity.slice(1)}. You just proved it.`
+      : `You showed up. You just proved it.`,
+  (_identity: string | null | undefined, _name: string, _streak: number) =>
+    `Every consistent person did exactly what you just did.`,
+  (identity: string | null | undefined, _name: string, _streak: number) =>
+    identity
+      ? `I AM a person who ${identity}. Today is evidence.`
+      : `I AM consistent. Today is evidence.`,
   (_identity: string | null | undefined, name: string, streak: number) =>
     streak > 1
-      ? `You kept the ${name} system alive for ${streak} days. That's real.`
-      : `You started. Every streak begins with day one.`,
+      ? `You kept the ${name} system alive for ${streak} days. That's not luck — that's a system working.`
+      : `Day one done. Every streak starts exactly here.`,
   (_identity: string | null | undefined, _name: string, _streak: number) =>
-    `Even the minimum version counts. You chose to show up.`,
-  (identity: string | null | undefined, name: string, _streak: number) =>
+    `Even the minimum version counts. You chose to show up instead of opt out.`,
+  (identity: string | null | undefined, _name: string, _streak: number) =>
     identity
-      ? `Every person who ${identity} did exactly what you just did.`
-      : `Every consistent person did exactly what you just did.`,
+      ? `This is what it looks like to become someone who ${identity}.`
+      : `This is what consistent people do. One day at a time.`,
 ];
 
 /* --- Celebration Ritual Modal (Prompt 5) --- */
@@ -181,7 +181,19 @@ function CelebrationRitualModal({
   );
 }
 
-/* --- Recovery Flow Modal (Prompt 6) --- */
+/* --- Recovery Flow Modal --- */
+const MISS_REASONS = [
+  { value: "low-energy",   label: "Low energy or overwhelmed",  emoji: "😔", suggestion: "shrink" },
+  { value: "forgot",       label: "I forgot",                   emoji: "💭", suggestion: "trigger" },
+  { value: "no-time",      label: "No time",                    emoji: "⏱️",  suggestion: "reduce" },
+  { value: "travel",       label: "Travel or unusual day",      emoji: "✈️",  suggestion: "maintenance" },
+  { value: "sick",         label: "Sick or unwell",             emoji: "🤒",  suggestion: "maintenance" },
+  { value: "overwhelmed",  label: "Emotionally overwhelmed",    emoji: "🌊",  suggestion: "shrink" },
+  { value: "other",        label: "Something else",             emoji: "💬",  suggestion: "fallback" },
+] as const;
+
+type MissReason = typeof MISS_REASONS[number];
+
 function RecoveryFlowModal({
   show, system, checkinStatus, onDismiss,
 }: {
@@ -190,19 +202,20 @@ function RecoveryFlowModal({
   checkinStatus: "skipped" | "partial";
   onDismiss: (intention?: string) => void;
 }) {
-  const [step, setStep] = useState(0);
-  const [intention, setIntention] = useState<string>("");
+  const [step, setStep]           = useState(0);
+  const [missReason, setMissReason] = useState<MissReason | null>(null);
+  const [intention, setIntention]  = useState<string>("");
   const [customNote, setCustomNote] = useState("");
 
   useEffect(() => {
-    if (show) { setStep(0); setIntention(""); setCustomNote(""); }
+    if (show) { setStep(0); setMissReason(null); setIntention(""); setCustomNote(""); }
   }, [show]);
 
   if (!show) return null;
 
-  const handleSelectIntention = (val: string) => {
-    setIntention(val);
-    setStep(3);
+  const handleMissReason = (reason: MissReason) => {
+    setMissReason(reason);
+    setStep(2);
   };
 
   const handleFinish = () => {
@@ -210,108 +223,233 @@ function RecoveryFlowModal({
     onDismiss(finalIntention || undefined);
   };
 
+  const totalSteps = checkinStatus === "partial" ? 2 : 3;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" data-testid="recovery-flow-overlay">
       <div className="relative bg-background rounded-2xl shadow-2xl max-w-sm w-full border" onClick={e => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex gap-1.5 mb-6">
-            {[0, 1, 2, 3].map(i => (
+            {Array.from({ length: totalSteps }, (_, i) => (
               <div key={i} className={cn("h-1 flex-1 rounded-full transition-all", i <= step ? "bg-primary" : "bg-muted")} />
             ))}
           </div>
 
-          {step === 0 && (
+          {/* ── PARTIAL: step 0 ── */}
+          {checkinStatus === "partial" && step === 0 && (
             <div className="space-y-4">
-              <p className="text-lg font-bold">
-                {checkinStatus === "skipped" ? "No worries — let's reset." : "Partial still counts!"}
+              <div className="text-4xl text-center">🟡</div>
+              <p className="text-lg font-bold text-center">Partial is not failure.</p>
+              <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                You kept the system alive. That's the whole point.
               </p>
-              {system.fallbackPlan && (
-                <div className="bg-chart-4/8 border border-chart-4/20 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <ClipboardList className="w-3.5 h-3.5 text-chart-4" />
-                    <p className="text-xs font-semibold text-chart-4 uppercase tracking-wide">Your Recovery Plan</p>
-                  </div>
-                  <p className="text-sm text-foreground leading-relaxed">{system.fallbackPlan}</p>
-                </div>
-              )}
               {system.minimumAction && (
-                <div className="bg-primary/8 border border-primary/20 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Check className="w-3.5 h-3.5 text-primary" />
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wide">Your Minimum Action</p>
-                  </div>
-                  <p className="text-sm text-foreground leading-relaxed">{system.minimumAction}</p>
+                <div className="bg-primary/8 border border-primary/20 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-primary mb-1">Your minimum action</p>
+                  <p className="text-sm text-foreground">"{system.minimumAction}"</p>
                 </div>
               )}
-              {!system.fallbackPlan && !system.minimumAction && (
-                <p className="text-sm text-muted-foreground">Missing one day never derailed anyone. The key is showing up tomorrow.</p>
-              )}
-              <Button className="w-full" onClick={() => setStep(1)} data-testid="button-recovery-next-1">
-                Got it — what about tomorrow? <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="space-y-4">
-              <p className="text-lg font-bold">What's your plan for tomorrow?</p>
-              <div className="space-y-2">
+              <p className="text-sm font-medium text-center">Want to stay in minimum mode tomorrow?</p>
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => handleSelectIntention("I'll do my minimum action")}
-                  className="w-full text-left p-4 rounded-xl border hover:border-primary/50 hover:bg-primary/5 transition-all text-sm font-medium"
-                  data-testid="button-intention-minimum"
+                  onClick={() => { setIntention("Yes — keep it small tomorrow"); setStep(1); }}
+                  className="p-3 rounded-xl border hover:border-chart-3/50 hover:bg-chart-3/5 transition-all text-sm font-medium text-center"
+                  data-testid="button-partial-minimum-mode"
                 >
-                  ✓ I'll do my minimum action
+                  Yes, keep it small
                 </button>
                 <button
-                  onClick={() => handleSelectIntention("I'll do my full action")}
-                  className="w-full text-left p-4 rounded-xl border hover:border-chart-3/50 hover:bg-chart-3/5 transition-all text-sm font-medium"
-                  data-testid="button-intention-full"
+                  onClick={() => { setIntention("Back to full action tomorrow"); setStep(1); }}
+                  className="p-3 rounded-xl border hover:border-primary/50 hover:bg-primary/5 transition-all text-sm font-medium text-center"
+                  data-testid="button-partial-back-to-full"
                 >
-                  ✓ I'll do my full action
-                </button>
-                <button
-                  onClick={() => { setIntention("custom"); setStep(2); }}
-                  className="w-full text-left p-4 rounded-xl border hover:border-chart-2/50 hover:bg-chart-2/5 transition-all text-sm font-medium"
-                  data-testid="button-intention-custom"
-                >
-                  ✏️ Write a custom note…
+                  No, full action
                 </button>
               </div>
             </div>
           )}
 
-          {step === 2 && (
-            <div className="space-y-4">
-              <p className="text-lg font-bold">What exactly will you do?</p>
-              <Textarea
-                placeholder="e.g. I'll do just 5 minutes after breakfast…"
-                value={customNote}
-                onChange={e => setCustomNote(e.target.value)}
-                rows={3}
-                className="text-sm"
-                data-testid="input-recovery-custom-note"
-                autoFocus
-              />
-              <Button className="w-full" onClick={() => setStep(3)} disabled={!customNote.trim()} data-testid="button-recovery-next-3">
-                Confirm <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          )}
-
-          {step === 3 && (
+          {/* ── PARTIAL: step 1 (done) ── */}
+          {checkinStatus === "partial" && step === 1 && (
             <div className="space-y-4 text-center">
               <div className="text-5xl">🔁</div>
-              <p className="text-lg font-bold text-foreground">System saved.</p>
-              <div className="text-sm text-muted-foreground leading-relaxed space-y-1">
-                <p>Missing one day never derailed anyone.</p>
-                <p className="font-semibold text-foreground">Missing two days starts a pattern.</p>
-                <p>See you tomorrow.</p>
-              </div>
-              {(intention && intention !== "custom" ? intention : customNote) && (
+              <p className="text-lg font-bold">System still alive.</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                It's paused, not broken. See you tomorrow.
+              </p>
+              {intention && (
                 <div className="bg-primary/8 border border-primary/20 rounded-xl p-3 text-left">
-                  <p className="text-xs font-semibold text-primary mb-1">Your intention for tomorrow:</p>
-                  <p className="text-sm text-foreground">{intention === "custom" ? customNote : intention}</p>
+                  <p className="text-xs font-semibold text-primary mb-1">Tomorrow's plan:</p>
+                  <p className="text-sm text-foreground">{intention}</p>
+                </div>
+              )}
+              <Button className="w-full" onClick={handleFinish} data-testid="button-recovery-finish">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                See you tomorrow
+              </Button>
+            </div>
+          )}
+
+          {/* ── MISSED: step 0 — acknowledge ── */}
+          {checkinStatus === "skipped" && step === 0 && (
+            <div className="space-y-4">
+              <p className="text-lg font-bold">It's paused, not broken.</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                What made today hard? Your answer helps the system adapt.
+              </p>
+              <div className="space-y-2">
+                {MISS_REASONS.map(reason => (
+                  <button
+                    key={reason.value}
+                    onClick={() => handleMissReason(reason)}
+                    className="w-full text-left p-3 rounded-xl border hover:border-primary/40 hover:bg-primary/4 transition-all flex items-center gap-3"
+                    data-testid={`button-miss-reason-${reason.value}`}
+                  >
+                    <span className="text-lg">{reason.emoji}</span>
+                    <span className="text-sm font-medium">{reason.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── MISSED: step 1 — intermediate (not used directly, skip to step 2) ── */}
+
+          {/* ── MISSED: step 2 — branched suggestion ── */}
+          {checkinStatus === "skipped" && step === 2 && missReason && (
+            <div className="space-y-4">
+              {missReason.suggestion === "shrink" && (
+                <>
+                  <p className="text-lg font-bold">Hard stretch detected.</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    The system adapts. For the next 3 days, only your minimum action counts. No streaks lost. Identity preserved.
+                  </p>
+                  {system.minimumAction && (
+                    <div className="bg-primary/8 border border-primary/20 rounded-xl p-3">
+                      <p className="text-xs font-semibold text-primary mb-1">Your minimum for the next 3 days:</p>
+                      <p className="text-sm text-foreground font-medium">"{system.minimumAction}"</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground italic">Small is not cheating. Small is what makes the system survivable.</p>
+                  <Button className="w-full" onClick={() => { setIntention("Minimum mode for 3 days"); setStep(3); }} data-testid="button-activate-shrink">
+                    Shrink system for 3 days <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </>
+              )}
+
+              {missReason.suggestion === "maintenance" && (
+                <>
+                  <p className="text-lg font-bold">Maintenance mode makes sense.</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Your identity stays intact. Streak loss is paused. For 3 days, only the minimum action counts — then you decide whether to return to normal or extend.
+                  </p>
+                  {system.minimumAction && (
+                    <div className="bg-chart-3/8 border border-chart-3/20 rounded-xl p-3">
+                      <p className="text-xs font-semibold text-chart-3 mb-1">Minimum action (maintenance mode):</p>
+                      <p className="text-sm text-foreground font-medium">"{system.minimumAction}"</p>
+                    </div>
+                  )}
+                  <Button className="w-full" onClick={() => { setIntention("Maintenance mode — minimum only for 3 days"); setStep(3); }} data-testid="button-activate-maintenance">
+                    Activate maintenance mode <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </>
+              )}
+
+              {missReason.suggestion === "trigger" && (
+                <>
+                  <p className="text-lg font-bold">Let's improve the trigger.</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    The best habits attach to something you already do. What existing routine could this follow?
+                  </p>
+                  <Textarea
+                    placeholder="e.g. After I brush my teeth, I'll… / When I sit at my desk, I'll…"
+                    value={customNote}
+                    onChange={e => setCustomNote(e.target.value)}
+                    rows={3}
+                    className="text-sm"
+                    data-testid="input-recovery-trigger-note"
+                    autoFocus
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={() => { setIntention(customNote.trim() ? `New trigger: ${customNote.trim()}` : "Improve my trigger"); setStep(3); }}
+                    data-testid="button-recovery-trigger-next"
+                  >
+                    Set new trigger <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </>
+              )}
+
+              {missReason.suggestion === "reduce" && (
+                <>
+                  <p className="text-lg font-bold">Make tomorrow easier to start.</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    What's the absolute smallest version that still counts? Even 30 seconds is better than nothing.
+                  </p>
+                  {system.minimumAction && (
+                    <div className="bg-muted/50 border border-border rounded-xl p-3">
+                      <p className="text-xs text-muted-foreground mb-1">Current minimum:</p>
+                      <p className="text-sm text-foreground">"{system.minimumAction}"</p>
+                    </div>
+                  )}
+                  <Textarea
+                    placeholder="e.g. Just open the app. Just stand up. Just pick up the book."
+                    value={customNote}
+                    onChange={e => setCustomNote(e.target.value)}
+                    rows={2}
+                    className="text-sm"
+                    data-testid="input-recovery-reduce-note"
+                    autoFocus
+                  />
+                  <Button
+                    className="w-full"
+                    onClick={() => { setIntention(customNote.trim() ? `Reduced minimum: ${customNote.trim()}` : "Start even smaller tomorrow"); setStep(3); }}
+                    data-testid="button-recovery-reduce-next"
+                  >
+                    That's my new minimum <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </>
+              )}
+
+              {missReason.suggestion === "fallback" && (
+                <>
+                  <p className="text-lg font-bold">No worries — let's reset.</p>
+                  {system.fallbackPlan && (
+                    <div className="bg-chart-4/8 border border-chart-4/20 rounded-xl p-3">
+                      <p className="text-xs font-semibold text-chart-4 mb-1">Your recovery plan</p>
+                      <p className="text-sm text-foreground leading-relaxed">{system.fallbackPlan}</p>
+                    </div>
+                  )}
+                  {system.minimumAction && (
+                    <div className="bg-primary/8 border border-primary/20 rounded-xl p-3">
+                      <p className="text-xs font-semibold text-primary mb-1">Tomorrow, even this counts:</p>
+                      <p className="text-sm text-foreground">"{system.minimumAction}"</p>
+                    </div>
+                  )}
+                  {!system.fallbackPlan && !system.minimumAction && (
+                    <p className="text-sm text-muted-foreground">Missing one day never derailed anyone. Tomorrow is a fresh start.</p>
+                  )}
+                  <Button className="w-full" onClick={() => { setIntention("Back tomorrow — minimum action"); setStep(3); }} data-testid="button-recovery-fallback-next">
+                    Got it — see you tomorrow <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── MISSED: step 3 — final ── */}
+          {checkinStatus === "skipped" && step === 3 && (
+            <div className="space-y-4 text-center">
+              <div className="text-5xl">🔁</div>
+              <p className="text-lg font-bold text-foreground">System still alive.</p>
+              <div className="text-sm text-muted-foreground leading-relaxed space-y-1">
+                <p>It's paused, not broken.</p>
+                <p className="font-semibold text-foreground">Showing up tomorrow is what matters.</p>
+              </div>
+              {intention && (
+                <div className="bg-primary/8 border border-primary/20 rounded-xl p-3 text-left">
+                  <p className="text-xs font-semibold text-primary mb-1">Your plan:</p>
+                  <p className="text-sm text-foreground">{intention}</p>
                 </div>
               )}
               <Button className="w-full" onClick={handleFinish} data-testid="button-recovery-finish">
