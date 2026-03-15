@@ -83,27 +83,6 @@ const plans = [
     ctaVariant: "default" as const,
     href: "/signup",
   },
-  {
-    name: "Team / Coach",
-    monthlyPrice: 49,
-    tagline: "For coaches and accountability groups",
-    idealFor: "Coaches and accountability groups",
-    badge: null,
-    features: [
-      "Everything in Pro",
-      "Multi-user workspace",
-      "Team progress overview",
-      "Shared templates",
-      "Accountability tracking",
-      "Coach dashboard",
-      "Group analytics",
-      "Priority onboarding support",
-    ],
-    notIncluded: [],
-    cta: "Contact Us",
-    ctaVariant: "outline" as const,
-    href: "/signup",
-  },
 ];
 
 const faqs = [
@@ -130,20 +109,16 @@ const faqs = [
 ];
 
 const comparisonRows = [
-  { feature: "Active Goals", free: "2", starter: "10", pro: "Unlimited", team: "Unlimited" },
-  { feature: "Active Systems", free: "3", starter: "Unlimited", pro: "Unlimited", team: "Unlimited" },
-  { feature: "Daily Check-ins", free: true, starter: true, pro: true, team: true },
-  { feature: "Streak Tracking", free: "Basic", starter: "Advanced", pro: "Advanced", team: "Advanced" },
-  { feature: "Templates", free: "3 starter", starter: "Full library", pro: "Premium", team: "Shared + Premium" },
-  { feature: "Analytics", free: "Light", starter: "Better", pro: "Advanced", team: "Group + Advanced" },
-  { feature: "Journaling", free: "Basic", starter: true, pro: "Advanced", team: "Advanced" },
-  { feature: "Export Reports", free: false, starter: "Basic", pro: "CSV / PDF", team: "CSV / PDF" },
-  { feature: "Dark Mode", free: false, starter: true, pro: true, team: true },
-  { feature: "Priority Support", free: false, starter: false, pro: true, team: "Priority onboarding" },
-  { feature: "Multi-user Workspace", free: false, starter: false, pro: false, team: true },
-  { feature: "Team Progress Overview", free: false, starter: false, pro: false, team: true },
-  { feature: "Coach Dashboard", free: false, starter: false, pro: false, team: true },
-  { feature: "Accountability Tracking", free: false, starter: false, pro: false, team: true },
+  { feature: "Active Goals", free: "2", starter: "10", pro: "Unlimited" },
+  { feature: "Active Systems", free: "3", starter: "Unlimited", pro: "Unlimited" },
+  { feature: "Daily Check-ins", free: true, starter: true, pro: true },
+  { feature: "Streak Tracking", free: "Basic", starter: "Advanced", pro: "Advanced" },
+  { feature: "Templates", free: "3 starter", starter: "Full library", pro: "Premium" },
+  { feature: "Analytics", free: "Light", starter: "Better", pro: "Advanced" },
+  { feature: "Journaling", free: "Basic", starter: true, pro: "Advanced" },
+  { feature: "Export Reports", free: false, starter: "Basic", pro: "CSV / PDF" },
+  { feature: "Dark Mode", free: false, starter: true, pro: true },
+  { feature: "Priority Support", free: false, starter: false, pro: true },
 ];
 
 function FAQItem({ q, a }: { q: string; a: string }) {

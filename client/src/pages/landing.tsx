@@ -203,27 +203,6 @@ const pricingPlans = [
     ctaVariant: "default" as const,
     href: "/signup",
   },
-  {
-    name: "Team / Coach",
-    price: "$49",
-    yearlyPrice: "$39",
-    period: "/month",
-    tagline: "For coaches and accountability groups",
-    badge: null,
-    features: [
-      "Everything in Pro",
-      "Multi-user workspace",
-      "Team progress overview",
-      "Shared templates",
-      "Accountability tracking",
-      "Coach dashboard",
-      "Group analytics",
-      "Priority onboarding support",
-    ],
-    cta: "Contact Us",
-    ctaVariant: "outline" as const,
-    href: "/signup",
-  },
 ];
 
 const navLinks = [
@@ -331,7 +310,7 @@ function CheckInPreview() {
     <div className="bg-card border border-border rounded-2xl p-5 h-full">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-[10px] text-muted-foreground">Monday, March 15</p>
+          <p className="text-[10px] text-muted-foreground">Sunday, March 15</p>
           <p className="text-xs font-bold">Good morning, Alex! 👋</p>
         </div>
         <div className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center">
