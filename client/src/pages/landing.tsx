@@ -203,6 +203,27 @@ const pricingPlans = [
     ctaVariant: "default" as const,
     href: "/signup",
   },
+  {
+    name: "Team / Coach",
+    price: "$49",
+    yearlyPrice: "$39",
+    period: "/month",
+    tagline: "For coaches and accountability groups",
+    badge: null,
+    features: [
+      "Everything in Pro",
+      "Multi-user workspace",
+      "Team progress overview",
+      "Shared templates",
+      "Accountability tracking",
+      "Coach dashboard",
+      "Group analytics",
+      "Priority onboarding support",
+    ],
+    cta: "Contact Us",
+    ctaVariant: "outline" as const,
+    href: "/signup",
+  },
 ];
 
 const navLinks = [
@@ -1144,7 +1165,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">© 2025 SystemForge. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© 2026 SystemForge. All rights reserved.</p>
             <p className="text-xs text-muted-foreground">Built for people who want to actually change.</p>
           </div>
         </div>
