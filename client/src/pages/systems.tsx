@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Zap, Plus, Trash2, Pause, Play, MoreVertical, Target, Clock, Repeat, Copy,
   ArrowRight, Sparkles, ChevronRight, Activity, LayoutGrid, Brain, BookOpen,
-  Dumbbell, Sunset, PenLine,
+  Dumbbell, Sunset, PenLine, Moon, Briefcase, Timer,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMemo, useState } from "react";
@@ -334,7 +334,9 @@ export default function SystemsPage() {
           </div>
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {STATIC_TEMPLATES.slice(0, 6).map(t => {
+            {["t1", "t2", "t3", "t10", "t11", "t12"].map(id => {
+              const t = STATIC_TEMPLATES.find(tmpl => tmpl.id === id);
+              if (!t) return null;
               const CATEGORY_ICONS: Record<string, any> = {
                 fitness: Dumbbell,
                 reading: BookOpen,
@@ -342,6 +344,9 @@ export default function SystemsPage() {
                 mindset: PenLine,
                 meditation: Sunset,
                 "content-creation": PenLine,
+                "evening-reset": Moon,
+                "job-search": Briefcase,
+                "study-sprint": Timer,
               };
               const Icon = CATEGORY_ICONS[t.category] ?? Sparkles;
               return (

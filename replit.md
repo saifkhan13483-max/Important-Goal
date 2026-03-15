@@ -120,8 +120,11 @@ Timing: `cubic-bezier(0.22, 1, 0.36, 1)` for entrances; `ease-out` for hover; `e
 
 ### Priority 6: Templates by default
 - Systems page empty state now shows a 6-template gallery with category icons and one-click "Use this template" links
+- Gallery shows the exact 6 templates named in the spec by ID: t1 (Beginner Workout), t2 (Daily Reader), t3 (Deep Work Starter), t10 (Calm Evening Reset), t11 (Job Search System), t12 (Study Sprint System)
 - Separator divides the template gallery from the "build from scratch" option
 - Templates link directly to `/systems/new?template=ID` pre-filling the builder
+- 3 new templates added to STATIC_TEMPLATES: Calm Evening Reset (t10), Job Search System (t11), Study Sprint System (t12)
+- All 3 new categories (`evening-reset`, `job-search`, `study-sprint`) registered in templates.tsx: colors, labels, and beginner flags
 
 ### Priority 7: Remove fake proof
 - Removed the `testimonials` array (fake user quotes) from landing.tsx — it was dead code but is now fully cleaned up

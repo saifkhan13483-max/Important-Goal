@@ -29,6 +29,9 @@ const ALL_CATEGORIES = [
   { value: "sleep", label: "Sleep" },
   { value: "deep-work", label: "Deep Work" },
   { value: "mindset", label: "Mindset" },
+  { value: "evening-reset", label: "Evening Reset" },
+  { value: "job-search", label: "Job Search" },
+  { value: "study-sprint", label: "Study Sprint" },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -44,13 +47,16 @@ const CATEGORY_COLORS: Record<string, string> = {
   career: "bg-primary/15 text-primary border-primary/30",
   business: "bg-chart-4/15 text-chart-4 border-chart-4/30",
   health: "bg-chart-3/15 text-chart-3 border-chart-3/30",
+  "evening-reset": "bg-indigo-500/15 text-indigo-500 border-indigo-500/30",
+  "job-search": "bg-amber-500/15 text-amber-500 border-amber-500/30",
+  "study-sprint": "bg-chart-2/15 text-chart-2 border-chart-2/30",
 };
 
 function categoryColor(cat: string) {
   return CATEGORY_COLORS[cat] ?? "bg-muted text-muted-foreground border-border";
 }
 
-const BEGINNER_CATEGORIES = new Set(["fitness", "reading", "meditation", "sleep", "mindset"]);
+const BEGINNER_CATEGORIES = new Set(["fitness", "reading", "meditation", "sleep", "mindset", "evening-reset", "study-sprint"]);
 
 function isBeginnerFriendly(template: Template): boolean {
   return BEGINNER_CATEGORIES.has(template.category);
