@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,15 +10,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Goal, System, Checkin, JournalEntry } from "@/types/schema";
 import { getGoals } from "@/services/goals.service";
 import { getSystems } from "@/services/systems.service";
-import { getCheckinsByDate, getCheckins } from "@/services/checkins.service";
+import { getCheckinsByDate, getCheckins, upsertCheckin } from "@/services/checkins.service";
 import { getJournals } from "@/services/journal.service";
 import { computeAnalytics } from "@/services/analytics.service";
+import { useToast } from "@/hooks/use-toast";
 import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
   Calendar, BookOpen, Check, Minus, X, BarChart2, PenLine, Sparkles,
-  Lightbulb, Star,
+  Lightbulb, Star, Loader2,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const beginnerTips = [
   "Start small. A good system is easy to repeat — even on your worst day.",
@@ -117,6 +119,69 @@ function EmptyStateCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function QuickCheckinRow({
+  system, existingCheckin, userId, today,
+}: { system: System; existingCheckin?: Checkin; userId: string; today: string }) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const current = existingCheckin?.status as "done" | "partial" | "missed" | undefined;
+
+  const mutation = useMutation({
+    mutationFn: (status: string) =>
+      upsertCheckin(userId, system.id, today, { status }),
+    onSuccess: (_, status) => {
+      qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
+      qc.invalidateQueries({ queryKey: ["checkins", userId] });
+      const msgs: Record<string, string> = {
+        done:    "Keep it up! 🔥",
+        partial: "Partial progress counts.",
+        missed:  "Tomorrow is another chance.",
+      };
+      toast({ title: msgs[status] ?? "Saved!" });
+    },
+    onError: () => toast({ title: "Couldn't save", variant: "destructive" }),
+  });
+
+  const buttons = [
+    { status: "done",    label: "Done",    Icon: Check, active: "bg-chart-3 text-white border-chart-3",    idle: "hover:border-chart-3/50 hover:text-chart-3" },
+    { status: "partial", label: "Partial", Icon: Minus, active: "bg-chart-4 text-white border-chart-4",    idle: "hover:border-chart-4/50 hover:text-chart-4" },
+    { status: "missed",  label: "Missed",  Icon: X,     active: "bg-destructive text-white border-destructive", idle: "hover:border-destructive/50 hover:text-destructive" },
+  ] as const;
+
+  return (
+    <div
+      className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 hover:border-border transition-colors"
+      data-testid={`quick-checkin-${system.id}`}
+    >
+      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <Zap className="w-3.5 h-3.5 text-primary" />
+      </div>
+      <span className="text-sm font-medium flex-1 truncate">{system.title}</span>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {mutation.isPending ? (
+          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+        ) : (
+          buttons.map(({ status, label, Icon, active, idle }) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() => mutation.mutate(status)}
+              title={label}
+              data-testid={`quick-checkin-${system.id}-${status}`}
+              className={cn(
+                "w-7 h-7 rounded-md border text-xs flex items-center justify-center transition-all",
+                current === status ? active : `bg-muted/40 border-border text-muted-foreground ${idle}`,
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+            </button>
+          ))
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -270,11 +335,11 @@ export default function Dashboard() {
             <div className="flex items-center justify-between gap-2">
               <div>
                 <CardTitle className="text-base">Today's Progress</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Tap "Check in" to log your systems for today</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Mark each habit done, partial, or missed — right here</p>
               </div>
               <Link href="/checkins">
-                <Button size="sm" className="gap-1.5" data-testid="link-today-checkins">
-                  Check in
+                <Button variant="outline" size="sm" className="gap-1.5" data-testid="link-today-checkins">
+                  Add notes
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </Link>
@@ -288,33 +353,26 @@ export default function Dashboard() {
               </div>
               <Progress value={completionPct} className="h-2.5" />
             </div>
-            <div className="grid gap-2 mt-3">
-              {activeSystems.slice(0, 5).map(system => {
-                const checkin = todayCheckins.find(c => c.systemId === system.id);
-                const statusStyles =
-                  checkin?.status === "done"
-                    ? "bg-chart-3/10 text-chart-3 border-chart-3/20"
-                    : checkin?.status === "partial"
-                    ? "bg-chart-4/10 text-chart-4 border-chart-4/20"
-                    : "bg-muted text-muted-foreground border-transparent";
-                return (
-                  <div
-                    key={system.id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/30 border border-border/50"
-                    data-testid={`system-today-${system.id}`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Zap className="w-3.5 h-3.5 text-primary" />
-                      </div>
-                      <span className="text-sm font-medium truncate">{system.title}</span>
-                    </div>
-                    <Badge variant="outline" className={`text-xs flex-shrink-0 capitalize ${statusStyles}`}>
-                      {checkin?.status ?? "pending"}
-                    </Badge>
-                  </div>
-                );
-              })}
+            <div className="space-y-2 mt-3">
+              <div className="flex items-center justify-end gap-3 px-1 mb-1">
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Done · Partial · Missed</span>
+              </div>
+              {activeSystems.slice(0, 5).map(system => (
+                <QuickCheckinRow
+                  key={system.id}
+                  system={system}
+                  existingCheckin={todayCheckins.find(c => c.systemId === system.id)}
+                  userId={userId}
+                  today={today}
+                />
+              ))}
+              {activeSystems.length > 5 && (
+                <Link href="/checkins">
+                  <p className="text-xs text-muted-foreground text-center py-1 hover:text-primary transition-colors cursor-pointer">
+                    +{activeSystems.length - 5} more — view all
+                  </p>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>

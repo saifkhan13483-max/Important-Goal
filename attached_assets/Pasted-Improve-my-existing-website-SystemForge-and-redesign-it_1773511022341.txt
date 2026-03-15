@@ -1,31 +1,4 @@
-Improve my existing website “SystemForge” and redesign it to be significantly more beautiful, more intuitive, and much easier to understand for beginners.
-
-ABOUT THE PRODUCT
-SystemForge is a habit-tracking and goal-achievement platform. Its core philosophy is:
-“Most people set goals. Few build systems.”
-The app helps users convert vague intentions into clear, repeatable daily systems that lead to long-term success.
-
-CURRENT CORE FEATURES
-- System Builder — guided 7-step wizard to turn goals into actionable systems
-- Goal Management — create/edit/delete long-term goals with categories, priorities, and deadlines
-- Daily Check-ins — mark systems as done, partial, or missed, with mood and difficulty tracking
-- Template Library — pre-built systems for fitness, mindset, and productivity
-- Analytics & Streaks — completion charts and streak tracking
-- Reflective Journaling — daily and weekly reflections tied to systems/goals
-- Onboarding Wizard — multi-step setup for new users
-
-DESIGN TOKENS / BRAND SYSTEM
-Use this visual identity consistently across the app:
-
-Color Palette:
-- Primary Brand: Vivid Purple — hsl(258 84% 62%)
-- Brand Gradient: Purple to Pink-Purple — hsl(258 84% 62%) to hsl(280 80% 65%)
-- Text Gradient: Purple to Sky Blue — hsl(258 84% 62%) to hsl(200 80% 56%)
-- Success / Green: Emerald — hsl(150 60% 48%)
-- Info / Blue: Sky Blue — hsl(200 80% 56%)
-- Warning / Orange: Amber — hsl(36 92% 60%)
-- Destructive / Error: Red — hsl(0 84% 60%)
-- Light Background: Gray-Blue — hsl(240 10% 98%)
+e — hsl(240 10% 98%)
 - Dark Background: Deep Charcoal — hsl(240 10% 6%)
 
 Typography:
