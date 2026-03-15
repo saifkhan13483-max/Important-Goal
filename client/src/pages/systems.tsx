@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { useAppStore } from "@/store/auth.store";
-import type { System, Goal } from "@/types/schema";
+import type { System, Goal, Checkin } from "@/types/schema";
 import { getSystems, updateSystem, deleteSystem, createSystem } from "@/services/systems.service";
 import { getGoals } from "@/services/goals.service";
+import { getCheckins } from "@/services/checkins.service";
+import { computeSystemHealthScore, computeAnalytics } from "@/services/analytics.service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,10 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import {
   Zap, Plus, Trash2, Pause, Play, MoreVertical, Target, Clock, Repeat, Copy,
-  ArrowRight, Sparkles, ChevronRight,
+  ArrowRight, Sparkles, ChevronRight, Activity,
 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const frequencyLabels: Record<string, string> = {
@@ -36,17 +38,22 @@ const timeLabels: Record<string, string> = {
 function SystemCard({
   system,
   goalTitle,
+  systemCheckins,
+  streak,
   onToggleActive,
   onDuplicate,
   onDelete,
 }: {
   system: System;
   goalTitle?: string | null;
+  systemCheckins: Checkin[];
+  streak: number;
   onToggleActive: (id: string, active: boolean) => void;
   onDuplicate: (system: System) => void;
   onDelete: (system: System) => void;
 }) {
   const isActive = system.active;
+  const health = computeSystemHealthScore(system, systemCheckins, streak);
 
   return (
     <Card
@@ -177,7 +184,18 @@ function SystemCard({
               {timeLabels[system.preferredTime] || system.preferredTime}
             </Badge>
           )}
-          {goalTitle && (
+          {systemCheckins.length > 0 && (
+            <Badge
+              variant="outline"
+              className={cn("text-xs gap-1 ml-auto", health.color, "border-current/30 bg-current/5")}
+              data-testid={`badge-health-${system.id}`}
+              title={`System health: ${health.score}/100`}
+            >
+              <Activity className="w-3 h-3" />
+              {health.label}
+            </Badge>
+          )}
+          {!systemCheckins.length && goalTitle && (
             <span className="text-xs text-muted-foreground flex items-center gap-1 ml-auto">
               <Target className="w-3 h-3 flex-shrink-0" />
               <span className="truncate max-w-[100px]">{goalTitle}</span>
@@ -205,6 +223,17 @@ export default function SystemsPage() {
     queryFn: () => getGoals(userId),
     enabled: !!userId,
   });
+
+  const { data: allCheckins = [] } = useQuery<Checkin[]>({
+    queryKey: ["checkins", userId],
+    queryFn: () => getCheckins(userId),
+    enabled: !!userId,
+  });
+
+  const streaks = useMemo(() => {
+    if (!allCheckins.length || !systems.length) return {} as Record<string, number>;
+    return computeAnalytics(allCheckins, systems, []).streaks;
+  }, [allCheckins, systems]);
 
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -334,6 +363,8 @@ export default function SystemsPage() {
                     key={system.id}
                     system={system}
                     goalTitle={getGoalTitle(system.goalId)}
+                    systemCheckins={allCheckins.filter(c => c.systemId === system.id)}
+                    streak={streaks[system.id] ?? 0}
                     onToggleActive={(id, active) => toggleActive.mutate({ id, active })}
                     onDuplicate={duplicateMutation.mutate}
                     onDelete={setDeleteSystemItem}
@@ -357,6 +388,8 @@ export default function SystemsPage() {
                     key={system.id}
                     system={system}
                     goalTitle={getGoalTitle(system.goalId)}
+                    systemCheckins={allCheckins.filter(c => c.systemId === system.id)}
+                    streak={streaks[system.id] ?? 0}
                     onToggleActive={(id, active) => toggleActive.mutate({ id, active })}
                     onDuplicate={duplicateMutation.mutate}
                     onDelete={setDeleteSystemItem}

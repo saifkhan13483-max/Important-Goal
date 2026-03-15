@@ -13,12 +13,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, CartesianGrid,
+  LineChart, Line, CartesianGrid, Cell,
 } from "recharts";
 import {
   Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
   Trophy, AlertCircle, Star, CheckSquare, Lightbulb,
-  TrendingDown, Heart, Award,
+  TrendingDown, Heart, Award, Smile, Dumbbell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
         <p className="font-medium mb-1">{label}</p>
         {payload.map((p: any) => (
           <p key={p.name} style={{ color: p.color }}>
-            {p.name}: {p.value}
+            {p.name}: {p.value}{p.name === "Completion %" || p.name === "Done %" ? "%" : ""}
           </p>
         ))}
       </div>
@@ -94,12 +94,12 @@ export default function Analytics() {
     [checkins, systems, goals],
   );
 
-  // Derived data — computed before early return so hooks order is preserved
   const {
     streaks, bestStreaks, topBestStreak,
     dailyChart, weeklyChart, monthlyChart,
     categoryBreakdown, systemStats, goalCompletion,
-    last30Days,
+    last30Days, dayOfWeekStats, moodBuckets, difficultyBuckets,
+    hasMoodData, hasDifficultyData,
   } = analytics;
 
   const avgCompletion = useMemo(() => {
@@ -174,6 +174,40 @@ export default function Analytics() {
       });
     }
 
+    // Mood insight
+    if (hasMoodData) {
+      const highMood = moodBuckets.filter(b => b.mood >= 4 && b.count > 0);
+      const lowMood  = moodBuckets.filter(b => b.mood <= 2 && b.count > 0);
+      if (highMood.length && lowMood.length) {
+        const avgHigh = Math.round(highMood.reduce((s, b) => s + b.completionPct, 0) / highMood.length);
+        const avgLow  = Math.round(lowMood.reduce((s, b) => s + b.completionPct, 0) / lowMood.length);
+        if (avgHigh > avgLow + 15) {
+          cards.push({
+            icon: Smile,
+            text: `On high-mood days you complete ${avgHigh}% of habits vs. ${avgLow}% on low-mood days. Your fallback plan matters most on hard days.`,
+            type: "tip",
+          });
+        }
+      }
+    }
+
+    // Difficulty insight
+    if (hasDifficultyData) {
+      const easyBuckets = difficultyBuckets.filter(b => b.difficulty <= 2 && b.count > 0);
+      const hardBuckets = difficultyBuckets.filter(b => b.difficulty >= 4 && b.count > 0);
+      if (easyBuckets.length && hardBuckets.length) {
+        const avgEasy = Math.round(easyBuckets.reduce((s, b) => s + b.completionPct, 0) / easyBuckets.length);
+        const avgHard = Math.round(hardBuckets.reduce((s, b) => s + b.completionPct, 0) / hardBuckets.length);
+        if (avgEasy > avgHard + 20) {
+          cards.push({
+            icon: Dumbbell,
+            text: `Habits rated easy are completed ${avgEasy}% of the time vs. ${avgHard}% for hard ones. Consider making your minimum action smaller.`,
+            type: "tip",
+          });
+        }
+      }
+    }
+
     // Total check-ins milestone
     const total = analytics.totalCheckins;
     if (total >= 100) {
@@ -191,7 +225,7 @@ export default function Analytics() {
     }
 
     return cards.slice(0, 4);
-  }, [checkins, systems, systemStats, analytics, avgCompletion]);
+  }, [checkins, systems, systemStats, analytics, avgCompletion, hasMoodData, hasDifficultyData, moodBuckets, difficultyBuckets]);
 
   // All hooks above — now safe to conditionally return
   const chartData = period === "daily" ? dailyChart
@@ -224,6 +258,7 @@ export default function Analytics() {
     .slice(0, 5);
 
   const hasData = checkins.length > 0;
+  const hasDowData = dayOfWeekStats.some(d => d.totalCount > 0);
 
   const periodLabel: Record<Period, string> = {
     daily:   "last 14 days",
@@ -291,7 +326,7 @@ export default function Analytics() {
             </div>
             <h3 className="font-bold text-lg mb-2">Your progress story starts here</h3>
             <p className="text-muted-foreground text-sm mb-3 max-w-sm mx-auto leading-relaxed">
-              Once you start checking in on your systems each day, you'll see beautiful charts showing your streaks, consistency, and growth over time.
+              Once you start checking in on your systems each day, you'll see charts showing your streaks, consistency, and growth over time.
             </p>
             <p className="text-xs text-muted-foreground mb-6">
               Even one check-in is enough to start.
@@ -310,15 +345,6 @@ export default function Analytics() {
                   </button>
                 </a>
               )}
-            </div>
-            {/* Preview of what they'll see */}
-            <div className="mt-8 grid grid-cols-3 gap-3 max-w-xs mx-auto opacity-30 pointer-events-none select-none" aria-hidden>
-              {["Streak", "Done", "Rate"].map(label => (
-                <div key={label} className="bg-muted rounded-xl p-3 text-center">
-                  <div className="h-6 w-10 mx-auto bg-muted-foreground/20 rounded mb-1" />
-                  <p className="text-[10px] text-muted-foreground">{label}</p>
-                </div>
-              ))}
             </div>
           </CardContent>
         </Card>
@@ -425,6 +451,127 @@ export default function Analytics() {
           )}
         </CardContent>
       </Card>
+
+      {/* Day-of-week patterns */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-chart-2" />
+            Day-of-week Patterns
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">Which days you complete habits most consistently</p>
+        </CardHeader>
+        <CardContent>
+          {!hasDowData ? (
+            <div className="h-32 flex items-center justify-center">
+              <p className="text-muted-foreground text-sm">Check in for at least a week to see patterns.</p>
+            </div>
+          ) : (
+            <div className="space-y-2" data-testid="dow-patterns">
+              {dayOfWeekStats.map(d => {
+                const pct = d.doneRate;
+                const barColor = pct >= 70 ? "bg-chart-3" : pct >= 40 ? "bg-chart-4" : "bg-destructive/60";
+                return (
+                  <div key={d.day} className="flex items-center gap-3">
+                    <span className="text-xs font-medium w-8 flex-shrink-0 text-muted-foreground">{d.shortDay}</span>
+                    <div className="flex-1 h-5 bg-muted rounded-sm overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-sm transition-all", barColor)}
+                        style={{ width: d.totalCount > 0 ? `${pct}%` : "0%" }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium w-8 text-right flex-shrink-0">
+                      {d.totalCount > 0 ? `${pct}%` : "—"}
+                    </span>
+                    <span className="text-xs text-muted-foreground w-16 flex-shrink-0">
+                      {d.totalCount > 0 ? `${d.doneCount}/${d.totalCount}` : "no data"}
+                    </span>
+                  </div>
+                );
+              })}
+              {(() => {
+                const withData = dayOfWeekStats.filter(d => d.totalCount > 0);
+                if (withData.length < 2) return null;
+                const best  = [...withData].sort((a, b) => b.doneRate - a.doneRate)[0];
+                const worst = [...withData].sort((a, b) => a.doneRate - b.doneRate)[0];
+                if (best.day === worst.day) return null;
+                return (
+                  <p className="text-xs text-muted-foreground pt-2 border-t border-border/50">
+                    Your strongest day is <span className="font-semibold text-foreground">{best.day}</span> ({best.doneRate}%).
+                    {worst.doneRate < best.doneRate - 20 && (
+                      <> Consider a fallback plan for <span className="font-semibold text-foreground">{worst.day}</span>s ({worst.doneRate}%).</>
+                    )}
+                  </p>
+                );
+              })()}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Mood vs Completion + Difficulty vs Completion */}
+      {(hasMoodData || hasDifficultyData) && (
+        <div className="grid md:grid-cols-2 gap-4">
+          {hasMoodData && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Smile className="w-4 h-4 text-chart-5" />
+                  Mood vs. Completion
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">How your pre-habit mood affects success</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2" data-testid="mood-correlation">
+                  {moodBuckets.filter(b => b.count > 0).map(b => (
+                    <div key={b.mood} className="flex items-center gap-3">
+                      <span className="text-xs w-16 flex-shrink-0 text-muted-foreground">{b.label}</span>
+                      <div className="flex-1 h-4 bg-muted rounded-sm overflow-hidden">
+                        <div
+                          className="h-full bg-chart-5/70 rounded-sm transition-all"
+                          style={{ width: `${b.completionPct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right flex-shrink-0">{b.completionPct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {hasDifficultyData && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Dumbbell className="w-4 h-4 text-chart-4" />
+                  Difficulty vs. Completion
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">How perceived difficulty affects follow-through</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2" data-testid="difficulty-correlation">
+                  {difficultyBuckets.filter(b => b.count > 0).map(b => (
+                    <div key={b.difficulty} className="flex items-center gap-3">
+                      <span className="text-xs w-20 flex-shrink-0 text-muted-foreground">{b.label}</span>
+                      <div className="flex-1 h-4 bg-muted rounded-sm overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-sm transition-all",
+                            b.completionPct >= 70 ? "bg-chart-3/70" : b.completionPct >= 40 ? "bg-chart-4/70" : "bg-destructive/50",
+                          )}
+                          style={{ width: `${b.completionPct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right flex-shrink-0">{b.completionPct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Current streaks + Best-ever streaks */}
       <div className="grid md:grid-cols-2 gap-4">

@@ -1,9 +1,11 @@
 import { useRoute, useLocation, Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
-import type { System, Goal } from "@/types/schema";
+import type { System, Goal, Checkin } from "@/types/schema";
 import { getSystem, updateSystem, deleteSystem, createSystem } from "@/services/systems.service";
 import { getGoals } from "@/services/goals.service";
+import { getCheckins } from "@/services/checkins.service";
+import { computeSystemHealthScore } from "@/services/analytics.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +15,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Zap, Target, Clock, CheckSquare, Trophy, ShieldCheck, Brain, Heart, Repeat,
-  MoreVertical, Pencil, Pause, Play, Copy, Trash2, ExternalLink,
+  MoreVertical, Pencil, Pause, Play, Copy, Trash2, ExternalLink, Activity,
 } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 const frequencyLabels: Record<string, string> = {
   daily: "Daily", weekdays: "Weekdays", weekends: "Weekends", weekly: "Weekly",
@@ -63,6 +66,14 @@ export default function SystemDetailPage() {
     queryFn: () => getGoals(userId),
     enabled: !!userId,
   });
+
+  const { data: allCheckins = [] } = useQuery<Checkin[]>({
+    queryKey: ["checkins", userId],
+    queryFn: () => getCheckins(userId),
+    enabled: !!userId,
+  });
+
+  const systemCheckins = allCheckins.filter(c => c.systemId === id);
 
   const linkedGoal = system?.goalId ? goals.find(g => g.id === system.goalId) : null;
 
@@ -136,6 +147,20 @@ export default function SystemDetailPage() {
             >
               {system.active ? "Active" : "Paused"}
             </Badge>
+            {systemCheckins.length > 0 && (() => {
+              const health = computeSystemHealthScore(system, systemCheckins, 0);
+              return (
+                <Badge
+                  variant="outline"
+                  className={cn("gap-1", health.color, "border-current/30 bg-current/5")}
+                  data-testid="badge-system-health"
+                  title={`System health score: ${health.score}/100`}
+                >
+                  <Activity className="w-3 h-3" />
+                  {health.label} · {health.score}
+                </Badge>
+              );
+            })()}
           </div>
           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
             {system.frequency && (

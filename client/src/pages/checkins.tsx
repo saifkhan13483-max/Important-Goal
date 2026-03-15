@@ -14,9 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   CheckSquare, Check, Minus, X, Flame, MessageSquare,
-  ChevronDown, ChevronUp, History, CalendarDays,
+  ChevronDown, ChevronUp, History, CalendarDays, Grid3x3,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 
 function getTodayKey() {
@@ -389,6 +389,164 @@ function HistoryDayCard({
   );
 }
 
+function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
+  const [viewDate, setViewDate] = useState(() => new Date());
+  const activeSystems = systems.filter(s => s.active);
+
+  const monthStart = startOfMonth(viewDate);
+  const daysInMonth = getDaysInMonth(viewDate);
+  const startDow = getDay(monthStart); // 0=Sun
+
+  // Build a map of dateKey -> completion info
+  const dayMap = useMemo(() => {
+    const map: Record<string, { done: number; total: number; status: string }> = {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateObj = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
+      const dateKey = dateObj.toISOString().split("T")[0];
+      const dayCheckins = allCheckins.filter(c => c.dateKey === dateKey);
+      const done = dayCheckins.filter(c => c.status === "done").length;
+      const total = activeSystems.length;
+      let status = "empty";
+      if (dayCheckins.length > 0) {
+        if (done === total && total > 0) status = "perfect";
+        else if (done > 0) status = "partial";
+        else status = "missed";
+      }
+      map[dateKey] = { done, total, status };
+    }
+    return map;
+  }, [allCheckins, activeSystems, viewDate, daysInMonth]);
+
+  const today = getTodayKey();
+  const todayDate = new Date();
+
+  const prevMonth = () => setViewDate(d => subMonths(d, 1));
+  const nextMonth = () => setViewDate(d => {
+    const next = addMonths(d, 1);
+    if (next > todayDate) return d;
+    return next;
+  });
+  const canGoNext = addMonths(viewDate, 1) <= todayDate;
+
+  const cellColor = (status: string) => {
+    switch (status) {
+      case "perfect": return "bg-chart-3/80 text-white";
+      case "partial": return "bg-chart-4/60 text-white";
+      case "missed":  return "bg-destructive/30 text-destructive-foreground";
+      default:        return "bg-muted/30 text-muted-foreground";
+    }
+  };
+
+  // Fill in blank cells for alignment (startDow 0=Sun)
+  const blanks = Array.from({ length: startDow });
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={prevMonth} className="p-1.5 rounded-md hover:bg-muted transition-colors text-sm">
+            ←
+          </button>
+          <h3 className="text-sm font-semibold">
+            {format(viewDate, "MMMM yyyy")}
+          </h3>
+          <button
+            onClick={nextMonth}
+            disabled={!canGoNext}
+            className="p-1.5 rounded-md hover:bg-muted transition-colors text-sm disabled:opacity-30"
+          >
+            →
+          </button>
+        </div>
+
+        {/* Day-of-week headers */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => (
+            <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">{d}</div>
+          ))}
+        </div>
+
+        {/* Calendar cells */}
+        <div className="grid grid-cols-7 gap-1" data-testid="calendar-grid">
+          {blanks.map((_, i) => (
+            <div key={`blank-${i}`} />
+          ))}
+          {days.map(d => {
+            const dateObj  = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
+            const dateKey  = dateObj.toISOString().split("T")[0];
+            const isFuture = dateKey > today;
+            const isToday  = dateKey === today;
+            const info     = dayMap[dateKey];
+
+            return (
+              <div
+                key={dateKey}
+                title={info && info.status !== "empty" ? `${info.done}/${info.total} done` : undefined}
+                className={cn(
+                  "aspect-square flex items-center justify-center rounded-md text-xs font-medium transition-all",
+                  isFuture
+                    ? "opacity-20 text-muted-foreground"
+                    : info
+                    ? cellColor(info.status)
+                    : "bg-muted/20 text-muted-foreground",
+                  isToday && "ring-2 ring-primary ring-offset-1",
+                )}
+                data-testid={`calendar-day-${dateKey}`}
+              >
+                {d}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/50 flex-wrap">
+          {[
+            { label: "Perfect", color: "bg-chart-3/80" },
+            { label: "Partial",  color: "bg-chart-4/60" },
+            { label: "Missed",   color: "bg-destructive/30" },
+            { label: "No data",  color: "bg-muted/30" },
+          ].map(item => (
+            <div key={item.label} className="flex items-center gap-1.5">
+              <div className={cn("w-3 h-3 rounded-sm", item.color)} />
+              <span className="text-[10px] text-muted-foreground">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Monthly summary */}
+        {(() => {
+          const monthCheckins = allCheckins.filter(c => {
+            const m = format(viewDate, "yyyy-MM");
+            return c.dateKey.startsWith(m);
+          });
+          const perfectDays = Object.values(dayMap).filter(d => d.status === "perfect").length;
+          const partialDays = Object.values(dayMap).filter(d => d.status === "partial").length;
+          const missedDays  = Object.values(dayMap).filter(d => d.status === "missed").length;
+          if (monthCheckins.length === 0) return null;
+          return (
+            <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="text-base font-bold text-chart-3">{perfectDays}</p>
+                <p className="text-[10px] text-muted-foreground">Perfect days</p>
+              </div>
+              <div>
+                <p className="text-base font-bold text-chart-4">{partialDays}</p>
+                <p className="text-[10px] text-muted-foreground">Partial days</p>
+              </div>
+              <div>
+                <p className="text-base font-bold text-muted-foreground">{missedDays}</p>
+                <p className="text-[10px] text-muted-foreground">Missed days</p>
+              </div>
+            </div>
+          );
+        })()}
+      </CardContent>
+    </Card>
+  );
+}
+
 function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
   const grouped = useMemo(() => {
     const map: Record<string, Checkin[]> = {};
@@ -473,11 +631,15 @@ export default function Checkins() {
 
       <Tabs defaultValue="today">
         <TabsList className="w-full">
-          <TabsTrigger value="today" className="flex-1 gap-2" data-testid="tab-today">
+          <TabsTrigger value="today" className="flex-1 gap-1.5" data-testid="tab-today">
             <CalendarDays className="w-3.5 h-3.5" />
             Today
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex-1 gap-2" data-testid="tab-history">
+          <TabsTrigger value="calendar" className="flex-1 gap-1.5" data-testid="tab-calendar">
+            <Grid3x3 className="w-3.5 h-3.5" />
+            Calendar
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex-1 gap-1.5" data-testid="tab-history">
             <History className="w-3.5 h-3.5" />
             History
           </TabsTrigger>
@@ -548,6 +710,15 @@ export default function Checkins() {
                 />
               ))}
             </div>
+          )}
+        </TabsContent>
+
+        {/* ─── CALENDAR TAB ─── */}
+        <TabsContent value="calendar" className="mt-6">
+          {allLoading ? (
+            <Skeleton className="h-96 rounded-xl" />
+          ) : (
+            <CalendarView allCheckins={allCheckins} systems={systems} />
           )}
         </TabsContent>
 

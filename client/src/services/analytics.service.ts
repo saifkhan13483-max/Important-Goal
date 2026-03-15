@@ -1,5 +1,5 @@
 import type { Checkin, System, Goal } from "@/types/schema";
-import { startOfWeek, startOfMonth, format, subWeeks, subMonths } from "date-fns";
+import { startOfWeek, startOfMonth, format, subWeeks, subMonths, getDay } from "date-fns";
 
 function getTodayKey(): string {
   return new Date().toISOString().split("T")[0];
@@ -28,6 +28,28 @@ export interface PeriodDataPoint {
   "Completion %": number;
 }
 
+export interface DayOfWeekStat {
+  day: string;
+  shortDay: string;
+  doneCount: number;
+  totalCount: number;
+  doneRate: number;
+}
+
+export interface MoodBucket {
+  mood: number;
+  label: string;
+  completionPct: number;
+  count: number;
+}
+
+export interface DifficultyBucket {
+  difficulty: number;
+  label: string;
+  completionPct: number;
+  count: number;
+}
+
 export interface AnalyticsData {
   totalGoals: number;
   activeGoals: number;
@@ -51,6 +73,15 @@ export interface AnalyticsData {
   categoryBreakdown: Record<string, number>;
   systemStats: SystemStat[];
   goalCompletion: GoalCompletion[];
+  /** Day-of-week completion patterns (Mon–Sun) */
+  dayOfWeekStats: DayOfWeekStat[];
+  /** Mood (1-5) vs completion rate */
+  moodBuckets: MoodBucket[];
+  /** Difficulty (1-5) vs completion rate */
+  difficultyBuckets: DifficultyBucket[];
+  /** Whether there is enough mood/difficulty data to show correlations */
+  hasMoodData: boolean;
+  hasDifficultyData: boolean;
 }
 
 export function computeAnalytics(
@@ -215,6 +246,72 @@ export function computeAnalytics(
     };
   }).filter(Boolean) as GoalCompletion[];
 
+  /* ── Day-of-week completion patterns ── */
+  const DOW_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // Reorder to start Monday
+  const MON_FIRST_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon=1, Tue=2, ..., Sun=0
+
+  const dowDone:  Record<number, number> = {};
+  const dowTotal: Record<number, number> = {};
+  for (let d = 0; d < 7; d++) { dowDone[d] = 0; dowTotal[d] = 0; }
+
+  for (const c of checkins) {
+    const d = getDay(new Date(c.dateKey + "T12:00:00")); // 0=Sun … 6=Sat
+    dowTotal[d]++;
+    if (c.status === "done") dowDone[d]++;
+  }
+
+  const dayOfWeekStats: DayOfWeekStat[] = MON_FIRST_ORDER.map(d => ({
+    day: DOW_NAMES[d],
+    shortDay: DOW_SHORT[d],
+    doneCount: dowDone[d],
+    totalCount: dowTotal[d],
+    doneRate: dowTotal[d] > 0 ? Math.round((dowDone[d] / dowTotal[d]) * 100) : 0,
+  }));
+
+  /* ── Mood vs completion ── */
+  const moodMap: Record<number, { done: number; total: number }> = {};
+  for (let i = 1; i <= 5; i++) moodMap[i] = { done: 0, total: 0 };
+
+  for (const c of checkins) {
+    const mood = c.moodBefore;
+    if (mood && mood >= 1 && mood <= 5) {
+      moodMap[mood].total++;
+      if (c.status === "done") moodMap[mood].done++;
+    }
+  }
+
+  const moodLabels: Record<number, string> = { 1: "Very Low", 2: "Low", 3: "Neutral", 4: "Good", 5: "Great" };
+  const moodBuckets: MoodBucket[] = [1, 2, 3, 4, 5].map(m => ({
+    mood: m,
+    label: moodLabels[m],
+    completionPct: moodMap[m].total > 0 ? Math.round((moodMap[m].done / moodMap[m].total) * 100) : 0,
+    count: moodMap[m].total,
+  }));
+  const hasMoodData = moodBuckets.some(b => b.count >= 2);
+
+  /* ── Difficulty vs completion ── */
+  const diffMap: Record<number, { done: number; total: number }> = {};
+  for (let i = 1; i <= 5; i++) diffMap[i] = { done: 0, total: 0 };
+
+  for (const c of checkins) {
+    const diff = c.difficulty;
+    if (diff && diff >= 1 && diff <= 5) {
+      diffMap[diff].total++;
+      if (c.status === "done") diffMap[diff].done++;
+    }
+  }
+
+  const diffLabels: Record<number, string> = { 1: "Very Easy", 2: "Easy", 3: "Moderate", 4: "Hard", 5: "Very Hard" };
+  const difficultyBuckets: DifficultyBucket[] = [1, 2, 3, 4, 5].map(d => ({
+    difficulty: d,
+    label: diffLabels[d],
+    completionPct: diffMap[d].total > 0 ? Math.round((diffMap[d].done / diffMap[d].total) * 100) : 0,
+    count: diffMap[d].total,
+  }));
+  const hasDifficultyData = difficultyBuckets.some(b => b.count >= 2);
+
   return {
     totalGoals:      goals.length,
     activeGoals:     goals.filter(g => g.status === "active").length,
@@ -232,5 +329,58 @@ export function computeAnalytics(
     categoryBreakdown,
     systemStats,
     goalCompletion,
+    dayOfWeekStats,
+    moodBuckets,
+    difficultyBuckets,
+    hasMoodData,
+    hasDifficultyData,
   };
+}
+
+/** Compute a system health score (0-100) based on checkin history and system completeness */
+export function computeSystemHealthScore(
+  system: System,
+  checkins: Checkin[],
+  streak: number,
+): { score: number; label: string; color: string } {
+  const sc      = checkins.filter(c => c.systemId === system.id);
+  const done    = sc.filter(c => c.status === "done").length;
+  const total   = sc.length;
+  const pct     = total > 0 ? (done / total) * 100 : 0;
+
+  // Completeness: how many of the 5 key fields are filled
+  const keyFields = [
+    system.identityStatement,
+    system.triggerStatement,
+    system.minimumAction,
+    system.rewardPlan,
+    system.fallbackPlan,
+  ];
+  const filled      = keyFields.filter(f => f && f.trim().length > 0).length;
+  const completeness = (filled / 5) * 100;
+
+  // Streak bonus — up to 21 days for max bonus
+  const streakBonus = Math.min(streak, 21) / 21 * 100;
+
+  // Weighted score
+  const rawScore = (pct * 0.5) + (completeness * 0.3) + (streakBonus * 0.2);
+  const score    = Math.round(Math.min(100, rawScore));
+
+  let label: string;
+  let color: string;
+  if (total === 0) {
+    label = "New";
+    color = "text-muted-foreground";
+  } else if (score >= 75) {
+    label = "Strong";
+    color = "text-chart-3";
+  } else if (score >= 50) {
+    label = "Building";
+    color = "text-chart-4";
+  } else {
+    label = "Needs attention";
+    color = "text-destructive";
+  }
+
+  return { score, label, color };
 }

@@ -294,8 +294,21 @@ export default function SystemBuilderPage() {
   const CurrentIcon = currentStep.icon;
   const pct = Math.round(((step) / (STEPS.length - 1)) * 100);
 
+  const previewFields = [
+    { label: "Who I'm becoming",  value: form.identityStatement, icon: Brain,       color: "text-primary" },
+    { label: "Target outcome",    value: form.targetOutcome,     icon: Target,      color: "text-chart-2" },
+    { label: "Why it matters",    value: form.whyItMatters,      icon: Heart,       color: "text-chart-5" },
+    { label: "Trigger",           value: form.triggerStatement,  icon: Zap,         color: "text-chart-3" },
+    { label: "Minimum action",    value: form.minimumAction,     icon: Check,       color: "text-chart-4" },
+    { label: "Reward plan",       value: form.rewardPlan,        icon: Trophy,      color: "text-chart-4" },
+    { label: "Fallback plan",     value: form.fallbackPlan,      icon: ShieldCheck, color: "text-muted-foreground" },
+  ].filter(f => f.value?.trim());
+
   return (
-    <div className="p-5 md:p-6 max-w-2xl mx-auto space-y-5">
+    <div className="p-5 md:p-6 max-w-screen-lg mx-auto">
+      <div className="flex gap-8">
+        {/* ── Left: Builder form ── */}
+        <div className="flex-1 min-w-0 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/systems")} data-testid="button-back-systems">

@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight } from "lucide-react";
+import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight, Zap, Lightbulb } from "lucide-react";
 import { format, isPast, isWithinInterval, addDays, startOfDay } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link } from "wouter";
@@ -231,6 +231,28 @@ export default function Goals() {
           New Goal
         </Button>
       </div>
+
+      {/* Educational hint: goals vs systems — shown to new users */}
+      {goals.length === 0 && !isLoading && (
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20" data-testid="hint-goals-education">
+          <Lightbulb className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold mb-1">Goals give you direction. Systems create progress.</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              A goal is the destination — "I want to get fit." A system is the vehicle — "After breakfast, I do 5 pushups."
+              Start with a goal here, then build a system to make daily progress automatic.
+            </p>
+            <div className="flex gap-2 mt-3">
+              <Link href="/systems/new">
+                <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity">
+                  <Zap className="w-3 h-3" />
+                  Build a system
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">

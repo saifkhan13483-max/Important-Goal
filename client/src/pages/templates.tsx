@@ -13,12 +13,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Search, LayoutGrid, Brain, Zap, CheckSquare, Trophy, ShieldCheck,
-  BookOpen, Sparkles, ArrowRight,
+  BookOpen, Sparkles, ArrowRight, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ALL_CATEGORIES = [
   { value: "all", label: "All" },
+  { value: "beginner", label: "⭐ Beginner" },
   { value: "fitness", label: "Fitness" },
   { value: "reading", label: "Reading" },
   { value: "meditation", label: "Meditation" },
@@ -47,6 +48,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 function categoryColor(cat: string) {
   return CATEGORY_COLORS[cat] ?? "bg-muted text-muted-foreground border-border";
+}
+
+const BEGINNER_CATEGORIES = new Set(["fitness", "reading", "meditation", "sleep", "mindset"]);
+
+function isBeginnerFriendly(template: Template): boolean {
+  return BEGINNER_CATEGORIES.has(template.category);
 }
 
 function categoryLabel(cat: string) {
@@ -90,7 +97,9 @@ export default function TemplatesPage() {
 
   const filtered = useMemo(() => {
     return templates.filter(t => {
-      const matchesCategory = activeCategory === "all" || t.category === activeCategory;
+      const matchesCategory = activeCategory === "all"
+        || (activeCategory === "beginner" && isBeginnerFriendly(t))
+        || t.category === activeCategory;
       const q = search.toLowerCase().trim();
       const matchesSearch = !q || [t.title, t.description, t.category, t.identityStatement, t.minimumAction]
         .some(f => f?.toLowerCase().includes(q));
@@ -204,7 +213,7 @@ export default function TemplatesPage() {
                   data-testid={`template-card-${t.id}`}
                 >
                   <CardContent className="p-5 flex flex-col flex-1">
-                    <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
                       <h3 className="font-semibold text-sm leading-snug flex-1">{t.title}</h3>
                       <Badge
                         variant="outline"
@@ -214,6 +223,18 @@ export default function TemplatesPage() {
                         {categoryLabel(t.category)}
                       </Badge>
                     </div>
+                    {isBeginnerFriendly(t) && (
+                      <div className="flex items-center gap-1 mb-2">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] gap-1 text-chart-4 border-chart-4/30 bg-chart-4/5"
+                          data-testid={`badge-beginner-${t.id}`}
+                        >
+                          <Star className="w-2.5 h-2.5" />
+                          Best for beginners
+                        </Badge>
+                      </div>
+                    )}
 
                     {t.description && (
                       <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2 flex-1">
@@ -274,6 +295,12 @@ export default function TemplatesPage() {
                   className={`text-xs ${categoryColor(selectedTemplate.category)}`}
                 >
                   {categoryLabel(selectedTemplate.category)}
+                </Badge>
+              )}
+              {selectedTemplate && isBeginnerFriendly(selectedTemplate) && (
+                <Badge variant="outline" className="text-[10px] gap-1 text-chart-4 border-chart-4/30 bg-chart-4/5">
+                  <Star className="w-2.5 h-2.5" />
+                  Best for beginners
                 </Badge>
               )}
             </DialogTitle>
