@@ -409,21 +409,21 @@ function AnalyticsPreview() {
 
 function ProductPreview() {
   return (
-    <div className="relative mx-auto max-w-3xl mt-14 mb-2 px-4">
-      <div className="relative rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-muted/60">
+    <div className="relative mx-auto max-w-3xl mt-8 sm:mt-14 mb-2 px-0 sm:px-4">
+      <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
+        <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border-b border-border bg-muted/60">
           <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-red-400/70" />
-            <div className="w-3 h-3 rounded-full bg-chart-4/70" />
-            <div className="w-3 h-3 rounded-full bg-chart-3/70" />
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400/70" />
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-chart-4/70" />
+            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-chart-3/70" />
           </div>
-          <div className="flex-1 mx-4 h-5 rounded-md bg-background/80 border border-border flex items-center px-3 gap-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-chart-3/50" />
-            <div className="text-[10px] text-muted-foreground">systemforge.app/dashboard</div>
+          <div className="flex-1 mx-2 sm:mx-4 h-5 rounded-md bg-background/80 border border-border flex items-center px-2 sm:px-3 gap-1">
+            <div className="w-2 h-2 rounded-full bg-chart-3/50" />
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground">systemforge.app/dashboard</div>
           </div>
         </div>
-        <div className="flex h-72 sm:h-80">
-          <div className="w-44 border-r border-border bg-sidebar hidden sm:flex flex-col p-3 gap-1">
+        <div className="flex h-64 sm:h-72 md:h-80">
+          <div className="w-36 sm:w-44 border-r border-border bg-sidebar hidden sm:flex flex-col p-3 gap-1">
             <div className="flex items-center gap-2 p-2 mb-2">
               <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-white" />
@@ -451,42 +451,42 @@ function ProductPreview() {
               </div>
             ))}
           </div>
-          <div className="flex-1 p-4 overflow-hidden bg-background">
-            <div className="rounded-xl gradient-brand p-3 text-white mb-3 relative overflow-hidden">
+          <div className="flex-1 p-3 sm:p-4 overflow-hidden bg-background">
+            <div className="rounded-xl gradient-brand p-2.5 sm:p-3 text-white mb-2 sm:mb-3 relative overflow-hidden">
               <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-              <p className="text-[10px] text-white/70">Sunday, March 15</p>
-              <p className="text-sm font-bold">Good morning, Alex! 👋</p>
-              <p className="text-[10px] text-white/80">Ready to make progress today?</p>
+              <p className="text-[9px] sm:text-[10px] text-white/70">Sunday, March 15</p>
+              <p className="text-xs sm:text-sm font-bold">Good morning, Alex! 👋</p>
+              <p className="text-[9px] sm:text-[10px] text-white/80">Ready to make progress today?</p>
             </div>
-            <div className="grid grid-cols-4 gap-2 mb-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-2 sm:mb-3">
               {[
                 { label: "Goals", value: "3", color: "text-primary" },
                 { label: "Systems", value: "5", color: "text-chart-2" },
                 { label: "Today", value: "2/5", color: "text-chart-3" },
                 { label: "Streak", value: "12d", color: "text-chart-4" },
               ].map(m => (
-                <div key={m.label} className="bg-card border border-border rounded-lg p-2 text-center">
-                  <p className={`text-sm font-bold ${m.color}`}>{m.value}</p>
-                  <p className="text-[9px] text-muted-foreground">{m.label}</p>
+                <div key={m.label} className="bg-card border border-border rounded-lg p-1.5 sm:p-2 text-center">
+                  <p className={`text-xs sm:text-sm font-bold ${m.color}`}>{m.value}</p>
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground">{m.label}</p>
                 </div>
               ))}
             </div>
-            <div className="bg-card border border-border rounded-lg p-2.5">
-              <p className="text-xs font-semibold mb-2">Today's Systems</p>
-              <div className="space-y-1.5">
+            <div className="bg-card border border-border rounded-lg p-2 sm:p-2.5">
+              <p className="text-[10px] sm:text-xs font-semibold mb-1.5 sm:mb-2">Today's Systems</p>
+              <div className="space-y-1 sm:space-y-1.5">
                 {[
                   { title: "Morning Movement", done: true },
                   { title: "Daily Reading", done: true },
                   { title: "Focus Block", done: false },
                 ].map(s => (
                   <div key={s.title} className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-foreground">{s.title}</span>
-                    <div className="flex gap-1">
-                      <div className={cn("w-5 h-5 rounded text-[8px] flex items-center justify-center border", s.done ? "bg-chart-3 text-white border-chart-3" : "bg-muted border-border")}>
+                    <span className="text-[9px] sm:text-[10px] text-foreground truncate">{s.title}</span>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <div className={cn("w-4 h-4 sm:w-5 sm:h-5 rounded text-[7px] sm:text-[8px] flex items-center justify-center border", s.done ? "bg-chart-3 text-white border-chart-3" : "bg-muted border-border")}>
                         {s.done ? "✓" : ""}
                       </div>
-                      <div className="w-5 h-5 rounded text-[8px] flex items-center justify-center border bg-muted border-border" />
-                      <div className="w-5 h-5 rounded text-[8px] flex items-center justify-center border bg-muted border-border" />
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded text-[8px] flex items-center justify-center border bg-muted border-border" />
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded text-[8px] flex items-center justify-center border bg-muted border-border" />
                     </div>
                   </div>
                 ))}
@@ -620,34 +620,33 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ── */}
-      <section id="main-content" className="relative pt-32 pb-8 px-4 overflow-hidden min-h-[90vh] flex flex-col justify-center" aria-label="Hero">
+      <section id="main-content" className="relative pt-24 sm:pt-32 pb-8 px-4 overflow-hidden min-h-[90vh] flex flex-col justify-center" aria-label="Hero">
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-3xl" />
           <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-chart-2/5 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-chart-5/5 rounded-full blur-3xl" />
         </div>
         <div className="max-w-4xl mx-auto text-center">
-          <Badge variant="secondary" className="mb-6 px-3 py-1.5 text-xs font-medium gap-1.5">
+          <Badge variant="secondary" className="mb-4 sm:mb-6 px-3 py-1.5 text-xs font-medium gap-1.5">
             <Sparkles className="w-3 h-3" />
             The habit system that actually works
           </Badge>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-[1.1]">
-            Turn goals into daily systems
-            <br />
-            <span className="gradient-text">you can actually follow.</span>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 leading-[1.1]">
+            Turn goals into daily systems{" "}
+            <span className="gradient-text block sm:inline">you can actually follow.</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-7 sm:mb-10 leading-relaxed">
             SystemForge helps you create a goal, break it into repeatable daily actions, track your progress, and stay consistent — no complexity, no overwhelm.
           </p>
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-5 sm:mb-6">
             <Link href="/signup">
-              <Button size="lg" className="btn-scale gap-2 h-12 px-7 text-base rounded-full" data-testid="button-hero-cta">
+              <Button size="lg" className="btn-scale gap-2 h-11 sm:h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full sm:w-auto" data-testid="button-hero-cta">
                 Start Free
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <a href="#how-it-works">
-              <Button size="lg" variant="outline" className="btn-scale h-12 px-7 text-base rounded-full" data-testid="button-hero-how-it-works">
+              <Button size="lg" variant="outline" className="btn-scale h-11 sm:h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full sm:w-auto" data-testid="button-hero-how-it-works">
                 See How It Works
               </Button>
             </a>
@@ -661,10 +660,10 @@ export default function Landing() {
       </section>
 
       {/* ── Social proof strip ── */}
-      <section className="py-10 px-4 border-t border-border bg-muted/20">
+      <section className="py-8 sm:py-10 px-4 border-t border-border bg-muted/20">
         <div className="max-w-4xl mx-auto">
-          <p className="text-center text-xs text-muted-foreground mb-6 uppercase tracking-widest font-medium">Trusted by habit-builders around the world</p>
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+          <p className="text-center text-xs text-muted-foreground mb-5 sm:mb-6 uppercase tracking-widest font-medium">Trusted by habit-builders around the world</p>
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-4 sm:gap-8 md:gap-16">
             {[
               { value: "12,000+", label: "Active users" },
               { value: "98,000+", label: "Habits tracked" },
@@ -672,7 +671,7 @@ export default function Landing() {
               { value: "47 days", label: "Avg streak" },
             ].map(s => (
               <div key={s.label} className="text-center">
-                <p className="text-2xl font-bold gradient-text">{s.value}</p>
+                <p className="text-xl sm:text-2xl font-bold gradient-text">{s.value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
               </div>
             ))}
@@ -681,12 +680,12 @@ export default function Landing() {
       </section>
 
       {/* ── Section 3: Why Systems Work Better Than Goals ── */}
-      <section className="py-24 px-4 border-t border-border">
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4 text-xs">The core idea</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Why systems work better than goals</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+            <Badge variant="secondary" className="mb-3 text-xs">The core idea</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Why systems work better than goals</h2>
+            <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
               A goal tells you where to go. A system gets you there — one day at a time.
             </p>
           </div>
@@ -769,14 +768,14 @@ export default function Landing() {
       </section>
 
       {/* ── How it works ── */}
-      <section id="how-it-works" className="py-24 px-4 border-t border-border bg-muted/20">
+      <section id="how-it-works" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4 text-xs">Simple as 1-2-3</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">How SystemForge works</h2>
-            <p className="text-muted-foreground text-lg">It only takes 2 minutes to set up. No complicated setup.</p>
+          <div className="text-center mb-10 md:mb-16">
+            <Badge variant="secondary" className="mb-3 text-xs">Simple as 1-2-3</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">How SystemForge works</h2>
+            <p className="text-muted-foreground text-base md:text-lg">It only takes 2 minutes to set up. No complicated setup.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
             {steps.map((s, i) => (
               <div key={s.step} className="relative text-center">
                 {i < steps.length - 1 && (
@@ -797,12 +796,12 @@ export default function Landing() {
       </section>
 
       {/* ── Feature Highlights (8 cards, 4x2) ── */}
-      <section id="features" className="py-24 px-4 border-t border-border">
+      <section id="features" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge variant="secondary" className="mb-4 text-xs">Everything you need</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Simple tools. Powerful results.</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          <div className="text-center mb-10 md:mb-16">
+            <Badge variant="secondary" className="mb-3 text-xs">Everything you need</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Simple tools. Powerful results.</h2>
+            <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
               Every feature is designed to be instantly understandable — even if you've never used a productivity app before.
             </p>
           </div>
@@ -929,12 +928,12 @@ export default function Landing() {
       </section>
 
       {/* ── Templates ── */}
-      <section id="templates" className="py-24 px-4 border-t border-border">
+      <section id="templates" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4 text-xs">Don't start from scratch</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Start with a proven template</h2>
-            <p className="text-muted-foreground text-lg">
+          <div className="text-center mb-8 md:mb-12">
+            <Badge variant="secondary" className="mb-3 text-xs">Don't start from scratch</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Start with a proven template</h2>
+            <p className="text-muted-foreground text-base md:text-lg">
               Not sure what system to build? Pick one — already proven to work.
             </p>
           </div>
@@ -981,13 +980,13 @@ export default function Landing() {
       </section>
 
       {/* ── Testimonials ── */}
-      <section className="py-24 px-4 border-t border-border bg-muted/20">
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4 text-xs">What people are saying</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Real results from real people</h2>
+          <div className="text-center mb-8 md:mb-12">
+            <Badge variant="secondary" className="mb-3 text-xs">What people are saying</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Real results from real people</h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {testimonials.map((t) => (
               <Card key={t.name} className="hover-elevate border-l-4 border-l-primary border-border/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <CardContent className="p-6">
@@ -1015,12 +1014,12 @@ export default function Landing() {
       </section>
 
       {/* ── Pricing ── */}
-      <section id="pricing" className="py-24 px-4 border-t border-border">
+      <section id="pricing" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4 text-xs">Simple pricing</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Start free. Upgrade when you're ready.</h2>
-            <p className="text-muted-foreground text-lg">All plans include a 14-day free trial. No credit card required.</p>
+          <div className="text-center mb-8 md:mb-12">
+            <Badge variant="secondary" className="mb-3 text-xs">Simple pricing</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Start free. Upgrade when you're ready.</h2>
+            <p className="text-muted-foreground text-base md:text-lg">All plans include a 14-day free trial. No credit card required.</p>
 
             <div className="flex items-center justify-center gap-3 mt-6">
               <span className={cn("text-sm", !billingYearly && "font-semibold text-foreground", billingYearly && "text-muted-foreground")}>Monthly</span>
@@ -1041,7 +1040,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
             {pricingPlans.map((plan) => (
               <Card
                 key={plan.name}
@@ -1088,11 +1087,11 @@ export default function Landing() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" className="py-24 px-4 border-t border-border bg-muted/20">
+      <section id="faq" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4 text-xs">Questions answered</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Frequently asked questions</h2>
+          <div className="text-center mb-8 md:mb-12">
+            <Badge variant="secondary" className="mb-3 text-xs">Questions answered</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Frequently asked questions</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((faq) => (
@@ -1103,15 +1102,15 @@ export default function Landing() {
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="py-24 px-4 border-t border-border">
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="relative rounded-3xl overflow-hidden gradient-brand p-12 md:p-16 text-white">
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden gradient-brand p-8 sm:p-12 md:p-16 text-white">
             <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 -translate-y-1/2 pointer-events-none" />
-            <Sparkles className="w-10 h-10 mx-auto mb-4 opacity-80" />
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+            <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 sm:mb-4 opacity-80" />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 leading-tight">
               Your goals deserve a system.
             </h2>
-            <p className="text-white/80 text-base md:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+            <p className="text-white/80 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed">
               It's free, it's simple, and it takes less than 2 minutes to begin.
             </p>
             <Link href="/signup">
@@ -1130,9 +1129,9 @@ export default function Landing() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="py-12 px-4 border-t border-border bg-muted/20">
+      <footer className="py-8 sm:py-12 px-4 border-t border-border bg-muted/20">
         <div className="max-w-6xl mx-auto">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-10">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
