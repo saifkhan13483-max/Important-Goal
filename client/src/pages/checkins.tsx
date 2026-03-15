@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
 import type { System, Checkin } from "@/types/schema";
@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   CheckSquare, Check, Minus, X, Flame, MessageSquare,
-  ChevronDown, ChevronUp, History, CalendarDays, Grid3x3,
+  ChevronDown, ChevronUp, History, CalendarDays, Grid3x3, Trophy,
 } from "lucide-react";
 import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -23,12 +23,129 @@ function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
-const STATUS_CONFIG = {
-  done:    { label: "Done",    icon: Check, color: "text-chart-3",     bg: "bg-chart-3/10 border-chart-3/20" },
-  partial: { label: "Partial", icon: Minus, color: "text-chart-4",     bg: "bg-chart-4/10 border-chart-4/20" },
-  missed:  { label: "Missed",  icon: X,     color: "text-destructive",  bg: "bg-destructive/10 border-destructive/20" },
-};
+/* ─── Confetti for celebration ─────────────────────────────────── */
+const CONFETTI_COLORS = [
+  "#a78bfa", "#818cf8", "#34d399", "#fbbf24", "#f472b6",
+  "#60a5fa", "#fb923c", "#e879f9",
+];
 
+function CelebrationOverlay({ show, onDismiss }: { show: boolean; onDismiss: () => void }) {
+  const particles = useRef(
+    Array.from({ length: 48 }, (_, i) => ({
+      id: i,
+      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+      left: Math.random() * 100,
+      delay: Math.random() * 1.2,
+      duration: 2.2 + Math.random() * 1.5,
+      size: 6 + Math.random() * 8,
+      rotate: Math.random() * 360,
+      shape: Math.random() > 0.5 ? "circle" : "rect",
+    }))
+  ).current;
+
+  useEffect(() => {
+    if (show) {
+      const t = setTimeout(onDismiss, 5000);
+      return () => clearTimeout(t);
+    }
+  }, [show, onDismiss]);
+
+  if (!show) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+      onClick={onDismiss}
+      data-testid="celebration-overlay"
+    >
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden>
+        {particles.map(p => (
+          <div
+            key={p.id}
+            style={{
+              position: "absolute",
+              top: -20,
+              left: `${p.left}%`,
+              width: p.size,
+              height: p.shape === "rect" ? p.size * 0.45 : p.size,
+              borderRadius: p.shape === "circle" ? "50%" : 2,
+              background: p.color,
+              animation: `ciConfettiFall ${p.duration}s ${p.delay}s ease-in forwards`,
+              transform: `rotate(${p.rotate}deg)`,
+            }}
+          />
+        ))}
+        <style>{`
+          @keyframes ciConfettiFall {
+            0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+            80%  { opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+          }
+        `}</style>
+      </div>
+      <div
+        className="relative z-10 bg-background rounded-2xl p-8 text-center shadow-2xl mx-4 max-w-sm w-full"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="text-5xl mb-4">🔥</div>
+        <p className="text-2xl font-bold mb-2">Perfect Day!</p>
+        <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
+          You checked in on every single system today. That kind of consistency is how lasting change is built.
+          See you tomorrow!
+        </p>
+        <Button className="w-full" onClick={onDismiss} data-testid="button-close-celebration">
+          <Trophy className="w-4 h-4 mr-2" />
+          Keep the momentum going!
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Mood emoji picker ─────────────────────────────────────────── */
+const MOOD_EMOJIS = [
+  { value: 1, emoji: "😞", label: "Rough"  },
+  { value: 2, emoji: "😔", label: "Low"    },
+  { value: 3, emoji: "😐", label: "Okay"   },
+  { value: 4, emoji: "😊", label: "Good"   },
+  { value: 5, emoji: "😄", label: "Great"  },
+];
+
+function MoodEmojiPicker({
+  label, value, onChange, testPrefix,
+}: {
+  label: string;
+  value: number | null | undefined;
+  onChange: (v: number) => void;
+  testPrefix: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs text-muted-foreground font-medium">{label}</p>
+      <div className="flex gap-2">
+        {MOOD_EMOJIS.map(m => (
+          <button
+            key={m.value}
+            type="button"
+            onClick={() => onChange(m.value)}
+            data-testid={`${testPrefix}-${m.value}`}
+            title={m.label}
+            className={cn(
+              "flex flex-col items-center gap-0.5 p-2 rounded-lg border transition-all flex-1",
+              value === m.value
+                ? "border-primary bg-primary/10 scale-110"
+                : "border-border bg-muted/30 hover:border-primary/40 hover:scale-105"
+            )}
+          >
+            <span className="text-lg leading-none">{m.emoji}</span>
+            <span className="text-[9px] text-muted-foreground">{m.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Number rating row (kept for Difficulty) ────────────────────── */
 function RatingRow({
   label, value, onChange,
 }: { label: string; value: number | null | undefined; onChange: (v: number) => void }) {
@@ -39,6 +156,7 @@ function RatingRow({
         {[1, 2, 3, 4, 5].map(n => (
           <button
             key={n}
+            type="button"
             onClick={() => onChange(n)}
             className={cn(
               "w-7 h-7 rounded text-xs font-medium border transition-all",
@@ -56,13 +174,22 @@ function RatingRow({
   );
 }
 
+/* ─── Status config ─────────────────────────────────────────────── */
+const STATUS_CONFIG = {
+  done:    { label: "Done",    icon: Check, color: "text-chart-3",     bg: "bg-chart-3/10 border-chart-3/20" },
+  partial: { label: "Partial", icon: Minus, color: "text-chart-4",     bg: "bg-chart-4/10 border-chart-4/20" },
+  missed:  { label: "Missed",  icon: X,     color: "text-destructive",  bg: "bg-destructive/10 border-destructive/20" },
+};
+
+/* ─── Individual check-in card ──────────────────────────────────── */
 function SystemCheckinCard({
-  system, existingCheckin, userId, streakDays,
+  system, existingCheckin, userId, streakDays, onPerfectDay,
 }: {
   system: System;
   existingCheckin?: Checkin;
   userId: string;
   streakDays: number;
+  onPerfectDay?: () => void;
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -76,12 +203,11 @@ function SystemCheckinCard({
 
   const current = existingCheckin?.status as keyof typeof STATUS_CONFIG | undefined;
 
-  // Single mutation that always sends status + note + ratings together
   const checkInMutation = useMutation({
     mutationFn: (status: string) =>
       upsertCheckin(userId, system.id, today, {
         status,
-        note: note || undefined,
+        note:       note || undefined,
         moodBefore: moodBefore ?? undefined,
         moodAfter:  moodAfter  ?? undefined,
         difficulty: difficulty ?? undefined,
@@ -101,13 +227,12 @@ function SystemCheckinCard({
     },
   });
 
-  // Save only note + ratings on an EXISTING check-in (status already set)
   const saveNotesMutation = useMutation({
     mutationFn: () => {
       if (!current) throw new Error("no-status");
       return upsertCheckin(userId, system.id, today, {
-        status: current,
-        note: note || undefined,
+        status:     current,
+        note:       note || undefined,
         moodBefore: moodBefore ?? undefined,
         moodAfter:  moodAfter  ?? undefined,
         difficulty: difficulty ?? undefined,
@@ -121,9 +246,9 @@ function SystemCheckinCard({
     onError: (err: any) => {
       if ((err as Error).message === "no-status") {
         toast({
-          title: "Pick a status first",
+          title:       "Pick a status first",
           description: "Tap Done, Partial, or Missed above — then your note & ratings will be saved together.",
-          variant: "destructive",
+          variant:     "destructive",
         });
       } else {
         toast({ title: "Couldn't save", description: err?.message ?? "Please try again.", variant: "destructive" });
@@ -197,24 +322,44 @@ function SystemCheckinCard({
             data-testid={`button-checkin-note-${system.id}`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            Note & ratings
+            Note & mood
             {showNote ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
         </div>
 
-        {/* Note + mood/difficulty panel */}
+        {/* Note + mood panel */}
         {showNote && (
-          <div className="mt-3 space-y-3 border-t border-border/50 pt-3">
-            {/* Helper hint when no status chosen yet */}
+          <div className="mt-3 space-y-4 border-t border-border/50 pt-3">
+            {/* Helper hint when no status chosen */}
             {!current && (
               <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
                 <MessageSquare className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                  <strong>Tap Done, Partial, or Missed first</strong> — your note and ratings will be saved together with your check-in.
+                  <strong>Tap Done, Partial, or Missed first</strong> — your note and mood will be saved together with your check-in.
                 </p>
               </div>
             )}
 
+            {/* Mood emoji pickers */}
+            <div className="space-y-3">
+              <MoodEmojiPicker
+                label="How were you feeling before?"
+                value={moodBefore}
+                onChange={setMoodBefore}
+                testPrefix={`mood-before-${system.id}`}
+              />
+              <MoodEmojiPicker
+                label="How do you feel now?"
+                value={moodAfter}
+                onChange={setMoodAfter}
+                testPrefix={`mood-after-${system.id}`}
+              />
+            </div>
+
+            {/* Difficulty rating */}
+            <RatingRow label="Difficulty" value={difficulty} onChange={setDifficulty} />
+
+            {/* Note textarea */}
             <Textarea
               placeholder="How did it go? What did you notice?"
               value={note}
@@ -223,15 +368,8 @@ function SystemCheckinCard({
               className="text-sm"
               data-testid={`input-checkin-note-${system.id}`}
             />
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Rate this session (1 = low, 5 = high)</p>
-              <RatingRow label="Mood before" value={moodBefore} onChange={setMoodBefore} />
-              <RatingRow label="Mood after"  value={moodAfter}  onChange={setMoodAfter} />
-              <RatingRow label="Difficulty"  value={difficulty} onChange={setDifficulty} />
-            </div>
 
             {current ? (
-              // Has status — save note & ratings update
               <Button
                 size="sm"
                 variant="outline"
@@ -239,12 +377,11 @@ function SystemCheckinCard({
                 disabled={saveNotesMutation.isPending}
                 data-testid={`button-save-note-${system.id}`}
               >
-                {saveNotesMutation.isPending ? "Saving…" : "Save note & ratings"}
+                {saveNotesMutation.isPending ? "Saving…" : "Save note & mood"}
               </Button>
             ) : (
-              // No status picked — clicking the status buttons will save everything
               <p className="text-xs text-muted-foreground">
-                Your note & ratings will be saved automatically when you tap Done, Partial, or Missed above.
+                Your note & mood will be saved automatically when you tap Done, Partial, or Missed above.
               </p>
             )}
           </div>
@@ -262,6 +399,7 @@ function SystemCheckinCard({
   );
 }
 
+/* ─── History day card ──────────────────────────────────────────── */
 function HistoryDayCard({
   dateKey, dayCheckins, systems, isToday,
 }: {
@@ -272,9 +410,9 @@ function HistoryDayCard({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  const done    = dayCheckins.filter(c => c.status === "done").length;
-  const total   = dayCheckins.length;
-  const pct     = total > 0 ? Math.round((done / total) * 100) : 0;
+  const done  = dayCheckins.filter(c => c.status === "done").length;
+  const total = dayCheckins.length;
+  const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
 
   const label = isToday
     ? "Today"
@@ -316,13 +454,14 @@ function HistoryDayCard({
         </div>
       </CardHeader>
 
-      {/* Compact summary — always visible */}
       <CardContent className="pb-3">
         <div className="space-y-1.5">
           {dayCheckins.map(c => {
             const sys = systems.find(s => s.id === c.systemId);
             const cfg = STATUS_CONFIG[c.status as keyof typeof STATUS_CONFIG];
             const Icon = cfg?.icon ?? Check;
+            const moodEmojiBefore = MOOD_EMOJIS.find(m => m.value === c.moodBefore);
+            const moodEmojiAfter  = MOOD_EMOJIS.find(m => m.value === c.moodAfter);
             return (
               <div
                 key={c.id}
@@ -334,12 +473,10 @@ function HistoryDayCard({
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium">{sys?.title ?? "Unknown system"}</p>
 
-                  {/* Collapsed: show truncated note */}
                   {!expanded && c.note && (
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 italic">"{c.note}"</p>
                   )}
 
-                  {/* Expanded: show full note + all ratings */}
                   {expanded && (
                     <div className="mt-2 space-y-2">
                       {c.note && (
@@ -352,26 +489,26 @@ function HistoryDayCard({
                         <div className="grid grid-cols-3 gap-2">
                           {c.moodBefore != null && (
                             <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
-                              <p className="text-xs font-bold">{c.moodBefore}/5</p>
-                              <p className="text-[10px] text-muted-foreground">Mood before</p>
+                              <p className="text-base">{moodEmojiBefore?.emoji ?? "—"}</p>
+                              <p className="text-[10px] text-muted-foreground">Before</p>
                             </div>
                           )}
                           {c.moodAfter != null && (
                             <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
-                              <p className="text-xs font-bold">{c.moodAfter}/5</p>
-                              <p className="text-[10px] text-muted-foreground">Mood after</p>
+                              <p className="text-base">{moodEmojiAfter?.emoji ?? "—"}</p>
+                              <p className="text-[10px] text-muted-foreground">After</p>
                             </div>
                           )}
                           {c.difficulty != null && (
                             <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
-                              <p className="text-xs font-bold">{c.difficulty}/5</p>
+                              <p className="text-base font-bold">{c.difficulty}/5</p>
                               <p className="text-[10px] text-muted-foreground">Difficulty</p>
                             </div>
                           )}
                         </div>
                       )}
                       {!c.note && !c.moodBefore && !c.moodAfter && !c.difficulty && (
-                        <p className="text-xs text-muted-foreground italic">No note or ratings recorded.</p>
+                        <p className="text-xs text-muted-foreground italic">No note or mood recorded.</p>
                       )}
                     </div>
                   )}
@@ -389,25 +526,25 @@ function HistoryDayCard({
   );
 }
 
+/* ─── Calendar view ─────────────────────────────────────────────── */
 function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
   const [viewDate, setViewDate] = useState(() => new Date());
   const activeSystems = systems.filter(s => s.active);
 
-  const monthStart = startOfMonth(viewDate);
+  const monthStart  = startOfMonth(viewDate);
   const daysInMonth = getDaysInMonth(viewDate);
-  const startDow = getDay(monthStart); // 0=Sun
+  const startDow    = getDay(monthStart);
 
-  // Build a map of dateKey -> completion info
   const dayMap = useMemo(() => {
     const map: Record<string, { done: number; total: number; status: string }> = {};
     for (let d = 1; d <= daysInMonth; d++) {
-      const dateObj = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
-      const dateKey = dateObj.toISOString().split("T")[0];
-      const dayCheckins = allCheckins.filter(c => c.dateKey === dateKey);
-      const done = dayCheckins.filter(c => c.status === "done").length;
-      const total = activeSystems.length;
+      const dateObj  = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
+      const dateKey  = dateObj.toISOString().split("T")[0];
+      const dayC     = allCheckins.filter(c => c.dateKey === dateKey);
+      const done     = dayC.filter(c => c.status === "done").length;
+      const total    = activeSystems.length;
       let status = "empty";
-      if (dayCheckins.length > 0) {
+      if (dayC.length > 0) {
         if (done === total && total > 0) status = "perfect";
         else if (done > 0) status = "partial";
         else status = "missed";
@@ -417,11 +554,10 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
     return map;
   }, [allCheckins, activeSystems, viewDate, daysInMonth]);
 
-  const today = getTodayKey();
-  const todayDate = new Date();
-
-  const prevMonth = () => setViewDate(d => subMonths(d, 1));
-  const nextMonth = () => setViewDate(d => {
+  const today      = getTodayKey();
+  const todayDate  = new Date();
+  const prevMonth  = () => setViewDate(d => subMonths(d, 1));
+  const nextMonth  = () => setViewDate(d => {
     const next = addMonths(d, 1);
     if (next > todayDate) return d;
     return next;
@@ -437,9 +573,8 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
     }
   };
 
-  // Fill in blank cells for alignment (startDow 0=Sun)
   const blanks = Array.from({ length: startDow });
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const days   = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
     <Card>
@@ -448,9 +583,7 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
           <button onClick={prevMonth} className="p-1.5 rounded-md hover:bg-muted transition-colors text-sm">
             ←
           </button>
-          <h3 className="text-sm font-semibold">
-            {format(viewDate, "MMMM yyyy")}
-          </h3>
+          <h3 className="text-sm font-semibold">{format(viewDate, "MMMM yyyy")}</h3>
           <button
             onClick={nextMonth}
             disabled={!canGoNext}
@@ -460,25 +593,20 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
           </button>
         </div>
 
-        {/* Day-of-week headers */}
         <div className="grid grid-cols-7 gap-1 mb-1">
           {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => (
             <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">{d}</div>
           ))}
         </div>
 
-        {/* Calendar cells */}
         <div className="grid grid-cols-7 gap-1" data-testid="calendar-grid">
-          {blanks.map((_, i) => (
-            <div key={`blank-${i}`} />
-          ))}
+          {blanks.map((_, i) => <div key={`blank-${i}`} />)}
           {days.map(d => {
             const dateObj  = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
             const dateKey  = dateObj.toISOString().split("T")[0];
             const isFuture = dateKey > today;
             const isToday  = dateKey === today;
             const info     = dayMap[dateKey];
-
             return (
               <div
                 key={dateKey}
@@ -500,13 +628,12 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
           })}
         </div>
 
-        {/* Legend */}
         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/50 flex-wrap">
           {[
             { label: "Perfect", color: "bg-chart-3/80" },
-            { label: "Partial",  color: "bg-chart-4/60" },
-            { label: "Missed",   color: "bg-destructive/30" },
-            { label: "No data",  color: "bg-muted/30" },
+            { label: "Partial", color: "bg-chart-4/60" },
+            { label: "Missed",  color: "bg-destructive/30" },
+            { label: "No data", color: "bg-muted/30" },
           ].map(item => (
             <div key={item.label} className="flex items-center gap-1.5">
               <div className={cn("w-3 h-3 rounded-sm", item.color)} />
@@ -515,15 +642,11 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
           ))}
         </div>
 
-        {/* Monthly summary */}
         {(() => {
-          const monthCheckins = allCheckins.filter(c => {
-            const m = format(viewDate, "yyyy-MM");
-            return c.dateKey.startsWith(m);
-          });
-          const perfectDays = Object.values(dayMap).filter(d => d.status === "perfect").length;
-          const partialDays = Object.values(dayMap).filter(d => d.status === "partial").length;
-          const missedDays  = Object.values(dayMap).filter(d => d.status === "missed").length;
+          const monthCheckins = allCheckins.filter(c => c.dateKey.startsWith(format(viewDate, "yyyy-MM")));
+          const perfectDays   = Object.values(dayMap).filter(d => d.status === "perfect").length;
+          const partialDays   = Object.values(dayMap).filter(d => d.status === "partial").length;
+          const missedDays    = Object.values(dayMap).filter(d => d.status === "missed").length;
           if (monthCheckins.length === 0) return null;
           return (
             <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-3 gap-2 text-center">
@@ -547,6 +670,7 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
   );
 }
 
+/* ─── History view ──────────────────────────────────────────────── */
 function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
   const grouped = useMemo(() => {
     const map: Record<string, Checkin[]> = {};
@@ -572,7 +696,6 @@ function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems
   }
 
   const today = getTodayKey();
-
   return (
     <div className="space-y-4">
       {grouped.map(([dateKey, dayCheckins]) => (
@@ -588,10 +711,14 @@ function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems
   );
 }
 
+/* ─── Main page ─────────────────────────────────────────────────── */
 export default function Checkins() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
-  const today = getTodayKey();
+  const today  = getTodayKey();
+
+  const [showCelebration, setShowCelebration] = useState(false);
+  const prevPerfect = useRef(false);
 
   const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
     queryKey: ["systems", userId],
@@ -611,19 +738,29 @@ export default function Checkins() {
     enabled: !!userId,
   });
 
-  const analytics = useMemo(
-    () => computeAnalytics(allCheckins, systems, []),
-    [allCheckins, systems],
-  );
+  const analytics     = useMemo(() => computeAnalytics(allCheckins, systems, []), [allCheckins, systems]);
+  const activeSystems = systems.filter(s => s.active);
+  const doneCount     = todayCheckins.filter(c => c.status === "done").length;
+  const totalCount    = activeSystems.length;
+  const completionPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const getCheckin    = (systemId: string) => todayCheckins.find(c => c.systemId === systemId);
 
-  const activeSystems  = systems.filter(s => s.active);
-  const doneCount      = todayCheckins.filter(c => c.status === "done").length;
-  const totalCount     = activeSystems.length;
-  const completionPct  = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
-  const getCheckin     = (systemId: string) => todayCheckins.find(c => c.systemId === systemId);
+  /* Show celebration the moment we hit 100% */
+  useEffect(() => {
+    const isPerfect = completionPct === 100 && totalCount > 0;
+    if (isPerfect && !prevPerfect.current) {
+      setShowCelebration(true);
+    }
+    prevPerfect.current = isPerfect;
+  }, [completionPct, totalCount]);
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
+      <CelebrationOverlay
+        show={showCelebration}
+        onDismiss={() => setShowCelebration(false)}
+      />
+
       <div>
         <h1 className="text-2xl font-bold">Daily Check-ins</h1>
         <p className="text-muted-foreground text-sm mt-0.5">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
@@ -669,12 +806,12 @@ export default function Checkins() {
             </Card>
           </div>
 
-          {/* Perfect day banner */}
+          {/* Perfect day banner (inline, shown even after celebrating) */}
           {completionPct === 100 && totalCount > 0 && (
             <div className="p-4 rounded-xl gradient-brand text-white text-center" data-testid="banner-perfect-day">
               <Flame className="w-8 h-8 mx-auto mb-2" />
               <p className="font-bold text-lg">Perfect day!</p>
-              <p className="text-white/80 text-sm">You completed all your systems today. Keep the streak going!</p>
+              <p className="text-white/80 text-sm">All systems done. Your streak is growing! 🔥</p>
             </div>
           )}
 
@@ -691,7 +828,8 @@ export default function Checkins() {
                 </div>
                 <h3 className="font-semibold mb-2">No active systems</h3>
                 <p className="text-muted-foreground text-sm mb-4">
-                  Build your first system to start tracking your daily actions.
+                  A <strong>system</strong> is a simple, repeatable action tied to your goal.
+                  Build your first one to start tracking your progress.
                 </p>
                 <Button asChild>
                   <a href="/systems/new" data-testid="button-go-build-system">Build a System</a>
@@ -707,6 +845,7 @@ export default function Checkins() {
                   existingCheckin={getCheckin(system.id)}
                   userId={userId}
                   streakDays={analytics.streaks[system.id] ?? 0}
+                  onPerfectDay={() => setShowCelebration(true)}
                 />
               ))}
             </div>

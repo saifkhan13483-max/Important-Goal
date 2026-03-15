@@ -1,0 +1,705 @@
+PHASE 0 — STRATEGIC FOUNDATION & BRAND ALIGNMENT
+Framework: D.E.E.P (Deep analysis for strategic decisions)
+
+Role: Act as a world-class SaaS product strategist, brand designer, and UX researcher.
+
+Context
+You are redesigning SystemForge, a habit + goal-tracking SaaS app. Before touching any pixel or writing any code, you must establish a rock-solid strategic foundation. Everything in subsequent phases depends on the clarity produced here.
+
+Product Definition
+SystemForge turns vague goals into clear daily systems. The core insight the product is built on:
+
+"Goals are the destination. Systems are the daily actions that get you there."
+
+Most people set goals like "get fit," "study more," or "be productive" but have no idea what to do on any given day. SystemForge helps beginners break goals into repeatable daily actions, track consistency, reflect, and improve over time.
+
+Target Audience (Deeply Defined)
+Design every decision for these users:
+
+Segment	Age Range	Key Pain Point	Emotional Need
+Beginners new to habit tracking	16–35	Don't know where to start	Hand-holding, reassurance
+Students	16–24	Overwhelmed by study goals	Structure without rigidity
+Young professionals	22–35	Want productivity without burnout	Calm clarity
+Self-improvement users	18–40	Have tried and failed other tools	Hope, simplicity
+Overwhelmed users	Any	Paralyzed by complex productivity apps	Relief, minimalism
+Users needing daily guidance	Any	Lack a repeatable routine	Step-by-step direction
+Brand Identity
+Brand Name: SystemForge
+
+Brand Personality Attributes:
+
+Elegant but approachable
+Calm but motivational
+Premium but not exclusive
+Structured but not intimidating
+Intelligent but never condescending
+Design Personality Benchmarks:
+
+Notion-level clarity
+Linear-level polish
+Headspace-level friendliness
+Apple-like spacing and simplicity
+A "soft productivity" aesthetic
+Hard Avoidances:
+
+Clutter or visual noise
+Productivity jargon (optimize, leverage, framework, workflow engine)
+Overly technical dashboards
+Harsh contrast blocks
+Too many competing colors
+"Crypto/fintech dashboard" vibes
+Overly gamified or childish UI
+Design Token System
+Colors:
+
+Token	Light Mode	Dark Mode
+Primary Purple	hsl(258, 84%, 62%)	hsl(258, 84%, 68%)
+Background	hsl(240, 10%, 98%)	hsl(240, 10%, 6%)
+Accent / Soft Purple	hsl(258, 30%, 92%)	(adjust for dark readability)
+Chart: Cyan	Define	Define
+Chart: Green	Define	Define
+Chart: Orange	Define	Define
+Chart: Pink	Define	Define
+Brand Gradient: Purple → Violet-pink (diagonal, used sparingly for CTAs and hero accents)
+
+Typography: Inter — with a clear hierarchy:
+
+Hero headings: Bold, large, confident (48–64px+)
+Section headings: Semibold, clear (28–36px)
+Body copy: Regular, readable (16–18px)
+Labels / helper text: Light or medium, soft (12–14px)
+Surface Styling:
+
+Cards with soft shadows (shadow-sm to shadow-md) or delicate 1px borders
+Rounded corners (rounded-xl to rounded-2xl)
+Generous whitespace (min 24–48px section padding)
+Strong spacing rhythm (8px base grid)
+Tech Constraints
+All design decisions must be implementable with:
+
+React (component architecture)
+Firebase Auth + Firestore (async data, loading states)
+Tailwind CSS (utility-first styling)
+shadcn/ui components (Button, Card, Tabs, Accordion, Dialog, Progress, Tooltip, Badge, Input, Select, Checkbox, Calendar, Avatar, Sheet/Drawer, Skeleton, Toast)
+Full responsive design (mobile-first, 320px → 1440px+)
+Full light/dark mode support
+Pricing Tiers
+Tier	Price	Notes
+Free	$0	Entry point, limited features
+Starter	$9/mo	For individual users getting serious
+Pro	$19/mo	Most popular — full feature set
+Team/Coach	$49/mo	For coaches, teams, multi-user
+Deliverables for This Phase
+UX Strategy Document — Define the 5 core UX principles that will govern every screen.
+User Journey Map — Map the journey from "first landing page visit" to "7-day retained user."
+Information Architecture / Sitemap — Full page structure for both the marketing website and the app.
+Design Personality Summary — A one-page reference card for the brand's visual and tonal personality.
+Problem ↔ Solution Matrix — Map each of the 5 main UX problems (listed below) to specific design strategies.
+The 5 Core UX Problems to Solve
+#	Problem	Success Metric
+1	Concept is not instantly understandable — A beginner should understand what SystemForge is, how it helps, why "systems" beat vague goals, and what to do first within 5 seconds of landing.	5-second test clarity
+2	Overwhelm — Too much information shown at once. Complex actions aren't broken into guided steps.	Progressive disclosure applied to every multi-step flow
+3	Beginner confidence is low — Interface feels demanding, not supportive. Lacks reassuring copy, examples, empty states, and onboarding cues.	Every empty state has a helpful CTA; onboarding completion rate target: 80%+
+4	UI doesn't feel premium or beautiful — Needs generous whitespace, soft surfaces, subtle borders, layered cards, smooth hierarchy, tasteful gradients, clean icons, elegant data viz.	Passes a "would I screenshot this?" test
+5	Information hierarchy is weak — Primary actions don't stand out: Start Free, Create First Goal, Build First System, Complete Today's Check-In.	Each screen has exactly 1 visually dominant CTA
+Constraints & Rules
+Every decision must trace back to one of the 5 UX principles you define.
+Assume users have zero familiarity with habit-tracking apps.
+Use plain English everywhere (6th–8th grade reading level).
+All outputs should reference the design tokens above.
+PHASE 1 — HOMEPAGE REDESIGN (Marketing Website)
+Framework: C.R.E.A.T.E (Creative + marketing work requiring brand voice and emotional resonance)
+
+Role: Act as a world-class SaaS landing page designer, conversion copywriter, and frontend architect.
+
+Dependency: Use all strategic decisions, brand tokens, sitemap, and UX principles established in Phase 0.
+
+Objective
+Design a beautiful, high-converting homepage that makes a first-time visitor instantly understand three things:
+
+"This helps me turn goals into daily habits."
+"This seems simple enough for me."
+"I want to try it."
+Homepage Sections — Design Each in Full Detail
+Section 1: Sticky Top Navigation
+
+Elements: Logo (left), nav links (center), auth + CTA (right)
+Links: Features · How It Works · Templates · Pricing · Sign In
+CTA Button: "Start Free" (primary purple, pill-shaped)
+Behavior: Transparent on hero, frosted glass (backdrop-blur-xl) on scroll
+Mobile: Hamburger menu → Sheet/Drawer slide-in
+Style: Minimal, no underlines, Inter Medium 14px, generous horizontal padding
+Section 2: Hero Section
+
+Headline — Must communicate the core value in ≤10 words. Direction options:
+"Turn goals into daily systems you can actually follow."
+"Build small daily habits that lead to big results."
+"Stop setting vague goals. Start building daily systems."
+Subheadline — 1–2 sentences in plain English explaining: SystemForge helps you create a goal, break it into repeatable daily actions, track your progress, and stay consistent — no complexity, no overwhelm.
+CTA Buttons — Two buttons side by side:
+Primary: "Start Free" (filled purple)
+Secondary: "See How It Works" (ghost/outlined)
+Visual — A polished product mockup showing the dashboard or onboarding screen. Floating, with a subtle shadow and slight perspective tilt. Both light and dark mode versions.
+Trust Line — A small line below CTAs: e.g., "Free forever. No credit card needed." or "Join 10,000+ people building better daily habits."
+Layout: Large hero (min 90vh), generous whitespace, heading left-aligned or centered depending on mockup placement. Breathable.
+Background: Soft gradient wash (brand purple at 5–8% opacity) or a subtle radial glow behind the mockup.
+Section 3: "Why Systems Work Better Than Goals"
+
+Purpose: Educate beginners on the product philosophy visually.
+Format: Side-by-side comparison (two columns or a visual table).
+Content:
+Left column (labeled "Goals"): Vague outcomes — "Get fit," "Read more," "Be productive"
+Right column (labeled "Systems"): Specific daily actions — "Walk 20 min every morning," "Read 10 pages after dinner," "Write for 15 min before work"
+Add a small bridging line: "A goal tells you where to go. A system gets you there — one day at a time."
+Visual treatment: Soft cards, subtle icons (target icon vs. repeat/cycle icon), muted vs. vibrant coloring to show the shift.
+This section must be extremely visual, not text-heavy. A beginner should grasp the concept in 3 seconds.
+Section 4: "How It Works" — 3-Step Process
+
+Format: 3 horizontal cards (stacked vertically on mobile)
+Steps:
+Set a Goal — "Choose what you want to improve." (icon: flag or target)
+Build a System — "Turn your goal into simple daily actions." (icon: building blocks or cog)
+Check In & Improve — "Track your progress and grow every day." (icon: checkmark or chart-up)
+Each card: icon + short title + 1-sentence description
+Connector: Subtle arrows or a numbered flow line between cards
+Tone: Easy and reassuring — "It only takes 2 minutes to set up."
+Section 5: Feature Highlights
+
+Format: Grid of 8 elegant feature cards (4×2 on desktop, 2×4 on tablet, 1×8 on mobile)
+
+Use beginner-friendly language for each feature:
+
+Feature	Beginner-Friendly Label	Description
+Goal Setting	"Define what you want to achieve"	Set a goal with a category, priority, and timeline.
+System Builder	"Turn your goal into a daily plan"	A guided wizard that builds your habit step by step.
+Daily Check-Ins	"Track how today went in seconds"	Mark each habit as done, partial, or missed.
+Streaks	"Stay motivated with visible consistency"	See how many days in a row you've shown up.
+Analytics	"See what's working"	Simple charts and plain-language insights.
+Journal	"Reflect on your progress"	Daily, weekly, and freeform journaling with prompts.
+Templates	"Start with proven systems"	Pre-built habit plans for fitness, study, wellness, and more.
+Personalization	"Get a setup that matches your life"	Customized onboarding based on your goals and schedule.
+Each card: clean icon (line-style, consistent weight), title, 1-line description
+
+Hover: Subtle lift + soft shadow increase
+
+Section 6: Product Preview
+
+Show 3–4 polished UI screenshots or mockups:
+Onboarding personalization screen
+System Builder wizard (mid-step)
+Daily check-in card
+Analytics dashboard
+Format: Horizontal carousel or a tabbed showcase (use shadcn/ui Tabs)
+Each preview should look like a real product, not a generic wireframe
+Add a short caption under each: e.g., "Your personal setup — done in 2 minutes."
+Section 7: Social Proof / Testimonials
+
+Format: 3 testimonial cards in a horizontal row
+Each card includes: quote, name, role/identity (e.g., "Student, 22"), avatar placeholder
+Tone of testimonials should emphasize:
+"I finally understand what to do every day."
+"It's so much simpler than other apps I've tried."
+"I've been consistent for 30 days for the first time ever."
+Style: Soft card with subtle left-border accent in brand purple. Quotation mark icon.
+Section 8: Pricing Section
+
+Format: 4-column pricing table (stacked on mobile)
+Tiers: | Free ($0) | Starter ($9) | Pro ($19) | Team/Coach ($49) |
+Pro plan visually highlighted: brand purple border, "Most Popular" badge, slightly elevated/scaled card
+Each tier: price, short description, feature list (checkmarks), CTA button
+CTA copy: Free → "Get Started," Starter → "Start Free Trial," Pro → "Start Free Trial," Team → "Contact Us"
+Footer note: "All plans include a 14-day free trial. No credit card required."
+Comparison toggle (optional): Monthly / Yearly with a discount badge on yearly
+Section 9: FAQ Section
+
+Format: Accordion (shadcn/ui Accordion component)
+Questions:
+What is a "system" in SystemForge?
+Is this good for complete beginners?
+Can I use it for fitness, study, or productivity goals?
+Does it work on mobile?
+What's included in the free plan?
+Can coaches or teams use it?
+How is this different from other habit trackers?
+Answers: Plain English, 2–3 sentences each, reassuring and specific.
+Section 10: Final CTA Footer
+
+Headline: "Your goals deserve a system." or "Start building your daily system today."
+Subline: "It's free, it's simple, and it takes less than 2 minutes to begin."
+CTA Button: "Start Free" (large, primary purple, centered)
+Background: Soft gradient wash or subtle brand-purple radial glow
+Below: Standard footer with links (Product, Company, Legal, Social)
+Deliverables for This Phase
+Section-by-section wireframe descriptions with layout, hierarchy, and component notes
+Full homepage copywriting (headlines, subheadlines, descriptions, CTAs, testimonials, FAQ answers)
+Responsive layout notes (desktop → tablet → mobile)
+shadcn/ui component mapping per section
+Light and dark mode considerations per section
+PHASE 2 — APP UX REDESIGN (In-App Experience)
+Framework: F.I.R.S.T + P.A.I.R (Iterative project requiring refinement and collaboration)
+
+Role: Act as a world-class product designer, UX strategist, and interaction designer.
+
+Dependency: Use all strategic decisions from Phase 0 and visual direction from Phase 1.
+
+Core App UX Principles
+Every screen must follow these rules:
+
+One primary action per screen — The user should always know what to do next.
+Plain language only — No jargon. Explain any non-obvious term the first time it appears.
+Visual progress everywhere — Progress bars, rings, streaks, completion counts.
+Empty states that teach — Every blank screen is an opportunity to guide, not confuse.
+Early success — The first session must feel rewarding (first goal set, first check-in done).
+Progressive disclosure — Don't show everything at once. Reveal complexity gradually.
+Screen-by-Screen Design Specifications
+Screen A: Onboarding Personalization Flow
+Purpose: Make the user feel welcomed and understood before they see the main app.
+Format: Full-screen step-by-step flow (not a modal). One question per screen.
+Progress Indicator: Top bar or stepper dots showing current step out of total.
+Questions (one per step):
+"What do you want to improve?" — Cards/chips: Health, Fitness, Study, Work, Creativity, Mindfulness, Other
+"What's your main goal?" — Short text input with examples: "Exercise 3x a week," "Read daily," "Study for exams"
+"How much time can you realistically commit each day?" — Segmented options: 5 min, 15 min, 30 min, 60 min+
+"When do you usually have free time?" — Chips: Morning, Afternoon, Evening, Varies
+"What motivates you most?" — Cards: Streaks, Progress charts, Journaling, Reminders, Accountability
+"Would you like daily reminders?" — Toggle with time picker
+"How experienced are you with habit tracking?" — 3 cards: Beginner, Intermediate, Advanced (with friendly descriptions)
+Visual Style: Large cards, friendly icons, soft brand-purple accents, encouraging micro-copy at the bottom of each step (e.g., "No pressure — you can always change this later.")
+Final Step: "You're all set!" celebration screen with a confetti micro-animation and CTA: "Create Your First Goal"
+Screen B: Goal Creation
+Purpose: Let the user define a goal in under 60 seconds.
+Format: Single-screen form (not a wizard — keep it simple).
+Fields:
+Goal name (text input, placeholder: "e.g., Exercise 3 times a week")
+Category (select dropdown: Health, Study, Work, Creative, Wellness, Custom)
+Priority (segmented: Low, Medium, High — with color coding)
+Deadline (calendar picker, optional, with helper text: "When do you want to reach this goal?")
+Helper Text: Below the form: "Don't overthink it — you can always edit your goal later."
+CTA: "Save Goal" → immediately prompts "Build a System for This Goal?"
+Empty State (if no goals yet): Illustration + "You haven't set a goal yet. Let's start with one." + CTA: "Create Your First Goal"
+Screen C: 7-Step System Builder Wizard
+Purpose: The flagship feature. Guide the user through creating a daily system for their goal.
+
+Format: Full-screen wizard with a horizontal stepper at the top.
+
+Interaction model: One question per step. Back/Next buttons. Skip option where appropriate.
+
+Steps:
+
+Step	Title	Content	Input Type
+1	Choose Your Goal	Select from existing goals or create a new one	Card selection
+2	Define Your Action	"What will you do every day/week?" + examples	Text input + suggestion chips
+3	Set Frequency	Daily / X times per week / Weekdays only / Custom	Segmented control
+4	Pick a Time or Trigger	"When will you do this?" — Morning / Afternoon / Evening / After [trigger]	Cards + optional time picker
+5	Set Difficulty	"What's the minimum version?" — e.g., "Even on a bad day, I'll do at least 5 minutes"	Slider or segmented
+6	Reminders	Enable/disable, pick time	Toggle + time picker
+7	Review & Start	Summary card of everything, edit links, "Looks good!" CTA	Review card
+Design Requirements:
+
+Must feel like a conversation, not a form
+Each step has a short motivational hint (e.g., Step 5: "Starting small is the secret to staying consistent.")
+Smooth transitions between steps (slide or fade)
+Review step shows a polished card with all choices, editable inline
+Final CTA: "Start My System" → triggers a subtle celebration animation
+Screen D: Daily Check-In
+Purpose: The most-used screen. Must be frictionless and satisfying.
+Format: Scrollable list of today's systems/habits, each as a card.
+Per-habit card:
+Habit name + goal it belongs to
+3 large tap targets: ✅ Done / 🔶 Partial / ❌ Missed
+Optional: quick note field (expandable)
+Streak count badge
+Top of screen:
+Date (today)
+Completion ring (X of Y habits done)
+Greeting: "Good morning, [Name]. Here's your plan for today."
+Bottom of screen:
+Mood check (5 emoji-style options: Great, Good, Okay, Low, Rough)
+"Finish Check-In" button → celebration animation if all done
+Completion state: All done → card turns into a calm congratulatory message: "All done for today. You showed up."
+Screen E: Dashboard / Home
+Purpose: The main hub. Must feel calm, focused, and action-oriented.
+Layout: Single-column with priority-ordered widgets:
+Today's Systems (top priority) — Quick check-in access. Shows undone habits.
+Streak Summary — Compact visual showing active streaks.
+Next Milestone — "3 more days until a 2-week streak!"
+One Insight — Plain-language: "You're 12% more consistent than last week."
+Recent Journal — Last entry preview with "Write today" CTA.
+Analytics Snapshot — Mini chart (weekly completion rate).
+Empty state (new user): Friendly illustration + "Welcome to SystemForge! Let's set up your first goal." + CTA button.
+Design: Soft card-based layout, generous padding, no data overload. A beginner should scan this in 5 seconds and know: "I should do my check-in."
+Screen F: Analytics
+Purpose: Show progress in a way non-technical users can understand.
+Key Visualizations:
+Weekly completion rate (simple bar chart)
+Streak timeline (horizontal dots or heatmap-lite)
+Best day of week (highlight card)
+Mood-vs-completion correlation (simple scatter or overlay)
+Plain-Language Insights (prioritized over charts):
+"You completed 78% of your planned actions this week."
+"You're most consistent on weekdays."
+"Mood is better on days you complete your morning system."
+Design: Charts use the brand chart colors (Cyan, Green, Orange, Pink). Clean axes, no gridline noise. Insights above charts, not below.
+Filter: By goal, by system, by time range (This Week / This Month / All Time)
+Screen G: Journal
+Purpose: A calming reflective space.
+Tabs (shadcn/ui Tabs):
+Daily — Guided prompts: "What worked today?" / "What got in the way?" / "What will I repeat tomorrow?"
+Weekly — Guided prompts: "What was my biggest win?" / "What pattern do I notice?" / "What should I adjust?"
+Freeform — Open text area, no prompts, write anything.
+Design: Warm, distraction-free. Minimal chrome. Soft background. Large text area. Auto-save indicator.
+Entry List: Below the editor, show past entries as a reverse-chronological list with date and preview snippet.
+Screen H: Template Library
+Purpose: Help users who don't know where to start.
+Format: Filterable gallery grid.
+Filters (chips or tabs): Fitness, Study, Focus, Wellness, Morning Routine, Work Productivity, All
+Template Card:
+Title (e.g., "Morning Wellness Routine")
+Difficulty badge (Easy / Medium / Advanced)
+Estimated daily time (e.g., "~15 min/day")
+Brief description (1 line)
+CTA: "Use This Template"
+Template Detail (Dialog or Sheet):
+Full description
+Example weekly schedule
+Included habits list
+"Use Template" CTA → pre-fills the System Builder
+Screen I: Upgrade / Pricing Modal
+Purpose: Convert free users to paid without being aggressive.
+Trigger: When user hits a free-plan limit (e.g., >3 goals, advanced analytics)
+Format: Dialog (shadcn/ui Dialog) or full page
+Content:
+Headline: "Unlock more with Pro"
+3–4 key benefits in plain language
+Pricing comparison (Free vs. Pro, simplified)
+CTA: "Start Free Trial" (primary) / "Maybe Later" (ghost)
+Tone: Helpful, not pushy. "No pressure — you're doing great on the free plan."
+Deliverables for This Phase
+Screen-by-screen UX specifications (layout, content, components, states)
+User flow diagrams: Onboarding → First Goal → First System → First Check-In
+Empty state designs and copy for every screen
+Error state and edge case handling notes
+Navigation structure (sidebar? bottom tabs? top bar?)
+Mobile-specific adaptations for each screen
+PHASE 3 — COPYWRITING & CONTENT STRATEGY
+Framework: S.T.Y.L.E (Content creation requiring personality and brand voice)
+
+Role: Act as a world-class UX copywriter specializing in SaaS products for beginner audiences.
+
+Dependency: Use the brand personality, audience profiles, and screen structures from Phases 0–2.
+
+Voice & Tone Guidelines
+Reading Level: 6th–8th grade. Use the Hemingway test.
+
+Tone Attributes:
+
+Clear — never ambiguous
+Short — sentences under 15 words when possible
+Encouraging — the user is doing something brave by starting
+Plain English — no jargon, no corporate speak
+Supportive — never demanding or guilt-inducing
+Action-oriented — every CTA tells the user exactly what happens next
+Explain "System" Clearly: Every first mention of the word "system" must include a definition: "A system is a simple, repeatable action tied to your goal — like walking 20 minutes every morning to get fit."
+
+Copy Rules
+Rule	Good Example	Bad Example
+Use plain verbs	"Build your first daily system"	"Configure your behavior architecture"
+Celebrate small wins	"You showed up today. That matters."	"Task completed."
+Make empty states helpful	"No habits yet. Let's create your first one."	"No data."
+Use specific examples	"Read 10 pages after dinner"	"Implement a reading framework"
+Button labels = actions	"Start Free," "Save Goal," "Finish Check-In"	"Submit," "Proceed," "Next"
+Reassure often	"You can always change this later."	(silence)
+Avoid jargon	"See what's working"	"Leverage performance insights"
+Full Copy Deliverables
+Homepage copy — Every section's headline, subheadline, body text, and CTA copy
+Onboarding copy — Every step's question, helper text, and micro-copy
+Empty state copy — For every screen (Dashboard, Goals, Systems, Journal, Analytics, Templates)
+Success/celebration copy — For check-in completion, streak milestones, wizard completion
+Error/edge case copy — Missed day, broken streak, failed save, offline state
+Tooltip and helper text copy — For every form field and unfamiliar concept
+Pricing page copy — Tier descriptions, feature names, comparison table labels
+FAQ answers — Full answers for all 7+ FAQ questions
+Notification/reminder copy — Push notification and email reminder text
+Upgrade nudge copy — Non-pushy copy for free-to-paid conversion moments
+PHASE 4 — VISUAL DESIGN SYSTEM & COMPONENT LIBRARY
+Framework: C.O.D.E (Technical implementation with design-system constraints)
+
+Role: Act as a world-class visual designer and design-system architect working with Tailwind CSS and shadcn/ui.
+
+Dependency: Uses brand tokens from Phase 0, layouts from Phases 1–2, and copy from Phase 3.
+
+Design System Specification
+4.1 — Color System (Expanded) Define complete color scales for both light and dark modes:
+
+Token	Light Mode	Dark Mode	Usage
+--primary	hsl(258, 84%, 62%)	hsl(258, 84%, 68%)	CTAs, links, active states
+--primary-foreground	#fff	#fff	Text on primary
+--background	hsl(240, 10%, 98%)	hsl(240, 10%, 6%)	Page background
+--card	#fff	hsl(240, 10%, 10%)	Card surfaces
+--card-foreground	hsl(240, 10%, 15%)	hsl(240, 10%, 90%)	Card text
+--muted	hsl(240, 5%, 94%)	hsl(240, 5%, 15%)	Muted backgrounds
+--muted-foreground	hsl(240, 5%, 45%)	hsl(240, 5%, 60%)	Secondary text
+--accent	hsl(258, 30%, 92%)	hsl(258, 30%, 18%)	Soft purple accent
+--border	hsl(240, 5%, 90%)	hsl(240, 5%, 18%)	Borders
+--destructive	hsl(0, 72%, 51%)	hsl(0, 72%, 60%)	Errors, missed
+--success	hsl(142, 72%, 40%)	hsl(142, 72%, 50%)	Done, success
+--warning	hsl(38, 92%, 50%)	hsl(38, 92%, 60%)	Partial, caution
+--chart-cyan	Define	Define	Chart color 1
+--chart-green	Define	Define	Chart color 2
+--chart-orange	Define	Define	Chart color 3
+--chart-pink	Define	Define	Chart color 4
+4.2 — Typography Scale
+
+Role	Size	Weight	Line Height	Tailwind Class
+Hero H1	56px / 3.5rem	700 (Bold)	1.1	text-[3.5rem] font-bold leading-tight
+Section H2	36px / 2.25rem	600 (Semibold)	1.2	text-4xl font-semibold
+Card Title H3	24px / 1.5rem	600	1.3	text-2xl font-semibold
+Body Large	18px / 1.125rem	400	1.6	text-lg
+Body	16px / 1rem	400	1.6	text-base
+Small / Label	14px / 0.875rem	500	1.4	text-sm font-medium
+Caption	12px / 0.75rem	400	1.4	text-xs
+4.3 — Spacing System
+
+Base unit: 4px
+Standard rhythm: 8, 16, 24, 32, 48, 64, 96px
+Section padding: py-24 (96px) on desktop, py-16 on mobile
+Card padding: p-6 (24px) standard, p-8 (32px) for large cards
+Component gap: gap-4 (16px) default, gap-6 for card grids
+4.4 — Component Style Guide (shadcn/ui + Tailwind) For each of these components, define the visual treatment:
+
+Button — Primary (filled purple, white text, rounded-xl, shadow-sm, hover:shadow-md+lift), Secondary (ghost with purple text), Destructive
+Card — White/dark surface, rounded-2xl, shadow-sm or 1px border, p-6, hover:shadow-md for interactive cards
+Tabs — Underline style or pill style. Active tab uses primary color.
+Accordion — Clean borders, smooth expand animation, chevron icon
+Dialog — Centered modal, backdrop-blur, rounded-2xl, generous padding
+Progress — Rounded bar, primary purple fill, 8px height, animated fill
+Tooltip — Dark surface, rounded-lg, text-sm, subtle shadow
+Badge — Pill-shaped, soft colored backgrounds (accent, success, warning, destructive)
+Input — Rounded-xl, 1px border, focus:ring-2 ring-primary/30, 44px min height
+Select — Same as input styling. Dropdown uses Card styling.
+Checkbox — Rounded-sm, primary fill when checked, smooth check animation
+Calendar — Clean grid, today highlighted with primary, selected with filled primary
+Avatar — Rounded-full, soft border, fallback initials
+Sheet/Drawer — Slide-in from right (desktop) or bottom (mobile), backdrop-blur
+Skeleton — Rounded shapes with pulse animation, muted background color
+Toast — Bottom-right, rounded-xl, shadow-lg, auto-dismiss, icon + text
+4.5 — Iconography
+
+Style: Line icons, 1.5px–2px stroke, rounded caps
+Recommended library: Lucide Icons (already pairs with shadcn/ui)
+Consistent 24px default size, 20px for small contexts, 32px for feature cards
+4.6 — Illustration Direction
+
+Style: Minimal, abstract, geometric with soft brand-purple accents
+Use cases: Empty states, onboarding steps, error pages, hero accent
+Avoid: Detailed character illustrations, clip-art, 3D renders
+4.7 — Dark Mode Specifics
+
+Dark surfaces: layered (background → card → elevated card) with 2–4% lightness increments
+Text: Use 90% lightness for primary text, 60% for secondary (never pure white)
+Borders: Visible but subtle (18–22% lightness)
+Brand purple: Slightly lighter in dark mode for visibility
+Gradients: Reduce opacity by 30–50% in dark mode
+Overall feel: Refined, soft, readable — never harsh or neon
+Deliverables for This Phase
+Complete color token table (light + dark)
+Typography scale with Tailwind classes
+Spacing system documentation
+Component style specifications for all shadcn/ui components used
+Icon and illustration style guide
+Dark mode adaptation rules
+Sample Tailwind config snippet (tailwind.config.js theme extension)
+PHASE 5 — ACCESSIBILITY & USABILITY
+Framework: T.A.G (Straightforward technical task with defined parameters)
+
+Role: Act as a senior accessibility engineer and usability specialist.
+
+Dependency: Applies to all outputs from Phases 1–4.
+
+Requirements Checklist
+Color & Contrast:
+
+All text meets WCAG AA contrast ratios (4.5:1 for normal text, 3:1 for large text)
+Interactive elements have 3:1 contrast against their background
+Status is never communicated by color alone — always pair with icon, label, or pattern
+Verify all brand colors in both light and dark mode pass contrast
+Typography & Readability:
+
+Minimum 16px body text (never smaller for readable content)
+Line height ≥ 1.5 for body text
+Maximum line length: 65–75 characters for readability
+No text embedded in images
+Interactive Elements:
+
+All interactive elements are keyboard accessible (Tab, Enter, Escape, Arrow keys)
+Visible focus states on all focusable elements (2px ring, brand color, offset)
+Touch targets minimum 44×44px on mobile
+Buttons have descriptive labels (not just icons)
+All form inputs have visible associated labels (not placeholder-only)
+Navigation & Structure:
+
+Semantic HTML: proper heading hierarchy (h1 → h2 → h3, no skipping)
+ARIA landmarks for main regions (nav, main, aside, footer)
+Skip-to-content link on every page
+Logical tab order matching visual layout
+Dynamic Content:
+
+Loading states announced to screen readers (aria-live)
+Toast notifications announced via aria-live="polite"
+Modal dialogs trap focus and return focus on close
+Wizard step changes announced to screen readers
+Motion & Animation:
+
+Respect prefers-reduced-motion — disable or simplify all animations
+No auto-playing animations that can't be paused
+No content that flashes more than 3 times per second
+Dark Mode:
+
+All contrast ratios re-verified in dark mode
+User preference respected (prefers-color-scheme)
+Manual toggle available and persisted
+Deliverables for This Phase
+Full accessibility checklist (pass/fail for each requirement)
+Specific recommendations per screen where accessibility concerns exist
+ARIA attribute recommendations for custom components
+Focus management plan for wizard, modals, and navigation
+prefers-reduced-motion implementation notes
+PHASE 6 — MOTION DESIGN & MICROINTERACTIONS
+Framework: S.T.Y.L.E (Creative work requiring brand voice and emotional resonance)
+
+Role: Act as a motion designer and interaction designer for premium SaaS products.
+
+Dependency: Uses the visual system from Phase 4 and accessibility constraints from Phase 5.
+
+Motion Principles
+Calm: Motion should reduce cognitive load, not add stimulation.
+Purposeful: Every animation communicates something (progress, success, transition, feedback).
+Fast: Most transitions 150–300ms. Nothing should feel sluggish.
+Consistent: Same easing curve throughout (ease-out or cubic-bezier(0.22, 1, 0.36, 1)).
+Microinteraction Specifications
+Element	Animation	Duration	Easing	Trigger
+Card hover	Translate Y -2px + shadow increase	200ms	ease-out	Hover
+Button hover	Slight scale (1.02) + shadow	150ms	ease-out	Hover
+Button press	Scale down (0.98)	100ms	ease-in	Click/tap
+Page transition	Fade in + slight upward slide	300ms	ease-out	Route change
+Wizard step transition	Current slides out left, next slides in right	250ms	ease-out	Next/Back
+Progress bar fill	Width animation from 0 to target	600ms	ease-out	On mount / update
+Completion ring	Stroke-dashoffset animation	800ms	ease-out	Check-in progress
+Check-in: Done	Checkmark draws in + brief green pulse	400ms	spring	Tap "Done"
+Check-in: All complete	Confetti burst (subtle, 15–20 particles)	1200ms	ease-out	Last habit checked
+Streak milestone	Badge scales in + subtle glow pulse	500ms	spring	Streak reached
+Toast notification	Slide in from bottom-right + fade	300ms in / 200ms out	ease-out	Event
+Skeleton loading	Pulse opacity 0.4 → 0.7	1500ms loop	ease-in-out	Data loading
+Accordion expand	Height auto + fade content	250ms	ease-out	Click
+Modal open	Fade in backdrop + scale dialog from 0.95	200ms	ease-out	Trigger
+Modal close	Fade out + scale to 0.95	150ms	ease-in	Close/Escape
+Number count-up	Animated number increment	800ms	ease-out	Stats load
+Chart bars	Bars grow from bottom	600ms staggered	ease-out	On viewport enter
+Implementation Notes
+Use CSS transitions for simple hover/focus effects
+Use Framer Motion (React) for page transitions, wizard steps, and complex sequences
+Use CSS @keyframes for skeleton loading
+All animations wrapped in prefers-reduced-motion check:
+Copy@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+Deliverables for This Phase
+Complete microinteraction table (as above, finalized)
+Animation easing and timing standards
+Implementation technology recommendations (CSS vs. Framer Motion per element)
+Reduced-motion fallback specifications
+3 "signature moments" — unique animations that make SystemForge feel memorable (e.g., the check-in completion, the wizard launch, the streak celebration)
+PHASE 7 — IMPLEMENTATION OUTPUT & TECHNICAL HANDOFF
+Framework: C.O.D.E (Technical implementation)
+
+Role: Act as a senior frontend engineer implementing a React + Tailwind + shadcn/ui project.
+
+Dependency: Synthesizes all outputs from Phases 0–6 into implementable specifications.
+
+Final Deliverables Checklist
+#	Deliverable	Description
+1	Brand/UI Direction Summary	One-page summary of the design philosophy, personality, and visual identity
+2	Homepage Wireframe	Section-by-section wireframe with layout grid, component placement, responsive breakpoints
+3	Homepage Copy	Final copy for every section (headlines, body, CTAs, testimonials, FAQ)
+4	App Screen UX Specs	Screen-by-screen specifications for all 9 screens (A through I)
+5	Visual Design System	Complete token file, typography scale, color system, component styles
+6	Tailwind + shadcn/ui Guide	tailwind.config.js theme extension, component customization notes, utility class patterns
+7	Accessibility Checklist	Full checklist with pass criteria and per-screen notes
+8	3 Standout Design Ideas	Three unique, memorable design choices that differentiate SystemForge
+9	Sample React Component Structure	Suggested file/folder structure, key component hierarchy, and 2–3 sample component code snippets
+Additional Implementation Guidance
+Layout Patterns:
+
+Homepage: Full-width sections, max-w-6xl centered content container
+App: Sidebar (desktop) + bottom tabs (mobile) + main content area
+Cards: CSS Grid with auto-fill / minmax() for responsive grids
+Suggested File Structure:
+
+src/
+├── components/
+│   ├── ui/          (shadcn/ui components)
+│   ├── layout/      (Nav, Sidebar, Footer, AppShell)
+│   ├── homepage/    (Hero, Features, Pricing, FAQ, etc.)
+│   ├── onboarding/  (OnboardingFlow, steps/)
+│   ├── goals/       (GoalForm, GoalCard, GoalList)
+│   ├── systems/     (SystemWizard, steps/, SystemCard)
+│   ├── checkin/     (CheckInCard, MoodPicker, CompletionRing)
+│   ├── dashboard/   (DashboardHome, widgets/)
+│   ├── analytics/   (InsightCard, Charts/)
+│   ├── journal/     (JournalEditor, JournalList, prompts)
+│   └── templates/   (TemplateCard, TemplateGallery, TemplateDetail)
+├── lib/             (Firebase config, utils, hooks)
+├── styles/          (globals.css with CSS variables)
+└── app/             (Next.js routes or React Router pages)
+CTA Hierarchy:
+
+Primary: Filled brand purple (most important action per screen)
+Secondary: Ghost/outlined (alternative action)
+Tertiary: Text link (low-priority navigation)
+Destructive: Red variant (delete, cancel)
+Only 1 primary CTA per viewport visible at a time
+Empty State Design Pattern: Every empty state follows this structure:
+
+Minimal illustration or icon (64px)
+Headline: What's missing (e.g., "No goals yet")
+Body: Why it matters + what to do (e.g., "Goals give your systems a purpose. Let's create your first one.")
+CTA button (primary)
+Dashboard Widget Pattern: Each widget is a Card with:
+
+Title (text-sm font-medium text-muted-foreground)
+Content (primary data, large and readable)
+Footer (action link or secondary info)
+Consistent padding (p-6) and rounded-2xl
+Icon Style:
+
+Library: Lucide React
+Default size: 20px for inline, 24px for standalone, 32px for feature cards
+Stroke width: 1.5px–2px
+Color: currentColor (inherits from text color)
+Sample Component Snippets
+Provide working React + Tailwind code for:
+
+A Homepage Hero section with responsive layout, heading, subtext, CTAs, and dark mode support
+A Daily Check-In habit card with Done/Partial/Missed buttons, streak badge, and hover animation
+A System Builder wizard step showing the card-based selection UI with progress stepper
+Each snippet should use shadcn/ui components, Tailwind utilities, and proper dark mode classes.
+
+Summary: Phase Dependency Chain
+Phase 0: Strategic Foundation & Brand Alignment
+    ↓
+Phase 1: Homepage Redesign ←────────────────┐
+    ↓                                        │
+Phase 2: App UX Redesign ←──────────────────┤
+    ↓                                        │ (all depend on Phase 0)
+Phase 3: Copywriting & Content Strategy ←────┤
+    ↓                                        │
+Phase 4: Visual Design System ←──────────────┘
+    ↓
+Phase 5: Accessibility & Usability (applies to all above)
+    ↓
+Phase 6: Motion Design & Microinteractions
+    ↓
+Phase 7: Implementation Output & Technical Handoff (synthesizes everything)

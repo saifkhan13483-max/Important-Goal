@@ -18,7 +18,7 @@ import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
   Calendar, BookOpen, Check, Minus, X, BarChart2, PenLine, Sparkles,
   Lightbulb, Star, Loader2, AlertCircle, RefreshCw, Trophy, Heart,
-  LayoutGrid,
+  LayoutGrid, Flag, TrendingDown,
 } from "lucide-react";
 import { format, parseISO, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,215 @@ function getTipOfTheDay(): string {
     (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000,
   );
   return beginnerTips[dayOfYear % beginnerTips.length];
+}
+
+/* ─── Next Milestone widget ─────────────────────────────────────── */
+function NextMilestone({
+  goals, analytics,
+}: {
+  goals: Goal[];
+  analytics: ReturnType<typeof computeAnalytics>;
+}) {
+  const today = new Date().toISOString().split("T")[0];
+
+  // Find nearest upcoming deadline
+  const upcoming = goals
+    .filter(g => g.status === "active" && g.deadline && g.deadline >= today)
+    .sort((a, b) => (a.deadline ?? "").localeCompare(b.deadline ?? ""))[0];
+
+  // Compute best streak and next streak milestone
+  const bestCurrentStreak = Math.max(0, ...Object.values(analytics.streaks));
+  const STREAK_MILESTONES = [7, 14, 21, 30, 50, 66, 100];
+  const nextStreakTarget = STREAK_MILESTONES.find(m => m > bestCurrentStreak) ?? 100;
+  const streakDaysLeft   = nextStreakTarget - bestCurrentStreak;
+
+  if (upcoming) {
+    const daysLeft = Math.ceil(
+      (new Date(upcoming.deadline!).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    );
+    const urgency = daysLeft <= 7 ? "text-chart-4" : "text-primary";
+    return (
+      <Card className="hover-elevate" data-testid="widget-next-milestone">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Flag className="w-4.5 h-4.5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Next Milestone</p>
+              <p className="font-medium text-sm truncate">{upcoming.title}</p>
+              <p className={`text-xs mt-0.5 font-semibold ${urgency}`}>
+                {daysLeft === 0
+                  ? "Due today!"
+                  : daysLeft === 1
+                  ? "Tomorrow"
+                  : `${daysLeft} days left`}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Target: {format(parseISO(upcoming.deadline!), "MMMM d, yyyy")}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (bestCurrentStreak > 0) {
+    return (
+      <Card className="hover-elevate" data-testid="widget-next-milestone">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-chart-4/10 flex items-center justify-center flex-shrink-0">
+              <Flame className="w-4.5 h-4.5 text-chart-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Next Milestone</p>
+              <p className="font-medium text-sm">{nextStreakTarget}-day streak</p>
+              <p className="text-xs text-chart-4 mt-0.5 font-semibold">{streakDaysLeft} more day{streakDaysLeft !== 1 ? "s" : ""} to go</p>
+              <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-chart-4/70 transition-all"
+                  style={{ width: `${Math.round((bestCurrentStreak / nextStreakTarget) * 100)}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {bestCurrentStreak} of {nextStreakTarget} days
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="hover-elevate border-dashed" data-testid="widget-next-milestone">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+            <Flag className="w-4.5 h-4.5 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Next Milestone</p>
+            <p className="font-medium text-sm">No milestone yet</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Set a goal deadline or build a 7-day streak to unlock your first milestone.</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── One Insight card ───────────────────────────────────────────── */
+function OneInsight({
+  analytics, activeSystems, completionPct,
+}: {
+  analytics: ReturnType<typeof computeAnalytics>;
+  activeSystems: System[];
+  completionPct: number;
+}) {
+  const insight = (() => {
+    // Best day-of-week
+    const bestDow = analytics.dayOfWeekStats
+      .filter(d => d.totalCount >= 3)
+      .sort((a, b) => b.doneRate - a.doneRate)[0];
+
+    // Worst day-of-week
+    const worstDow = analytics.dayOfWeekStats
+      .filter(d => d.totalCount >= 3)
+      .sort((a, b) => a.doneRate - b.doneRate)[0];
+
+    // Mood improvement (moodAfter - moodBefore trend)
+    const hasMoodInsight = analytics.hasMoodData;
+
+    // Overall completion rate trend
+    const recent7 = analytics.last30Days.slice(-7);
+    const prev7   = analytics.last30Days.slice(-14, -7);
+    const recentAvg = recent7.reduce((s, d) => s + (d.total > 0 ? (d.done / d.total) * 100 : 0), 0) / 7;
+    const prevAvg   = prev7.reduce((s, d) => s + (d.total > 0 ? (d.done / d.total) * 100 : 0), 0) / 7;
+    const trendDiff = Math.round(recentAvg - prevAvg);
+
+    if (bestDow && bestDow.doneRate > 60 && worstDow && bestDow.shortDay !== worstDow.shortDay) {
+      return {
+        icon: TrendingUp,
+        color: "text-chart-3",
+        bg:   "bg-chart-3/10",
+        title: `${bestDow.day}s are your strongest`,
+        body:  `You complete ${bestDow.doneRate}% of habits on ${bestDow.day}s — your personal high. Try to schedule your hardest habits for this day.`,
+      };
+    }
+
+    if (activeSystems.length > 0 && trendDiff >= 10) {
+      return {
+        icon: TrendingUp,
+        color: "text-chart-3",
+        bg:   "bg-chart-3/10",
+        title: "You're trending up",
+        body:  `Your completion rate improved by ${trendDiff}% this week compared to last week. Keep this momentum going!`,
+      };
+    }
+
+    if (activeSystems.length > 0 && trendDiff <= -10) {
+      return {
+        icon: TrendingDown,
+        color: "text-chart-4",
+        bg:   "bg-chart-4/10",
+        title: "Slight dip this week",
+        body:  `Your completion rate dropped ${Math.abs(trendDiff)}% vs last week. That's okay — review your fallback plans and start fresh today.`,
+      };
+    }
+
+    if (hasMoodInsight) {
+      const highMoodBucket = analytics.moodBuckets.filter(b => b.count >= 2 && b.mood >= 4);
+      if (highMoodBucket.length > 0) {
+        const avg = Math.round(highMoodBucket.reduce((s, b) => s + b.completionPct, 0) / highMoodBucket.length);
+        return {
+          icon: Heart,
+          color: "text-primary",
+          bg:   "bg-primary/10",
+          title: "Good mood = better habits",
+          body:  `When you rate your mood as Good or Great before a session, you complete ${avg}% of habits. Protecting your energy pays off.`,
+        };
+      }
+    }
+
+    if (activeSystems.length === 0) {
+      return {
+        icon: Sparkles,
+        color: "text-primary",
+        bg:   "bg-primary/10",
+        title: "Your first insight is coming",
+        body:  "Build your first system and check in for a few days — we'll start showing personalized insights based on your patterns.",
+      };
+    }
+
+    return {
+      icon: Lightbulb,
+      color: "text-primary",
+      bg:   "bg-primary/10",
+      title: "Check in consistently",
+      body:  `With ${activeSystems.length} active system${activeSystems.length !== 1 ? "s" : ""}, a few more days of data will reveal your strongest patterns.`,
+    };
+  })();
+
+  const Icon = insight.icon;
+  return (
+    <Card className="hover-elevate" data-testid="widget-one-insight">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${insight.bg}`}>
+            <Icon className={`w-4.5 h-4.5 ${insight.color}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">One Insight</p>
+            <p className="font-medium text-sm">{insight.title}</p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{insight.body}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function GreetingBanner({ name, completionPct, todayDone, todayTotal }: {
@@ -394,6 +603,14 @@ export default function Dashboard() {
           color="bg-chart-4/10 text-chart-4"
         />
       </div>
+
+      {/* Next Milestone + One Insight row */}
+      {!isNewUser && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <NextMilestone goals={goals} analytics={analytics} />
+          <OneInsight analytics={analytics} activeSystems={activeSystems} completionPct={completionPct} />
+        </div>
+      )}
 
       {/* Empty state for new users */}
       {isNewUser && (
