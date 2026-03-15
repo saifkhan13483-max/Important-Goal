@@ -1,0 +1,213 @@
+A. Product reality
+1) Is the site fully working right now?
+yes / partly / prototype only
+2) Can a new user complete the full flow without signing in?
+yes / no / partly
+3) What happens after a user creates their first system?
+Describe the exact next screen.
+
+4) What is the user’s first win inside the product?
+What moment makes them feel:
+
+“this is useful”
+“I should come back tomorrow”
+5) What is the single biggest promise of the app?
+Finish this sentence:
+
+“If you use SystemForge for 14 days, you will ______.”
+
+B. Target user clarity
+6) Who is your primary user right now?
+Pick one:
+
+students
+job seekers
+self-improvement users
+creators
+professionals
+coaches
+other
+7) Which one user type do you want to win first?
+Only one.
+
+8) What problem is most painful for that user?
+Examples:
+
+inconsistency
+overwhelm
+no plan
+fear of failure
+bad routine
+distraction
+lack of accountability
+9) What are they using today instead of your app?
+Examples:
+
+notes app
+Notion
+habit tracker
+journal
+coach
+nothing
+10) Why would they choose your app over those?
+One sharp sentence.
+
+C. Onboarding and friction
+11) In the 7-step builder, what are the 7 steps exactly?
+Please list them in order.
+
+12) Which step do you think has the highest drop-off?
+Just your guess is okay.
+
+13) How long does onboarding take for a normal user?
+under 1 min
+1–3 min
+3–5 min
+5+ min
+14) Do users see example systems during onboarding?
+yes / no
+If yes, what examples?
+15) Can a user start with a template instead of building from scratch?
+yes / no
+16) Does the app ask too many reflective questions before action?
+yes / no / maybe
+D. Daily usage
+17) What does a user do on a normal day in under 30 seconds?
+Describe the shortest daily loop.
+
+18) What exactly is checked in during daily check-in?
+Examples:
+
+completed yes/no
+mood
+effort
+difficulty
+notes
+trigger hit/missed
+19) Is the daily action pre-decided, or does the user have to think each day?
+fully pre-decided
+somewhat
+user decides daily
+20) What happens if the user misses 1 day?
+21) What happens if they miss 3 days?
+22) What happens if they abandon for 2 weeks?
+E. Trigger engineering
+23) How specific is the trigger setup?
+Can users define:
+
+exact time?
+existing habit?
+location?
+event-based trigger?
+24) Do you help users create better triggers, or just let them type anything?
+Example:
+
+“after brushing teeth” is better than
+“in the morning”
+25) Do you reject weak triggers?
+Like:
+
+“whenever I feel motivated”
+“sometime tomorrow”
+26) Does the app remind users at the trigger moment?
+yes / no / planned
+F. Action minimization
+27) How do you help users choose a true minimum action?
+Do you guide them to something tiny enough?
+
+28) Do users often pick actions that are still too big?
+Examples:
+
+“study 2 hours”
+“full workout”
+“build startup”
+29) Do you offer a fallback minimum version for bad days?
+Example:
+
+normal = 20 min walk
+fallback = put on shoes + 2 min walk
+G. Reward loop
+30) What is the reward immediately after completing today’s action?
+Be specific.
+
+31) Is the reward emotional, visual, social, or numerical?
+32) Does it feel motivating for adults, or slightly game-y?
+33) Do users get a sense of progress toward identity, not just streak?
+H. Failure-proof safety net
+34) Describe the recovery flow in detail.
+What screens/questions/actions are included?
+
+35) Does recovery reduce shame, or does it accidentally highlight failure?
+36) Can users restart without “losing everything” emotionally?
+37) Do you distinguish between:
+low motivation
+time crunch
+travel
+sickness
+emotional burnout
+I. Identity shift
+38) Where in the app do you explicitly talk about identity?
+Examples:
+
+“I am a disciplined person”
+“I am a writer”
+“I am consistent”
+39) Does onboarding ask:
+“Who do you want to become?” or only: “What goal do you want?”
+
+40) After completion, do you reinforce:
+“you completed a task” or
+“you cast a vote for your identity”?
+41) Can users name their system in identity language?
+Example:
+
+“Daily Writer System”
+“Calm Student System”
+J. Differentiation
+42) What makes this different from a normal habit tracker?
+Be very specific.
+
+43) What makes this different from Atomic Habits-inspired apps?
+44) What makes this different from Notion templates or coach worksheets?
+K. Business / trust / credibility
+45) Is this for personal use only, or also for coaches/teams?
+46) Do coaches have separate features?
+47) Do you show testimonials, case studies, or fake placeholder proof?
+48) Do you explain why your system works using psychology or research?
+49) Do you have privacy/trust signals on the site?
+L. UX / copy / conversion
+50) What is the homepage headline right now?
+51) What is the main CTA right now?
+52) Does the homepage clearly explain:
+why goals fail
+why systems work
+how your app helps in under 10 seconds?
+53) What might confuse a first-time visitor?
+54) What might make them skeptical?
+55) If I removed 50% of your homepage, what should definitely remain?
+M. Growth / retention
+56) How will users come back daily?
+push notifications
+email
+WhatsApp
+calendar
+no system yet
+57) What is your plan for day-2 retention?
+58) What is your plan for week-2 retention?
+59) What is your plan for users who stop checking in?
+N. Vision
+60) What do you want this product to become in 1 year?
+61) What do you want people to say about it?
+Finish this sentence:
+
+“SystemForge is the app that finally helped me ______.”
+
+62) Which is more important right now?
+Pick one:
+
+conversion
+clarity
+retention
+habit stickiness
+coaching features
+visual polish
