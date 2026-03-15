@@ -7,8 +7,12 @@
  *  - FutureSelfAudioPlayer  – plays audio with autoplay/first-visit logic (dashboard, recovery)
  *  - FutureSelfAudioSettings – playback preference toggles (settings page)
  *
- * Audio is stored as a base64 data-URL in localStorage (key: sf_future_self_audio).
- * Playback preferences are stored on the Firestore User document.
+ * Audio is uploaded to Firebase Storage at audio/{userId}/future-self.<ext>
+ * The download URL is stored on the Firestore User document (futureAudioUrl)
+ * and also cached in localStorage for fast local playback.
+ *
+ * Legacy: if the user has a base64 blob in localStorage from before the
+ * Firebase Storage upgrade, that will be used as a fallback automatically.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -16,29 +20,36 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
   Mic, MicOff, Upload, Play, Pause, RotateCcw, Trash2,
   Volume2, VolumeX, SkipForward, CheckCircle2, Loader2,
-  AudioWaveform,
+  AudioWaveform, CloudUpload, AlertCircle,
 } from "lucide-react";
+import {
+  uploadFutureSelfAudioBase64,
+  uploadFutureSelfAudioFile,
+  deleteFutureSelfAudioFromStorage,
+  getLocalAudioUrl,
+  hasStoredAudio,
+} from "@/services/audio.service";
 
-/* ─── localStorage keys ──────────────────────────────────────────────── */
-export const LS_AUDIO      = "sf_future_self_audio";
-export const LS_AUDIO_TYPE = "sf_future_self_audio_type";
+/* ─── localStorage keys (kept for cache / legacy compat) ─────────── */
+const LS_AUDIO_URL  = "sf_future_self_audio_url";
+const LS_AUDIO_B64  = "sf_future_self_audio";
+const LS_AUDIO_TYPE = "sf_future_self_audio_type";
 export const LS_LAST_PLAYED = "sf_future_self_last_played";
 
-export function hasFutureSelfAudio(): boolean {
-  try {
-    return !!localStorage.getItem(LS_AUDIO);
-  } catch {
-    return false;
-  }
+/** @deprecated use hasStoredAudio() from audio.service instead */
+export function hasFutureSelfAudio(firestoreUrl?: string | null): boolean {
+  return hasStoredAudio(firestoreUrl);
 }
 
 export function deleteFutureSelfAudio(): void {
   try {
-    localStorage.removeItem(LS_AUDIO);
+    localStorage.removeItem(LS_AUDIO_URL);
+    localStorage.removeItem(LS_AUDIO_B64);
     localStorage.removeItem(LS_AUDIO_TYPE);
     localStorage.removeItem(LS_LAST_PLAYED);
   } catch {}
@@ -78,15 +89,7 @@ function WaveformBars({ active }: { active: boolean }) {
 }
 
 /* ─── Audio player bar ───────────────────────────────────────────────── */
-function MiniPlayer({
-  src,
-  mimeType,
-  muted,
-}: {
-  src: string;
-  mimeType: string;
-  muted?: boolean;
-}) {
+function MiniPlayer({ src, muted }: { src: string; muted?: boolean }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -150,25 +153,31 @@ function MiniPlayer({
    ═══════════════════════════════════════════════════════════════════════ */
 
 interface SetupProps {
-  onSaved?: (hasAudio: boolean) => void;
+  /** Called with the Firebase Storage URL after a successful upload */
+  onSaved?: (audioUrl: string) => void;
   onSkip?: () => void;
   compact?: boolean;
+  /** Existing Firestore URL (so saved state shows on revisit) */
+  existingUrl?: string | null;
 }
 
-export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: SetupProps) {
-  const [mode, setMode] = useState<"idle" | "record" | "upload" | "preview" | "saved">(
-    hasFutureSelfAudio() ? "saved" : "idle"
+export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existingUrl }: SetupProps) {
+  const initialSrc = getLocalAudioUrl(existingUrl);
+  const [mode, setMode] = useState<"idle" | "record" | "upload" | "preview" | "uploading" | "saved">(
+    initialSrc ? "saved" : "idle"
   );
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
-  const [audioType, setAudioType] = useState<string>("audio/webm");
-  const [uploading, setUploading] = useState(false);
+  const [localSrc, setLocalSrc] = useState<string | null>(initialSrc);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [label, setLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+  const blobRef = useRef<Blob | null>(null);
+  const mimeTypeRef = useRef<string>("audio/webm");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -176,31 +185,78 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   };
 
-  useEffect(() => {
-    if (hasFutureSelfAudio()) {
-      const stored = localStorage.getItem(LS_AUDIO);
-      const type = localStorage.getItem(LS_AUDIO_TYPE) || "audio/webm";
-      if (stored) { setAudioSrc(stored); setAudioType(type); setMode("saved"); }
-    }
-    return () => { stopTimer(); };
-  }, []);
+  useEffect(() => () => { stopTimer(); }, []);
 
+  /* ── Upload to Firebase Storage ─────────────────────────────────── */
+  const doUpload = useCallback(async (
+    getUrl: () => Promise<string>,
+    b64ForPreview: string,
+    mimeType: string,
+  ) => {
+    setMode("uploading");
+    setUploadError(null);
+
+    // Animate progress while uploading (Firebase SDK doesn't expose granular progress easily with uploadBytes)
+    const ticker = setInterval(() => setUploadProgress(p => Math.min(p + 5, 90)), 200);
+    try {
+      const url = await getUrl();
+      clearInterval(ticker);
+      setUploadProgress(100);
+
+      // Cache locally for instant playback
+      try { localStorage.setItem(LS_AUDIO_URL, url); } catch {}
+      try { localStorage.setItem(LS_AUDIO_TYPE, mimeType); } catch {}
+
+      setLocalSrc(url);
+      setMode("saved");
+      setTimeout(() => setUploadProgress(0), 800);
+      onSaved?.(url);
+    } catch (err: any) {
+      clearInterval(ticker);
+      setUploadProgress(0);
+
+      // If Firebase Storage rejects (rules not configured), fall back to localStorage base64
+      if (b64ForPreview.startsWith("data:")) {
+        try {
+          localStorage.setItem(LS_AUDIO_B64, b64ForPreview);
+          localStorage.setItem(LS_AUDIO_TYPE, mimeType);
+          setLocalSrc(b64ForPreview);
+          setMode("saved");
+          setUploadError(
+            "Saved locally on this device. Cloud sync unavailable — check Firebase Storage rules."
+          );
+          onSaved?.(b64ForPreview);
+          return;
+        } catch {}
+      }
+
+      setUploadError(
+        err?.message?.includes("storage/unauthorized")
+          ? "Permission denied. Please ensure Firebase Storage rules allow authenticated writes."
+          : (err?.message || "Upload failed. Please try again.")
+      );
+      setMode("preview");
+    }
+  }, [onSaved]);
+
+  /* ── Recording ──────────────────────────────────────────────────── */
   const startRecording = async () => {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       chunksRef.current = [];
       const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg";
+      mimeTypeRef.current = mimeType;
       const mr = new MediaRecorder(stream, { mimeType });
       mr.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       mr.onstop = () => {
         stream.getTracks().forEach(t => t.stop());
         const blob = new Blob(chunksRef.current, { type: mimeType });
+        blobRef.current = blob;
         const reader = new FileReader();
         reader.onloadend = () => {
           const b64 = reader.result as string;
-          setAudioSrc(b64);
-          setAudioType(mimeType);
+          setLocalSrc(b64);
           setMode("preview");
         };
         reader.readAsDataURL(blob);
@@ -210,7 +266,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
       setRecording(true);
       setRecordSeconds(0);
       timerRef.current = setInterval(() => setRecordSeconds(s => s + 1), 1000);
-    } catch (err: any) {
+    } catch {
       setError("Microphone access was denied. Please allow microphone access and try again.");
     }
   };
@@ -223,6 +279,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
     }
   };
 
+  /* ── File upload ─────────────────────────────────────────────────── */
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -230,50 +287,66 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
       setError("Please upload an audio file (MP3, WAV, M4A, OGG, etc.)");
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError("Audio file must be under 10 MB.");
+    if (file.size > 20 * 1024 * 1024) {
+      setError("Audio file must be under 20 MB.");
       return;
     }
-    setUploading(true);
     setError(null);
+    mimeTypeRef.current = file.type;
+
+    // Show a b64 preview first, then upload
     const reader = new FileReader();
     reader.onloadend = () => {
       const b64 = reader.result as string;
-      setAudioSrc(b64);
-      setAudioType(file.type);
+      setLocalSrc(b64);
+      blobRef.current = new Blob([file], { type: file.type });
       setMode("preview");
-      setUploading(false);
     };
     reader.readAsDataURL(file);
   };
 
-  const saveAudio = useCallback(() => {
-    if (!audioSrc) return;
-    try {
-      localStorage.setItem(LS_AUDIO, audioSrc);
-      localStorage.setItem(LS_AUDIO_TYPE, audioType);
-      setMode("saved");
-      onSaved?.(true);
-    } catch {
-      setError("Could not save audio — your browser storage may be full. Try a shorter recording.");
-    }
-  }, [audioSrc, audioType, onSaved]);
+  /* ── Save (trigger Firebase upload) ────────────────────────────── */
+  const saveAudio = () => {
+    if (!localSrc) return;
+    const mime = mimeTypeRef.current;
 
-  const deleteAudio = () => {
+    if (blobRef.current) {
+      doUpload(
+        () => uploadFutureSelfAudioFile(new File([blobRef.current!], `audio.${mime.split("/")[1] || "audio"}`, { type: mime })),
+        localSrc,
+        mime,
+      );
+    } else {
+      doUpload(
+        () => uploadFutureSelfAudioBase64(localSrc, mime),
+        localSrc,
+        mime,
+      );
+    }
+  };
+
+  /* ── Delete ─────────────────────────────────────────────────────── */
+  const deleteAudio = async () => {
+    const existing = getLocalAudioUrl(existingUrl);
+    if (existing && existing.startsWith("http")) {
+      await deleteFutureSelfAudioFromStorage(existing).catch(() => {});
+    }
     deleteFutureSelfAudio();
-    setAudioSrc(null);
+    setLocalSrc(null);
     setMode("idle");
-    onSaved?.(false);
+    onSaved?.("");
   };
 
   const reRecord = () => {
-    setAudioSrc(null);
+    setLocalSrc(null);
+    blobRef.current = null;
     setMode("record");
     startRecording();
   };
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
+  /* ── Render: idle ───────────────────────────────────────────────── */
   if (mode === "idle") {
     return (
       <div className="space-y-4">
@@ -305,7 +378,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
             className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all"
           >
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              {uploading ? <Loader2 className="w-5 h-5 text-primary animate-spin" /> : <Upload className="w-5 h-5 text-primary" />}
+              <Upload className="w-5 h-5 text-primary" />
             </div>
             <span className="text-sm font-semibold">Upload file</span>
             <span className="text-xs text-muted-foreground text-center">MP3, WAV, M4A…</span>
@@ -335,6 +408,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
     );
   }
 
+  /* ── Render: recording ──────────────────────────────────────────── */
   if (mode === "record") {
     return (
       <div className="space-y-4">
@@ -360,7 +434,9 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
             onClick={recording ? stopRecording : startRecording}
             data-testid="button-future-audio-stop"
           >
-            {recording ? <><MicOff className="w-4 h-4 mr-2" /> Stop recording</> : <><Mic className="w-4 h-4 mr-2" /> Start recording</>}
+            {recording
+              ? <><MicOff className="w-4 h-4 mr-2" /> Stop recording</>
+              : <><Mic className="w-4 h-4 mr-2" /> Start recording</>}
           </Button>
         </div>
         {error && <p className="text-xs text-destructive text-center">{error}</p>}
@@ -377,7 +453,8 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
     );
   }
 
-  if (mode === "preview" && audioSrc) {
+  /* ── Render: preview (pre-upload) ───────────────────────────────── */
+  if (mode === "preview" && localSrc) {
     return (
       <div className="space-y-4">
         <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-3">
@@ -385,7 +462,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
             <AudioWaveform className="w-4 h-4 text-primary" />
             <p className="text-sm font-semibold">Preview your recording</p>
           </div>
-          <MiniPlayer src={audioSrc} mimeType={audioType} />
+          <MiniPlayer src={localSrc} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="audio-label" className="text-xs">
@@ -393,13 +470,19 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
           </Label>
           <Input
             id="audio-label"
-            placeholder="e.g. My future self — January 2026"
+            placeholder="e.g. My future self — March 2026"
             value={label}
             onChange={e => setLabel(e.target.value)}
             className="text-sm"
             data-testid="input-future-audio-label"
           />
         </div>
+        {uploadError && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/8 border border-warning/20">
+            <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground leading-relaxed">{uploadError}</p>
+          </div>
+        )}
         {error && <p className="text-xs text-destructive">{error}</p>}
         <Button
           type="button"
@@ -407,8 +490,8 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
           onClick={saveAudio}
           data-testid="button-future-audio-save"
         >
-          <CheckCircle2 className="w-4 h-4" />
-          Save this recording
+          <CloudUpload className="w-4 h-4" />
+          Save to cloud
         </Button>
         <div className="flex gap-2">
           <Button
@@ -425,7 +508,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
             type="button"
             variant="ghost"
             className="flex-1 text-sm"
-            onClick={() => setMode("idle")}
+            onClick={() => { setLocalSrc(null); blobRef.current = null; setMode("idle"); }}
             data-testid="button-future-audio-discard"
           >
             Discard
@@ -435,18 +518,47 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
     );
   }
 
-  if (mode === "saved" && audioSrc) {
+  /* ── Render: uploading ──────────────────────────────────────────── */
+  if (mode === "uploading") {
+    return (
+      <div className="space-y-4 py-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+            <CloudUpload className="w-6 h-6 text-primary animate-pulse" />
+          </div>
+          <p className="text-sm font-semibold">Saving to cloud…</p>
+          <p className="text-xs text-muted-foreground">Your recording is being securely stored</p>
+        </div>
+        <Progress value={uploadProgress} className="h-2" />
+        <p className="text-xs text-muted-foreground text-center">{uploadProgress}%</p>
+      </div>
+    );
+  }
+
+  /* ── Render: saved ──────────────────────────────────────────────── */
+  if (mode === "saved" && localSrc) {
     return (
       <div className="space-y-4">
         <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-primary" />
-              <p className="text-sm font-semibold text-primary">Recording saved</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-primary" />
+            <p className="text-sm font-semibold text-primary">
+              {localSrc.startsWith("http") ? "Recording saved to cloud" : "Recording saved locally"}
+            </p>
+            {localSrc.startsWith("http") && (
+              <span className="ml-auto text-[10px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
+                Synced ✓
+              </span>
+            )}
           </div>
-          <MiniPlayer src={audioSrc} mimeType={audioType} />
+          <MiniPlayer src={localSrc} />
         </div>
+        {uploadError && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/8 border border-warning/20">
+            <AlertCircle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground leading-relaxed">{uploadError}</p>
+          </div>
+        )}
         <div className="flex gap-2">
           <button
             type="button"
@@ -483,12 +595,11 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false }: Setup
           className="hidden"
           onChange={handleFileUpload}
         />
-        {error && <p className="text-xs text-destructive">{error}</p>}
         {onSaved && (
           <Button
             type="button"
             className="w-full"
-            onClick={() => onSaved(true)}
+            onClick={() => onSaved(localSrc)}
             data-testid="button-future-audio-continue"
           >
             Continue
@@ -581,6 +692,8 @@ export function FutureSelfAudioSettings({ prefs, onChange }: SettingsProps) {
 interface PlayerProps {
   context: "firstVisit" | "missedDay" | "hypeWarning" | "manual";
   userName?: string;
+  /** Firestore URL — passed from user.futureAudioUrl */
+  firestoreUrl?: string | null;
   playOnFirstVisit?: boolean;
   playAfterMissed?: boolean;
   autoplay?: boolean;
@@ -614,6 +727,7 @@ const CONTEXT_COPY = {
 export function FutureSelfAudioPlayer({
   context,
   userName,
+  firestoreUrl,
   playOnFirstVisit = true,
   playAfterMissed = true,
   autoplay = true,
@@ -627,12 +741,14 @@ export function FutureSelfAudioPlayer({
   const [duration, setDuration] = useState(0);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const copy = CONTEXT_COPY[context];
 
   const shouldShow = useCallback(() => {
-    if (!hasFutureSelfAudio()) return false;
+    const src = getLocalAudioUrl(firestoreUrl);
+    if (!src) return false;
     const today = new Date().toISOString().split("T")[0];
     if (context === "firstVisit") {
       if (!playOnFirstVisit) return false;
@@ -641,17 +757,20 @@ export function FutureSelfAudioPlayer({
     }
     if (context === "missedDay") return playAfterMissed;
     return true;
-  }, [context, playOnFirstVisit, playAfterMissed]);
+  }, [context, playOnFirstVisit, playAfterMissed, firestoreUrl]);
 
   useEffect(() => {
     if (!shouldShow()) return;
-    setVisible(true);
 
-    const src = localStorage.getItem(LS_AUDIO) || "";
+    const src = getLocalAudioUrl(firestoreUrl);
+    if (!src) return;
+
+    setVisible(true);
+    setAudioSrc(src);
+
     const el = new Audio(src);
     el.muted = mutedPref;
     el.preload = "auto";
-
     el.onloadedmetadata = () => setDuration(el.duration);
     el.ontimeupdate = () => {
       if (el.duration) setProgress((el.currentTime / el.duration) * 100);
@@ -665,15 +784,11 @@ export function FutureSelfAudioPlayer({
     audioRef.current = el;
 
     if (autoplay) {
-      el.play().then(() => {
-        setPlaying(true);
-      }).catch(() => {
-        setAutoplayBlocked(true);
-      });
+      el.play().then(() => setPlaying(true)).catch(() => setAutoplayBlocked(true));
     }
 
     return () => { el.pause(); el.src = ""; };
-  }, [shouldShow, autoplay, mutedPref]);
+  }, [shouldShow, autoplay, mutedPref, firestoreUrl]);
 
   const togglePlay = () => {
     const el = audioRef.current;
@@ -718,34 +833,27 @@ export function FutureSelfAudioPlayer({
       )}
       data-testid="future-self-audio-player"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-3">
-          <div
-            className={cn(
-              "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
-              context === "missedDay" ? "bg-warning/15" : "bg-primary/15"
-            )}
-          >
-            <AudioWaveform
-              className={cn("w-4.5 h-4.5", context === "missedDay" ? "text-warning" : "text-primary")}
-            />
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground mb-0.5">
-              {copy.badge}
-            </p>
-            <p className="text-sm font-bold leading-snug">
-              {userName ? `${userName.split(" ")[0]}, ` : ""}{copy.label}
-            </p>
-            {autoplayBlocked && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Tap play to hear your message.
-              </p>
-            )}
-            {!autoplayBlocked && !playing && (
-              <p className="text-xs text-muted-foreground mt-0.5">{copy.sub}</p>
-            )}
-          </div>
+      <div className="flex items-start gap-3">
+        <div
+          className={cn(
+            "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0",
+            context === "missedDay" ? "bg-warning/15" : "bg-primary/15"
+          )}
+        >
+          <AudioWaveform
+            className={cn("w-4.5 h-4.5", context === "missedDay" ? "text-warning" : "text-primary")}
+          />
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground mb-0.5">
+            {copy.badge}
+          </p>
+          <p className="text-sm font-bold leading-snug">
+            {userName ? `${userName.split(" ")[0]}, ` : ""}{copy.label}
+          </p>
+          {(autoplayBlocked || !playing) && (
+            <p className="text-xs text-muted-foreground mt-0.5">{copy.sub}</p>
+          )}
         </div>
       </div>
 
@@ -764,7 +872,7 @@ export function FutureSelfAudioPlayer({
         </Button>
 
         <div className="flex-1 space-y-1">
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden cursor-pointer">
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className={cn("h-full rounded-full transition-all", context === "missedDay" ? "bg-warning/70" : "bg-primary/70")}
               style={{ width: `${progress}%` }}
@@ -786,7 +894,9 @@ export function FutureSelfAudioPlayer({
           onClick={toggleMute}
           data-testid="button-future-audio-mute"
         >
-          {muted ? <VolumeX className="w-3.5 h-3.5 text-muted-foreground" /> : <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />}
+          {muted
+            ? <VolumeX className="w-3.5 h-3.5 text-muted-foreground" />
+            : <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />}
         </Button>
       </div>
 

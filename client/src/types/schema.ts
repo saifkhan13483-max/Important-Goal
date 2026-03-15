@@ -12,6 +12,7 @@ export interface User {
   createdAt?: string | null;
   reminderEnabled?: boolean | null;
   reminderTime?: string | null;
+  futureAudioUrl?: string | null;
   futureAudioPlayOnFirstVisit?: boolean | null;
   futureAudioPlayAfterMissed?: boolean | null;
   futureAudioAutoplay?: boolean | null;

@@ -343,7 +343,14 @@ export default function Onboarding() {
                   </p>
                 </div>
                 <FutureSelfAudioSetup
-                  onSaved={() => setStep(s => s + 1)}
+                  onSaved={async (url) => {
+                    if (url) {
+                      try {
+                        await updateProfile({ futureAudioUrl: url } as any);
+                      } catch {}
+                    }
+                    setStep(s => s + 1);
+                  }}
                   onSkip={() => setStep(s => s + 1)}
                 />
               </div>

@@ -847,10 +847,11 @@ export default function Dashboard() {
       <RecoveryBanner missedSystems={missedYesterday} />
 
       {/* Future Self Audio player */}
-      {hasFutureSelfAudio() && (
+      {hasFutureSelfAudio(user?.futureAudioUrl) && (
         missedYesterday.length > 0 ? (
           <FutureSelfAudioPlayer
             context="missedDay"
+            firestoreUrl={user?.futureAudioUrl}
             userName={user?.name}
             playOnFirstVisit={user?.futureAudioPlayOnFirstVisit ?? true}
             playAfterMissed={user?.futureAudioPlayAfterMissed ?? true}
@@ -860,6 +861,7 @@ export default function Dashboard() {
         ) : (
           <FutureSelfAudioPlayer
             context="firstVisit"
+            firestoreUrl={user?.futureAudioUrl}
             userName={user?.name}
             playOnFirstVisit={user?.futureAudioPlayOnFirstVisit ?? true}
             playAfterMissed={user?.futureAudioPlayAfterMissed ?? true}

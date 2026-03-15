@@ -396,7 +396,17 @@ export default function Settings() {
         <div className="space-y-6">
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Your recording</p>
-            <FutureSelfAudioSetup compact />
+            <FutureSelfAudioSetup
+              compact
+              existingUrl={user?.futureAudioUrl}
+              onSaved={async (url) => {
+                if (url) {
+                  try { await updateProfile({ futureAudioUrl: url } as any); } catch {}
+                } else {
+                  try { await updateProfile({ futureAudioUrl: null } as any); } catch {}
+                }
+              }}
+            />
           </div>
           <div className="border-t border-border/40 pt-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Playback settings</p>

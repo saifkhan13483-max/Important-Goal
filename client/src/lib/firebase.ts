@@ -9,13 +9,15 @@
  * so no secrets are hardcoded. The .env.example file documents every variable.
  *
  * Services initialized here:
- *   - auth: Firebase Authentication (email/password + Google OAuth)
- *   - db:   Firestore database (primary data store for all user data)
+ *   - auth:    Firebase Authentication (email/password + Google OAuth)
+ *   - db:      Firestore database (primary data store for all user data)
+ *   - storage: Firebase Storage (audio file uploads for Future Self Audio)
  */
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -30,3 +32,4 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);

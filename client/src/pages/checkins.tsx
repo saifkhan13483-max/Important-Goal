@@ -230,10 +230,11 @@ function RecoveryFlowModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" data-testid="recovery-flow-overlay">
       <div className="relative bg-background rounded-2xl shadow-2xl max-w-sm w-full border" onClick={e => e.stopPropagation()}>
-        {checkinStatus === "skipped" && hasFutureSelfAudio() && (
+        {checkinStatus === "skipped" && hasFutureSelfAudio(user?.futureAudioUrl) && (
           <div className="px-6 pt-5 pb-0">
             <FutureSelfAudioPlayer
               context="missedDay"
+              firestoreUrl={user?.futureAudioUrl}
               userName={user?.name}
               playOnFirstVisit={user?.futureAudioPlayOnFirstVisit ?? true}
               playAfterMissed={user?.futureAudioPlayAfterMissed ?? true}
