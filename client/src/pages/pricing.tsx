@@ -181,7 +181,7 @@ export default function Pricing() {
         {/* Header */}
         <div className="text-center mb-14">
           <Badge variant="secondary" className="mb-4 text-xs">Simple, transparent pricing</Badge>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Start free. Grow when you're ready.</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Start free. Upgrade when you're ready.</h1>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">
             No tricks. No hidden fees. The free plan is free forever. Upgrade only when you need more.
           </p>
