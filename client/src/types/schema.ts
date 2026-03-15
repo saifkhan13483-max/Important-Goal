@@ -12,6 +12,11 @@ export interface User {
   createdAt?: string | null;
   reminderEnabled?: boolean | null;
   reminderTime?: string | null;
+  futureAudioPlayOnFirstVisit?: boolean | null;
+  futureAudioPlayAfterMissed?: boolean | null;
+  futureAudioAutoplay?: boolean | null;
+  futureAudioMuted?: boolean | null;
+  futureAudioLabel?: string | null;
 }
 
 export interface GoalMilestone {

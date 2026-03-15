@@ -87,6 +87,36 @@ Timing: `cubic-bezier(0.22, 1, 0.36, 1)` for entrances; `ease-out` for hover; `e
 ### Border Radius
 `rounded-xl` = 12px, `rounded-2xl` = 16px, `rounded-3xl` = 24px
 
+## Phase 8 — Future Self Audio (implemented)
+
+A personal audio feature that lets users record or upload a message from their future self, played back as a motivational reminder.
+
+### Feature components
+- `client/src/components/future-self-audio.tsx` — all audio components in one file:
+  - `FutureSelfAudioSetup` — record/upload UI (used in onboarding + settings)
+  - `FutureSelfAudioPlayer` — playback widget with autoplay logic (used in dashboard + recovery)
+  - `FutureSelfAudioSettings` — playback preference toggles (used in settings)
+
+### Storage
+- Audio data: `localStorage` key `sf_future_self_audio` (base64 data-URL, max ~10MB)
+- Audio MIME type: `localStorage` key `sf_future_self_audio_type`
+- Last played date: `localStorage` key `sf_future_self_last_played`
+- User preferences on Firestore `User` doc: `futureAudioPlayOnFirstVisit`, `futureAudioPlayAfterMissed`, `futureAudioAutoplay`, `futureAudioMuted`, `futureAudioLabel`
+
+### User type additions (schema.ts)
+`futureAudioPlayOnFirstVisit`, `futureAudioPlayAfterMissed`, `futureAudioAutoplay`, `futureAudioMuted`, `futureAudioLabel`
+
+### Integration points
+- **Onboarding**: New step 4 of 5 "Leave a message for your future self" — optional/skippable
+- **Settings**: New "Future Self Audio" section (after Daily Reminder) — manage recording + playback prefs
+- **Dashboard**: Player surfaces after RecoveryBanner — "missedDay" context if missed yesterday, "firstVisit" context otherwise
+- **Recovery flow (checkins.tsx)**: Player shown at top of RecoveryFlowModal when checkinStatus is "skipped"
+
+### Autoplay behavior
+- Attempts `HTMLAudioElement.play()` — if blocked by browser, shows a prominent play button
+- Shows once per day via `sf_future_self_last_played` localStorage key
+- "Skip for today" records today's date to suppress further auto-show that day
+
 ## Phase 7 — Product Improvement Pass (implemented)
 
 ### Priority 1: Quick Start onboarding (already implemented)

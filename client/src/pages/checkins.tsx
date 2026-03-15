@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
 import type { System, Checkin } from "@/types/schema";
+import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/future-self-audio";
 import { getSystems } from "@/services/systems.service";
 import { getCheckinsByDate, getCheckins, upsertCheckin } from "@/services/checkins.service";
 import { computeAnalytics } from "@/services/analytics.service";
@@ -202,6 +203,7 @@ function RecoveryFlowModal({
   checkinStatus: "skipped" | "partial";
   onDismiss: (intention?: string) => void;
 }) {
+  const { user } = useAppStore();
   const [step, setStep]           = useState(0);
   const [missReason, setMissReason] = useState<MissReason | null>(null);
   const [intention, setIntention]  = useState<string>("");
@@ -228,6 +230,18 @@ function RecoveryFlowModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" data-testid="recovery-flow-overlay">
       <div className="relative bg-background rounded-2xl shadow-2xl max-w-sm w-full border" onClick={e => e.stopPropagation()}>
+        {checkinStatus === "skipped" && hasFutureSelfAudio() && (
+          <div className="px-6 pt-5 pb-0">
+            <FutureSelfAudioPlayer
+              context="missedDay"
+              userName={user?.name}
+              playOnFirstVisit={user?.futureAudioPlayOnFirstVisit ?? true}
+              playAfterMissed={user?.futureAudioPlayAfterMissed ?? true}
+              autoplay={user?.futureAudioAutoplay ?? true}
+              muted={user?.futureAudioMuted ?? false}
+            />
+          </div>
+        )}
         <div className="p-6">
           <div className="flex gap-1.5 mb-6">
             {Array.from({ length: totalSteps }, (_, i) => (

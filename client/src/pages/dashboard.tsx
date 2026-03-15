@@ -20,6 +20,7 @@ import {
   Lightbulb, Star, Loader2, AlertCircle, RefreshCw, Trophy, Heart,
   LayoutGrid, Flag, TrendingDown, Brain,
 } from "lucide-react";
+import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/future-self-audio";
 import { format, parseISO, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -844,6 +845,29 @@ export default function Dashboard() {
 
       {/* Recovery banner */}
       <RecoveryBanner missedSystems={missedYesterday} />
+
+      {/* Future Self Audio player */}
+      {hasFutureSelfAudio() && (
+        missedYesterday.length > 0 ? (
+          <FutureSelfAudioPlayer
+            context="missedDay"
+            userName={user?.name}
+            playOnFirstVisit={user?.futureAudioPlayOnFirstVisit ?? true}
+            playAfterMissed={user?.futureAudioPlayAfterMissed ?? true}
+            autoplay={user?.futureAudioAutoplay ?? true}
+            muted={user?.futureAudioMuted ?? false}
+          />
+        ) : (
+          <FutureSelfAudioPlayer
+            context="firstVisit"
+            userName={user?.name}
+            playOnFirstVisit={user?.futureAudioPlayOnFirstVisit ?? true}
+            playAfterMissed={user?.futureAudioPlayAfterMissed ?? true}
+            autoplay={user?.futureAudioAutoplay ?? true}
+            muted={user?.futureAudioMuted ?? false}
+          />
+        )
+      )}
 
       {/* Tomorrow intention reminder */}
       {tomorrowIntentionCheckin && (() => {

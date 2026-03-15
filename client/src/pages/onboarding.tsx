@@ -6,9 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Zap, RefreshCw, CheckSquare, LayoutDashboard } from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Zap, RefreshCw, CheckSquare, LayoutDashboard, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/auth.store";
+import { FutureSelfAudioSetup } from "@/components/future-self-audio";
 
 const CONFETTI_COLORS = [
   "#a78bfa", "#818cf8", "#34d399", "#fbbf24", "#f472b6",
@@ -85,10 +86,11 @@ interface OnboardingData {
 }
 
 const STEPS = [
-  { id: "name",          title: "What should we call you?",       skippable: false },
-  { id: "identity",      title: "Who are you becoming?",          skippable: false },
-  { id: "minimumAction", title: "What still counts on your worst day?", skippable: false },
-  { id: "done",          title: "Your system is live.",           skippable: false },
+  { id: "name",            title: "What should we call you?",                skippable: false },
+  { id: "identity",        title: "Who are you becoming?",                   skippable: false },
+  { id: "minimumAction",   title: "What still counts on your worst day?",    skippable: false },
+  { id: "futureSelfAudio", title: "Leave a message for your future self.",   skippable: true  },
+  { id: "done",            title: "Your system is live.",                    skippable: false },
 ];
 
 export default function Onboarding() {
@@ -165,10 +167,11 @@ export default function Onboarding() {
   };
 
   const subtitleMap: Record<string, string> = {
-    name:          "This is how we'll greet you in the app.",
-    identity:      "This is who you're building toward — one day at a time.",
-    minimumAction: "This is the action that keeps your system alive on hard days.",
-    done:          "Even this counts today.",
+    name:            "This is how we'll greet you in the app.",
+    identity:        "This is who you're building toward — one day at a time.",
+    minimumAction:   "This is the action that keeps your system alive on hard days.",
+    futureSelfAudio: "Optional, but powerful. Your voice is the best motivation you'll ever hear.",
+    done:            "Even this counts today.",
   };
 
   return (
@@ -328,6 +331,24 @@ export default function Onboarding() {
               </div>
             )}
 
+            {current.id === "futureSelfAudio" && (
+              <div className="space-y-4">
+                <div className="bg-muted/40 border border-border/60 rounded-xl p-4">
+                  <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <Mic className="w-3.5 h-3.5 text-primary" />
+                    What to say
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Speak to yourself 90 days from now. Describe who you're becoming, why it matters to you, and what you want your future self to remember. There's no right way — just be honest.
+                  </p>
+                </div>
+                <FutureSelfAudioSetup
+                  onSaved={() => setStep(s => s + 1)}
+                  onSkip={() => setStep(s => s + 1)}
+                />
+              </div>
+            )}
+
             {current.id === "done" && (
               <div className="space-y-5 text-center">
                 <div className="w-20 h-20 rounded-full gradient-brand flex items-center justify-center mx-auto shadow-lg">
@@ -383,7 +404,22 @@ export default function Onboarding() {
           </CardContent>
         </Card>
 
-        {current.id !== "done" && (
+        {current.id === "futureSelfAudio" && (
+          <div className="flex justify-start mt-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setStep(s => s - 1)}
+              data-testid="button-ob-back-audio"
+              className="text-muted-foreground"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back
+            </Button>
+          </div>
+        )}
+
+        {current.id !== "done" && current.id !== "futureSelfAudio" && (
           <div className="flex justify-between mt-5">
             {step > 0 ? (
               <Button

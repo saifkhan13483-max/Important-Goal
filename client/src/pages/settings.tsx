@@ -14,10 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Sun, Moon, Monitor, LogOut, User, Palette, Globe,
   Bell, Shield, HelpCircle, Sparkles, Zap, Target, BookOpen,
-  ChevronRight, ExternalLink, Heart, BellRing, BellOff,
+  ChevronRight, ExternalLink, Heart, BellRing, BellOff, Mic,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
+import { FutureSelfAudioSetup, FutureSelfAudioSettings } from "@/components/future-self-audio";
 
 const timezones = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
@@ -77,6 +78,12 @@ export default function Settings() {
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
     typeof Notification !== "undefined" ? Notification.permission : "default",
   );
+  const [audioPrefs, setAudioPrefs] = useState({
+    playOnFirstVisit: user?.futureAudioPlayOnFirstVisit ?? true,
+    playAfterMissed:  user?.futureAudioPlayAfterMissed  ?? true,
+    autoplay:         user?.futureAudioAutoplay          ?? true,
+    muted:            user?.futureAudioMuted             ?? false,
+  });
 
   useEffect(() => {
     if (typeof Notification !== "undefined") {
@@ -119,6 +126,20 @@ export default function Settings() {
         localStorage.removeItem("sf_reminder_time");
       }
       toast({ title: "Reminder saved!", description: reminderEnabled ? `You'll be reminded daily at ${reminderTime}.` : "Daily reminder turned off." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleSaveAudioPrefs = async () => {
+    try {
+      await updateProfile({
+        futureAudioPlayOnFirstVisit: audioPrefs.playOnFirstVisit,
+        futureAudioPlayAfterMissed:  audioPrefs.playAfterMissed,
+        futureAudioAutoplay:         audioPrefs.autoplay,
+        futureAudioMuted:            audioPrefs.muted,
+      } as any);
+      toast({ title: "Audio settings saved!", description: "Your Future Self Audio preferences have been updated." });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -363,6 +384,34 @@ export default function Settings() {
               </Button>
             </div>
           )}
+        </div>
+      </SectionCard>
+
+      {/* Future Self Audio */}
+      <SectionCard
+        icon={Mic}
+        title="Future Self Audio"
+        description="A personal message from who you're becoming — played back as a daily reminder"
+      >
+        <div className="space-y-6">
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Your recording</p>
+            <FutureSelfAudioSetup compact />
+          </div>
+          <div className="border-t border-border/40 pt-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Playback settings</p>
+            <FutureSelfAudioSettings prefs={audioPrefs} onChange={setAudioPrefs} />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSaveAudioPrefs}
+            disabled={updatePending}
+            data-testid="button-save-audio-prefs"
+          >
+            {updatePending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
+            Save Audio Preferences
+          </Button>
         </div>
       </SectionCard>
 
