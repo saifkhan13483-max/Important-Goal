@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -251,11 +252,21 @@ function FAQItem({ q, a }: { q: string; a: string }) {
           className={cn("w-4 h-4 flex-shrink-0 text-muted-foreground transition-transform duration-200", open && "rotate-180")}
         />
       </button>
-      {open && (
-        <div className="px-5 pb-5">
-          <p className="text-sm text-muted-foreground leading-relaxed">{a}</p>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="faq-body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } }}
+            exit={{ height: 0, opacity: 0, transition: { duration: 0.18, ease: "easeIn" } }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="px-5 pb-5">
+              <p className="text-sm text-muted-foreground leading-relaxed">{a}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -538,7 +549,7 @@ export default function Landing() {
               <Button variant="ghost" size="sm" data-testid="link-login">Sign In</Button>
             </Link>
             <Link href="/signup">
-              <Button size="sm" className="rounded-full px-5 gap-1.5" data-testid="link-signup">
+              <Button size="sm" className="btn-scale rounded-full px-5 gap-1.5" data-testid="link-signup">
                 Start Free
               </Button>
             </Link>
@@ -606,13 +617,13 @@ export default function Landing() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center mb-6">
             <Link href="/signup">
-              <Button size="lg" className="gap-2 h-12 px-7 text-base rounded-full" data-testid="button-hero-cta">
+              <Button size="lg" className="btn-scale gap-2 h-12 px-7 text-base rounded-full" data-testid="button-hero-cta">
                 Start Free
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <a href="#how-it-works">
-              <Button size="lg" variant="outline" className="h-12 px-7 text-base rounded-full" data-testid="button-hero-how-it-works">
+              <Button size="lg" variant="outline" className="btn-scale h-12 px-7 text-base rounded-full" data-testid="button-hero-how-it-works">
                 See How It Works
               </Button>
             </a>
@@ -775,7 +786,7 @@ export default function Landing() {
             {allFeatures.map((f) => (
               <Card
                 key={f.title}
-                className="hover-elevate border-border/60 group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                className="card-interactive border-border/60"
               >
                 <CardContent className="p-5">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${f.color}`}>
@@ -1028,7 +1039,7 @@ export default function Landing() {
             <Link href="/signup">
               <Button
                 size="lg"
-                className="bg-white text-primary hover:bg-white/90 gap-2 h-12 px-8 text-base font-semibold shadow-lg rounded-full"
+                className="btn-scale bg-white text-primary hover:bg-white/90 gap-2 h-12 px-8 text-base font-semibold shadow-lg rounded-full"
                 data-testid="button-final-cta"
               >
                 Start Free

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useCountUp } from "@/hooks/use-count-up";
 import { useAppStore } from "@/store/auth.store";
 import type { System, Goal, Checkin } from "@/types/schema";
 import { getSystems } from "@/services/systems.service";
@@ -23,6 +24,11 @@ import {
 import { cn } from "@/lib/utils";
 
 function MetricCard({ label, value, sub, icon: Icon, color }: any) {
+  const rawNum = typeof value === "number" ? value : parseFloat(String(value).replace(/[^0-9.]/g, ""));
+  const suffix = typeof value === "string" ? String(value).replace(/[0-9.]/g, "") : "";
+  const isNumeric = !isNaN(rawNum);
+  const animated = useCountUp(isNumeric ? rawNum : 0, 800);
+
   return (
     <Card>
       <CardContent className="p-5">
@@ -30,10 +36,10 @@ function MetricCard({ label, value, sub, icon: Icon, color }: any) {
           <div>
             <p className="text-sm text-muted-foreground mb-1">{label}</p>
             <p
-              className="text-2xl font-bold"
+              className="text-2xl font-bold animate-count-up"
               data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}
             >
-              {value}
+              {isNumeric ? `${animated}${suffix}` : value}
             </p>
             {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
           </div>
@@ -417,8 +423,8 @@ export default function Analytics() {
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="Done"  fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Total" fill="hsl(var(--muted))"   radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Done"  fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
+                <Bar dataKey="Total" fill="hsl(var(--muted))"   radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationBegin={60} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -450,6 +456,9 @@ export default function Analytics() {
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
                   dot={{ fill: "hsl(var(--primary))", r: 3 }}
+                  isAnimationActive
+                  animationDuration={600}
+                  animationEasing="ease-out"
                 />
               </LineChart>
             </ResponsiveContainer>

@@ -174,6 +174,9 @@ function RatingRow({
   );
 }
 
+/* ─── Streak milestone set ──────────────────────────────────────── */
+const STREAK_MILESTONES = new Set([7, 14, 21, 30, 50, 66, 100]);
+
 /* ─── Status config ─────────────────────────────────────────────── */
 const STATUS_CONFIG = {
   done:    { label: "Done",    icon: Check, color: "text-chart-3",     bg: "bg-chart-3/10 border-chart-3/20" },
@@ -200,6 +203,8 @@ function SystemCheckinCard({
   const [moodBefore, setMoodBefore] = useState<number | null>(existingCheckin?.moodBefore ?? null);
   const [moodAfter, setMoodAfter]   = useState<number | null>(existingCheckin?.moodAfter ?? null);
   const [difficulty, setDifficulty] = useState<number | null>(existingCheckin?.difficulty ?? null);
+  const [justDone, setJustDone]     = useState(false);
+  const pulseDoneTimer              = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const current = existingCheckin?.status as keyof typeof STATUS_CONFIG | undefined;
 
@@ -221,6 +226,11 @@ function SystemCheckinCard({
         missed:  "Missed today — your fallback plan is shown below.",
       };
       toast({ title: msgs[status] ?? "Checked in!" });
+      if (status === "done") {
+        if (pulseDoneTimer.current) clearTimeout(pulseDoneTimer.current);
+        setJustDone(true);
+        pulseDoneTimer.current = setTimeout(() => setJustDone(false), 600);
+      }
     },
     onError: (err: any) => {
       toast({ title: "Couldn't save check-in", description: err?.message ?? "Please try again.", variant: "destructive" });
@@ -258,7 +268,11 @@ function SystemCheckinCard({
 
   return (
     <Card
-      className={cn("transition-all", current === "done" ? "ring-1 ring-chart-3/30" : "")}
+      className={cn(
+        "transition-all",
+        current === "done" ? "ring-1 ring-chart-3/30" : "",
+        justDone ? "animate-pulse-success" : "",
+      )}
       data-testid={`checkin-card-${system.id}`}
     >
       <CardContent className="p-4">
@@ -268,9 +282,18 @@ function SystemCheckinCard({
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-medium text-sm">{system.title}</p>
               {streakDays > 0 && (
-                <span className="flex items-center gap-0.5 text-chart-4 text-xs font-semibold" data-testid={`streak-badge-${system.id}`}>
+                <span
+                  className={cn(
+                    "flex items-center gap-0.5 text-chart-4 text-xs font-semibold rounded px-1",
+                    STREAK_MILESTONES.has(streakDays) ? "animate-glow-pulse" : "",
+                  )}
+                  data-testid={`streak-badge-${system.id}`}
+                >
                   <Flame className="w-3 h-3" />
                   {streakDays}d
+                  {STREAK_MILESTONES.has(streakDays) && (
+                    <Trophy className="w-3 h-3 ml-0.5 text-chart-4" aria-label="Streak milestone reached!" />
+                  )}
                 </span>
               )}
             </div>
