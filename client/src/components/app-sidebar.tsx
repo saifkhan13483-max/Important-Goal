@@ -5,12 +5,29 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, Target, Zap, CheckSquare, BarChart2, BookOpen, Settings,
-  Sparkles, LogOut, LayoutGrid,
+  Sparkles, LogOut, LayoutGrid, Plus, Calendar,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { useAppStore } from "@/store/auth.store";
+import { getSystems } from "@/services/systems.service";
+import { getCheckinsByDate } from "@/services/checkins.service";
+import type { System, Checkin } from "@/types/schema";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+function getTodayKey() {
+  return new Date().toISOString().split("T")[0];
+}
 
 const navItems = [
   {
@@ -60,7 +77,28 @@ const navItems = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const { user: appUser } = useAppStore();
   const { toast } = useToast();
+  const userId = appUser?.id ?? "";
+  const today = getTodayKey();
+
+  const { data: systems = [] } = useQuery<System[]>({
+    queryKey: ["systems", userId],
+    queryFn: () => getSystems(userId),
+    enabled: !!userId,
+  });
+
+  const { data: todayCheckins = [] } = useQuery<Checkin[]>({
+    queryKey: ["checkins-today", userId, today],
+    queryFn: () => getCheckinsByDate(userId, today),
+    enabled: !!userId,
+  });
+
+  const activeSystems = systems.filter(s => s.active);
+  const todayDone = todayCheckins.filter(c => c.status === "done").length;
+  const todayTotal = activeSystems.length;
+  const completionPct = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : null;
+  const allDone = todayTotal > 0 && todayDone === todayTotal;
 
   const handleLogout = async () => {
     await logout();
@@ -85,6 +123,37 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
+      {/* Today's progress summary */}
+      {todayTotal > 0 && (
+        <div className="px-4 py-2.5 border-b border-sidebar-border">
+          <Link href="/checkins">
+            <div className={cn(
+              "rounded-lg p-2.5 cursor-pointer transition-colors",
+              allDone ? "bg-chart-3/10" : "bg-muted/40 hover:bg-muted/60",
+            )}>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Today</span>
+                </div>
+                <span className={cn(
+                  "text-[10px] font-bold",
+                  allDone ? "text-chart-3" : "text-foreground",
+                )}>
+                  {allDone ? "All done! 🔥" : `${todayDone}/${todayTotal}`}
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full transition-all", allDone ? "bg-chart-3" : "bg-primary")}
+                  style={{ width: `${completionPct ?? 0}%` }}
+                />
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
+
       <SidebarContent className="py-3">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase tracking-wider">
@@ -94,6 +163,11 @@ export function AppSidebar() {
             <SidebarMenu>
               {navItems.map((item) => {
                 const isActive = location === item.url || location.startsWith(item.url + "/");
+
+                // Add badge for today's progress on the check-in nav item
+                const showBadge = item.url === "/checkins" && completionPct !== null && !allDone;
+                const showComplete = item.url === "/checkins" && allDone;
+
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
@@ -103,13 +177,65 @@ export function AppSidebar() {
                         title={item.hint}
                       >
                         <item.icon className="w-4 h-4" />
-                        <span>{item.title}</span>
+                        <span className="flex-1">{item.title}</span>
+                        {showComplete && (
+                          <span className="ml-auto text-chart-3 text-[10px] font-bold">✓</span>
+                        )}
+                        {showBadge && (
+                          <Badge
+                            variant="secondary"
+                            className="ml-auto text-[10px] px-1.5 py-0 h-4 bg-primary/15 text-primary"
+                          >
+                            {todayDone}/{todayTotal}
+                          </Badge>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Quick-add group */}
+        <SidebarGroup className="mt-auto pt-3">
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase tracking-wider">
+            Quick Add
+          </SidebarGroupLabel>
+          <SidebarGroupContent className="px-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start gap-2 text-xs h-8"
+                  data-testid="button-quick-add"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Build or add something...
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href="/systems/new" data-testid="quick-add-system">
+                    <Zap className="w-3.5 h-3.5 mr-2 text-primary" />
+                    New System
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/goals" data-testid="quick-add-goal">
+                    <Target className="w-3.5 h-3.5 mr-2 text-chart-2" />
+                    New Goal
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/journal" data-testid="quick-add-journal">
+                    <BookOpen className="w-3.5 h-3.5 mr-2 text-chart-4" />
+                    New Journal Entry
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Sparkles, Target, Zap, CheckSquare, TrendingUp, BookOpen,
-  ArrowRight, Shield, Brain, Star, Check, ChevronDown,
-  Flame, LayoutGrid, Users, Lightbulb, Heart, Quote,
-  BarChart2, Clock, RefreshCw, HelpCircle,
+  ArrowRight, Star, Check, ChevronDown,
+  Flame, LayoutGrid, Lightbulb, Heart, Quote,
+  BarChart2, Shield, Brain, Trophy, RefreshCw,
+  Play, Calendar, Clock, Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,18 +57,21 @@ const steps = [
     title: "Tell us your goal",
     desc: "Write down what you want to achieve. It can be anything — fitness, learning, focus, creativity.",
     icon: Target,
+    color: "gradient-brand",
   },
   {
     step: "2",
     title: "Build a simple daily system",
     desc: "We walk you through 7 quick questions that turn your goal into a clear, daily action you can actually do.",
     icon: Zap,
+    color: "gradient-brand",
   },
   {
     step: "3",
     title: "Check in every day",
-    desc: "Mark your habit done or missed. One tap. No pressure. Small actions, done consistently, beat big plans done rarely.",
+    desc: "Mark your habit done or missed. One tap. Small actions, done consistently, beat big plans done rarely.",
     icon: CheckSquare,
+    color: "gradient-brand",
   },
 ];
 
@@ -238,6 +242,111 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+function ProductPreview() {
+  return (
+    <div className="relative mx-auto max-w-3xl mt-14 mb-2 px-4">
+      <div className="relative rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
+        {/* Mock browser bar */}
+        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-muted/60">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-400/70" />
+            <div className="w-3 h-3 rounded-full bg-chart-4/70" />
+            <div className="w-3 h-3 rounded-full bg-chart-3/70" />
+          </div>
+          <div className="flex-1 mx-4 h-5 rounded-md bg-background/80 border border-border flex items-center px-3 gap-1">
+            <div className="w-2.5 h-2.5 rounded-full bg-chart-3/50" />
+            <div className="text-[10px] text-muted-foreground">systemforge.app/dashboard</div>
+          </div>
+        </div>
+
+        {/* Mock dashboard content */}
+        <div className="flex h-72 sm:h-80">
+          {/* Sidebar */}
+          <div className="w-44 border-r border-border bg-sidebar hidden sm:flex flex-col p-3 gap-1">
+            <div className="flex items-center gap-2 p-2 mb-2">
+              <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
+                <Sparkles className="w-3 h-3 text-white" />
+              </div>
+              <span className="text-xs font-bold text-sidebar-foreground">SystemForge</span>
+            </div>
+            {[
+              { icon: BarChart2, label: "Dashboard", active: true },
+              { icon: Target, label: "My Goals", active: false },
+              { icon: Zap, label: "My Systems", active: false },
+              { icon: CheckSquare, label: "Check-ins", active: false },
+              { icon: TrendingUp, label: "Analytics", active: false },
+            ].map(item => (
+              <div
+                key={item.label}
+                className={cn(
+                  "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-all",
+                  item.active
+                    ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50",
+                )}
+              >
+                <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
+                {item.label}
+              </div>
+            ))}
+          </div>
+
+          {/* Main content */}
+          <div className="flex-1 p-4 overflow-hidden bg-background">
+            {/* Greeting banner */}
+            <div className="rounded-xl gradient-brand p-3 text-white mb-3 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+              <p className="text-[10px] text-white/70">Sunday, March 15</p>
+              <p className="text-sm font-bold">Good morning, Alex! 👋</p>
+              <p className="text-[10px] text-white/80">Ready to make progress today?</p>
+            </div>
+
+            {/* Metrics row */}
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {[
+                { label: "Goals", value: "3", color: "text-primary" },
+                { label: "Systems", value: "5", color: "text-chart-2" },
+                { label: "Today", value: "2/5", color: "text-chart-3" },
+                { label: "Streak", value: "12d", color: "text-chart-4" },
+              ].map(m => (
+                <div key={m.label} className="bg-card border border-border rounded-lg p-2 text-center">
+                  <p className={`text-sm font-bold ${m.color}`}>{m.value}</p>
+                  <p className="text-[9px] text-muted-foreground">{m.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Check-ins */}
+            <div className="bg-card border border-border rounded-lg p-2.5">
+              <p className="text-xs font-semibold mb-2">Today's Systems</p>
+              <div className="space-y-1.5">
+                {[
+                  { title: "Morning Movement", done: true },
+                  { title: "Daily Reading", done: true },
+                  { title: "Focus Block", done: false },
+                ].map(s => (
+                  <div key={s.title} className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-foreground">{s.title}</span>
+                    <div className="flex gap-1">
+                      <div className={cn("w-5 h-5 rounded text-[8px] flex items-center justify-center border", s.done ? "bg-chart-3 text-white border-chart-3" : "bg-muted border-border")}>
+                        {s.done ? "✓" : ""}
+                      </div>
+                      <div className="w-5 h-5 rounded text-[8px] flex items-center justify-center border bg-muted border-border" />
+                      <div className="w-5 h-5 rounded text-[8px] flex items-center justify-center border bg-muted border-border" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Glow effect */}
+      <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-3/4 h-16 bg-primary/20 blur-2xl rounded-full pointer-events-none" />
+    </div>
+  );
+}
+
 export default function Landing() {
   const [billingYearly, setBillingYearly] = useState(false);
 
@@ -272,7 +381,7 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="relative pt-32 pb-24 px-4 overflow-hidden">
+      <section className="relative pt-28 pb-8 px-4 overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-3xl" />
           <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-chart-2/5 rounded-full blur-3xl" />
@@ -293,7 +402,7 @@ export default function Landing() {
           <p className="text-base text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
             SystemForge guides you — step by step — to turn any goal into a simple, repeatable daily habit. No jargon. No overwhelm. Just clear, friendly guidance.
           </p>
-          <div className="flex flex-wrap gap-3 justify-center mb-10">
+          <div className="flex flex-wrap gap-3 justify-center mb-6">
             <Link href="/signup">
               <Button size="lg" className="gap-2 h-12 px-6 text-base" data-testid="button-hero-cta">
                 Start Building for Free
@@ -306,14 +415,37 @@ export default function Landing() {
               </Button>
             </Link>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground mb-2">
             Free forever · No credit card required · Takes 2 minutes to set up
           </p>
+        </div>
+
+        {/* Product preview */}
+        <ProductPreview />
+      </section>
+
+      {/* ── Social proof strip ── */}
+      <section className="py-10 px-4 border-t border-border bg-muted/20">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-center text-xs text-muted-foreground mb-6 uppercase tracking-widest font-medium">Trusted by habit-builders around the world</p>
+          <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+            {[
+              { value: "12,000+", label: "Active users" },
+              { value: "98,000+", label: "Habits tracked" },
+              { value: "4.9★", label: "Average rating" },
+              { value: "47 days", label: "Avg streak" },
+            ].map(s => (
+              <div key={s.label} className="text-center">
+                <p className="text-2xl font-bold gradient-text">{s.value}</p>
+                <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── Problem section ── */}
-      <section className="py-20 px-4 border-t border-border bg-muted/20">
+      <section className="py-20 px-4 border-t border-border">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-destructive/10 text-destructive rounded-full px-4 py-1.5 text-xs font-semibold mb-6">
             Sound familiar?
@@ -350,7 +482,7 @@ export default function Landing() {
       </section>
 
       {/* ── How it works ── */}
-      <section id="how-it-works" className="py-24 px-4 border-t border-border">
+      <section id="how-it-works" className="py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4 text-xs">Simple as 1-2-3</Badge>
@@ -378,7 +510,7 @@ export default function Landing() {
       </section>
 
       {/* ── Goal → System transformation example ── */}
-      <section className="py-24 px-4 bg-muted/20 border-t border-border">
+      <section className="py-24 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 text-xs">Real example</Badge>
@@ -433,7 +565,7 @@ export default function Landing() {
       </section>
 
       {/* ── Features ── */}
-      <section id="features" className="py-24 px-4 border-t border-border">
+      <section id="features" className="py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4 text-xs">Everything you need</Badge>
@@ -459,7 +591,7 @@ export default function Landing() {
       </section>
 
       {/* ── Template preview ── */}
-      <section className="py-24 px-4 bg-muted/20 border-t border-border">
+      <section className="py-24 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 text-xs">Don't start from scratch</Badge>
@@ -470,22 +602,27 @@ export default function Landing() {
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { icon: "💪", name: "Morning Movement", category: "Fitness", desc: "5 pushups after brushing teeth" },
-              { icon: "📚", name: "Daily Reading", category: "Learning", desc: "1 page before bed" },
-              { icon: "🧘", name: "Mindful Morning", category: "Mindfulness", desc: "3 minutes of breathing after waking up" },
-              { icon: "✍️", name: "Daily Writing", category: "Creativity", desc: "100 words at 8am" },
-              { icon: "💧", name: "Hydration Habit", category: "Health", desc: "Drink a glass of water with each meal" },
-              { icon: "🎯", name: "Focus Block", category: "Productivity", desc: "25-min deep work before email" },
+              { icon: "💪", name: "Morning Movement", category: "Fitness", desc: "5 pushups after brushing teeth", beginner: true },
+              { icon: "📚", name: "Daily Reading", category: "Learning", desc: "1 page before bed", beginner: true },
+              { icon: "🧘", name: "Mindful Morning", category: "Mindfulness", desc: "3 minutes of breathing after waking up", beginner: false },
+              { icon: "✍️", name: "Daily Writing", category: "Creativity", desc: "100 words at 8am", beginner: false },
+              { icon: "💧", name: "Hydration Habit", category: "Health", desc: "Drink a glass of water with each meal", beginner: true },
+              { icon: "🎯", name: "Focus Block", category: "Productivity", desc: "25-min deep work before email", beginner: false },
             ].map((t) => (
-              <Card key={t.name} className="hover-elevate border-border/60 cursor-pointer">
+              <Card key={t.name} className="hover-elevate border-border/60 cursor-pointer group">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">{t.icon}</span>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <p className="font-semibold text-sm">{t.name}</p>
-                        <Badge variant="secondary" className="text-xs px-1.5">{t.category}</Badge>
+                        {t.beginner && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-chart-3/10 text-chart-3 border-chart-3/20">
+                            Beginner
+                          </Badge>
+                        )}
                       </div>
+                      <Badge variant="secondary" className="text-xs px-1.5 mb-1.5">{t.category}</Badge>
                       <p className="text-xs text-muted-foreground leading-relaxed">{t.desc}</p>
                     </div>
                   </div>
@@ -500,6 +637,51 @@ export default function Landing() {
                 Browse all templates
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Compassionate design section ── */}
+      <section className="py-24 px-4 border-t border-border bg-muted/20">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4 text-xs">Designed for real life</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">Missing a day is part of the process</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              SystemForge doesn't punish you for missing a day. It helps you recover with compassion — because consistency matters more than perfection.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              {
+                icon: Shield,
+                title: "Built-in Backup Plan",
+                desc: "Every system has a tiny fallback version for hard days. One pushup beats zero.",
+                color: "bg-primary/10 text-primary",
+              },
+              {
+                icon: RefreshCw,
+                title: "Gentle Recovery Mode",
+                desc: "Miss multiple days? We gently suggest starting over — no guilt, no shame, just forward momentum.",
+                color: "bg-chart-2/10 text-chart-2",
+              },
+              {
+                icon: Heart,
+                title: "Compassionate Language",
+                desc: "No harsh red alerts. Instead: 'Missed yesterday? Let's reset gently.' Small actions still count.",
+                color: "bg-chart-5/10 text-chart-5",
+              },
+            ].map(item => (
+              <Card key={item.title} className="hover-elevate border-border/60">
+                <CardContent className="p-6">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${item.color}`}>
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-base mb-2">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -527,62 +709,51 @@ export default function Landing() {
                 desc: "We help you create a backup plan so one bad day never breaks your streak permanently.",
               },
               {
-                icon: RefreshCw,
-                title: "Start small on purpose",
-                desc: "We encourage you to make habits embarrassingly small. That's actually the secret.",
+                icon: Brain,
+                title: "Science-backed, simply explained",
+                desc: "Habit science — identity, triggers, rewards — explained in plain language you can actually apply.",
               },
               {
-                icon: Shield,
-                title: "No judgment. Ever.",
-                desc: "The app tracks your data so you can learn, not so you can feel bad about yourself.",
+                icon: Play,
+                title: "Start in under 5 minutes",
+                desc: "The wizard guides you through every question. You don't need to know anything going in.",
               },
             ].map((item) => (
-              <div key={item.title} className="flex gap-4 p-4 rounded-xl border border-border/60 bg-card">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-                  <item.icon className="w-4.5 h-4.5" />
+              <div key={item.title} className="flex gap-4 p-5 rounded-xl border border-border bg-card hover-elevate">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <item.icon className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm mb-1">{item.title}</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                  <h3 className="font-bold text-sm mb-1">{item.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
-          </div>
-          <div className="mt-8 p-5 rounded-xl bg-primary/5 border border-primary/20 text-center">
-            <p className="text-sm font-medium text-foreground mb-1">
-              💡 The SystemForge promise
-            </p>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-lg mx-auto">
-              "Start small. A good system is easy to repeat. Your goal gives direction — your system creates daily progress. On hard days, your backup plan keeps you moving."
-            </p>
           </div>
         </div>
       </section>
 
       {/* ── Testimonials ── */}
-      <section className="py-24 px-4 bg-muted/20 border-t border-border">
+      <section className="py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4 text-xs">What users say</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Real people. Real results.</h2>
-            <p className="text-muted-foreground text-lg">Beginners and veterans alike are building better habits.</p>
+            <Badge variant="secondary" className="mb-4 text-xs">What people are saying</Badge>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">Real results from real people</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {testimonials.map((t) => (
               <Card key={t.name} className="hover-elevate border-border/60">
                 <CardContent className="p-6">
-                  <div className="flex mb-3">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-chart-4 fill-chart-4" />
+                  <div className="flex items-center gap-1 mb-4">
+                    {[...Array(t.rating)].map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-chart-4 text-chart-4" />
                     ))}
                   </div>
-                  <div className="mb-4">
-                    <Quote className="w-5 h-5 text-muted-foreground/40 mb-2" />
-                    <p className="text-sm text-foreground leading-relaxed">{t.quote}</p>
-                  </div>
+                  <Quote className="w-5 h-5 text-primary/30 mb-2" />
+                  <p className="text-sm text-foreground leading-relaxed mb-4">"{t.quote}"</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {t.avatar}
+                    <div className="w-9 h-9 rounded-full gradient-brand flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-white">{t.avatar}</span>
                     </div>
                     <div>
                       <p className="text-sm font-semibold">{t.name}</p>
@@ -598,109 +769,83 @@ export default function Landing() {
 
       {/* ── Pricing ── */}
       <section id="pricing" className="py-24 px-4 border-t border-border">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-4 text-xs">Simple pricing</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">Start free. Grow when you're ready.</h2>
-            <p className="text-muted-foreground text-lg mb-8">No tricks. No hidden fees. Cancel anytime.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">Start free. Upgrade when you're ready.</h2>
+            <p className="text-muted-foreground text-lg">No credit card required. Free plan available forever.</p>
 
-            {/* Billing toggle */}
-            <div className="inline-flex items-center gap-3 bg-muted rounded-xl p-1">
+            <div className="flex items-center justify-center gap-3 mt-6">
+              <span className={cn("text-sm", !billingYearly && "font-semibold text-foreground", billingYearly && "text-muted-foreground")}>Monthly</span>
               <button
-                onClick={() => setBillingYearly(false)}
+                onClick={() => setBillingYearly(!billingYearly)}
                 className={cn(
-                  "px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
-                  !billingYearly ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
+                  "relative w-11 h-6 rounded-full transition-colors",
+                  billingYearly ? "bg-primary" : "bg-muted-foreground/30",
                 )}
               >
-                Monthly
+                <div className={cn("absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform", billingYearly ? "translate-x-6" : "translate-x-1")} />
               </button>
-              <button
-                onClick={() => setBillingYearly(true)}
-                className={cn(
-                  "px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
-                  billingYearly ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
-                )}
-              >
+              <span className={cn("text-sm flex items-center gap-1.5", billingYearly && "font-semibold text-foreground", !billingYearly && "text-muted-foreground")}>
                 Yearly
-                <Badge className="text-xs px-1.5 py-0 bg-chart-3/20 text-chart-3 border-0">Save 20%</Badge>
-              </button>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-chart-3/15 text-chart-3">Save 20%</Badge>
+              </span>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {pricingPlans.map((plan) => {
-              const yearlyPrice = plan.price === "$0" ? "$0" : `$${Math.round(parseInt(plan.price.slice(1)) * 0.8)}`;
-              const displayPrice = billingYearly ? yearlyPrice : plan.price;
-              const isPro = plan.badge === "Most Popular";
-              return (
-                <Card
-                  key={plan.name}
-                  className={cn(
-                    "relative flex flex-col border-border/60 hover-elevate",
-                    isPro && "border-primary/40 ring-1 ring-primary/20 shadow-md",
-                  )}
-                >
-                  {plan.badge && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="gradient-brand text-white border-0 px-3 py-0.5 text-xs shadow-sm">
-                        {plan.badge}
-                      </Badge>
-                    </div>
-                  )}
-                  <CardContent className="p-5 flex flex-col flex-1">
-                    <div className="mb-5">
-                      <p className="font-bold text-base mb-0.5">{plan.name}</p>
-                      <p className="text-xs text-muted-foreground mb-4">{plan.tagline}</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-extrabold">{displayPrice}</span>
-                        <span className="text-sm text-muted-foreground">{plan.price === "$0" ? "" : plan.period}</span>
-                      </div>
-                      {billingYearly && plan.price !== "$0" && (
-                        <p className="text-xs text-chart-3 font-medium mt-1">billed annually</p>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 mb-6 flex-1">
-                      {plan.features.map((feature) => (
-                        <div key={feature} className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-chart-3 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-muted-foreground leading-snug">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <Link href={plan.href}>
-                      <Button
-                        variant={plan.ctaVariant}
-                        className={cn("w-full", isPro && "gradient-brand text-white border-0 hover:opacity-90")}
-                        data-testid={`button-pricing-${plan.name.toLowerCase()}`}
-                      >
-                        {plan.cta}
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          <div className="mt-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              All plans include a 14-day money-back guarantee. Questions?{" "}
-              <a href="#faq" className="text-primary underline underline-offset-4">See FAQ</a>
-            </p>
+          <div className="grid md:grid-cols-4 gap-4">
+            {pricingPlans.map((plan) => (
+              <Card
+                key={plan.name}
+                className={cn(
+                  "relative flex flex-col hover-elevate",
+                  plan.badge ? "border-primary/40 shadow-lg" : "border-border/60",
+                )}
+              >
+                {plan.badge && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                    <Badge className="gradient-brand text-white text-xs px-3 py-1 border-0 shadow-sm">
+                      {plan.badge}
+                    </Badge>
+                  </div>
+                )}
+                <CardContent className="p-5 flex flex-col flex-1 pt-6">
+                  <p className="text-sm font-bold mb-1">{plan.name}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{plan.tagline}</p>
+                  <div className="flex items-end gap-0.5 mb-5">
+                    <span className="text-3xl font-extrabold">
+                      {billingYearly && plan.price !== "$0"
+                        ? `$${Math.round(parseInt(plan.price.replace("$", "")) * 0.8)}`
+                        : plan.price}
+                    </span>
+                    <span className="text-muted-foreground text-sm mb-1">{plan.period}</span>
+                  </div>
+                  <ul className="space-y-2 flex-1 mb-5">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-xs text-muted-foreground">
+                        <Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0 mt-0.5" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={plan.href}>
+                    <Button variant={plan.ctaVariant} className="w-full" size="sm" data-testid={`button-plan-${plan.name.toLowerCase()}`}>
+                      {plan.cta}
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" className="py-24 px-4 bg-muted/20 border-t border-border">
-        <div className="max-w-2xl mx-auto">
+      <section id="faq" className="py-24 px-4 border-t border-border bg-muted/20">
+        <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4 text-xs">Questions</Badge>
+            <Badge variant="secondary" className="mb-4 text-xs">Questions answered</Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-3">Frequently asked questions</h2>
-            <p className="text-muted-foreground text-lg">Everything you need to know before getting started.</p>
           </div>
           <div className="space-y-3">
             {faqs.map((faq) => (
@@ -711,61 +856,48 @@ export default function Landing() {
       </section>
 
       {/* ── Final CTA ── */}
-      <section className="py-28 px-4 border-t border-border text-center relative overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/6 rounded-full blur-3xl" />
-        </div>
-        <div className="max-w-2xl mx-auto">
-          <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <Sparkles className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
-            Ready to stop setting goals and start building systems?
-          </h2>
-          <p className="text-muted-foreground text-lg mb-3">
-            Join people who've turned vague aspirations into consistent daily action.
-          </p>
-          <p className="text-sm text-muted-foreground mb-10">
-            It starts with one small habit. Then another. Then another.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
+      <section className="py-24 px-4 border-t border-border">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="relative rounded-3xl overflow-hidden gradient-brand p-12 md:p-16 text-white">
+            <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 -translate-y-1/2 pointer-events-none" />
+            <Sparkles className="w-10 h-10 mx-auto mb-4 opacity-80" />
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+              Your goal gives direction.<br />Your system creates progress.
+            </h2>
+            <p className="text-white/80 text-base md:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+              Start small. Build something repeatable. Show up every day. That's it. SystemForge handles the rest.
+            </p>
             <Link href="/signup">
-              <Button size="lg" className="gap-2 h-12 px-8 text-base" data-testid="button-footer-cta">
-                Start Building for Free
+              <Button
+                size="lg"
+                className="bg-white text-primary hover:bg-white/90 gap-2 h-12 px-8 text-base font-semibold shadow-lg"
+                data-testid="button-final-cta"
+              >
+                Build Your First System — Free
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
+            <p className="text-white/60 text-xs mt-4">No credit card required · Takes 2 minutes</p>
           </div>
-          <p className="text-xs text-muted-foreground mt-4">
-            Free plan · No credit card · 2-minute setup
-          </p>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-border py-10 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-wrap items-center justify-between gap-6 mb-8">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded gradient-brand flex items-center justify-center">
-                <Sparkles className="w-3 h-3 text-white" />
-              </div>
-              <span className="text-sm font-bold">SystemForge</span>
+      <footer className="py-10 px-4 border-t border-border bg-muted/20">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
+              <Sparkles className="w-3 h-3 text-white" />
             </div>
-            <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-              <a href="#how-it-works" className="hover:text-foreground transition-colors">How it works</a>
-              <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-              <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
-              <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
-              <Link href="/login" className="hover:text-foreground transition-colors">Sign in</Link>
-              <Link href="/signup" className="hover:text-foreground transition-colors">Get started</Link>
-            </div>
+            <span className="font-bold text-sm">SystemForge</span>
           </div>
-          <div className="border-t border-border pt-6 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">© 2026 SystemForge. Built to help you build systems that last.</p>
-            <p className="text-xs text-muted-foreground">
-              Small actions done consistently beat big plans done rarely.
-            </p>
+          <p className="text-xs text-muted-foreground text-center">
+            © 2025 SystemForge. All rights reserved. · Built for people who want to actually change.
+          </p>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+            <a href="#" className="hover:text-foreground transition-colors">Terms</a>
+            <a href="#" className="hover:text-foreground transition-colors">Support</a>
           </div>
         </div>
       </footer>

@@ -17,8 +17,10 @@ import {
 } from "recharts";
 import {
   Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
-  Trophy, AlertCircle, Star, CheckSquare,
+  Trophy, AlertCircle, Star, CheckSquare, Lightbulb,
+  TrendingDown, Heart, Award,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function MetricCard({ label, value, sub, icon: Icon, color }: any) {
   return (
@@ -92,22 +94,7 @@ export default function Analytics() {
     [checkins, systems, goals],
   );
 
-  if (isLoading) {
-    return (
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold">Progress Insights</h1>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
-        </div>
-        <Skeleton className="h-64 rounded-xl" />
-        <div className="grid md:grid-cols-2 gap-4">
-          <Skeleton className="h-48 rounded-xl" />
-          <Skeleton className="h-48 rounded-xl" />
-        </div>
-      </div>
-    );
-  }
-
+  // Derived data — computed before early return so hooks order is preserved
   const {
     streaks, bestStreaks, topBestStreak,
     dailyChart, weeklyChart, monthlyChart,
@@ -115,6 +102,98 @@ export default function Analytics() {
     last30Days,
   } = analytics;
 
+  const avgCompletion = useMemo(() => {
+    const daysWithData = (last30Days as any[]).filter(d => d.total > 0);
+    if (daysWithData.length === 0) return 0;
+    return Math.round(daysWithData.reduce((sum: number, d: any) => sum + (d.done / d.total) * 100, 0) / daysWithData.length);
+  }, [last30Days]);
+
+  // Build text-based insight cards from data
+  const insightCards = useMemo(() => {
+    if (checkins.length < 3) return [];
+    const cards: { icon: any; text: string; type: "positive" | "neutral" | "tip" }[] = [];
+
+    // Best streak insight
+    const topStreakEntry = Object.entries(analytics.bestStreaks)
+      .filter(([, v]) => (v as number) > 0)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))[0];
+    if (topStreakEntry) {
+      const sys = systems.find(s => s.id === topStreakEntry[0]);
+      const streak = topStreakEntry[1] as number;
+      if (streak >= 7) {
+        cards.push({
+          icon: Flame,
+          text: `Your longest streak is ${streak} days on "${sys?.title}". That's real consistency.`,
+          type: "positive",
+        });
+      }
+    }
+
+    // Consistency insight
+    if (avgCompletion >= 80) {
+      cards.push({
+        icon: Trophy,
+        text: `You complete habits ${avgCompletion}% of the time on average. That puts you ahead of most people.`,
+        type: "positive",
+      });
+    } else if (avgCompletion >= 50) {
+      cards.push({
+        icon: TrendingUp,
+        text: `You're completing about ${avgCompletion}% of habits on average. Getting above 70% is the next milestone.`,
+        type: "neutral",
+      });
+    } else if (avgCompletion > 0) {
+      cards.push({
+        icon: Heart,
+        text: `Consistency takes time to build. At ${avgCompletion}% avg, consider simplifying your habits — the minimum should feel almost too easy.`,
+        type: "tip",
+      });
+    }
+
+    // Most consistent system
+    const topConsistent = [...systemStats]
+      .filter(s => s.totalCheckins >= 5)
+      .sort((a, b) => b.pct - a.pct)[0];
+    if (topConsistent && topConsistent.pct >= 70) {
+      cards.push({
+        icon: Award,
+        text: `"${topConsistent.title}" is your most reliable habit at ${topConsistent.pct}% completion. It's becoming automatic.`,
+        type: "positive",
+      });
+    }
+
+    // Most missed system
+    const topMissed = [...systemStats]
+      .filter(s => s.totalCheckins >= 5 && s.missedCount > 0)
+      .sort((a, b) => b.missedCount - a.missedCount)[0];
+    if (topMissed && topMissed.pct < 50) {
+      cards.push({
+        icon: Lightbulb,
+        text: `"${topMissed.title}" is being missed frequently. Try shrinking it to a 2-minute version — doing less is better than skipping.`,
+        type: "tip",
+      });
+    }
+
+    // Total check-ins milestone
+    const total = analytics.totalCheckins;
+    if (total >= 100) {
+      cards.push({
+        icon: Star,
+        text: `You've logged ${total} check-ins all time. That's ${total} decisions to show up for yourself. Remarkable.`,
+        type: "positive",
+      });
+    } else if (total >= 30) {
+      cards.push({
+        icon: TrendingUp,
+        text: `${total} total check-ins so far. The research says 66 days to form a habit — you're building real momentum.`,
+        type: "neutral",
+      });
+    }
+
+    return cards.slice(0, 4);
+  }, [checkins, systems, systemStats, analytics, avgCompletion]);
+
+  // All hooks above — now safe to conditionally return
   const chartData = period === "daily" ? dailyChart
     : period === "weekly" ? weeklyChart
     : monthlyChart;
@@ -128,14 +207,6 @@ export default function Analytics() {
     .filter(([, v]) => (v as number) > 0)
     .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 5);
-
-  const avgCompletion = last30Days.length > 0 && last30Days.some((d: any) => d.total > 0)
-    ? Math.round(
-        last30Days.filter((d: any) => d.total > 0)
-          .reduce((sum: number, d: any) => sum + (d.done / d.total) * 100, 0) /
-        last30Days.filter((d: any) => d.total > 0).length,
-      )
-    : 0;
 
   const categoryData = Object.entries(categoryBreakdown).map(([cat, count]) => ({
     category: cat.charAt(0).toUpperCase() + cat.slice(1),
@@ -160,6 +231,22 @@ export default function Analytics() {
     monthly: "last 6 months",
   };
 
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <h1 className="text-2xl font-bold">Progress Insights</h1>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        </div>
+        <Skeleton className="h-64 rounded-xl" />
+        <div className="grid md:grid-cols-2 gap-4">
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
@@ -168,6 +255,32 @@ export default function Analytics() {
           Track your consistency and growth over time
         </p>
       </div>
+
+      {/* Text-based insight cards */}
+      {insightCards.length > 0 && (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {insightCards.map((card, i) => {
+            const colorMap = {
+              positive: "bg-chart-3/8 border-chart-3/20 text-chart-3",
+              neutral:  "bg-primary/8 border-primary/20 text-primary",
+              tip:      "bg-chart-4/8 border-chart-4/20 text-chart-4",
+            };
+            const iconColor = colorMap[card.type];
+            return (
+              <div
+                key={i}
+                className={cn("flex items-start gap-3 p-4 rounded-xl border", colorMap[card.type].split(" ").slice(0, 2).join(" "))}
+                data-testid={`insight-card-${i}`}
+              >
+                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", iconColor.split(" ").slice(0, 2).join(" "))}>
+                  <card.icon className={cn("w-4 h-4", iconColor.split(" ").slice(2).join(" "))} />
+                </div>
+                <p className="text-sm text-foreground leading-relaxed">{card.text}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Full empty state when user has no check-ins at all */}
       {!hasData && (

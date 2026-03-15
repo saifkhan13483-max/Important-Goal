@@ -30,18 +30,76 @@ npm run build   # outputs to dist/
 - **Templates Library** — 9 prebuilt templates with Firestore seeding + category filters + preview dialog
 - **Pricing Page** — `/pricing` page with 4 plans (Free, Starter, Pro, Team/Coach), comparison table, FAQ, monthly/yearly toggle
 
-## Recent Design Changes (v2 Redesign)
+## Recent Design Changes (v3 Full UX Redesign)
 
-- **Landing page** — Major redesign: added nav links, problem section, goal→system transformation example, template preview grid, beginner reassurance section, testimonials, pricing section, full FAQ, improved footer
-- **Dashboard** — Added daily beginner tip, improved empty states with guided nudges, redesigned metric cards and quick actions
-- **System Builder** — All step labels rewritten to beginner-friendly language (e.g. "Who do you want to become?", "When will this habit happen?", "What is the smallest version of this habit?"), clearer "Why this matters" coaching panels, improved example chips
-- **Sidebar nav** — Renamed: "Goals" → "My Goals", "Systems" → "My Systems", "Check-ins" → "Today's Progress", "Analytics" → "Progress Insights", "Journal" → "Reflections"
-- **Pricing page** — New standalone `/pricing` route with 4 plan cards, full feature comparison table, money-back guarantee callout, FAQ accordion
-- **Daily Check-ins** — Today view + history tab; mark done/partial/missed; mood before/after (1-5); difficulty (1-5); inline streak badge; fallback plan shown on miss
-- **Analytics** — 14-day bar chart, completion rate trend, current streaks, goals by category, most consistent systems, most missed systems, completion by goal
-- **Dashboard** — Greeting, today's progress, streaks, active goals, quick actions, recent activity feed
-- **Journal** — Daily reflection entries linked to goals/systems
-- **Settings** — Profile, theme (light/dark/system), timezone
+### Landing Page
+- Premium hero with gradient headline ("Most people set goals. Few build systems.")
+- Live product preview mockup embedded in the hero (mock browser + dashboard UI)
+- Social proof stats strip (12,000+ users, 4.9★ rating, 47-day avg streak)
+- Problem section with "Sound familiar?" relatable framing
+- Goal → System transformation example side-by-side
+- How it works 3-step section with dashed timeline
+- Template preview grid with Beginner badges
+- Compassionate design section (backup plans, recovery mode, gentle language)
+- Beginner reassurance 4-point grid
+- Testimonials with star ratings
+- Pricing section with monthly/yearly toggle and 4 plans (Free, Starter, Pro, Team)
+- Interactive FAQ accordion
+- Final gradient CTA banner
+
+### Dashboard
+- Gradient greeting banner with date, dynamic message, and live progress bar
+- Recovery mode banner when habits were missed yesterday
+- Daily tip-of-the-day (educational habit science tips)
+- Improved metric cards (Active Goals, My Systems, Today's Progress, Best Streak)
+- Better empty states with guided next-step nudges
+- Quick check-in row — Done / Partial / Missed buttons inline
+- 7-day completion bar chart with legend and weekly average
+- Active streaks list with progress bars
+- Suggested next step card (changes based on context)
+- Recent activity feed (combined check-ins + journal entries)
+- Quick action buttons at bottom
+
+### Analytics
+- Text-based AI-style insight cards at the top (e.g. "Your longest streak is 12 days on 'Morning Movement'. That's real consistency.")
+- Insight cards cover: streak milestones, avg completion rate, most consistent system, most missed system, total check-ins milestones
+- Fixed React hooks ordering (all useMemo calls before conditional returns)
+
+### Journal
+- Replaced modal-only form with inline writing experience
+- Entry type pill selector (6 types with emojis)
+- Prominent prompt display with lightbulb icon
+- Jump-start sentence starter chips (click to insert into textarea)
+- Word count display in corner of textarea
+- Collapsible "Link to a goal" section
+- Expanded/collapsed long entries with "Read more" toggle
+- Better date grouping headers with "Today" highlight
+- Entry cards with per-type emoji + color-coded badges
+
+### Systems Page
+- Separate sections for Active vs Paused systems
+- Per-card status dot with ring indicator
+- Identity statement shown as blockquote with left border
+- Trigger and minimum action styled as labeled info boxes
+- "What's a system?" explainer shown for new users
+- Nudge to build more when under 5 active systems
+
+### Sidebar
+- Today's completion progress bar in the header
+- "Done/Total" badge on Today's Progress nav item
+- "Quick Add" section with dropdown for New System / New Goal / New Journal Entry
+
+### Settings
+- Icon-labeled section cards with descriptions
+- Profile section shows avatar preview with initials
+- Appearance section improved with theme descriptions
+- Notifications section (coming soon) with placeholders
+- Data & Privacy section
+- Help & Resources section with quick links
+- Account section with plan status + upgrade nudge + sign out
+
+### Goals Page
+- Already polished — maintained existing card design with search/filter
 
 ## Folder Structure
 

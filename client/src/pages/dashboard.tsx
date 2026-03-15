@@ -17,9 +17,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
   Calendar, BookOpen, Check, Minus, X, BarChart2, PenLine, Sparkles,
-  Lightbulb, Star, Loader2,
+  Lightbulb, Star, Loader2, AlertCircle, RefreshCw, Trophy, Heart,
+  LayoutGrid,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
 const beginnerTips = [
@@ -44,16 +45,67 @@ function getTipOfTheDay(): string {
   return beginnerTips[dayOfYear % beginnerTips.length];
 }
 
-function GreetingBanner({ name }: { name: string }) {
+function GreetingBanner({ name, completionPct, todayDone, todayTotal }: {
+  name: string; completionPct: number; todayDone: number; todayTotal: number;
+}) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   return (
-    <div className="relative rounded-2xl overflow-hidden p-6 md:p-8 gradient-brand text-white mb-0">
+    <div className="relative rounded-2xl overflow-hidden p-6 md:p-8 gradient-brand text-white">
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
       <div className="absolute top-0 right-0 w-48 h-48 opacity-10 bg-white rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <p className="text-white/70 text-sm font-medium mb-1">{format(new Date(), "EEEE, MMMM d")}</p>
-      <h1 className="text-2xl md:text-3xl font-bold mb-1">{greeting}, {name.split(" ")[0]}! 👋</h1>
-      <p className="text-white/80 text-sm">Ready to make progress today? Every check-in counts.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-white/70 text-sm font-medium mb-1">{format(new Date(), "EEEE, MMMM d")}</p>
+          <h1 className="text-2xl md:text-3xl font-bold mb-1">{greeting}, {name.split(" ")[0]}! 👋</h1>
+          <p className="text-white/80 text-sm">
+            {todayTotal === 0
+              ? "Ready to start building your systems?"
+              : todayDone === todayTotal
+              ? "Perfect day! All habits complete. 🔥"
+              : `${todayTotal - todayDone} habit${todayTotal - todayDone !== 1 ? "s" : ""} left for today.`}
+          </p>
+        </div>
+        {todayTotal > 0 && (
+          <div className="flex-shrink-0 text-right">
+            <p className="text-3xl font-extrabold text-white">{completionPct}%</p>
+            <p className="text-xs text-white/70">complete</p>
+          </div>
+        )}
+      </div>
+      {todayTotal > 0 && (
+        <div className="mt-4">
+          <div className="h-2 rounded-full bg-white/20 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-white/80 transition-all duration-700"
+              style={{ width: `${completionPct}%` }}
+            />
+          </div>
+          <p className="text-xs text-white/60 mt-1">{todayDone} of {todayTotal} systems checked in</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecoveryBanner({ missedSystems }: { missedSystems: System[] }) {
+  if (missedSystems.length === 0) return null;
+  return (
+    <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-4/8 border border-chart-4/20">
+      <RefreshCw className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-chart-4 mb-0.5">Missed yesterday? Let's reset gently.</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {missedSystems.length === 1
+            ? `"${missedSystems[0].title}" was missed. Use the fallback plan — even 1 minute counts.`
+            : `${missedSystems.length} systems were missed. Start fresh today with the smallest possible action.`}
+        </p>
+      </div>
+      <Link href="/checkins">
+        <Button size="sm" variant="outline" className="flex-shrink-0 text-xs h-7">
+          Check in now
+        </Button>
+      </Link>
     </div>
   );
 }
@@ -98,7 +150,7 @@ function EmptyStateCard({
   secondaryAction?: { label: string; href: string; testId: string };
 }) {
   return (
-    <Card>
+    <Card className="border-primary/20 bg-primary/3">
       <CardContent className="p-10 md:p-14 text-center">
         <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
           <Icon className="w-8 h-8 text-primary" />
@@ -148,18 +200,29 @@ function QuickCheckinRow({
   const buttons = [
     { status: "done",    label: "Done",    Icon: Check, active: "bg-chart-3 text-white border-chart-3",    idle: "hover:border-chart-3/50 hover:text-chart-3" },
     { status: "partial", label: "Partial", Icon: Minus, active: "bg-chart-4 text-white border-chart-4",    idle: "hover:border-chart-4/50 hover:text-chart-4" },
-    { status: "missed",  label: "Missed",  Icon: X,     active: "bg-destructive text-white border-destructive", idle: "hover:border-destructive/50 hover:text-destructive" },
+    { status: "missed",  label: "Missed",  Icon: X,     active: "bg-muted-foreground/60 text-white border-muted-foreground/60", idle: "hover:border-muted-foreground/30 hover:text-muted-foreground" },
   ] as const;
 
   return (
     <div
-      className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50 hover:border-border transition-colors"
+      className={cn(
+        "flex items-center gap-3 p-3 rounded-xl border transition-all",
+        current === "done" ? "bg-chart-3/5 border-chart-3/20" : "bg-muted/30 border-border/50 hover:border-border",
+      )}
       data-testid={`quick-checkin-${system.id}`}
     >
-      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-        <Zap className="w-3.5 h-3.5 text-primary" />
+      <div className={cn(
+        "w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0",
+        current === "done" ? "bg-chart-3/15" : "bg-primary/10",
+      )}>
+        {current === "done"
+          ? <Check className="w-3.5 h-3.5 text-chart-3" />
+          : <Zap className="w-3.5 h-3.5 text-primary" />}
       </div>
       <span className="text-sm font-medium flex-1 truncate">{system.title}</span>
+      {system.minimumAction && (
+        <span className="text-xs text-muted-foreground truncate max-w-24 hidden sm:block">{system.minimumAction}</span>
+      )}
       <div className="flex items-center gap-1 flex-shrink-0">
         {mutation.isPending ? (
           <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -189,6 +252,7 @@ export default function Dashboard() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
   const today = getTodayKey();
+  const yesterday = subDays(new Date(), 1).toISOString().split("T")[0];
   const tip = getTipOfTheDay();
 
   const { data: goals = [], isLoading: goalsLoading } = useQuery<Goal[]>({
@@ -237,6 +301,12 @@ export default function Dashboard() {
     .sort((a, b) => (b[1] as number) - (a[1] as number))
     .slice(0, 3);
 
+  const yesterdayCheckins = allCheckins.filter(c => c.dateKey === yesterday);
+  const missedYesterday = activeSystems.filter(s => {
+    const c = yesterdayCheckins.find(c => c.systemId === s.id);
+    return c?.status === "missed";
+  });
+
   const recentActivity = useMemo(() => {
     type ActivityItem =
       | { kind: "checkin"; data: Checkin; sortKey: string }
@@ -274,7 +344,15 @@ export default function Dashboard() {
 
   return (
     <div className="p-5 md:p-6 max-w-5xl mx-auto space-y-5">
-      <GreetingBanner name={user?.name || "there"} />
+      <GreetingBanner
+        name={user?.name || "there"}
+        completionPct={completionPct}
+        todayDone={todayDone}
+        todayTotal={todayTotal}
+      />
+
+      {/* Recovery banner */}
+      <RecoveryBanner missedSystems={missedYesterday} />
 
       {/* Beginner tip of the day */}
       <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15">
@@ -334,18 +412,27 @@ export default function Dashboard() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-base">Today's Progress</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Mark each habit done, partial, or missed — right here</p>
+                <CardTitle className="text-base">Today's Check-ins</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Tap Done, Partial, or Missed for each habit</p>
               </div>
               <Link href="/checkins">
                 <Button variant="outline" size="sm" className="gap-1.5" data-testid="link-today-checkins">
-                  Add notes
+                  Full view
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </Link>
             </div>
           </CardHeader>
           <CardContent>
+            {completionPct === 100 && todayTotal > 0 && (
+              <div className="flex items-center gap-3 p-3 rounded-xl gradient-brand text-white mb-4">
+                <Trophy className="w-5 h-5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-bold">Perfect day! All done. 🔥</p>
+                  <p className="text-xs text-white/80">Incredible consistency. See you tomorrow!</p>
+                </div>
+              </div>
+            )}
             <div className="space-y-1 mb-4">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{todayDone} of {todayTotal} habits done today</span>
@@ -357,7 +444,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-end gap-3 px-1 mb-1">
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Done · Partial · Missed</span>
               </div>
-              {activeSystems.slice(0, 5).map(system => (
+              {activeSystems.slice(0, 6).map(system => (
                 <QuickCheckinRow
                   key={system.id}
                   system={system}
@@ -366,10 +453,10 @@ export default function Dashboard() {
                   today={today}
                 />
               ))}
-              {activeSystems.length > 5 && (
+              {activeSystems.length > 6 && (
                 <Link href="/checkins">
                   <p className="text-xs text-muted-foreground text-center py-1 hover:text-primary transition-colors cursor-pointer">
-                    +{activeSystems.length - 5} more — view all
+                    +{activeSystems.length - 6} more — view all
                   </p>
                 </Link>
               )}
@@ -451,7 +538,7 @@ export default function Dashboard() {
                         isEmpty ? "bg-muted/50" :
                         pct === 100 ? "bg-chart-3/80" :
                         pct >= 50  ? "bg-chart-4/70" :
-                        pct > 0    ? "bg-destructive/40" :
+                        pct > 0    ? "bg-primary/40" :
                         "bg-muted";
                       const barH = isEmpty ? 8 : Math.max(8, Math.round((pct / 100) * 56));
                       return (
@@ -530,12 +617,18 @@ export default function Dashboard() {
               <div className="space-y-3">
                 {topStreaks.map(([systemId, streak]) => {
                   const sys = systems.find(s => s.id === systemId);
+                  const pct = Math.min(100, Math.round(((streak as number) / 30) * 100));
                   return (
-                    <div key={systemId} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-muted/30">
-                      <span className="text-sm font-medium truncate">{sys?.title ?? "Unknown system"}</span>
-                      <div className="flex items-center gap-1 text-chart-4 font-bold flex-shrink-0">
-                        <Flame className="w-3.5 h-3.5" />
-                        <span className="text-sm">{streak as number}d</span>
+                    <div key={systemId} className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium truncate">{sys?.title ?? "Unknown system"}</span>
+                        <div className="flex items-center gap-1 text-chart-4 font-bold flex-shrink-0">
+                          <Flame className="w-3.5 h-3.5" />
+                          {streak as number}d
+                        </div>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-chart-4/70 transition-all" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -545,201 +638,147 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick actions */}
-        <Card>
+        {/* Suggested next step */}
+        <Card className="bg-muted/20">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Quick Actions</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Lightbulb className="w-4 h-4 text-primary" />
+              Suggested next step
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <Link href="/goals">
-              <Button variant="outline" className="w-full justify-start gap-2.5 h-10" data-testid="quick-action-goals">
-                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center">
-                  <Plus className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <span className="text-sm">Create a new goal</span>
-              </Button>
-            </Link>
-            <Link href="/systems/new">
-              <Button variant="outline" className="w-full justify-start gap-2.5 h-10" data-testid="quick-action-systems">
-                <div className="w-6 h-6 rounded-md bg-chart-2/10 flex items-center justify-center">
-                  <Zap className="w-3.5 h-3.5 text-chart-2" />
-                </div>
-                <span className="text-sm">Build a new system</span>
-              </Button>
-            </Link>
-            <Link href="/checkins">
-              <Button variant="outline" className="w-full justify-start gap-2.5 h-10" data-testid="quick-action-checkins">
-                <div className="w-6 h-6 rounded-md bg-chart-3/10 flex items-center justify-center">
-                  <CheckSquare className="w-3.5 h-3.5 text-chart-3" />
-                </div>
-                <span className="text-sm">Check in for today</span>
-              </Button>
-            </Link>
-            <Link href="/journal">
-              <Button variant="outline" className="w-full justify-start gap-2.5 h-10" data-testid="quick-action-journal">
-                <div className="w-6 h-6 rounded-md bg-chart-4/10 flex items-center justify-center">
-                  <BookOpen className="w-3.5 h-3.5 text-chart-4" />
-                </div>
-                <span className="text-sm">Write a reflection</span>
-              </Button>
-            </Link>
+          <CardContent>
+            {activeSystems.length === 0 ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Build your first system to start your habit journey.
+                </p>
+                <Link href="/systems/new">
+                  <Button size="sm" className="gap-1.5">
+                    <Zap className="w-3.5 h-3.5" />
+                    Build first system
+                  </Button>
+                </Link>
+              </div>
+            ) : todayCheckins.length === 0 ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  You haven't checked in yet today. Start with your first habit — it takes under 10 seconds.
+                </p>
+                <Link href="/checkins">
+                  <Button size="sm" className="gap-1.5">
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    Check in now
+                  </Button>
+                </Link>
+              </div>
+            ) : completionPct === 100 ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  All done today! Take a moment to reflect on what went well.
+                </p>
+                <Link href="/journal">
+                  <Button size="sm" variant="outline" className="gap-1.5">
+                    <PenLine className="w-3.5 h-3.5" />
+                    Write a reflection
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {todayTotal - todayDone} habit{todayTotal - todayDone !== 1 ? "s" : ""} remaining. Keep the momentum going!
+                </p>
+                <Link href="/checkins">
+                  <Button size="sm" className="gap-1.5">
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    Continue check-ins
+                  </Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Active Goals */}
-      {activeGoals.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <CardTitle className="text-base">Active Goals</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Your current long-term targets</p>
-              </div>
-              <Link href="/goals">
-                <Button variant="ghost" size="sm" data-testid="link-all-goals">
-                  See all <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-3">
-              {activeGoals.slice(0, 4).map(goal => (
-                <Link href={`/goals/${goal.id}`} key={goal.id}>
-                  <div
-                    className="p-3.5 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/20 hover:bg-primary/5 transition-colors cursor-pointer"
-                    data-testid={`goal-card-${goal.id}`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <Target className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                        <p className="text-sm font-semibold truncate">{goal.title}</p>
-                      </div>
-                      <Badge variant="outline" className="text-xs flex-shrink-0 capitalize">
-                        {goal.priority}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap pl-9">
-                      <Badge variant="secondary" className="text-xs capitalize">{goal.category}</Badge>
-                      {goal.deadline && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {format(new Date(goal.deadline), "MMM d")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* No goals yet */}
-      {!isNewUser && activeGoals.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="p-8 text-center">
-            <Target className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-semibold text-sm mb-1">No active goals yet</h3>
-            <p className="text-muted-foreground text-xs mb-4 max-w-[200px] mx-auto">
-              Goals give you direction. Start with just one.
-            </p>
-            <Link href="/goals">
-              <Button variant="outline" size="sm" data-testid="button-add-goal-empty">
-                Add a goal
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Recent activity */}
       {recentActivity.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between gap-2">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-muted-foreground" />
-                  Recent Activity
-                </CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Your latest check-ins and reflections</p>
+              <CardTitle className="text-base">Recent Activity</CardTitle>
+              <div className="flex gap-2">
+                <Link href="/checkins">
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    Check-ins <ArrowRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </Link>
+                <Link href="/journal">
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    Journal <ArrowRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </Link>
               </div>
-              <Link href="/checkins">
-                <Button variant="ghost" size="sm" data-testid="link-activity-history">
-                  View all <ArrowRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
-              </Link>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {recentActivity.map((item) => {
+              {recentActivity.map((item, i) => {
                 if (item.kind === "checkin") {
                   const c = item.data as Checkin;
                   const sys = systems.find(s => s.id === c.systemId);
-                  const StatusIcon = c.status === "done" ? Check : c.status === "partial" ? Minus : X;
-                  const statusColor =
-                    c.status === "done" ? "text-chart-3 bg-chart-3/10" :
-                    c.status === "partial" ? "text-chart-4 bg-chart-4/10" :
-                    "text-destructive bg-destructive/10";
+                  const statusColors = {
+                    done: "text-chart-3 bg-chart-3/10",
+                    partial: "text-chart-4 bg-chart-4/10",
+                    missed: "text-muted-foreground bg-muted",
+                  };
                   return (
-                    <div
-                      key={`checkin-${c.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-muted/30"
-                      data-testid={`activity-checkin-${c.id}`}
-                    >
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${statusColor}`}>
-                        <StatusIcon className="w-3.5 h-3.5" />
+                    <div key={`checkin-${c.id}`} className="flex items-center gap-3 py-1.5 border-b border-border/40 last:border-0">
+                      <div className={cn("w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-xs", statusColors[c.status as keyof typeof statusColors] || "bg-muted text-muted-foreground")}>
+                        {c.status === "done" ? "✓" : c.status === "partial" ? "~" : "×"}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{sys?.title ?? "Unknown system"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {c.dateKey === today ? "Today" : format(parseISO(c.dateKey), "MMM d")}
-                          {c.note ? ` · "${c.note.slice(0, 40)}${c.note.length > 40 ? "…" : ""}"` : ""}
-                        </p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{sys?.title ?? "Unknown system"}</p>
+                        <p className="text-[10px] text-muted-foreground capitalize">{c.status} · {c.dateKey}</p>
                       </div>
-                      <Badge variant="secondary" className="text-xs flex-shrink-0 capitalize">
-                        {c.status}
-                      </Badge>
+                    </div>
+                  );
+                } else {
+                  const j = item.data as JournalEntry;
+                  return (
+                    <div key={`journal-${j.id}`} className="flex items-center gap-3 py-1.5 border-b border-border/40 last:border-0">
+                      <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <PenLine className="w-3 h-3 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{j.promptType ? j.promptType.charAt(0).toUpperCase() + j.promptType.slice(1) : "Journal"} entry</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{j.content.slice(0, 60)}…</p>
+                      </div>
                     </div>
                   );
                 }
-
-                const j = item.data as JournalEntry;
-                const dateLabel = j.dateKey === today ? "Today" : format(parseISO(j.dateKey), "MMM d");
-                return (
-                  <div
-                    key={`journal-${j.id}`}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-muted/30"
-                    data-testid={`activity-journal-${j.id}`}
-                  >
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-primary bg-primary/10">
-                      <PenLine className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">
-                        {j.promptType
-                          ? j.promptType.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())
-                          : "Reflection"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {dateLabel}
-                        {j.content ? ` · "${j.content.slice(0, 40)}${j.content.length > 40 ? "…" : ""}"` : ""}
-                      </p>
-                    </div>
-                    <Badge variant="secondary" className="text-xs flex-shrink-0">journal</Badge>
-                  </div>
-                );
               })}
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { icon: Zap, label: "New System", href: "/systems/new", color: "text-primary" },
+          { icon: Target, label: "New Goal", href: "/goals", color: "text-chart-2" },
+          { icon: LayoutGrid, label: "Templates", href: "/templates", color: "text-chart-3" },
+          { icon: BookOpen, label: "Reflect", href: "/journal", color: "text-chart-4" },
+        ].map(({ icon: Icon, label, href, color }) => (
+          <Link key={label} href={href}>
+            <Button variant="outline" className="w-full h-10 gap-2 justify-start text-xs">
+              <Icon className={cn("w-3.5 h-3.5 flex-shrink-0", color)} />
+              {label}
+            </Button>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
+

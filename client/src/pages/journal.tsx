@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
 import type { JournalEntry, Goal } from "@/types/schema";
@@ -10,41 +10,111 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Plus, Trash2, Pencil, Loader2 } from "lucide-react";
+import {
+  BookOpen, Plus, Trash2, Pencil, Loader2, X, PenLine,
+  ChevronDown, ChevronUp, Lightbulb, Check,
+} from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const PROMPT_TYPES = [
-  { value: "daily", label: "Daily Reflection" },
-  { value: "weekly", label: "Weekly Review" },
-  { value: "win", label: "Capture a Win" },
-  { value: "struggle", label: "Process a Struggle" },
-  { value: "insight", label: "Record an Insight" },
-  { value: "freeform", label: "Freeform Notes" },
+  { value: "daily",    label: "Daily Reflection",   emoji: "🌅", color: "text-primary" },
+  { value: "weekly",   label: "Weekly Review",       emoji: "📆", color: "text-chart-2" },
+  { value: "win",      label: "Capture a Win",       emoji: "🏆", color: "text-chart-3" },
+  { value: "struggle", label: "Process a Struggle",  emoji: "🧩", color: "text-chart-4" },
+  { value: "insight",  label: "Record an Insight",   emoji: "💡", color: "text-primary" },
+  { value: "freeform", label: "Freeform Notes",      emoji: "📝", color: "text-muted-foreground" },
 ];
 
-const PROMPTS: Record<string, string> = {
-  daily: "What worked today? What was hard? What do you want to improve tomorrow?",
-  weekly: "What were your biggest wins this week? What patterns did you notice in your behavior? What will you do differently next week?",
-  win: "Describe a recent win, big or small. How did it happen? What did you do well?",
-  struggle: "What's been challenging lately? What have you tried? What might help?",
-  insight: "What's something you've learned or realized recently about yourself or your systems?",
-  freeform: "What's on your mind? Let it out freely.",
+const PROMPTS: Record<string, { prompt: string; starters: string[] }> = {
+  daily: {
+    prompt: "What worked today? What was hard? What do you want to improve tomorrow?",
+    starters: [
+      "Today I showed up for my habit by…",
+      "The hardest moment today was…",
+      "One thing I want to try differently tomorrow…",
+    ],
+  },
+  weekly: {
+    prompt: "What were your biggest wins this week? What patterns did you notice? What will you do differently?",
+    starters: [
+      "My biggest win this week was…",
+      "I noticed a pattern where I keep…",
+      "Next week I want to focus on…",
+    ],
+  },
+  win: {
+    prompt: "Describe a recent win, big or small. How did it happen? What did you do well?",
+    starters: [
+      "I'm proud that I managed to…",
+      "What made this possible was…",
+      "This win showed me that I…",
+    ],
+  },
+  struggle: {
+    prompt: "What's been challenging lately? What have you tried? What might help?",
+    starters: [
+      "I've been struggling with…",
+      "What I've tried so far is…",
+      "What might actually help is…",
+    ],
+  },
+  insight: {
+    prompt: "What's something you've learned or realized recently about yourself or your systems?",
+    starters: [
+      "I recently realized that I…",
+      "Something I've noticed about my habits is…",
+      "This insight changed how I think about…",
+    ],
+  },
+  freeform: {
+    prompt: "What's on your mind right now? Let it out freely — no structure needed.",
+    starters: [
+      "Right now I'm thinking about…",
+    ],
+  },
 };
 
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
-function JournalForm({ entry, userId, goals, onClose }: { entry?: JournalEntry; userId: string; goals: Goal[]; onClose: () => void }) {
+function getPromptInfo(type: string) {
+  return PROMPT_TYPES.find(p => p.value === type) || PROMPT_TYPES[0];
+}
+
+function InlineJournalForm({
+  entry,
+  userId,
+  goals,
+  onClose,
+  onSaved,
+}: {
+  entry?: JournalEntry;
+  userId: string;
+  goals: Goal[];
+  onClose: () => void;
+  onSaved?: () => void;
+}) {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [promptType, setPromptType] = useState(entry?.promptType || "daily");
   const [content, setContent] = useState(entry?.content || "");
   const [goalId, setGoalId] = useState(entry?.goalId || "");
+  const [showOptions, setShowOptions] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const promptInfo = getPromptInfo(promptType);
+  const promptData = PROMPTS[promptType] || PROMPTS.daily;
+
+  useEffect(() => {
+    if (!entry) {
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    }
+  }, [entry]);
 
   const mutation = useMutation({
     mutationFn: (data: any) =>
@@ -53,75 +123,242 @@ function JournalForm({ entry, userId, goals, onClose }: { entry?: JournalEntry; 
         : createJournal(userId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["journals", userId] });
-      toast({ title: entry ? "Entry updated!" : "Entry saved!" });
+      toast({ title: entry ? "Entry updated!" : "Entry saved! ✨" });
       onClose();
+      onSaved?.();
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 
   const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
 
+  const useStarter = (starter: string) => {
+    if (!content) {
+      setContent(starter + " ");
+    } else {
+      setContent(prev => prev + "\n\n" + starter + " ");
+    }
+    setTimeout(() => {
+      textareaRef.current?.focus();
+      if (textareaRef.current) {
+        textareaRef.current.selectionStart = textareaRef.current.value.length;
+        textareaRef.current.selectionEnd = textareaRef.current.value.length;
+      }
+    }, 50);
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Entry Type</Label>
-        <Select value={promptType} onValueChange={setPromptType}>
-          <SelectTrigger data-testid="select-prompt-type">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PROMPT_TYPES.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
+    <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+      {/* Entry type selector */}
+      <div className="border-b border-border bg-muted/30 px-4 py-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Entry type:</span>
+          <div className="flex flex-wrap gap-2">
+            {PROMPT_TYPES.map(p => (
+              <button
+                key={p.value}
+                onClick={() => setPromptType(p.value)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all",
+                  promptType === p.value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                )}
+                data-testid={`tab-prompt-${p.value}`}
+              >
+                <span>{p.emoji}</span>
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="p-3 rounded-md bg-muted/50">
-        <p className="text-xs text-muted-foreground italic leading-relaxed">{PROMPTS[promptType]}</p>
-      </div>
+      <div className="p-5 space-y-4">
+        {/* Prompt display */}
+        <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/15">
+          <Lightbulb className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-foreground leading-relaxed italic">{promptData.prompt}</p>
+        </div>
 
-      <div className="space-y-2">
-        <Label>Your thoughts</Label>
-        <Textarea
-          placeholder="Start writing..."
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          rows={8}
-          className="resize-none"
-          data-testid="input-journal-content"
-        />
-        <p className="text-xs text-muted-foreground text-right">{wordCount} words</p>
-      </div>
+        {/* Sentence starters */}
+        {promptData.starters.length > 0 && !entry && (
+          <div>
+            <p className="text-xs text-muted-foreground mb-2 font-medium">Jump-start ideas:</p>
+            <div className="flex flex-wrap gap-2">
+              {promptData.starters.map((starter) => (
+                <button
+                  key={starter}
+                  onClick={() => useStarter(starter)}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-border bg-muted/40 hover:bg-primary/8 hover:border-primary/30 hover:text-primary transition-all text-left"
+                >
+                  {starter.length > 40 ? starter.slice(0, 40) + "…" : starter}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-      <div className="space-y-2">
-        <Label>Linked Goal <span className="text-muted-foreground">(optional)</span></Label>
-        <Select value={goalId} onValueChange={setGoalId}>
-          <SelectTrigger data-testid="select-journal-goal">
-            <SelectValue placeholder="Link to a goal..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">No goal linked</SelectItem>
-            {goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
+        {/* Main textarea */}
+        <div className="relative">
+          <Textarea
+            ref={textareaRef}
+            placeholder="Start writing... there are no wrong answers."
+            value={content}
+            onChange={e => setContent(e.target.value)}
+            rows={7}
+            className="resize-none text-base leading-relaxed focus:ring-1 focus:ring-primary/30 border-border/60"
+            data-testid="input-journal-content"
+          />
+          <div className="absolute bottom-3 right-3 flex items-center gap-2 pointer-events-none">
+            <span className={cn("text-xs tabular-nums", wordCount > 0 ? "text-muted-foreground" : "text-border")}>
+              {wordCount} {wordCount === 1 ? "word" : "words"}
+            </span>
+          </div>
+        </div>
 
-      <DialogFooter>
-        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button
-          onClick={() => mutation.mutate({
-            promptType,
-            content,
-            goalId: goalId || undefined,
-            dateKey: entry?.dateKey || getTodayKey(),
-          })}
-          disabled={mutation.isPending || content.length < 10}
-          data-testid="button-save-journal"
-        >
-          {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-          {entry ? "Save Changes" : "Save Entry"}
-        </Button>
-      </DialogFooter>
+        {/* Extra options — collapsible */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowOptions(!showOptions)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showOptions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {showOptions ? "Hide options" : "Link to a goal (optional)"}
+          </button>
+          {showOptions && (
+            <div className="mt-3">
+              <Select value={goalId} onValueChange={setGoalId}>
+                <SelectTrigger className="text-sm" data-testid="select-journal-goal">
+                  <SelectValue placeholder="No goal linked" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No goal linked</SelectItem>
+                  {goals.map(g => (
+                    <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between gap-3 pt-1 border-t border-border/40">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="text-muted-foreground"
+            data-testid="button-cancel-journal"
+          >
+            <X className="w-3.5 h-3.5 mr-1.5" />
+            Cancel
+          </Button>
+          <Button
+            onClick={() => mutation.mutate({
+              promptType,
+              content,
+              goalId: goalId || undefined,
+              dateKey: entry?.dateKey || getTodayKey(),
+            })}
+            disabled={mutation.isPending || content.length < 10}
+            data-testid="button-save-journal"
+            className="gap-2"
+          >
+            {mutation.isPending
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Check className="w-3.5 h-3.5" />}
+            {entry ? "Save Changes" : "Save Entry"}
+          </Button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function JournalEntryCard({
+  entry,
+  goals,
+  onEdit,
+  onDelete,
+}: {
+  entry: JournalEntry;
+  goals: Goal[];
+  onEdit: (e: JournalEntry) => void;
+  onDelete: (e: JournalEntry) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const promptInfo = getPromptInfo(entry.promptType);
+  const goalTitle = goals.find(g => g.id === entry.goalId)?.title;
+  const wordCount = entry.content.trim().split(/\s+/).filter(Boolean).length;
+  const isLong = entry.content.length > 300;
+
+  return (
+    <Card
+      className="hover-elevate border-border/60 transition-all"
+      data-testid={`journal-entry-${entry.id}`}
+    >
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-lg leading-none">{promptInfo.emoji}</span>
+            <Badge variant="secondary" className={cn("text-xs font-medium", promptInfo.color)}>
+              {promptInfo.label}
+            </Badge>
+            {goalTitle && (
+              <Badge variant="outline" className="text-xs">
+                🎯 {goalTitle}
+              </Badge>
+            )}
+          </div>
+          <div className="flex gap-1 flex-shrink-0">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-7 h-7 text-muted-foreground hover:text-foreground"
+              onClick={() => onEdit(entry)}
+              data-testid={`button-edit-entry-${entry.id}`}
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-7 h-7 text-muted-foreground hover:text-destructive"
+              onClick={() => onDelete(entry)}
+              data-testid={`button-delete-entry-${entry.id}`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-2">
+          <p className={cn(
+            "text-sm leading-relaxed whitespace-pre-wrap text-foreground",
+            !expanded && isLong && "line-clamp-4",
+          )}>
+            {entry.content}
+          </p>
+          {isLong && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-xs text-primary hover:underline transition-all"
+            >
+              {expanded ? "Show less" : "Read more"}
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
+          <span className="text-xs text-muted-foreground">{wordCount} words</span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -143,7 +380,8 @@ export default function Journal() {
 
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const [showNewForm, setShowNewForm] = useState(false);
   const [editEntry, setEditEntry] = useState<JournalEntry | undefined>();
   const [deleteEntry, setDeleteEntry] = useState<JournalEntry | undefined>();
 
@@ -156,131 +394,179 @@ export default function Journal() {
     },
   });
 
-  const getGoalTitle = (goalId?: string | null) => goals.find(g => g.id === goalId)?.title;
-
   const grouped: Record<string, JournalEntry[]> = {};
   for (const entry of entries) {
     if (!grouped[entry.dateKey]) grouped[entry.dateKey] = [];
     grouped[entry.dateKey].push(entry);
   }
   const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+  const today = getTodayKey();
+  const todayEntries = grouped[today] || [];
 
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
+    <div className="p-5 md:p-6 max-w-3xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Reflections</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{entries.length} entries total</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-primary" />
+            Reflections
+          </h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            {entries.length === 0
+              ? "Reflection is the hidden ingredient of lasting change."
+              : `${entries.length} entr${entries.length === 1 ? "y" : "ies"} · ${sortedDates.length} day${sortedDates.length !== 1 ? "s" : ""} journaled`}
+          </p>
         </div>
-        <Button onClick={() => { setEditEntry(undefined); setDialogOpen(true); }} data-testid="button-new-entry">
-          <Plus className="w-4 h-4 mr-2" />
-          New Entry
-        </Button>
+        {!showNewForm && !editEntry && (
+          <Button
+            onClick={() => setShowNewForm(true)}
+            className="gap-2"
+            data-testid="button-new-entry"
+          >
+            <PenLine className="w-4 h-4" />
+            Write Entry
+          </Button>
+        )}
       </div>
 
-      {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
-        </div>
-      ) : entries.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-7 h-7 text-primary" />
-            </div>
-            <h3 className="font-semibold mb-2">Start your journal</h3>
-            <p className="text-muted-foreground text-sm mb-4 max-w-sm mx-auto">
-              Reflection is the hidden ingredient of lasting change. Spend 5 minutes each day capturing what you're learning.
-            </p>
-            <Button onClick={() => setDialogOpen(true)} data-testid="button-first-entry">Write Your First Entry</Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {sortedDates.map(dateKey => (
-            <div key={dateKey}>
-              <div className="flex items-center gap-3 mb-3">
-                <p className="text-sm font-semibold text-muted-foreground">
-                  {format(new Date(dateKey + "T00:00:00"), "EEEE, MMMM d, yyyy")}
-                </p>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-              <div className="space-y-3">
-                {grouped[dateKey].map(entry => (
-                  <Card key={entry.id} className="hover-elevate" data-testid={`journal-entry-${entry.id}`}>
-                    <CardContent className="p-5">
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="secondary" className="text-xs">
-                            {PROMPT_TYPES.find(p => p.value === entry.promptType)?.label || entry.promptType}
-                          </Badge>
-                          {entry.goalId && (
-                            <Badge variant="outline" className="text-xs">
-                              {getGoalTitle(entry.goalId)}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex gap-1 flex-shrink-0">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="w-7 h-7"
-                            onClick={() => { setEditEntry(entry); setDialogOpen(true); }}
-                            data-testid={`button-edit-entry-${entry.id}`}
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="w-7 h-7"
-                            onClick={() => setDeleteEntry(entry)}
-                            data-testid={`button-delete-entry-${entry.id}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{entry.content}</p>
-                      <p className="text-xs text-muted-foreground mt-3">
-                        {entry.content.trim().split(/\s+/).filter(Boolean).length} words
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+      {/* What reflection is for — shown only when no entries */}
+      {entries.length === 0 && !showNewForm && (
+        <div className="grid sm:grid-cols-3 gap-3 mb-2">
+          {[
+            { emoji: "🧠", label: "Spot patterns", desc: "Notice what's working and what keeps tripping you up." },
+            { emoji: "🎯", label: "Reinforce wins", desc: "Writing about a success makes it stick better in memory." },
+            { emoji: "🌱", label: "Process struggles", desc: "Turning challenges into words helps you learn from them." },
+          ].map(item => (
+            <div key={item.label} className="p-4 rounded-xl border border-border bg-card text-center">
+              <div className="text-2xl mb-2">{item.emoji}</div>
+              <p className="text-sm font-semibold mb-1">{item.label}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg" data-testid="dialog-journal-form">
-          <DialogHeader>
-            <DialogTitle>{editEntry ? "Edit Entry" : "New Journal Entry"}</DialogTitle>
-          </DialogHeader>
-          <JournalForm
+      {/* New entry inline form */}
+      {(showNewForm && !editEntry) && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2 font-medium flex items-center gap-1.5">
+            <PenLine className="w-3 h-3" />
+            Today's entry — {format(new Date(today + "T00:00:00"), "EEEE, MMMM d")}
+          </p>
+          <InlineJournalForm
+            userId={userId}
+            goals={goals}
+            onClose={() => setShowNewForm(false)}
+          />
+        </div>
+      )}
+
+      {/* Edit form inline */}
+      {editEntry && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-2 font-medium flex items-center gap-1.5">
+            <Pencil className="w-3 h-3" />
+            Editing entry from {format(new Date(editEntry.dateKey + "T00:00:00"), "MMMM d, yyyy")}
+          </p>
+          <InlineJournalForm
             entry={editEntry}
             userId={userId}
             goals={goals}
-            onClose={() => { setDialogOpen(false); setEditEntry(undefined); }}
+            onClose={() => setEditEntry(undefined)}
           />
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && entries.length === 0 && !showNewForm && (
+        <Card className="border-primary/20 bg-primary/3">
+          <CardContent className="p-12 text-center">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-7 h-7 text-primary" />
+            </div>
+            <h3 className="font-semibold text-lg mb-2">Start your journal</h3>
+            <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto leading-relaxed">
+              Spend just 5 minutes reflecting. What worked today? What felt hard? Consistent reflection is one of the most underrated habits you can build.
+            </p>
+            <Button onClick={() => setShowNewForm(true)} data-testid="button-first-entry" className="gap-2">
+              <PenLine className="w-4 h-4" />
+              Write my first entry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Entries grouped by date */}
+      {!isLoading && entries.length > 0 && (
+        <div className="space-y-8">
+          {sortedDates.map(dateKey => {
+            const isToday = dateKey === today;
+            return (
+              <div key={dateKey}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    {isToday && (
+                      <div className="w-2 h-2 rounded-full bg-chart-3 flex-shrink-0" />
+                    )}
+                    <p className={cn(
+                      "text-sm font-semibold",
+                      isToday ? "text-chart-3" : "text-muted-foreground",
+                    )}>
+                      {isToday ? "Today — " : ""}{format(new Date(dateKey + "T00:00:00"), "EEEE, MMMM d, yyyy")}
+                    </p>
+                  </div>
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    {grouped[dateKey].length} entr{grouped[dateKey].length !== 1 ? "ies" : "y"}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {grouped[dateKey].map(entry => {
+                    if (editEntry?.id === entry.id) return null;
+                    return (
+                      <JournalEntryCard
+                        key={entry.id}
+                        entry={entry}
+                        goals={goals}
+                        onEdit={(e) => { setEditEntry(e); setShowNewForm(false); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                        onDelete={setDeleteEntry}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Delete confirmation */}
       <AlertDialog open={!!deleteEntry} onOpenChange={() => setDeleteEntry(undefined)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Entry</AlertDialogTitle>
-            <AlertDialogDescription>This journal entry will be permanently deleted.</AlertDialogDescription>
+            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This journal entry will be permanently deleted. Reflection takes courage — are you sure you want to remove this one?
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => deleteEntry && deleteMutation.mutate(deleteEntry.id)}
               data-testid="button-confirm-delete-entry"
-            >Delete</AlertDialogAction>
+            >
+              {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

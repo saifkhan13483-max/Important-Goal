@@ -1,0 +1,700 @@
+You are a senior SaaS product designer, UX strategist, and frontend architect.
+
+I want you to redesign and improve my web app called **SystemForge**, a habit-building app focused on helping users build systems instead of just setting goals.
+
+Core philosophy:
+**“Most people set goals. Few build systems.”**
+SystemForge helps users turn vague goals into repeatable daily habits using structured, science-backed steps.
+
+Your mission:
+Redesign SystemForge to make it:
+1. More beautiful and premium
+2. Easier to understand for complete beginners
+3. More motivating and less overwhelming
+4. More useful through better features, workflows, and micro-interactions
+5. Clean, modern, calm, and highly usable
+6. Mobile-friendly and accessible
+7. Consistent with my current brand identity
+
+---
+
+## PRODUCT CONTEXT
+
+### Site Name
+SystemForge
+
+### Purpose
+A habit-building web app that helps users create repeatable personal systems from long-term goals.
+
+### Current Core Features
+- **System Builder** — guided 7-step wizard:
+  1. Identity
+  2. Outcome
+  3. Trigger
+  4. Action
+  5. Reward
+  6. Fallback Plan
+  7. Review
+
+- **Goal Management** — create, edit, organize long-term goals with categories, priorities, and deadlines
+- **Daily Check-ins** — log habits as Done / Partial / Missed with mood tracking and difficulty ratings
+- **Templates Library** — pre-built habit systems users can adopt in one click
+- **Analytics & Streaks** — track completion, streaks, and consistency over time
+- **Journaling** — daily and weekly reflections linked to goals and systems
+- **Onboarding** — guided intro for new users to create their first goal/system
+
+### Current Pages
+- Landing / Marketing — `/`
+- Dashboard — `/dashboard`
+- Goals — `/goals` and `/goals/:id`
+- Systems — `/systems` and `/systems/:id`
+- System Builder — `/systems/new` and `/systems/:id/edit`
+- Check-ins — `/checkins`
+- Templates — `/templates`
+- Analytics — `/analytics`
+- Journal — `/journal`
+- Settings — `/settings`
+
+---
+
+## TECH STACK
+
+Please keep the redesign realistic for this stack:
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui
+- Firebase (Firestore + Firebase Auth)
+- TanStack Query v5
+- wouter
+- Zustand
+
+Design with reusable components and practical implementation in mind.
+
+---
+
+## BRAND / DESIGN SYSTEM
+
+### Color Palette — Light Mode
+- Primary (Brand Purple): `hsl(258, 84%, 62%)`
+- Background: `hsl(240, 10%, 98%)`
+- Foreground (Text): `hsl(240, 15%, 9%)`
+- Card: `hsl(0, 0%, 100%)`
+- Sidebar: `hsl(240, 14%, 95%)`
+- Accent: `hsl(258, 30%, 92%)`
+- Muted Text: `hsl(240, 8%, 50%)`
+- Destructive: `hsl(0, 84%, 60%)`
+- Border: `hsl(240, 6%, 88%)`
+
+### Dark Mode
+- Background: `hsl(240, 10%, 6%)`
+- Primary: `hsl(258, 84%, 68%)`
+- Card: `hsl(240, 10%, 10%)`
+
+### Chart / Data Colors
+- Chart 1: Purple `hsl(258, 84%, 62%)`
+- Chart 2: Sky Blue `hsl(200, 80%, 56%)`
+- Chart 3: Green `hsl(150, 60%, 48%)`
+- Chart 4: Amber `hsl(36, 92%, 60%)`
+- Chart 5: Rose `hsl(340, 80%, 60%)`
+
+### Brand Gradient
+- `linear-gradient(135deg, hsl(258,84%,62%) → hsl(280,80%,65%))`
+
+### Typography
+- Primary Font: Inter
+- Serif Font: Georgia
+- Mono Font: Menlo
+
+### Style Direction
+Use a visual style that feels:
+- Calm
+- Focused
+- Modern SaaS
+- Premium but friendly
+- Structured
+- Motivating without being childish
+- Clean with generous spacing
+- Soft shadows, subtle gradients, rounded corners
+- Smart use of icons and illustrations
+- Minimal but not empty
+
+### Border Radius
+- `0.5rem`
+
+---
+
+## TARGET USER
+
+Primary audience:
+- Beginners who want better habits but don’t know where to start
+- People who set goals but struggle with consistency
+- Users who are easily overwhelmed by complicated productivity tools
+- People who want a more guided and compassionate system
+
+The product should feel beginner-friendly, educational, and supportive.
+
+---
+
+## MAIN UX GOALS
+
+### 1. Make it easier for beginners
+Improve clarity by:
+- Using plain language instead of abstract productivity jargon
+- Explaining each step in simple terms
+- Showing examples everywhere
+- Adding “Why this matters” helper text
+- Using empty states that teach users what to do next
+- Reducing cognitive load on every page
+
+### 2. Make the app feel more beautiful and polished
+Improve:
+- Layout hierarchy
+- Spacing
+- Card design
+- Visual rhythm
+- Typography scale
+- Data visualization
+- Micro-interactions
+- Hover states
+- Loading skeletons
+- Empty states
+- Icons and visual storytelling
+
+### 3. Make it more motivating
+Include:
+- Progress feedback
+- Celebratory but tasteful animations
+- Streaks and milestone moments
+- Weekly wins
+- Encouraging copy
+- Recovery paths after missed days
+- “Start small” messaging
+
+### 4. Make daily usage simpler
+The app should make it obvious:
+- What I should do today
+- Which habit/system matters most
+- What progress I’m making
+- What to do if I miss a day
+- How to keep going without guilt
+
+---
+
+## IMPORTANT UX IMPROVEMENTS FOR BEGINNERS
+
+Please redesign the experience using these principles:
+
+### A. Replace complex wording with beginner-friendly wording
+For example:
+- “Identity” → “Who do you want to become?”
+- “Outcome” → “What result are you aiming for?”
+- “Trigger” → “When will this habit happen?”
+- “Action” → “What is the tiny action?”
+- “Reward” → “How will you reinforce it?”
+- “Fallback Plan” → “What is the easy version on hard days?”
+- “Review” → “How will you reflect and improve?”
+
+Keep the original structure, but make the labels more understandable.
+
+### B. Add progressive disclosure
+Don’t show too much at once.
+- Show one clear primary action per screen
+- Use collapsible help sections
+- Reveal advanced analytics later
+- Keep core workflows lightweight
+
+### C. Add educational UI
+Each important page should teach the user something:
+- Tooltips
+- Short hints
+- Example systems
+- Sample templates
+- “Try this” suggestions
+- “Common mistake” warnings
+- “Keep it tiny” reminders
+
+### D. Make the app feel supportive, not judgmental
+Avoid harsh red/error emotional design for missed habits.
+Use compassionate messaging like:
+- “Missed yesterday? Let’s reset gently.”
+- “Small actions still count.”
+- “Consistency matters more than perfection.”
+
+---
+
+## PAGE-BY-PAGE REDESIGN REQUIREMENTS
+
+### 1. Landing Page `/`
+Redesign the marketing site to clearly explain the product in under 10 seconds.
+
+Include:
+- Strong hero section with headline and subheadline
+- Clear CTA: “Build Your First System”
+- Secondary CTA: “Explore Templates”
+- Visual product preview / UI mockup
+- A simple 3-step explanation:
+  1. Define who you want to become
+  2. Build a repeatable system
+  3. Show up daily and improve
+- Problem/solution section
+- “Goals fail, systems scale” message
+- Feature showcase cards
+- Beginner-friendly template examples
+- Testimonials or placeholder social proof
+- Analytics preview section
+- Journal/Reflection section preview
+- FAQ section
+- Final CTA section
+
+Visual goal:
+A premium productivity SaaS landing page that feels cleaner and more emotionally resonant than a generic dashboard app.
+
+### 2. Dashboard `/dashboard`
+This should become a **Today-focused command center**.
+
+Include:
+- Today’s habits/systems at the top
+- Quick check-in actions: Done / Partial / Missed
+- Progress ring or completion bar for today
+- “Top priority system” card
+- Small streak summary
+- Weekly consistency snapshot
+- Quick Add button
+- “Suggested next step” block
+- Encouraging reflection prompt
+- Mini calendar / heatmap
+- Useful empty state if nothing exists yet
+
+The dashboard should answer:
+- What should I do today?
+- What matters most?
+- How am I doing lately?
+- What should I do next?
+
+### 3. Goals `/goals` and `/goals/:id`
+Improve goal pages so goals feel connected to systems.
+
+Include:
+- Cleaner list/grid layout
+- Filter by category, priority, status
+- Goal detail page with linked systems
+- Deadline, progress, and motivation notes
+- Visual relationship between long-term goals and daily systems
+- “This goal is supported by these systems” section
+- Beginner explanation that goals set direction, systems create progress
+
+### 4. Systems `/systems` and `/systems/:id`
+Make systems easier to scan and use.
+
+Include:
+- Cards with status, schedule, streak, and next check-in
+- Tags for category and difficulty
+- A system health score
+- Show linked goal
+- System detail page with:
+  - Summary
+  - 7-step structure
+  - completion history
+  - notes
+  - fallback plan
+  - related journal entries
+  - edit button
+  - pause/archive option
+
+### 5. System Builder `/systems/new` and `/systems/:id/edit`
+This is the most important experience.
+
+Redesign as a premium step-by-step wizard with:
+- A clear progress sidebar
+- One step per screen
+- Short explanations
+- Real examples
+- Helpful prompts
+- “Why this matters” section
+- “Good example” and “weak example”
+- Progress save
+- “Back” and “Next” controls
+- Final summary preview before saving
+
+For each step, add clearer beginner prompts:
+
+1. Identity
+   - Prompt: “Who do you want to become through this system?”
+   - Example: “I want to become someone who takes care of their energy.”
+
+2. Outcome
+   - Prompt: “What result are you trying to create?”
+   - Example: “Have more energy in the morning and feel healthier.”
+
+3. Trigger
+   - Prompt: “When and where will this habit happen?”
+   - Example: “After I brush my teeth at 7:00 AM.”
+
+4. Action
+   - Prompt: “What small action will you actually take?”
+   - Example: “Do 5 minutes of stretching.”
+
+5. Reward
+   - Prompt: “How will you make the habit satisfying?”
+   - Example: “Mark it complete and enjoy coffee afterward.”
+
+6. Fallback Plan
+   - Prompt: “What is the minimum version on hard days?”
+   - Example: “Stretch for just 1 minute.”
+
+7. Review
+   - Prompt: “How will you reflect and improve over time?”
+   - Example: “Every Sunday, review consistency and adjust timing.”
+
+Also:
+- Add a live preview panel
+- Add a “make it smaller” suggestion engine
+- Warn users if the habit feels too ambitious
+- Recommend templates based on answers
+
+### 6. Check-ins `/checkins`
+Make check-ins effortless and visually satisfying.
+
+Include:
+- Calendar view
+- List view
+- Today quick log
+- Mood tracking
+- Difficulty tracking
+- Short optional note
+- Quick bulk logging
+- Color-coded status states
+- Weekly streak and pattern summary
+- “What made this easy/hard?” prompt
+
+### 7. Templates `/templates`
+Make templates feel inspiring and easy to adopt.
+
+Include:
+- Search + filter by category, time of day, difficulty, goal type
+- Template cards with preview
+- “Best for beginners” badges
+- Adoption preview before applying
+- Recommended templates based on user goals
+- Sample templates like:
+  - Morning Movement
+  - Daily Reading
+  - Evening Reset
+  - Deep Work Starter
+  - Hydration Habit
+  - Sleep Wind-Down
+
+### 8. Analytics `/analytics`
+The analytics page should be visually clear and beginner-friendly.
+
+Include:
+- Completion trends
+- Weekly consistency
+- Best-performing systems
+- Miss patterns
+- Mood vs completion correlation
+- Difficulty vs success correlation
+- Streak history
+- Text-based insights, not only charts
+
+Add helpful insight cards like:
+- “You complete habits more often on weekdays.”
+- “Your easiest system has the highest consistency.”
+- “Mood improves on days when you complete morning habits.”
+
+### 9. Journal `/journal`
+Make journaling feel connected, not separate.
+
+Include:
+- Daily reflection
+- Weekly review
+- Goal-linked journal entries
+- System-linked reflections
+- Guided prompts
+- Mood-aware prompts
+- Quick entry mode
+- Reflection templates
+
+Suggested prompts:
+- What helped me show up today?
+- What friction got in the way?
+- What system should I simplify?
+- What small win am I proud of?
+
+### 10. Settings `/settings`
+Improve settings clarity and usefulness.
+
+Include:
+- Profile
+- Notifications/reminders
+- Theme mode
+- Timezone / preferred check-in time
+- Data export
+- Privacy controls
+- Account management
+- Habit reminder preferences
+- Weekly review preferences
+
+---
+
+## ADD MORE USEFUL FEATURES
+
+Please suggest and incorporate useful features that genuinely improve habit-building, especially for beginners.
+
+Prioritize practical features over gimmicks.
+
+### High-value feature ideas to include
+1. **Today Mode**
+   - A focused daily screen showing only what matters today
+
+2. **Smart Onboarding**
+   - Ask 3–5 questions and generate the user’s first system automatically
+
+3. **Quick Add**
+   - Create a system or goal from anywhere
+
+4. **Weekly Review Flow**
+   - Guided summary of wins, misses, mood, patterns, and adjustments
+
+5. **Recovery Mode**
+   - If the user misses multiple days, suggest easier fallback versions rather than punish them
+
+6. **System Health Score**
+   - A simple score based on consistency, ease, and clarity
+
+7. **Beginner Tips Layer**
+   - Optional helper mode with explanations throughout the app
+
+8. **Reminder Scheduling**
+   - Custom reminders tied to triggers and time windows
+
+9. **Mini Habit Version**
+   - Every system should support a tiny fallback version
+
+10. **Streak Protection / Compassionate Reset**
+   - Reframe missed days so users don’t feel like they failed
+
+11. **Reflection-to-Action Loop**
+   - Turn journal insights into system adjustments
+
+12. **Pattern Detection**
+   - Help users see what conditions improve success
+
+13. **Celebration Moments**
+   - Tasteful milestone moments for 3, 7, 14, 30 day consistency
+
+14. **Focus Mode**
+   - A distraction-free screen for completing a habit session
+
+15. **Suggested Templates**
+   - Based on selected goal category or onboarding answers
+
+16. **Category-based planning**
+   - Fitness, learning, work, mental health, relationships, sleep, etc.
+
+17. **Miss Reason Logging**
+   - Let users choose reasons like too hard, forgot, no time, low energy
+
+18. **Adaptive Recommendations**
+   - If users repeatedly miss a habit, suggest:
+     - smaller action
+     - better trigger
+     - different time
+     - new reward
+
+19. **Goal-to-System Mapping**
+   - Every goal should show which systems support it
+
+20. **End-of-day recap**
+   - A short summary showing what was done, skipped, learned, and what to improve tomorrow
+
+### Optional advanced features
+- AI habit coach
+- Accountability partner sharing
+- Public/private progress sharing
+- Habit notes and attachments
+- Monthly review reports
+- Personal best streak records
+- Seasonal goals
+- Import/export templates
+- Mobile widget ideas
+- Offline-friendly check-ins
+- Smart nudges based on user behavior
+
+---
+
+## VISUAL / UI REQUIREMENTS
+
+Please make the interface visually stronger by improving:
+
+### Layout & Hierarchy
+- Clear section spacing
+- Strong visual hierarchy
+- Better use of white space
+- Easy scanability
+- One clear primary CTA per section
+
+### Components
+Use modern reusable components like:
+- Sidebar
+- Top nav
+- Cards
+- Progress bars
+- Stepper
+- Timeline
+- Stats cards
+- Tabs
+- Calendar
+- Drawer / modal
+- Tooltips
+- Accordions
+- Empty states
+- Toasts
+- Skeleton loaders
+
+### Aesthetic touches
+- Soft gradients on hero and key CTAs
+- Light glassmorphism only if subtle
+- Hover elevation on cards
+- Clean icons
+- Calm chart styling
+- Subtle motion / animations
+- Better status badges
+- Friendly illustrations or abstract habit visuals
+
+### Accessibility
+- Good color contrast
+- Keyboard navigation
+- Visible focus states
+- Accessible form labels
+- Screen-reader-friendly structure
+- Charts with labels and summaries
+
+### Responsive Design
+- Mobile-first adaptation
+- Bottom nav or compact sidebar for mobile
+- Sticky check-in CTA on small screens
+- Simple responsive wizard for the builder
+- Avoid cramped analytics on mobile
+
+---
+
+## COPYWRITING / CONTENT STYLE
+
+Use microcopy that feels:
+- supportive
+- clear
+- motivating
+- non-judgmental
+- simple
+- modern
+
+Examples of tone:
+- “Start small. Build something repeatable.”
+- “You don’t need a perfect plan. You need a system you can actually follow.”
+- “Missed a day? Shrink the habit, not your ambition.”
+- “Your goal gives direction. Your system creates progress.”
+
+Avoid:
+- robotic text
+- overly corporate language
+- guilt-based productivity language
+- too much jargon
+
+---
+
+## WHAT I WANT YOU TO DELIVER
+
+Please produce a complete redesign plan with these sections:
+
+### 1. Product redesign strategy
+- What should change and why
+
+### 2. Information architecture improvements
+- Better navigation, page hierarchy, and content grouping
+
+### 3. Page-by-page redesign recommendations
+- Detailed UI/UX suggestions for every route
+
+### 4. Beginner-first UX improvements
+- Exactly how to simplify the experience
+
+### 5. Feature prioritization
+Group into:
+- MVP
+- High-impact phase 2
+- Nice-to-have later
+
+### 6. Visual design system recommendations
+- Spacing
+- Typography scale
+- card styles
+- button styles
+- icon style
+- motion suggestions
+- light/dark mode improvements
+
+### 7. Components to build
+List reusable React/shadcn components needed
+
+### 8. Suggested homepage copy
+Write:
+- hero headline
+- subheadline
+- CTA text
+- feature section copy
+- onboarding copy
+
+### 9. Empty state examples
+Write friendly empty-state copy for:
+- dashboard
+- goals
+- systems
+- journal
+- analytics
+
+### 10. New feature ideas with rationale
+Only recommend useful features that improve retention, clarity, and habit success
+
+### 11. Example UI structure / wireframe descriptions
+Describe how each key page should be laid out
+
+### 12. Implementation plan
+Suggest:
+- Phase 1 quick wins
+- Phase 2 structural improvements
+- Phase 3 advanced features
+
+### 13. Optional component/code direction
+If possible, suggest practical Tailwind + shadcn component structure for implementation
+
+---
+
+## IMPORTANT CONSTRAINTS
+
+- Keep the brand purple identity
+- Do not make the UI overly gamified or childish
+- Avoid clutter and dashboard overload
+- Keep the app supportive and calm
+- Prioritize real usability over trendy visual effects
+- Make the system-builder experience the strongest part of the product
+- Make everything understandable for first-time users
+- Do not remove the existing core concept; improve and clarify it
+
+---
+
+## FINAL GOAL
+
+Transform SystemForge into a polished, beginner-friendly, habit-building product that feels like a premium system-design tool for personal growth.
+
+It should help users feel:
+- clear
+- capable
+- supported
+- motivated
+- less overwhelmed
+
+The app should make users think:
+**“This finally makes habit building feel simple and doable.”**
