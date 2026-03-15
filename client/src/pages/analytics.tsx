@@ -17,7 +17,7 @@ import {
 } from "recharts";
 import {
   Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
-  Trophy, AlertCircle, Star,
+  Trophy, AlertCircle, Star, CheckSquare,
 } from "lucide-react";
 
 function MetricCard({ label, value, sub, icon: Icon, color }: any) {
@@ -95,7 +95,7 @@ export default function Analytics() {
   if (isLoading) {
     return (
       <div className="p-6 max-w-5xl mx-auto space-y-6">
-        <h1 className="text-2xl font-bold">Analytics</h1>
+        <h1 className="text-2xl font-bold">Progress Insights</h1>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
         </div>
@@ -163,11 +163,53 @@ export default function Analytics() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Analytics</h1>
+        <h1 className="text-2xl font-bold">Progress Insights</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Track your consistency and growth over time
         </p>
       </div>
+
+      {/* Full empty state when user has no check-ins at all */}
+      {!hasData && (
+        <Card className="border-primary/20">
+          <CardContent className="p-12 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+              <BarChart2 className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="font-bold text-lg mb-2">Your progress story starts here</h3>
+            <p className="text-muted-foreground text-sm mb-3 max-w-sm mx-auto leading-relaxed">
+              Once you start checking in on your systems each day, you'll see beautiful charts showing your streaks, consistency, and growth over time.
+            </p>
+            <p className="text-xs text-muted-foreground mb-6">
+              Even one check-in is enough to start.
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <a href="/checkins">
+                <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity" data-testid="button-analytics-go-checkin">
+                  <CheckSquare className="w-4 h-4" />
+                  Check in today
+                </button>
+              </a>
+              {systems.length === 0 && (
+                <a href="/systems/new">
+                  <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors" data-testid="button-analytics-build-system">
+                    Build a system first
+                  </button>
+                </a>
+              )}
+            </div>
+            {/* Preview of what they'll see */}
+            <div className="mt-8 grid grid-cols-3 gap-3 max-w-xs mx-auto opacity-30 pointer-events-none select-none" aria-hidden>
+              {["Streak", "Done", "Rate"].map(label => (
+                <div key={label} className="bg-muted rounded-xl p-3 text-center">
+                  <div className="h-6 w-10 mx-auto bg-muted-foreground/20 rounded mb-1" />
+                  <p className="text-[10px] text-muted-foreground">{label}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

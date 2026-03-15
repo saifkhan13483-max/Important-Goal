@@ -223,7 +223,7 @@ export default function Goals() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Goals</h1>
+          <h1 className="text-2xl font-bold">My Goals</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{goals.length} goal{goals.length !== 1 ? "s" : ""} total</p>
         </div>
         <Button onClick={() => { setEditGoal(undefined); setDialogOpen(true); }} data-testid="button-new-goal">

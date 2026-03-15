@@ -339,6 +339,110 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {/* 7-Day Weekly Progress */}
+      {activeSystems.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-base">This Week</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Your check-in consistency for the last 7 days</p>
+              </div>
+              <Link href="/analytics">
+                <Button variant="ghost" size="sm" data-testid="link-weekly-analytics">
+                  Full insights <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const last7: { dateKey: string; label: string; shortDay: string; pct: number | null; isToday: boolean }[] = [];
+              for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateKey = d.toISOString().split("T")[0];
+                const dayCheckins = allCheckins.filter(c => c.dateKey === dateKey);
+                const doneCount = dayCheckins.filter(c => c.status === "done").length;
+                const pct = activeSystems.length > 0 && dayCheckins.length > 0
+                  ? Math.round((doneCount / activeSystems.length) * 100)
+                  : dayCheckins.length === 0 && i === 0 ? null
+                  : dayCheckins.length === 0 ? null
+                  : 0;
+                last7.push({
+                  dateKey,
+                  label: format(d, "EEE"),
+                  shortDay: format(d, "d"),
+                  pct,
+                  isToday: i === 0,
+                });
+              }
+
+              const daysWithData = last7.filter(d => d.pct !== null);
+              const weekAvg = daysWithData.length > 0
+                ? Math.round(daysWithData.reduce((s, d) => s + (d.pct ?? 0), 0) / daysWithData.length)
+                : null;
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-end justify-between gap-2">
+                    {last7.map(day => {
+                      const pct = day.pct;
+                      const isEmpty = pct === null;
+                      const bgClass =
+                        isEmpty ? "bg-muted/50" :
+                        pct === 100 ? "bg-chart-3/80" :
+                        pct >= 50  ? "bg-chart-4/70" :
+                        pct > 0    ? "bg-destructive/40" :
+                        "bg-muted";
+                      const barH = isEmpty ? 8 : Math.max(8, Math.round((pct / 100) * 56));
+                      return (
+                        <div key={day.dateKey} className="flex flex-col items-center gap-1.5 flex-1">
+                          <div className="w-full flex items-end justify-center" style={{ height: 60 }}>
+                            <div
+                              className={`w-full rounded-t-md transition-all ${bgClass} ${day.isToday ? "ring-1 ring-primary/40" : ""}`}
+                              style={{ height: barH }}
+                              title={isEmpty ? "No data" : `${pct}% complete`}
+                            />
+                          </div>
+                          <span className={`text-[10px] font-medium ${day.isToday ? "text-primary" : "text-muted-foreground"}`}>
+                            {day.label}
+                          </span>
+                          <span className={`text-[9px] ${day.isToday ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                            {day.isToday ? "today" : day.shortDay}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between gap-3 pt-1 border-t border-border/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-chart-3/80" />
+                        <span className="text-xs text-muted-foreground">100%</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-chart-4/70" />
+                        <span className="text-xs text-muted-foreground">Partial</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-muted/50" />
+                        <span className="text-xs text-muted-foreground">No data</span>
+                      </div>
+                    </div>
+                    {weekAvg !== null && (
+                      <span className="text-xs text-muted-foreground">
+                        Avg: <span className="font-semibold text-foreground">{weekAvg}%</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid md:grid-cols-2 gap-4">
         {/* Streaks */}
         <Card>

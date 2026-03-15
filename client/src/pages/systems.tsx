@@ -89,7 +89,7 @@ export default function SystemsPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Systems</h1>
+          <h1 className="text-2xl font-bold">My Systems</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{systems.length} system{systems.length !== 1 ? "s" : ""} total</p>
         </div>
         <div className="flex gap-2">
