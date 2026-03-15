@@ -211,7 +211,7 @@ export default function Pricing() {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-16 max-w-4xl mx-auto">
           {plans.map((plan) => {
             const isPro = plan.badge === "Most Popular";
             const price = plan.monthlyPrice === 0
