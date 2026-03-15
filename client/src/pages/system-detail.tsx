@@ -57,6 +57,20 @@ function ChainCalendar({ checkins }: { checkins: Checkin[] }) {
     return streak;
   })();
 
+  const lastStreak = (() => {
+    if (currentStreak > 0) return 0;
+    let skippingToday = true;
+    let streak = 0;
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[cells.length - 1 - i];
+      if (skippingToday && (cell.isToday || !cell.status)) continue;
+      skippingToday = false;
+      if (cell.status === "done" || cell.status === "partial") streak++;
+      else break;
+    }
+    return streak;
+  })();
+
   const cellColor = (status: string | undefined, isToday: boolean) => {
     if (status === "done")    return "bg-primary border-primary/40";
     if (status === "partial") return "bg-chart-4/70 border-chart-4/40";
@@ -86,6 +100,23 @@ function ChainCalendar({ checkins }: { checkins: Checkin[] }) {
             </div>
           )}
         </div>
+        {currentStreak > 0 ? (
+          <div className="mt-2 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/10 border border-primary/25" data-testid="chain-active-banner">
+            <span className="text-lg">🔗</span>
+            <div>
+              <p className="text-sm font-bold text-primary">Your chain: {currentStreak} day{currentStreak !== 1 ? "s" : ""}. Don't break it!</p>
+              <p className="text-xs text-muted-foreground">Every day you show up makes the chain stronger.</p>
+            </div>
+          </div>
+        ) : lastStreak > 0 ? (
+          <div className="mt-2 flex items-center gap-2 px-3 py-2.5 rounded-lg bg-chart-4/10 border border-chart-4/25" data-testid="chain-broken-banner">
+            <span className="text-lg">⛓️</span>
+            <div>
+              <p className="text-sm font-bold text-chart-4">Chain broken at {lastStreak} day{lastStreak !== 1 ? "s" : ""} — Start a new one today!</p>
+              <p className="text-xs text-muted-foreground">Streaks break. Systems don't. Log today to begin again.</p>
+            </div>
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent>
         <div className="flex gap-1 flex-wrap justify-start">

@@ -18,7 +18,7 @@ import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
   Calendar, BookOpen, Check, Minus, X, BarChart2, PenLine, Sparkles,
   Lightbulb, Star, Loader2, AlertCircle, RefreshCw, Trophy, Heart,
-  LayoutGrid, Flag, TrendingDown,
+  LayoutGrid, Flag, TrendingDown, Brain,
 } from "lucide-react";
 import { format, parseISO, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -421,6 +421,34 @@ function RecoveryBanner({ missedSystems }: { missedSystems: System[] }) {
   );
 }
 
+function TomorrowIntentionCard({ checkin, systemName }: { checkin: Checkin; systemName: string }) {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(`tomorrow-intention-dismissed-${checkin.id}`) === "true"; } catch { return false; }
+  });
+  if (dismissed) return null;
+  return (
+    <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/20" data-testid="tomorrow-intention-card">
+      <div className="flex-shrink-0 text-xl">📋</div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-chart-3 mb-0.5">Today's intention — you set this yesterday</p>
+        <p className="text-xs text-muted-foreground mb-1.5">For <span className="font-medium text-foreground">{systemName}</span>:</p>
+        <p className="text-sm text-foreground font-medium leading-snug">"{checkin.tomorrowIntention}"</p>
+      </div>
+      <button
+        onClick={() => {
+          try { localStorage.setItem(`tomorrow-intention-dismissed-${checkin.id}`, "true"); } catch {}
+          setDismissed(true);
+        }}
+        className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors p-1"
+        aria-label="Dismiss intention reminder"
+        data-testid="button-dismiss-intention"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 function MetricCard({ icon: Icon, label, value, sub, color, hint }: {
   icon: any; label: string; value: string | number; sub?: string; color: string; hint?: string;
 }) {
@@ -618,6 +646,8 @@ export default function Dashboard() {
     return c?.status === "missed";
   });
 
+  const tomorrowIntentionCheckin = yesterdayCheckins.find(c => c.tomorrowIntention && c.tomorrowIntention.trim());
+
   const recentActivity = useMemo(() => {
     type ActivityItem =
       | { kind: "checkin"; data: Checkin; sortKey: string }
@@ -693,6 +723,14 @@ export default function Dashboard() {
 
       {/* Recovery banner */}
       <RecoveryBanner missedSystems={missedYesterday} />
+
+      {/* Tomorrow intention reminder */}
+      {tomorrowIntentionCheckin && (() => {
+        const sys = systems.find(s => s.id === tomorrowIntentionCheckin.systemId);
+        return sys ? (
+          <TomorrowIntentionCard checkin={tomorrowIntentionCheckin} systemName={sys.title} />
+        ) : null;
+      })()}
 
       {/* Beginner tip of the day */}
       <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15">

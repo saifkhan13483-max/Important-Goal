@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight, Zap, Lightbulb, ArrowLeft, ArrowRight, Flag, CheckCircle2, Milestone } from "lucide-react";
+import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight, Zap, Lightbulb, ArrowLeft, ArrowRight, Flag, CheckCircle2, Milestone, Eye } from "lucide-react";
 import { format, isPast, isWithinInterval, addDays, startOfDay } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link } from "wouter";
@@ -63,11 +63,38 @@ function DeadlineBadge({ deadline }: { deadline: string }) {
 }
 
 const WIZARD_STEPS = [
-  { label: "Target",     icon: Target   },
-  { label: "Outcome",    icon: CheckCircle2 },
-  { label: "Deadline",   icon: Flag     },
-  { label: "Milestones", icon: Milestone },
+  { label: "Target",     icon: Target      },
+  { label: "Outcome",    icon: CheckCircle2},
+  { label: "Deadline",   icon: Flag        },
+  { label: "Milestones", icon: Milestone   },
+  { label: "Preview",    icon: Eye         },
 ];
+
+const CATEGORY_EXAMPLES: Record<string, { target: string; outcome: string; milestones: string[] }> = {
+  fitness:      { target: "Run a 5K in under 30 minutes", outcome: "Complete a timed 5K run in 28 min or less", milestones: ["Run 2km without stopping", "Run 3km in 22 min", "Complete a 5K at any pace"] },
+  career:       { target: "Get promoted to a senior role", outcome: "Receive an official promotion with a 20% salary increase", milestones: ["Complete 3 high-impact projects", "Request feedback from manager", "Lead a team initiative"] },
+  study:        { target: "Complete a Python programming course and build 2 projects", outcome: "Score 90%+ on final exam and have 2 deployed GitHub projects", milestones: ["Complete Python basics module", "Build first project", "Deploy both projects publicly"] },
+  relationship: { target: "Deepen connection with my partner through daily rituals", outcome: "30 straight days of dedicated quality time together", milestones: ["Establish a weekly date night", "Create a daily check-in habit", "Plan a shared experience"] },
+  business:     { target: "Launch a side business and make my first sale", outcome: "Generate $500 in revenue in 90 days", milestones: ["Validate the idea with 5 potential customers", "Launch a landing page", "Make first paid sale"] },
+  mindset:      { target: "Build a daily meditation practice", outcome: "Meditate 20 minutes daily for 60 consecutive days", milestones: ["Meditate 5 min daily for 2 weeks", "Increase to 10 min for 2 weeks", "Reach 20 min sessions"] },
+  health:       { target: "Reduce stress and improve sleep quality", outcome: "Average 7.5 hours of sleep tracked over 30 days", milestones: ["Set a consistent bedtime for 2 weeks", "Remove screens 1hr before bed", "Track sleep quality for a full month"] },
+  finance:      { target: "Build a 3-month emergency fund", outcome: "Save $5,000 in a dedicated savings account", milestones: ["Save first $1,000", "Save $2,500", "Reach $5,000 goal"] },
+  creativity:   { target: "Complete a creative project from start to finish", outcome: "Publish or share a finished creative work publicly", milestones: ["Outline the project", "Complete a first draft", "Revise and prepare for sharing"] },
+  other:        { target: "Achieve a meaningful personal goal", outcome: "Have a clear, measurable result you can point to", milestones: ["Complete phase 1", "Reach the halfway point", "Cross the finish line"] },
+};
+
+function ExampleHint({ label, value, onUse }: { label: string; value: string; onUse: (v: string) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onUse(value)}
+      className="text-left text-xs px-3 py-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all text-muted-foreground hover:text-foreground leading-snug"
+      data-testid={`example-hint-${label}`}
+    >
+      <span className="font-semibold text-primary mr-1">e.g.</span>{value}
+    </button>
+  );
+}
 
 function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onClose: () => void }) {
   const qc = useQueryClient();
@@ -87,7 +114,7 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
   );
 
   const mutation = useMutation({
-    mutationFn: (data: Record<string, any>) =>
+    mutationFn: (data: Partial<Goal> & Pick<Goal, "title" | "status" | "category" | "priority">) =>
       goal
         ? updateGoal(goal.id, data)
         : createGoal(userId, data),
@@ -192,12 +219,15 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
       {step === 0 && (
         <div className="space-y-4">
           <div>
-            <h3 className="font-semibold text-base mb-0.5">What's your goal?</h3>
-            <p className="text-xs text-muted-foreground">Give your goal a clear, inspiring title.</p>
+            <h3 className="font-semibold text-base mb-0.5">What exactly do you want to achieve?</h3>
+            <p className="text-xs text-muted-foreground">Be specific — vague goals stay wishes. A clear target becomes a system.</p>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Goal Title</label>
             <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Run my first marathon" autoFocus data-testid="input-goal-title" />
+            {!title.trim() && (
+              <ExampleHint label="target" value={CATEGORY_EXAMPLES[category]?.target ?? CATEGORY_EXAMPLES.other.target} onUse={v => setTitle(v)} />
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -241,14 +271,9 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
               data-testid="input-measurable-outcome"
             />
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {["Lose 10 lbs", "Read 12 books", "Save $5,000"].map(ex => (
-              <button key={ex} type="button" onClick={() => setMeasurableOutcome(ex)}
-                className="text-xs px-2 py-1.5 rounded-md border border-dashed border-muted-foreground/40 text-muted-foreground hover:border-primary hover:text-primary transition-colors text-left">
-                {ex}
-              </button>
-            ))}
-          </div>
+          {!measurableOutcome.trim() && (
+            <ExampleHint label="outcome" value={CATEGORY_EXAMPLES[category]?.outcome ?? CATEGORY_EXAMPLES.other.outcome} onUse={v => setMeasurableOutcome(v)} />
+          )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setStep(0)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
             <Button onClick={() => setStep(2)} data-testid="button-next-step">
@@ -293,6 +318,20 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
             <h3 className="font-semibold text-base mb-0.5">Break it into monthly wins</h3>
             <p className="text-xs text-muted-foreground">Add 2–4 checkpoints to track your progress along the way.</p>
           </div>
+          {(CATEGORY_EXAMPLES[category]?.milestones ?? []).length > 0 && milestones.every(m => !m.target.trim()) && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Suggestions for {category}:</p>
+              {(CATEGORY_EXAMPLES[category]?.milestones ?? CATEGORY_EXAMPLES.other.milestones).map((ex, i) => (
+                <button key={i} type="button"
+                  onClick={() => setMilestones(ms => ms.map((m, idx) => idx === i ? { ...m, target: ex } : m))}
+                  className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all text-muted-foreground hover:text-foreground"
+                  data-testid={`milestone-suggestion-${i}`}
+                >
+                  <span className="font-semibold text-primary mr-1">Month {i + 1}:</span>{ex}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="space-y-2">
             {milestones.map((m, i) => (
               <div key={i} className="flex gap-2 items-start">
@@ -325,6 +364,73 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
           )}
           <DialogFooter>
             <Button variant="ghost" onClick={() => setStep(2)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+            <Button onClick={() => setStep(4)} data-testid="button-next-step">
+              Preview <Eye className="w-4 h-4 ml-1" />
+            </Button>
+          </DialogFooter>
+        </div>
+      )}
+
+      {/* Step 4: Structure Preview */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-base mb-0.5">Your Goal Structure</h3>
+            <p className="text-xs text-muted-foreground">Review your goal before saving. This is the blueprint for your system.</p>
+          </div>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3" data-testid="goal-structure-preview">
+            <div className="flex items-start gap-2">
+              <Target className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Target</p>
+                <p className="text-sm font-medium text-foreground">{title}</p>
+                <div className="flex gap-2 mt-1">
+                  <Badge variant="secondary" className="text-xs capitalize">{category}</Badge>
+                  <Badge variant="outline" className="text-xs capitalize">{priority} priority</Badge>
+                </div>
+              </div>
+            </div>
+            {measurableOutcome && (
+              <div className="flex items-start gap-2 pt-2 border-t border-primary/10">
+                <CheckCircle2 className="w-4 h-4 text-chart-3 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Measurable Outcome</p>
+                  <p className="text-sm text-foreground">{measurableOutcome}</p>
+                </div>
+              </div>
+            )}
+            {deadline && (
+              <div className="flex items-start gap-2 pt-2 border-t border-primary/10">
+                <Flag className="w-4 h-4 text-chart-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Deadline</p>
+                  <p className="text-sm text-foreground">{format(new Date(deadline), "MMMM d, yyyy")} · <span className="text-muted-foreground">{Math.max(0, Math.round((new Date(deadline).getTime() - Date.now()) / 86400000))} days away</span></p>
+                </div>
+              </div>
+            )}
+            {milestones.filter(m => m.target).length > 0 && (
+              <div className="flex items-start gap-2 pt-2 border-t border-primary/10">
+                <Milestone className="w-4 h-4 text-chart-2 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Monthly Milestones</p>
+                  <div className="space-y-1">
+                    {milestones.filter(m => m.target).map((m, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <span className="text-xs font-medium text-primary w-16 flex-shrink-0">{m.month}</span>
+                        <span className="text-foreground">{m.target}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-chart-3/8 border border-chart-3/20">
+            <CheckCircle2 className="w-4 h-4 text-chart-3 flex-shrink-0" />
+            <p className="text-xs text-chart-3 font-medium">A goal with a system is a plan. Now build a daily system to make it automatic.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setStep(3)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
             <Button onClick={handleSubmit} disabled={mutation.isPending} data-testid="button-save-goal">
               {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Create Goal 🎯
