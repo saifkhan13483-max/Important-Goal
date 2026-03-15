@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useRoute, useSearch } from "wouter";
 import { useAppStore } from "@/store/auth.store";
@@ -117,6 +118,20 @@ const examples: Record<string, string[]> = {
   ],
 };
 
+const stepVariants = {
+  enter: (d: number) => ({ x: d > 0 ? 40 : -40, opacity: 0 }),
+  center: {
+    x: 0,
+    opacity: 1,
+    transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const },
+  },
+  exit: (d: number) => ({
+    x: d > 0 ? -40 : 40,
+    opacity: 0,
+    transition: { duration: 0.18, ease: "easeIn" as const },
+  }),
+};
+
 type FormData = {
   title: string;
   goalId: string;
@@ -165,6 +180,7 @@ export default function SystemBuilderPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState(1);
   const [form, setForm] = useState<FormData>({
     title: "",
     goalId: "",
@@ -404,7 +420,9 @@ export default function SystemBuilderPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-4 space-y-5">
+        <CardContent className="pt-4 overflow-hidden">
+          <AnimatePresence mode="wait" custom={direction} initial={false}>
+          <motion.div key={step} custom={direction} variants={stepVariants} initial="enter" animate="center" exit="exit" className="space-y-5">
           {/* Why this matters */}
           {currentStep.why && (
             <div className="flex gap-3 p-3.5 rounded-xl bg-amber-500/8 border border-amber-500/15">
@@ -673,6 +691,8 @@ export default function SystemBuilderPage() {
               })}
             </div>
           )}
+          </motion.div>
+          </AnimatePresence>
         </CardContent>
       </Card>
 
@@ -690,7 +710,7 @@ export default function SystemBuilderPage() {
       {/* Navigation */}
       <div className="flex justify-between gap-2 pb-4">
         {step > 0 ? (
-          <Button variant="outline" onClick={() => setStep(s => s - 1)} data-testid="button-step-back">
+          <Button variant="outline" onClick={() => { setDirection(-1); setStep(s => s - 1); }} data-testid="button-step-back">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
@@ -701,7 +721,7 @@ export default function SystemBuilderPage() {
         )}
 
         {step < STEPS.length - 1 ? (
-          <Button onClick={() => setStep(s => s + 1)} disabled={!canProceed()} data-testid="button-step-next">
+          <Button onClick={() => { setDirection(1); setStep(s => s + 1); }} disabled={!canProceed()} data-testid="button-step-next">
             Continue
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
