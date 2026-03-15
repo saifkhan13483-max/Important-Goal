@@ -502,8 +502,14 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Phase 5 — Skip link for keyboard users */}
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+
       {/* ── Navbar ── */}
       <nav
+        aria-label="Main navigation"
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
           scrolled
@@ -579,7 +585,7 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ── */}
-      <section className="relative pt-32 pb-8 px-4 overflow-hidden min-h-[90vh] flex flex-col justify-center">
+      <section id="main-content" className="relative pt-32 pb-8 px-4 overflow-hidden min-h-[90vh] flex flex-col justify-center" aria-label="Hero">
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-3xl" />
           <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-chart-2/5 rounded-full blur-3xl" />

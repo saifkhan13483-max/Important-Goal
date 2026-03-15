@@ -110,7 +110,7 @@ export function AppSidebar() {
     : "SF";
 
   return (
-    <Sidebar>
+    <Sidebar role="navigation" aria-label="Application navigation">
       <SidebarHeader className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0 shadow-sm">

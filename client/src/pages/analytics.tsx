@@ -268,7 +268,12 @@ export default function Analytics() {
 
   if (isLoading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <div
+        className="p-6 max-w-5xl mx-auto space-y-6"
+        aria-busy="true"
+        aria-label="Loading progress insights"
+      >
+        <span className="sr-only" role="status">Loading your progress data, please wait…</span>
         <h1 className="text-2xl font-bold">Progress Insights</h1>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}

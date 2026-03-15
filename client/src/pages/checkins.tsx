@@ -817,7 +817,12 @@ export default function Checkins() {
 
           {/* System cards */}
           {systemsLoading || todayLoading ? (
-            <div className="space-y-4">
+            <div
+              className="space-y-4"
+              aria-busy="true"
+              aria-label="Loading today's habits"
+            >
+              <span className="sr-only" role="status">Loading today's habits, please wait…</span>
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
             </div>
           ) : activeSystems.length === 0 ? (

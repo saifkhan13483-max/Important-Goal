@@ -323,14 +323,32 @@ export default function SystemBuilderPage() {
         <Badge variant="secondary" className="text-xs flex-shrink-0">{pct}% done</Badge>
       </div>
 
+      {/* Phase 5 — Screen reader announcement for wizard step changes */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        Step {step + 1} of {STEPS.length}: {currentStep.shortTitle}
+      </div>
+
       {/* Progress bar */}
-      <div>
-        <div className="flex gap-1">
+      <div
+        role="group"
+        aria-label={`Wizard progress: step ${step + 1} of ${STEPS.length}`}
+      >
+        <div className="flex gap-1" role="list" aria-label="Wizard steps">
           {STEPS.map((s, i) => (
             <button
               key={s.id}
+              role="listitem"
               onClick={() => i <= step && setStep(i)}
               title={s.shortTitle}
+              aria-label={`${s.shortTitle} — ${i < step ? "completed" : i === step ? "current step" : "upcoming"}`}
+              aria-current={i === step ? "step" : undefined}
+              disabled={i > step}
+              data-touch-target="compact"
               className={cn(
                 "h-2 flex-1 rounded-full transition-all",
                 i < step ? "bg-primary cursor-pointer" :
@@ -402,11 +420,15 @@ export default function SystemBuilderPage() {
           {step === 0 && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="font-semibold">
-                  Give your system a name <span className="text-destructive">*</span>
+                <Label htmlFor="field-system-title" className="font-semibold">
+                  Give your system a name <span className="text-destructive" aria-hidden="true">*</span>
+                  <span className="sr-only">(required)</span>
                 </Label>
-                <p className="text-xs text-muted-foreground">Something short and meaningful. You'll see this in your daily check-ins.</p>
+                <p className="text-xs text-muted-foreground" id="hint-system-title">Something short and meaningful. You'll see this in your daily check-ins.</p>
                 <Input
+                  id="field-system-title"
+                  aria-describedby="hint-system-title"
+                  aria-required="true"
                   placeholder="e.g. Morning Movement, Daily Reading, Focus Block"
                   value={form.title}
                   onChange={e => update("title", e.target.value)}
@@ -414,9 +436,11 @@ export default function SystemBuilderPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold">Who are you becoming? <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
-                <p className="text-xs text-muted-foreground">Start with "I am someone who…" to make this feel personal.</p>
+                <Label htmlFor="field-identity" className="font-semibold">Who are you becoming? <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+                <p className="text-xs text-muted-foreground" id="hint-identity">Start with "I am someone who…" to make this feel personal.</p>
                 <Textarea
+                  id="field-identity"
+                  aria-describedby="hint-identity"
                   placeholder="I am someone who…"
                   value={form.identityStatement}
                   onChange={e => update("identityStatement", e.target.value)}

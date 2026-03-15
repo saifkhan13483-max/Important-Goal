@@ -541,7 +541,12 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto space-y-5">
+      <div
+        className="p-6 max-w-5xl mx-auto space-y-5"
+        aria-busy="true"
+        aria-label="Loading dashboard data"
+      >
+        <span className="sr-only" role="status">Loading your dashboard, please wait…</span>
         <Skeleton className="h-28 w-full rounded-2xl" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}

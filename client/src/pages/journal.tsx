@@ -201,9 +201,12 @@ function InlineJournalForm({
 
         {/* Main textarea */}
         <div className="relative">
+          <label htmlFor="journal-content" className="sr-only">Journal entry content</label>
           <Textarea
+            id="journal-content"
             ref={textareaRef}
             placeholder="Start writing... there are no wrong answers."
+            aria-label="Journal entry content"
             value={content}
             onChange={e => setContent(e.target.value)}
             rows={7}
