@@ -83,27 +83,6 @@ const plans = [
     ctaVariant: "default" as const,
     href: "/signup",
   },
-  {
-    name: "Team / Coach",
-    monthlyPrice: 49,
-    tagline: "Lead groups and coach others",
-    idealFor: "Coaches, mentors & accountability groups",
-    badge: null,
-    features: [
-      "Everything in Pro",
-      "Multi-user workspace",
-      "Team progress overview",
-      "Shared templates",
-      "Accountability tracking",
-      "Coach dashboard",
-      "Group analytics",
-      "Priority onboarding support",
-    ],
-    notIncluded: [],
-    cta: "Get Team",
-    ctaVariant: "outline" as const,
-    href: "/signup",
-  },
 ];
 
 const faqs = [
@@ -124,27 +103,22 @@ const faqs = [
     a: "No. The free plan is free forever. There's no time limit, no trial period, and no credit card required.",
   },
   {
-    q: "What does 'Team / Coach' include exactly?",
-    a: "The Team plan is designed for coaches and accountability partners. It includes a coach dashboard where you can see the progress of people you're working with, shared templates, and group analytics. These features are currently in development and will roll out progressively.",
-  },
-  {
     q: "Can I pay yearly?",
     a: "Yes. Choosing yearly billing saves you 20% compared to monthly. You can toggle between monthly and yearly billing on this page.",
   },
 ];
 
 const comparisonRows = [
-  { feature: "Active Goals", free: "2", starter: "10", pro: "Unlimited", team: "Unlimited" },
-  { feature: "Active Systems", free: "3", starter: "Unlimited", pro: "Unlimited", team: "Unlimited" },
-  { feature: "Daily Check-ins", free: true, starter: true, pro: true, team: true },
-  { feature: "Streak Tracking", free: "Basic", starter: "Advanced", pro: "Advanced", team: "Advanced" },
-  { feature: "Templates", free: "3 starter", starter: "Full library", pro: "Premium", team: "Premium + Shared" },
-  { feature: "Analytics", free: "Light", starter: "Better", pro: "Advanced", team: "Advanced + Group" },
-  { feature: "Journaling", free: "Basic", starter: true, pro: "Advanced", team: "Advanced" },
-  { feature: "Export Reports", free: false, starter: "Basic", pro: "CSV / PDF", team: "CSV / PDF" },
-  { feature: "Dark Mode", free: false, starter: true, pro: true, team: true },
-  { feature: "Priority Support", free: false, starter: false, pro: true, team: true },
-  { feature: "Team / Coach Tools", free: false, starter: false, pro: false, team: true },
+  { feature: "Active Goals", free: "2", starter: "10", pro: "Unlimited" },
+  { feature: "Active Systems", free: "3", starter: "Unlimited", pro: "Unlimited" },
+  { feature: "Daily Check-ins", free: true, starter: true, pro: true },
+  { feature: "Streak Tracking", free: "Basic", starter: "Advanced", pro: "Advanced" },
+  { feature: "Templates", free: "3 starter", starter: "Full library", pro: "Premium" },
+  { feature: "Analytics", free: "Light", starter: "Better", pro: "Advanced" },
+  { feature: "Journaling", free: "Basic", starter: true, pro: "Advanced" },
+  { feature: "Export Reports", free: false, starter: "Basic", pro: "CSV / PDF" },
+  { feature: "Dark Mode", free: false, starter: true, pro: true },
+  { feature: "Priority Support", free: false, starter: false, pro: true },
 ];
 
 function FAQItem({ q, a }: { q: string; a: string }) {

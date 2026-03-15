@@ -135,10 +135,6 @@ const faqs = [
     a: "The free plan includes up to 2 active goals, 3 active systems, daily check-ins, streak tracking, starter templates, and basic analytics. It's plenty to get started and see real results.",
   },
   {
-    q: "Can coaches or teams use it?",
-    a: "Yes! The Team/Coach plan at $49/month includes a multi-user workspace, team progress overview, shared templates, accountability tracking, and a coach dashboard.",
-  },
-  {
     q: "How is this different from other habit trackers?",
     a: "Most habit apps just let you check boxes. SystemForge builds real systems — with an identity statement, a trigger, a minimum action, and a fallback plan. It also warns you before motivation slumps hit (Hype Drop alerts), visualises your unbroken chain on a Calendar, and guides you through a Recovery Flow when you miss a day. It's designed to survive real life, not just work when you're motivated.",
   },
@@ -205,27 +201,6 @@ const pricingPlans = [
     ],
     cta: "Start Free Trial",
     ctaVariant: "default" as const,
-    href: "/signup",
-  },
-  {
-    name: "Team / Coach",
-    price: "$49",
-    yearlyPrice: "$39",
-    period: "/month",
-    tagline: "For coaches and accountability groups",
-    badge: null,
-    features: [
-      "Everything in Pro",
-      "Multi-user workspace",
-      "Team progress overview",
-      "Shared templates",
-      "Accountability tracking",
-      "Coach dashboard",
-      "Group analytics",
-      "Priority onboarding support",
-    ],
-    cta: "Contact Us",
-    ctaVariant: "outline" as const,
     href: "/signup",
   },
 ];
