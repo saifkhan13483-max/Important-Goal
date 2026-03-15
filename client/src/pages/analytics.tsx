@@ -412,12 +412,43 @@ export default function Analytics() {
                 const comeback = comebackStreaks[sys.id] ?? 0;
                 const resilience = resilienceScores[sys.id] ?? 0;
                 const consistencyColor = consistency >= 70 ? "bg-chart-3" : consistency >= 40 ? "bg-chart-4" : "bg-destructive/60";
+
+                const last7Days = Array.from({ length: 7 }, (_, i) => {
+                  const d = new Date();
+                  d.setDate(d.getDate() - (6 - i));
+                  const dateKey = d.toISOString().split("T")[0];
+                  const checkin = checkins.find(c => c.systemId === sys.id && c.dateKey === dateKey);
+                  return {
+                    dateKey,
+                    label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1),
+                    status: checkin?.status ?? null,
+                  };
+                });
+
+                const fiveOfSeven = votes >= 5;
+                const perfectWeek = votes === 7;
+                const graceDayUsed = votes === 6;
+
                 return (
-                  <div key={sys.id} className="p-3 rounded-xl border border-border/50 bg-muted/20 space-y-2" data-testid={`consistency-row-${sys.id}`}>
-                    <div className="flex items-center justify-between gap-2">
+                  <div key={sys.id} className="p-3 rounded-xl border border-border/50 bg-muted/20 space-y-3" data-testid={`consistency-row-${sys.id}`}>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
                       <p className="text-sm font-medium truncate">{sys.title}</p>
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <span className="text-xs text-muted-foreground">{votes}/7 this week</span>
+                      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                        {perfectWeek && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-chart-3/15 text-chart-3" data-testid={`badge-perfect-week-${sys.id}`}>
+                            Perfect week
+                          </span>
+                        )}
+                        {graceDayUsed && !perfectWeek && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-chart-2/15 text-chart-2" data-testid={`badge-grace-day-${sys.id}`}>
+                            Grace day used
+                          </span>
+                        )}
+                        {fiveOfSeven && !graceDayUsed && !perfectWeek && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-chart-4/15 text-chart-4" data-testid={`badge-five-of-seven-${sys.id}`}>
+                            5 of 7 ✓
+                          </span>
+                        )}
                         <span className={cn(
                           "text-xs font-semibold px-2 py-0.5 rounded-full",
                           resilience >= 70 ? "bg-chart-3/15 text-chart-3" :
@@ -428,6 +459,26 @@ export default function Analytics() {
                         </span>
                       </div>
                     </div>
+
+                    {/* 7-dot weekly visualization */}
+                    <div className="flex items-center gap-1.5" data-testid={`weekly-dots-${sys.id}`}>
+                      {last7Days.map((day) => (
+                        <div key={day.dateKey} className="flex flex-col items-center gap-1 flex-1">
+                          <div
+                            className={cn(
+                              "w-full h-5 rounded-md transition-all",
+                              day.status === "done"    ? "bg-chart-3"          :
+                              day.status === "partial" ? "bg-chart-4/70"       :
+                              day.status === "missed"  ? "bg-destructive/30"   :
+                              "bg-muted/50 border border-border/40",
+                            )}
+                            title={`${day.dateKey}: ${day.status ?? "no check-in"}`}
+                          />
+                          <span className="text-[9px] text-muted-foreground leading-none">{day.label}</span>
+                        </div>
+                      ))}
+                    </div>
+
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div
@@ -435,7 +486,7 @@ export default function Analytics() {
                           style={{ width: `${consistency}%` }}
                         />
                       </div>
-                      <span className="text-xs font-medium w-12 text-right flex-shrink-0">{consistency}%</span>
+                      <span className="text-xs font-medium w-20 text-right flex-shrink-0">{consistency}% · {votes}/7 wk</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       Last 30 days · Comeback run: {comeback} day{comeback !== 1 ? "s" : ""}
@@ -444,10 +495,14 @@ export default function Analytics() {
                 );
               })}
             </div>
-            <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/40">
+            <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/40 space-y-2">
               <p className="text-xs text-muted-foreground leading-relaxed">
                 <strong className="text-foreground">Resilience score</strong> rewards you for showing up consistently over time and for coming back after a miss — not just for unbroken streaks.
                 A score of 70+ means you're reliably building this habit.
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong className="text-foreground">Grace day</strong> — missing one day per week (6 of 7) still counts as a strong week. Life happens. Bouncing back is what matters.
+                Hitting <strong className="text-foreground">5 of 7 days</strong> consistently is a genuine win.
               </p>
             </div>
           </CardContent>

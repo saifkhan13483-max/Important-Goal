@@ -63,35 +63,41 @@ function AuthInitializer() {
  */
 function ReminderChecker() {
   useEffect(() => {
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
-    const enabled = localStorage.getItem("sf_reminder_enabled") === "true";
-    if (!enabled) return;
-    const reminderTime = localStorage.getItem("sf_reminder_time") || "08:00";
-    const today = new Date().toISOString().split("T")[0];
-    const lastNotified = localStorage.getItem("sf_reminder_last_notified");
-    if (lastNotified === today) return;
+    function checkAndNotify() {
+      if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      const enabled = localStorage.getItem("sf_reminder_enabled") === "true";
+      if (!enabled) return;
+      const reminderTime = localStorage.getItem("sf_reminder_time") || "08:00";
+      const today = new Date().toISOString().split("T")[0];
+      const lastNotified = localStorage.getItem("sf_reminder_last_notified");
+      if (lastNotified === today) return;
 
-    const [hours, minutes] = reminderTime.split(":").map(Number);
-    const now = new Date();
-    const scheduledTime = new Date();
-    scheduledTime.setHours(hours, minutes, 0, 0);
+      const [hours, minutes] = reminderTime.split(":").map(Number);
+      const now = new Date();
+      const scheduledTime = new Date();
+      scheduledTime.setHours(hours, minutes, 0, 0);
 
-    if (now >= scheduledTime) {
-      const missedYesterday = localStorage.getItem("sf_missed_yesterday") === "true";
-      const body = missedYesterday
-        ? "Missed yesterday? Restart tiny. Your system only needs the minimum version today."
-        : "Time to check in with your habits. Even the minimum version counts.";
-      try {
-        new Notification("SystemForge — Daily Check-in", {
-          body,
-          icon: "/favicon.ico",
-          tag: "sf-daily-reminder",
-        });
-        localStorage.setItem("sf_reminder_last_notified", today);
-      } catch {
-        // Ignore notification errors silently
+      if (now >= scheduledTime) {
+        const missedYesterday = localStorage.getItem("sf_missed_yesterday") === "true";
+        const body = missedYesterday
+          ? "Missed yesterday? Restart tiny. Your system only needs the minimum version today."
+          : "Time to check in with your habits. Even the minimum version counts.";
+        try {
+          new Notification("SystemForge — Daily Check-in", {
+            body,
+            icon: "/favicon.ico",
+            tag: "sf-daily-reminder",
+          });
+          localStorage.setItem("sf_reminder_last_notified", today);
+        } catch {
+          // Ignore notification errors silently
+        }
       }
     }
+
+    checkAndNotify();
+    const interval = setInterval(checkAndNotify, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   return null;

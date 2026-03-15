@@ -319,8 +319,16 @@ export default function SystemBuilderPage() {
         : createSystem(userId, { ...data, active: true }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["systems", userId] });
-      toast({ title: isEdit ? "System updated!" : "System created!", description: "Your system is ready to use." });
-      navigate("/systems");
+      if (isEdit) {
+        toast({ title: "System updated!", description: "Your changes have been saved." });
+        navigate("/systems");
+      } else if (quickMode) {
+        toast({ title: "System activated!", description: "Your system is live. Complete your first check-in now." });
+        navigate("/checkins");
+      } else {
+        toast({ title: "System created!", description: "Your system is ready to use." });
+        navigate("/checkins");
+      }
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
