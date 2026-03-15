@@ -500,10 +500,34 @@ function ProductPreview() {
   );
 }
 
+const TAB_META: Record<string, { heading: string; body: string; caption: string }> = {
+  onboarding: {
+    heading: "Personalize in 2 minutes",
+    body: "Tell us what matters to you and we'll tailor your entire experience. No overwhelming options — just the essentials, set up in a few taps.",
+    caption: "Your personal setup — done in 2 minutes.",
+  },
+  "system-builder": {
+    heading: "Build any habit, step by step",
+    body: "A guided 7-step wizard turns a vague intention into a concrete, scheduled daily action. No guesswork, no blank slate.",
+    caption: "A guided wizard that builds your habit step by step.",
+  },
+  checkin: {
+    heading: "Check in under 30 seconds",
+    body: "One tap per habit — Done, Partial, or Missed. No lengthy journaling, no friction. Just a quick, honest record that keeps you moving.",
+    caption: "One tap to track each habit — under 30 seconds total.",
+  },
+  analytics: {
+    heading: "See patterns, not just numbers",
+    body: "Plain-language insights show which days you're strongest and where to focus next. No data science degree required.",
+    caption: "Plain-language insights, not confusing charts.",
+  },
+};
+
 export default function Landing() {
   const [billingYearly, setBillingYearly] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("onboarding");
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -802,49 +826,103 @@ export default function Landing() {
       </section>
 
       {/* ── Section 6: Product Preview (Tabbed Showcase) ── */}
-      <section className="py-24 px-4 border-t border-border bg-muted/20">
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4 text-xs">See it in action</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-3">A real product built for real people</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+            <Badge variant="secondary" className="mb-3 text-xs">See it in action</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+              A real product built for real people
+            </h2>
+            <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
               Every screen is designed to feel calm, clear, and encouraging.
             </p>
           </div>
 
-          <Tabs defaultValue="onboarding" className="w-full">
-            <TabsList className="flex w-full max-w-2xl mx-auto mb-8 h-auto p-1 gap-1 bg-muted rounded-2xl flex-wrap">
-              <TabsTrigger value="onboarding" className="flex-1 rounded-xl text-xs py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm" data-testid="tab-onboarding">
-                Personalization
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {/* Tab bar: 2×2 grid on mobile, single row on sm+ */}
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-2xl mx-auto mb-8 h-auto p-1 gap-1 bg-muted rounded-2xl">
+              <TabsTrigger
+                value="onboarding"
+                className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                data-testid="tab-onboarding"
+              >
+                <span className="sm:hidden">Setup</span>
+                <span className="hidden sm:inline">Personalization</span>
               </TabsTrigger>
-              <TabsTrigger value="system-builder" className="flex-1 rounded-xl text-xs py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm" data-testid="tab-system-builder">
-                System Builder
+              <TabsTrigger
+                value="system-builder"
+                className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                data-testid="tab-system-builder"
+              >
+                <span className="sm:hidden">Builder</span>
+                <span className="hidden sm:inline">System Builder</span>
               </TabsTrigger>
-              <TabsTrigger value="checkin" className="flex-1 rounded-xl text-xs py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm" data-testid="tab-checkin">
-                Daily Check-In
+              <TabsTrigger
+                value="checkin"
+                className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                data-testid="tab-checkin"
+              >
+                <span className="sm:hidden">Check-In</span>
+                <span className="hidden sm:inline">Daily Check-In</span>
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex-1 rounded-xl text-xs py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm" data-testid="tab-analytics">
+              <TabsTrigger
+                value="analytics"
+                className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                data-testid="tab-analytics"
+              >
                 Analytics
               </TabsTrigger>
             </TabsList>
 
-            <div className="max-w-sm mx-auto">
-              <TabsContent value="onboarding">
-                <OnboardingPreview />
-                <p className="text-center text-sm text-muted-foreground mt-4">Your personal setup — done in 2 minutes.</p>
-              </TabsContent>
-              <TabsContent value="system-builder">
-                <SystemBuilderPreview />
-                <p className="text-center text-sm text-muted-foreground mt-4">A guided wizard that builds your habit step by step.</p>
-              </TabsContent>
-              <TabsContent value="checkin">
-                <CheckInPreview />
-                <p className="text-center text-sm text-muted-foreground mt-4">One tap to track each habit — under 30 seconds total.</p>
-              </TabsContent>
-              <TabsContent value="analytics">
-                <AnalyticsPreview />
-                <p className="text-center text-sm text-muted-foreground mt-4">Plain-language insights, not confusing charts.</p>
-              </TabsContent>
+            {/* Body: stacked on mobile/tablet, side-by-side on lg+ */}
+            <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-14 lg:items-center max-w-4xl mx-auto">
+              {/* Left column: context description — desktop only */}
+              <div className="hidden lg:block">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, x: -14 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 14 }}
+                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <h3 className="text-2xl font-bold mb-3 leading-snug">
+                      {TAB_META[activeTab].heading}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {TAB_META[activeTab].body}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Right column (or only column on mobile): the preview card */}
+              <div className="w-full max-w-xs sm:max-w-sm mx-auto lg:max-w-none">
+                <TabsContent value="onboarding" className="mt-0">
+                  <OnboardingPreview />
+                  <p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">
+                    {TAB_META.onboarding.caption}
+                  </p>
+                </TabsContent>
+                <TabsContent value="system-builder" className="mt-0">
+                  <SystemBuilderPreview />
+                  <p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">
+                    {TAB_META["system-builder"].caption}
+                  </p>
+                </TabsContent>
+                <TabsContent value="checkin" className="mt-0">
+                  <CheckInPreview />
+                  <p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">
+                    {TAB_META.checkin.caption}
+                  </p>
+                </TabsContent>
+                <TabsContent value="analytics" className="mt-0">
+                  <AnalyticsPreview />
+                  <p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">
+                    {TAB_META.analytics.caption}
+                  </p>
+                </TabsContent>
+              </div>
             </div>
           </Tabs>
         </div>
