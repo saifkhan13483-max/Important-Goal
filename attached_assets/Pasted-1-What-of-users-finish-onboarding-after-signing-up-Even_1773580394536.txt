@@ -1,0 +1,78 @@
+1) What % of users finish onboarding after signing up?
+Even a rough guess.
+
+2) Of those who finish onboarding, what % complete at least one daily check-in?
+3) If you had to remove 12 of the 17 steps, which 5 would remain?
+4) Which onboarding step creates the first “aha” moment?
+5) Do users understand the difference between:
+goal
+habit
+system inside the app, or do they blur together?
+Motivation vs automation questions
+6) What part of your app still requires motivation instead of structure?
+7) If a user opens the app on a terrible day, what makes them continue instead of closing it?
+8) What happens in the app when a user feels ashamed, behind, or tired?
+9) If the user has only 10 seconds, can they still win that day?
+10) Does the app make “minimum action” feel meaningful, or like a weak compromise?
+Trust and clarity questions
+11) Can a first-time visitor understand what “system” means without reading below the fold?
+12) What sentence on the homepage makes users think:
+“This is for me.”
+
+13) What sentence might make users think:
+“This sounds like another habit tracker.”
+
+14) If someone asked “Why not just use Notion?” what is your strongest answer?
+15) If someone asked “Why not just use Apple Reminders?” what is your strongest answer?
+Differentiation questions
+16) Is your moat the builder, the recovery flow, the identity layer, or the retention engine?
+17) Which feature would users miss most if removed?
+18) Which feature sounds good in theory but may not matter in practice?
+19) Are you building a habit product, a behavior design product, or an accountability product?
+20) Which one of those do you want to own in the market?
+Retention questions
+21) What is the emotional reason to come back tomorrow, not just the functional reason?
+22) What day do you think most users quit?
+Day 1, 2, 3, 7, or 14?
+
+23) What exactly should happen on day 2?
+24) What exactly should happen on day 7?
+25) What exactly should happen when the app detects “hype drop”?
+Identity questions
+26) What identity archetypes show up most often?
+Examples:
+
+disciplined
+fit
+reader
+creator
+calm
+focused
+27) Could the dashboard say:
+“Today you are showing up as a ___” Would that fit your tone?
+
+28) Should identity be singular or layered?
+Example:
+
+“I am a writer” vs
+“I am consistent, creative, and disciplined”
+29) Is identity stored as copy only, or does it influence UX and messaging?
+30) Should completing a check-in unlock identity reinforcement text automatically?
+Recovery questions
+31) What is the biggest emotional mistake your recovery flow could make?
+32) Should “missed” and “partial” have different recovery scripts?
+33) Should sickness/travel/burnout activate different fallback systems?
+34) Should the app offer a “shrink the system for 3 days” option during rough periods?
+35) Should users be able to enter “maintenance mode” instead of breaking streaks?
+Business and product direction questions
+36) Is the first winning market:
+self-improvement consumers
+ADHD / inconsistent users
+fitness beginners
+students
+creators
+coaching clients
+37) Which market has the clearest pain and strongest willingness to return daily?
+38) If you had to build only one template library first, what would it be?
+39) What makes your app feel premium enough for paid tiers later?
+40) What result would make users happily recommend it to a friend?
