@@ -7,12 +7,12 @@
  *  - FutureSelfAudioPlayer  – plays audio with autoplay/first-visit logic (dashboard, recovery)
  *  - FutureSelfAudioSettings – playback preference toggles (settings page)
  *
- * Audio is uploaded to Firebase Storage at audio/{userId}/future-self.<ext>
+ * Audio is uploaded to Cloudinary (folder: future-self-audio/).
  * The download URL is stored on the Firestore User document (futureAudioUrl)
  * and also cached in localStorage for fast local playback.
  *
  * Legacy: if the user has a base64 blob in localStorage from before the
- * Firebase Storage upgrade, that will be used as a fallback automatically.
+ * Cloudinary upgrade, that will be used as a fallback automatically.
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -186,7 +186,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existin
 
   useEffect(() => () => { stopTimer(); }, []);
 
-  /* ── Upload to Firebase Storage (real progress via uploadBytesResumable) ── */
+  /* ── Upload to Cloudinary (real progress via XHR) ── */
   const doUpload = useCallback(async (
     blob: Blob,
     b64ForPreview: string,
@@ -212,7 +212,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existin
     } catch (err: any) {
       setUploadProgress(0);
 
-      // If Firebase Storage is blocked, fall back to localStorage base64
+      // If Cloudinary upload fails, fall back to localStorage base64
       if (b64ForPreview.startsWith("data:")) {
         try {
           localStorage.setItem(LS_AUDIO_B64, b64ForPreview);
@@ -220,18 +220,16 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existin
           setLocalSrc(b64ForPreview);
           setMode("saved");
           setUploadError(
-            "Saved locally on this device. To sync across devices, configure Firebase Storage rules."
+            "Saved locally on this device. Cloud upload failed — please try again later."
           );
           onSaved?.(b64ForPreview);
           return;
         } catch {}
       }
 
-      const msg = err?.code === "storage/unauthorized"
-        ? "Permission denied — Firebase Storage rules need to allow authenticated writes."
-        : err?.message?.includes("timed out")
-          ? "Upload timed out. Check your connection and try again."
-          : (err?.message || "Upload failed. Please try again.");
+      const msg = err?.message?.includes("timed out")
+        ? "Upload timed out. Check your connection and try again."
+        : (err?.message || "Upload failed. Please try again.");
 
       setUploadError(msg);
       setMode("preview");
