@@ -360,20 +360,23 @@ function AnalyticsPreview() {
 
 function ProductPreview() {
   return (
-    <div className="relative mx-auto max-w-3xl mt-8 sm:mt-14 mb-2 px-0 sm:px-4">
+    <div className="relative mx-auto max-w-3xl mt-6 sm:mt-14 mb-2 px-2 sm:px-4">
       <div className="relative rounded-xl sm:rounded-2xl overflow-hidden border border-border shadow-2xl bg-card">
+        {/* Browser chrome bar */}
         <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 border-b border-border bg-muted/60">
           <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-400/70" />
-            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-chart-4/70" />
-            <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-chart-3/70" />
+            <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-400/70" />
+            <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-chart-4/70" />
+            <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-chart-3/70" />
           </div>
-          <div className="flex-1 mx-2 sm:mx-4 h-5 rounded-md bg-background/80 border border-border flex items-center px-2 sm:px-3 gap-1">
-            <div className="w-2 h-2 rounded-full bg-chart-3/50" />
-            <div className="text-[9px] sm:text-[10px] text-muted-foreground">systemforge.app/dashboard</div>
+          <div className="flex-1 mx-2 sm:mx-4 h-5 rounded-md bg-background/80 border border-border flex items-center px-2 sm:px-3 gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-chart-3/50" />
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">systemforge.app/dashboard</div>
           </div>
         </div>
-        <div className="flex h-64 sm:h-72 md:h-80">
+
+        <div className="flex h-56 sm:h-72 md:h-80">
+          {/* Sidebar — hidden on mobile */}
           <div className="w-36 sm:w-44 border-r border-border bg-sidebar hidden sm:flex flex-col p-3 gap-1">
             <div className="flex items-center gap-2 p-2 mb-2">
               <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
@@ -402,14 +405,34 @@ function ProductPreview() {
               </div>
             ))}
           </div>
-          <div className="flex-1 p-3 sm:p-4 overflow-hidden bg-background">
-            <div className="rounded-xl gradient-brand p-2.5 sm:p-3 text-white mb-2 sm:mb-3 relative overflow-hidden">
+
+          {/* Main content */}
+          <div className="flex-1 p-2.5 sm:p-4 overflow-hidden bg-background flex flex-col gap-2 sm:gap-3">
+            {/* Mobile bottom nav strip */}
+            <div className="flex sm:hidden items-center justify-around border-b border-border pb-2 mb-0.5">
+              {[
+                { icon: BarChart2, label: "Home", active: true },
+                { icon: Target, label: "Goals", active: false },
+                { icon: Zap, label: "Systems", active: false },
+                { icon: CheckSquare, label: "Today", active: false },
+              ].map(item => (
+                <div key={item.label} className={cn("flex flex-col items-center gap-0.5", item.active ? "text-primary" : "text-muted-foreground")}>
+                  <item.icon className="w-3.5 h-3.5" />
+                  <span className="text-[8px] font-medium">{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Welcome banner */}
+            <div className="rounded-lg sm:rounded-xl gradient-brand p-2 sm:p-3 text-white relative overflow-hidden flex-shrink-0">
               <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 translate-x-1/2 -translate-y-1/2 pointer-events-none" />
               <p className="text-[9px] sm:text-[10px] text-white/70">Monday, March 16</p>
-              <p className="text-xs sm:text-sm font-bold">Good morning, Alex! 👋</p>
-              <p className="text-[9px] sm:text-[10px] text-white/80">Ready to make progress today?</p>
+              <p className="text-[11px] sm:text-sm font-bold">Good morning, Alex! 👋</p>
+              <p className="text-[9px] sm:text-[10px] text-white/80 hidden sm:block">Ready to make progress today?</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2 flex-shrink-0">
               {[
                 { label: "Goals", value: "3", color: "text-primary" },
                 { label: "Systems", value: "5", color: "text-chart-2" },
@@ -417,12 +440,14 @@ function ProductPreview() {
                 { label: "Streak", value: "12d", color: "text-chart-4" },
               ].map(m => (
                 <div key={m.label} className="bg-card border border-border rounded-lg p-1.5 sm:p-2 text-center">
-                  <p className={`text-xs sm:text-sm font-bold ${m.color}`}>{m.value}</p>
+                  <p className={`text-[11px] sm:text-sm font-bold ${m.color}`}>{m.value}</p>
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground">{m.label}</p>
                 </div>
               ))}
             </div>
-            <div className="bg-card border border-border rounded-lg p-2 sm:p-2.5">
+
+            {/* Today's systems */}
+            <div className="bg-card border border-border rounded-lg p-2 sm:p-2.5 flex-1 min-h-0 overflow-hidden">
               <p className="text-[10px] sm:text-xs font-semibold mb-1.5 sm:mb-2">Today's Systems</p>
               <div className="space-y-1 sm:space-y-1.5">
                 {[
@@ -436,8 +461,8 @@ function ProductPreview() {
                       <div className={cn("w-4 h-4 sm:w-5 sm:h-5 rounded text-[7px] sm:text-[8px] flex items-center justify-center border", s.done ? "bg-chart-3 text-white border-chart-3" : "bg-muted border-border")}>
                         {s.done ? "✓" : ""}
                       </div>
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded text-[8px] flex items-center justify-center border bg-muted border-border" />
-                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded text-[8px] flex items-center justify-center border bg-muted border-border" />
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center border bg-muted border-border" />
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center border bg-muted border-border" />
                     </div>
                   </div>
                 ))}
@@ -571,38 +596,38 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ── */}
-      <section id="main-content" className="relative pt-24 sm:pt-32 pb-8 px-4 overflow-hidden min-h-[90vh] flex flex-col justify-center" aria-label="Hero">
+      <section id="main-content" className="relative pt-20 sm:pt-32 pb-8 px-4 overflow-hidden sm:min-h-[85vh] sm:flex sm:flex-col sm:justify-center" aria-label="Hero">
         <div className="absolute inset-0 -z-10">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-3xl" />
           <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-chart-2/5 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-chart-5/5 rounded-full blur-3xl" />
         </div>
         <div className="max-w-4xl mx-auto text-center">
-          <Badge variant="secondary" className="mb-4 sm:mb-6 px-3 py-1.5 text-xs font-medium gap-1.5">
-            <Sparkles className="w-3 h-3" />
+          <Badge variant="secondary" className="mb-4 sm:mb-6 px-3 py-1.5 text-xs font-medium gap-1.5 inline-flex flex-wrap justify-center">
+            <Sparkles className="w-3 h-3 flex-shrink-0" />
             Trusted by 12,000+ people building better habits
           </Badge>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 leading-[1.1]">
+          <h1 className="text-[1.75rem] leading-[1.15] sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 sm:leading-[1.1]">
             Stop starting over.{" "}
             <span className="gradient-text block sm:inline">Build something that survives hard days.</span>
           </h1>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-5 sm:mb-7 leading-relaxed">
-            SystemForge helps inconsistent people turn one goal into a daily system with a minimum action, a fallback plan, and a recovery path — so progress continues even when motivation doesn't.
+          <p className="text-sm sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-5 sm:mb-7 leading-relaxed px-1 sm:px-0">
+            Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't.
           </p>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm text-muted-foreground mb-7 sm:mb-10">
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3" /> No perfect routines</span>
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3" /> No guilt spirals</span>
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3" /> No "start again Monday"</span>
+          <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6 sm:gap-y-1 text-sm text-muted-foreground mb-6 sm:mb-10">
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No perfect routines needed</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No guilt spirals</span>
+            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No "start again Monday"</span>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-5 sm:mb-6">
-            <Link href="/signup">
-              <Button size="lg" className="btn-scale gap-2 h-11 sm:h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full sm:w-auto" data-testid="button-hero-cta">
-                Build My System in 60 Seconds
-                <ArrowRight className="w-4 h-4" />
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4 sm:mb-6 px-2 sm:px-0">
+            <Link href="/signup" className="w-full sm:w-auto">
+              <Button size="lg" className="btn-scale gap-2 h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full" data-testid="button-hero-cta">
+                Build My System Free
+                <ArrowRight className="w-4 h-4 flex-shrink-0" />
               </Button>
             </Link>
-            <a href="#how-it-works">
-              <Button size="lg" variant="outline" className="btn-scale h-11 sm:h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full sm:w-auto" data-testid="button-hero-how-it-works">
+            <a href="#how-it-works" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="btn-scale h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full" data-testid="button-hero-how-it-works">
                 See How It Works
               </Button>
             </a>
