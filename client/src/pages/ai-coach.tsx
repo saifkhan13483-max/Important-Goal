@@ -11,20 +11,200 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Bot, Send, Sparkles, User, Loader2, RefreshCw, Flame,
+  Bot, Send, Sparkles, User, RefreshCw, Flame,
+  Copy, Check, ChevronRight, Brain, Target, Zap,
+  TrendingUp, Clock, MessageSquare, Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STARTER_QUESTIONS = [
-  "Why do I keep breaking my habits?",
-  "How do I stay consistent when I have no motivation?",
-  "Help me design a better trigger for my habit.",
-  "What should my minimum action be?",
-  "How do I recover after missing several days?",
-  "What does the science say about habit stacking?",
-  "My streak broke — what should I do now?",
-  "How can I make my habit harder to skip?",
+const PROMPT_CATEGORIES = [
+  {
+    label: "Consistency",
+    icon: TrendingUp,
+    color: "text-blue-500",
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+    border: "border-blue-200 dark:border-blue-800",
+    questions: [
+      "Why do I keep breaking my habits?",
+      "How do I stay consistent when I have no motivation?",
+      "How can I make my habit harder to skip?",
+    ],
+  },
+  {
+    label: "Design",
+    icon: Target,
+    color: "text-violet-500",
+    bg: "bg-violet-50 dark:bg-violet-950/30",
+    border: "border-violet-200 dark:border-violet-800",
+    questions: [
+      "Help me design a better trigger for my habit.",
+      "What should my minimum action be?",
+      "What does the science say about habit stacking?",
+    ],
+  },
+  {
+    label: "Recovery",
+    icon: Zap,
+    color: "text-amber-500",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    border: "border-amber-200 dark:border-amber-800",
+    questions: [
+      "How do I recover after missing several days?",
+      "My streak broke — what should I do now?",
+      "How do I deal with guilt after skipping?",
+    ],
+  },
+  {
+    label: "Mindset",
+    icon: Brain,
+    color: "text-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
+    border: "border-emerald-200 dark:border-emerald-800",
+    questions: [
+      "How do I build an identity around my habits?",
+      "What's the difference between motivation and discipline?",
+      "How do I stop relying on willpower?",
+    ],
+  },
 ];
+
+function TypingDots() {
+  return (
+    <div className="flex items-center gap-1 py-1">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
+          style={{ animationDelay: `${i * 150}ms`, animationDuration: "0.8s" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function parseMarkdown(text: string) {
+  const lines = text.split("\n");
+  const elements: JSX.Element[] = [];
+
+  lines.forEach((line, idx) => {
+    if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
+      elements.push(
+        <p key={idx} className="font-semibold mt-1 first:mt-0">
+          {line.slice(2, -2)}
+        </p>
+      );
+    } else if (line.match(/^[\-\*•]\s/)) {
+      elements.push(
+        <li key={idx} className="ml-3 list-disc list-outside">
+          {renderInline(line.replace(/^[\-\*•]\s/, ""))}
+        </li>
+      );
+    } else if (line.trim() === "") {
+      if (idx > 0 && lines[idx - 1].trim() !== "") {
+        elements.push(<div key={idx} className="h-1" />);
+      }
+    } else {
+      elements.push(<p key={idx}>{renderInline(line)}</p>);
+    }
+  });
+
+  return elements;
+}
+
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={i}>{part.slice(2, -2)}</strong>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
+function MessageBubble({
+  msg,
+  index,
+}: {
+  msg: ChatMessage & { timestamp?: Date };
+  index: number;
+}) {
+  const [copied, setCopied] = useState(false);
+  const isAssistant = msg.role === "assistant";
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(msg.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const timeStr = msg.timestamp
+    ? msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "";
+
+  return (
+    <div
+      className={cn("flex gap-3 group", !isAssistant && "flex-row-reverse")}
+      data-testid={`ai-message-${msg.role}-${index}`}
+    >
+      <div
+        className={cn(
+          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+          isAssistant
+            ? "bg-primary/10 border border-primary/20"
+            : "bg-muted border border-border"
+        )}
+      >
+        {isAssistant ? (
+          <Bot className="w-4 h-4 text-primary" />
+        ) : (
+          <User className="w-4 h-4 text-muted-foreground" />
+        )}
+      </div>
+
+      <div className={cn("flex flex-col gap-1 max-w-[80%]", !isAssistant && "items-end")}>
+        <div
+          className={cn(
+            "rounded-2xl px-4 py-3 text-sm leading-relaxed relative",
+            isAssistant
+              ? "bg-card border border-border/60 text-foreground rounded-tl-sm"
+              : "bg-primary text-primary-foreground rounded-tr-sm"
+          )}
+        >
+          {isAssistant ? (
+            <div className="space-y-0.5">{parseMarkdown(msg.content)}</div>
+          ) : (
+            <p>{msg.content}</p>
+          )}
+        </div>
+
+        <div className={cn("flex items-center gap-2 px-1", !isAssistant && "flex-row-reverse")}>
+          {timeStr && (
+            <span className="text-[10px] text-muted-foreground/60">{timeStr}</span>
+          )}
+          {isAssistant && (
+            <button
+              onClick={handleCopy}
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-muted-foreground"
+              aria-label="Copy message"
+              data-testid={`button-copy-message-${index}`}
+            >
+              {copied ? (
+                <Check className="w-3 h-3 text-emerald-500" />
+              ) : (
+                <Copy className="w-3 h-3" />
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AiCoach() {
   const { user } = useAppStore();
@@ -32,16 +212,19 @@ export default function AiCoach() {
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<(ChatMessage & { timestamp?: Date })[]>([
     {
       role: "assistant",
       content:
-        "Hi! I'm your AI habit coach. I know about your systems and can help you design better habits, stay consistent, and work through any challenges. What's on your mind?",
+        "Hi! I'm your AI habit coach. I know about your systems and can help you design better habits, stay consistent, and work through challenges.\n\nWhat's on your mind today?",
+      timestamp: new Date(),
     },
   ]);
   const [loading, setLoading] = useState(false);
+  const [sessionMsgCount, setSessionMsgCount] = useState(0);
 
   const { data: systems = [] } = useQuery<System[]>({
     queryKey: ["systems", userId],
@@ -57,12 +240,19 @@ export default function AiCoach() {
 
   const analytics = useMemo(
     () => computeAnalytics(allCheckins, systems, []),
-    [allCheckins, systems],
+    [allCheckins, systems]
   );
 
-  const activeSystems = systems.filter(s => s.active);
+  const activeSystems = systems.filter((s) => s.active);
   const bestStreak = Math.max(0, ...Object.values(analytics.streaks).map(Number));
-  const systemNames = activeSystems.map(s => s.title);
+  const systemNames = activeSystems.map((s) => s.title);
+  const totalCheckins = allCheckins.length;
+
+  const avgCompletion = useMemo(() => {
+    if (!totalCheckins) return 0;
+    const done = allCheckins.filter((c) => c.status === "done").length;
+    return Math.round((done / totalCheckins) * 100);
+  }, [allCheckins, totalCheckins]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,17 +261,25 @@ export default function AiCoach() {
   const sendMessage = async (content: string) => {
     if (!content.trim() || loading) return;
     setInput("");
-    const userMsg: ChatMessage = { role: "user", content: content.trim() };
+    setActiveCategory(null);
+    const userMsg: ChatMessage & { timestamp: Date } = {
+      role: "user",
+      content: content.trim(),
+      timestamp: new Date(),
+    };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setLoading(true);
+    setSessionMsgCount((n) => n + 1);
     try {
-      const reply = await chatWithCoach(updatedMessages, {
-        systemNames,
-        bestStreak,
-        userName: user?.name,
-      });
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      const reply = await chatWithCoach(
+        updatedMessages.map(({ role, content }) => ({ role, content })),
+        { systemNames, bestStreak, userName: user?.name }
+      );
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: reply, timestamp: new Date() },
+      ]);
     } catch (err: any) {
       toast({
         title: "Couldn't reach AI coach",
@@ -101,171 +299,294 @@ export default function AiCoach() {
   };
 
   const resetChat = () => {
-    setMessages([messages[0]]);
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          "Hi! I'm your AI habit coach. I know about your systems and can help you design better habits, stay consistent, and work through challenges.\n\nWhat's on your mind today?",
+        timestamp: new Date(),
+      },
+    ]);
     setInput("");
+    setActiveCategory(null);
+    setSessionMsgCount(0);
     setTimeout(() => textareaRef.current?.focus(), 50);
   };
 
+  const activeCat = PROMPT_CATEGORIES.find((c) => c.label === activeCategory);
+
+  const isFirstMessage = messages.length === 1 && !loading;
+
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-            <Bot className="w-4 h-4 text-primary" />
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      {/* ── Main chat column ── */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Bot className="w-5 h-5 text-primary" />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />
+            </div>
+            <div>
+              <h1 className="text-base font-semibold leading-tight">AI Habit Coach</h1>
+              <p className="text-xs text-muted-foreground leading-tight">
+                {loading ? "Thinking…" : "Online · Ready to help"}
+              </p>
+            </div>
           </div>
-          AI Habit Coach
-        </h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Personalized coaching powered by AI — ask anything about your habits
-        </p>
-      </div>
 
-      {/* Context: active systems + streak */}
-      {(activeSystems.length > 0 || bestStreak > 0) && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Coaching context:</span>
-          {activeSystems.slice(0, 4).map(s => (
-            <Badge key={s.id} variant="secondary" className="text-xs">
-              {s.title}
-            </Badge>
-          ))}
-          {activeSystems.length > 4 && (
-            <Badge variant="secondary" className="text-xs">
-              +{activeSystems.length - 4} more
-            </Badge>
-          )}
-          {bestStreak > 0 && (
-            <Badge
-              variant="outline"
-              className="text-xs text-primary border-primary/30 flex items-center gap-1"
-            >
-              <Flame className="w-3 h-3" />
-              {bestStreak}d streak
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {sessionMsgCount > 0 && (
+              <Badge variant="secondary" className="text-xs gap-1">
+                <MessageSquare className="w-3 h-3" />
+                {sessionMsgCount} {sessionMsgCount === 1 ? "exchange" : "exchanges"}
+              </Badge>
+            )}
+            {messages.length > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetChat}
+                className="text-xs text-muted-foreground h-8 gap-1.5"
+                data-testid="button-reset-coach"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                New chat
+              </Button>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Chat messages */}
-      <div
-        className="space-y-4 min-h-[280px] max-h-[480px] overflow-y-auto pr-1 scroll-smooth"
-        data-testid="ai-coach-messages"
-      >
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={cn("flex gap-3", msg.role === "user" && "flex-row-reverse")}
-            data-testid={`ai-message-${msg.role}-${i}`}
-          >
-            {/* Avatar */}
-            <div
-              className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                msg.role === "assistant"
-                  ? "bg-primary/10 border border-primary/20"
-                  : "bg-muted border border-border",
-              )}
-            >
-              {msg.role === "assistant" ? (
+        {/* Messages area */}
+        <div
+          className="flex-1 overflow-y-auto px-6 py-5 space-y-5 scroll-smooth"
+          data-testid="ai-coach-messages"
+        >
+          {messages.map((msg, i) => (
+            <MessageBubble key={i} msg={msg} index={i} />
+          ))}
+
+          {loading && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-primary/10 border border-primary/20">
                 <Bot className="w-4 h-4 text-primary" />
-              ) : (
-                <User className="w-4 h-4 text-muted-foreground" />
-              )}
+              </div>
+              <div className="bg-card border border-border/60 rounded-2xl rounded-tl-sm px-4 py-3">
+                <TypingDots />
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Quick prompts — shown before first user message */}
+        {isFirstMessage && (
+          <div className="px-6 pb-3 space-y-3 flex-shrink-0">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3" />
+              Choose a topic to get started
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {PROMPT_CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const isActive = activeCategory === cat.label;
+                return (
+                  <button
+                    key={cat.label}
+                    onClick={() =>
+                      setActiveCategory(isActive ? null : cat.label)
+                    }
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all font-medium",
+                      isActive
+                        ? cn(cat.bg, cat.border, cat.color)
+                        : "border-border bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted/80"
+                    )}
+                    data-testid={`category-${cat.label.toLowerCase()}`}
+                  >
+                    <Icon className={cn("w-3 h-3", isActive ? cat.color : "")} />
+                    {cat.label}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Bubble */}
-            <div
-              className={cn(
-                "rounded-2xl px-4 py-3 text-sm leading-relaxed max-w-[82%]",
-                msg.role === "assistant"
-                  ? "bg-card border border-border/60 text-foreground"
-                  : "bg-primary text-primary-foreground",
-              )}
-            >
-              {msg.content}
-            </div>
-          </div>
-        ))}
+            {activeCat && (
+              <div className={cn("rounded-xl border p-3 space-y-1.5", activeCat.bg, activeCat.border)}>
+                {activeCat.questions.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => sendMessage(q)}
+                    className="w-full text-left text-xs px-3 py-2 rounded-lg bg-background/70 hover:bg-background border border-border/40 hover:border-border transition-all flex items-center justify-between gap-2 group"
+                    data-testid={`starter-question-${q.slice(0, 20).replace(/\s/g, "-")}`}
+                  >
+                    <span>{q}</span>
+                    <ChevronRight className="w-3 h-3 text-muted-foreground group-hover:text-foreground flex-shrink-0 transition-colors" />
+                  </button>
+                ))}
+              </div>
+            )}
 
-        {/* Thinking indicator */}
-        {loading && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-primary/10 border border-primary/20">
-              <Bot className="w-4 h-4 text-primary" />
-            </div>
-            <div className="bg-card border border-border/60 rounded-2xl px-4 py-3 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Thinking…</span>
-            </div>
+            {!activeCat && (
+              <p className="text-xs text-muted-foreground/60 flex items-center gap-1">
+                <Lightbulb className="w-3 h-3" />
+                Or type your own question below
+              </p>
+            )}
           </div>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Starter questions — only shown before first user message */}
-      {messages.length === 1 && !loading && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3" />
-            Try asking…
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {STARTER_QUESTIONS.map(q => (
-              <button
-                key={q}
-                onClick={() => sendMessage(q)}
-                className="text-xs px-3 py-1.5 rounded-lg border border-border bg-muted/40 hover:bg-primary/8 hover:border-primary/30 hover:text-primary transition-all text-left"
-                data-testid={`starter-question-${q.slice(0, 20).replace(/\s/g, "-")}`}
-              >
-                {q}
-              </button>
-            ))}
+        {/* Input area */}
+        <div className="px-6 pb-5 pt-3 border-t border-border flex-shrink-0 bg-background/80 backdrop-blur-sm">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 relative">
+              <Textarea
+                ref={textareaRef}
+                placeholder="Ask your coach anything… (Enter to send, Shift+Enter for new line)"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={2}
+                className="resize-none text-sm pr-2"
+                data-testid="input-ai-coach"
+              />
+              {input.length > 0 && (
+                <span className="absolute bottom-2 right-3 text-[10px] text-muted-foreground/40">
+                  {input.length}
+                </span>
+              )}
+            </div>
+            <Button
+              onClick={() => sendMessage(input)}
+              disabled={!input.trim() || loading}
+              className="self-end h-10 w-10 p-0 flex-shrink-0 rounded-xl"
+              data-testid="button-send-ai-coach"
+              aria-label="Send message"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-      )}
-
-      {/* Input area */}
-      <div className="flex gap-2 items-end">
-        <Textarea
-          ref={textareaRef}
-          placeholder="Ask your coach anything… (Enter to send, Shift+Enter for new line)"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={2}
-          className="resize-none text-sm flex-1"
-          data-testid="input-ai-coach"
-        />
-        <Button
-          onClick={() => sendMessage(input)}
-          disabled={!input.trim() || loading}
-          className="self-end h-10 w-10 p-0 flex-shrink-0"
-          data-testid="button-send-ai-coach"
-          aria-label="Send message"
-        >
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
-        </Button>
       </div>
 
-      {/* Reset */}
-      {messages.length > 1 && (
-        <div className="text-center">
-          <button
-            onClick={resetChat}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 mx-auto"
-            data-testid="button-reset-coach"
-          >
-            <RefreshCw className="w-3 h-3" />
-            Start a new conversation
-          </button>
+      {/* ── Context sidebar ── */}
+      <aside className="hidden lg:flex flex-col w-72 border-l border-border bg-card/40 flex-shrink-0 overflow-y-auto">
+        <div className="p-5 space-y-5">
+          {/* Coach section */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Your Coach
+            </p>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/15">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                <Bot className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">AI Habit Coach</p>
+                <p className="text-xs text-muted-foreground">
+                  Powered by behavioral science
+                </p>
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                    Online
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Your Progress
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/50">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Flame className="w-3.5 h-3.5 text-orange-500" />
+                  Best streak
+                </div>
+                <span className="text-sm font-semibold tabular-nums">
+                  {bestStreak > 0 ? `${bestStreak}d` : "—"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/50">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
+                  Avg completion
+                </div>
+                <span className="text-sm font-semibold tabular-nums">
+                  {totalCheckins > 0 ? `${avgCompletion}%` : "—"}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/50">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5 text-violet-500" />
+                  Total check-ins
+                </div>
+                <span className="text-sm font-semibold tabular-nums">
+                  {totalCheckins > 0 ? totalCheckins : "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Active systems */}
+          {activeSystems.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                Active Systems
+              </p>
+              <div className="space-y-1.5">
+                {activeSystems.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/40"
+                    data-testid={`sidebar-system-${s.id}`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                    <span className="text-xs truncate">{s.title}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground/60 mt-2 px-1">
+                The coach uses these to personalize responses.
+              </p>
+            </div>
+          )}
+
+          {activeSystems.length === 0 && (
+            <div className="p-3 rounded-xl border border-dashed border-border text-center space-y-1">
+              <Target className="w-4 h-4 text-muted-foreground mx-auto" />
+              <p className="text-xs text-muted-foreground">No active systems yet.</p>
+              <p className="text-[10px] text-muted-foreground/60">
+                Create a habit system so the coach can give personalized advice.
+              </p>
+            </div>
+          )}
+
+          {/* Tips */}
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 space-y-1.5">
+            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <Lightbulb className="w-3.5 h-3.5" />
+              Coaching tips
+            </p>
+            <ul className="text-[11px] text-amber-700/80 dark:text-amber-400/80 space-y-1">
+              <li>• Be specific about your situation</li>
+              <li>• Share what you've already tried</li>
+              <li>• Ask follow-up questions freely</li>
+            </ul>
+          </div>
         </div>
-      )}
+      </aside>
     </div>
   );
 }
