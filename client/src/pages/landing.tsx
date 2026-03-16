@@ -1268,7 +1268,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">© 2026 SystemForge. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} SystemForge. All rights reserved.</p>
             <p className="text-xs text-muted-foreground">Not another habit tracker. A system that survives real life.</p>
           </div>
         </div>
