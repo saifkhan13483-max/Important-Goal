@@ -492,16 +492,20 @@ export default function Settings() {
               Free
             </Badge>
           </div>
-          <div className="flex items-center justify-between p-3 rounded-md bg-chart-3/5 border border-chart-3/20">
-            <div>
-              <p className="text-sm font-medium text-chart-3">Upgrade to Pro</p>
-              <p className="text-xs text-muted-foreground">Unlimited goals, systems + advanced analytics</p>
+          <Link href="/pricing">
+            <div className="flex items-center justify-between p-3 rounded-md bg-chart-3/5 border border-chart-3/20 cursor-pointer hover:bg-chart-3/10 transition-colors">
+              <div>
+                <p className="text-sm font-medium text-chart-3">Upgrade to Pro</p>
+                <p className="text-xs text-muted-foreground">Unlimited goals, systems + advanced analytics</p>
+              </div>
+              <Button size="sm" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-upgrade" asChild>
+                <span>
+                  <Sparkles className="w-3 h-3" />
+                  Upgrade
+                </span>
+              </Button>
             </div>
-            <Button size="sm" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-upgrade">
-              <Sparkles className="w-3 h-3" />
-              Upgrade
-            </Button>
-          </div>
+          </Link>
           <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border border-border/40">
             <div>
               <p className="text-sm font-medium">Sign out</p>

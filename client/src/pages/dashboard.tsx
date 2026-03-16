@@ -414,7 +414,7 @@ function RetentionBanner({
 
   if (dismissed || activeSystems.length === 0) return null;
 
-  const sortedDates = [...new Set(allCheckins.map(c => c.dateKey))].sort();
+  const sortedDates = Array.from(new Set(allCheckins.map(c => c.dateKey))).sort();
   if (sortedDates.length === 0) return null;
 
   const firstDate   = new Date(sortedDates[0] + "T00:00:00");
