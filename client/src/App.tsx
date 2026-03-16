@@ -27,6 +27,8 @@ import { useAuth } from "@/hooks/use-auth";
 
 import Landing from "@/pages/landing";
 import Pricing from "@/pages/pricing";
+import PrivacyPolicy from "@/pages/privacy";
+import TermsOfService from "@/pages/terms";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import ForgotPassword from "@/pages/forgot-password";
@@ -112,6 +114,8 @@ function Router() {
       {/* Public routes */}
       <Route path="/" component={() => <PublicOnlyRoute component={Landing} />} />
       <Route path="/pricing" component={Pricing} />
+      <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={TermsOfService} />
       <Route path="/login" component={() => <PublicOnlyRoute component={Login} />} />
       <Route path="/signup" component={() => <PublicOnlyRoute component={Signup} />} />
       <Route path="/forgot-password" component={() => <PublicOnlyRoute component={ForgotPassword} />} />

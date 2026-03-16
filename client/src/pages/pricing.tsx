@@ -311,7 +311,6 @@ export default function Pricing() {
                     <td className="p-4"><CellValue value={row.free} /></td>
                     <td className="p-4"><CellValue value={row.starter} /></td>
                     <td className="p-4 bg-primary/3"><CellValue value={row.pro} /></td>
-                    <td className="p-4"><CellValue value={row.team} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -352,6 +351,55 @@ export default function Pricing() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-muted/20 py-10 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
+                  <Sparkles className="w-3 h-3 text-white" />
+                </div>
+                <span className="font-bold text-sm">SystemForge</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Built for people who are tired of starting over.
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Product</p>
+              <div className="flex flex-col gap-2">
+                <Link href="/#features" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Features</Link>
+                <Link href="/#how-it-works" className="text-xs text-muted-foreground hover:text-foreground transition-colors">How It Works</Link>
+                <Link href="/#templates" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Templates</Link>
+                <Link href="/pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Company</p>
+              <div className="flex flex-col gap-2">
+                {["About", "Blog", "Careers", "Press"].map((item) => (
+                  <a key={item} href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{item}</a>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Legal</p>
+              <div className="flex flex-col gap-2">
+                <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
+                <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookie Policy</a>
+                <a href="mailto:support@systemforge.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">© 2026 SystemForge. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">Not another habit tracker. A system that survives real life.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

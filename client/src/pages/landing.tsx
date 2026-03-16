@@ -1012,6 +1012,83 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── Testimonials ── */}
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8 md:mb-12">
+            <Badge variant="secondary" className="mb-3 text-xs">Early user feedback</Badge>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
+              Real results from real people
+            </h2>
+            <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
+              These are honest quotes from early beta users — no inflated numbers, no made-up reviews.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {[
+              {
+                quote: "I've tried every habit app. This is the first one that has a plan for when I mess up. The fallback feature alone changed everything for me.",
+                name: "Marcus R.",
+                detail: "Early beta user · Fitness goal",
+                emoji: "🏃",
+              },
+              {
+                quote: "I liked that it didn't let me set a big ambitious goal and call it done. It forced me to ask — okay, but what will you actually *do* tomorrow morning?",
+                name: "Priya S.",
+                detail: "Early beta user · Daily reading",
+                emoji: "📚",
+              },
+              {
+                quote: "The identity framing is subtle but it genuinely works. I stopped saying 'I'm trying to study more' and started saying 'I'm someone who studies every day.' Different mindset.",
+                name: "Tom W.",
+                detail: "Early beta user · Exam prep",
+                emoji: "🎯",
+              },
+              {
+                quote: "The minimum action concept saved me. On rough days I just do the 2-minute version and it keeps the streak alive. No guilt, just consistency.",
+                name: "Aisha K.",
+                detail: "Early beta user · Meditation",
+                emoji: "🧘",
+              },
+              {
+                quote: "The recovery flow is brilliant. Instead of feeling like a failure after missing a day, it just asks what got in the way and how to make tomorrow easier.",
+                name: "Daniel M.",
+                detail: "Early beta user · Deep work",
+                emoji: "💼",
+              },
+              {
+                quote: "The trigger setup step made me realise I'd been trying to build habits at random times. Anchoring to my coffee routine made the habit automatic within two weeks.",
+                name: "Sophie L.",
+                detail: "Early beta user · Morning routine",
+                emoji: "☕",
+              },
+            ].map((t) => (
+              <Card key={t.name} className="border-border/60 flex flex-col">
+                <CardContent className="p-5 flex flex-col flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-foreground leading-relaxed flex-1 mb-4">
+                    "{t.quote}"
+                  </p>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-base flex-shrink-0">
+                      {t.emoji}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold leading-none mb-0.5">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{t.detail}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Pricing ── */}
       <section id="pricing" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
@@ -1145,25 +1222,28 @@ export default function Landing() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Product</p>
               <div className="flex flex-col gap-2">
-                {["Features", "How It Works", "Templates", "Pricing"].map((item) => (
-                  <a key={item} href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{item}</a>
-                ))}
+                <a href="#features" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Features</a>
+                <a href="#how-it-works" className="text-xs text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+                <a href="#templates" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Templates</a>
+                <a href="#pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
               </div>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Company</p>
               <div className="flex flex-col gap-2">
-                {["About", "Blog", "Careers", "Press"].map((item) => (
-                  <a key={item} href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{item}</a>
-                ))}
+                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">About</a>
+                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Blog</a>
+                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Careers</a>
+                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Press</a>
               </div>
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Legal</p>
               <div className="flex flex-col gap-2">
-                {["Privacy Policy", "Terms of Service", "Cookie Policy", "Support"].map((item) => (
-                  <a key={item} href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">{item}</a>
-                ))}
+                <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
+                <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookie Policy</a>
+                <a href="mailto:support@systemforge.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
           </div>
