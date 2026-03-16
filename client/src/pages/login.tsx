@@ -137,6 +137,7 @@ export default function Login() {
                         <Input
                           type="email"
                           placeholder="you@example.com"
+                          autoComplete="email"
                           data-testid="input-email"
                           {...field}
                         />
@@ -164,6 +165,7 @@ export default function Login() {
                         <Input
                           type="password"
                           placeholder="••••••••"
+                          autoComplete="current-password"
                           data-testid="input-password"
                           {...field}
                         />

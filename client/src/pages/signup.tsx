@@ -139,7 +139,7 @@ export default function Signup() {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Alex Johnson" data-testid="input-name" {...field} />
+                        <Input placeholder="Alex Johnson" autoComplete="name" data-testid="input-name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -155,6 +155,7 @@ export default function Signup() {
                         <Input
                           type="email"
                           placeholder="you@example.com"
+                          autoComplete="email"
                           data-testid="input-email"
                           {...field}
                         />
@@ -173,6 +174,7 @@ export default function Signup() {
                         <Input
                           type="password"
                           placeholder="At least 6 characters"
+                          autoComplete="new-password"
                           data-testid="input-password"
                           {...field}
                         />
@@ -191,6 +193,7 @@ export default function Signup() {
                         <Input
                           type="password"
                           placeholder="Repeat your password"
+                          autoComplete="new-password"
                           data-testid="input-confirm-password"
                           {...field}
                         />

@@ -1227,7 +1227,7 @@ export default function Landing() {
       {/* ── Footer ── */}
       <footer className="py-8 sm:py-12 px-4 border-t border-border bg-muted/20">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-10">
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
@@ -1249,20 +1249,10 @@ export default function Landing() {
               </div>
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Company</p>
-              <div className="flex flex-col gap-2">
-                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">About</a>
-                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Blog</a>
-                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Careers</a>
-                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Press</a>
-              </div>
-            </div>
-            <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Legal</p>
               <div className="flex flex-col gap-2">
                 <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-                <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookie Policy</a>
                 <a href="mailto:support@systemforge.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
