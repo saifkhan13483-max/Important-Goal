@@ -22,7 +22,12 @@ import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addM
 import { cn } from "@/lib/utils";
 
 function getTodayKey() {
-  return new Date().toISOString().split("T")[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function toLocalDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 /* ─── Confetti for celebration ─────────────────────────────────── */
@@ -1079,11 +1084,11 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
     let globalChain = 0;
     let lastGlobalChain = 0;
     let finishedCurrentChain = false;
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = getTodayKey();
     for (let i = 0; i < 120; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateKey = d.toISOString().split("T")[0];
+      const dateKey = toLocalDateKey(d);
       const dayC = allCheckins.filter(c => c.dateKey === dateKey);
       const hasDone = dayC.some(c => c.status === "done" || c.status === "partial");
       if (!finishedCurrentChain) {
@@ -1105,16 +1110,17 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
 
   const dayMap = useMemo(() => {
     const map: Record<string, { done: number; total: number; status: string }> = {};
+    const activeSystemIds = new Set(activeSystems.map(s => s.id));
     for (let d = 1; d <= daysInMonth; d++) {
-      const dateObj  = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
-      const dateKey  = dateObj.toISOString().split("T")[0];
-      const dayC     = allCheckins.filter(c => c.dateKey === dateKey);
+      const dateKey  = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dayC     = allCheckins.filter(c => c.dateKey === dateKey && activeSystemIds.has(c.systemId));
       const done     = dayC.filter(c => c.status === "done").length;
+      const partial  = dayC.filter(c => c.status === "partial").length;
       const total    = activeSystems.length;
       let status = "empty";
       if (dayC.length > 0) {
         if (done === total && total > 0) status = "perfect";
-        else if (done > 0) status = "partial";
+        else if (done > 0 || partial > 0) status = "partial";
         else status = "missed";
       }
       map[dateKey] = { done, total, status };
@@ -1188,8 +1194,7 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
         <div className="grid grid-cols-7 gap-1" data-testid="calendar-grid">
           {blanks.map((_, i) => <div key={`blank-${i}`} />)}
           {days.map(d => {
-            const dateObj  = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
-            const dateKey  = dateObj.toISOString().split("T")[0];
+            const dateKey  = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
             const isFuture = dateKey > today;
             const isToday  = dateKey === today;
             const info     = dayMap[dateKey];
