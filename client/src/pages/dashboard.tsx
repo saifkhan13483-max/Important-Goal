@@ -261,19 +261,19 @@ function GreetingBanner({ name, identityStatement, completionPct, todayDone, tod
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   return (
-    <div className="relative rounded-2xl overflow-hidden p-6 md:p-8 gradient-brand text-white">
+    <div className="relative rounded-2xl overflow-hidden p-4 sm:p-6 md:p-8 gradient-brand text-white">
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
       <div className="absolute top-0 right-0 w-48 h-48 opacity-10 bg-white rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-white/70 text-sm font-medium mb-1">{format(new Date(), "EEEE, MMMM d")}</p>
-          <h1 className="text-2xl md:text-3xl font-bold mb-1">{greeting}, {name.split(" ")[0]}! 👋</h1>
+          <p className="text-white/70 text-xs sm:text-sm font-medium mb-1">{format(new Date(), "EEEE, MMMM d")}</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 leading-tight">{greeting}, {name.split(" ")[0]}! 👋</h1>
           {identityStatement ? (
-            <p className="text-white/90 text-sm font-semibold mt-1 leading-snug">
+            <p className="text-white/90 text-xs sm:text-sm font-semibold mt-1 leading-snug">
               Remember: You are a person who {identityStatement}.
             </p>
           ) : (
-            <p className="text-white/80 text-sm">
+            <p className="text-white/80 text-xs sm:text-sm">
               {todayTotal === 0
                 ? "Ready to start building your systems?"
                 : todayDone === todayTotal
@@ -289,13 +289,13 @@ function GreetingBanner({ name, identityStatement, completionPct, todayDone, tod
         </div>
         {todayTotal > 0 && (
           <div className="flex-shrink-0 text-right">
-            <p className="text-3xl font-extrabold text-white">{completionPct}%</p>
+            <p className="text-2xl sm:text-3xl font-extrabold text-white">{completionPct}%</p>
             <p className="text-xs text-white/70">complete</p>
           </div>
         )}
       </div>
       {todayTotal > 0 && (
-        <div className="mt-4">
+        <div className="mt-3 sm:mt-4">
           <div className="h-2 rounded-full bg-white/20 overflow-hidden">
             <div
               className="h-full rounded-full bg-white/80 transition-all duration-700"
@@ -505,18 +505,20 @@ function RetentionBanner({
 function RecoveryBanner({ missedSystems }: { missedSystems: System[] }) {
   if (missedSystems.length === 0) return null;
   return (
-    <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-4/8 border border-chart-4/20">
-      <RefreshCw className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-chart-4 mb-0.5">Missed yesterday? Let's reset gently.</p>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          {missedSystems.length === 1
-            ? `"${missedSystems[0].title}" was missed. Use the fallback plan — even 1 minute counts.`
-            : `${missedSystems.length} systems were missed. Start fresh today with the smallest possible action.`}
-        </p>
+    <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-4 rounded-xl bg-chart-4/8 border border-chart-4/20">
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <RefreshCw className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-chart-4 mb-0.5">Missed yesterday? Let's reset gently.</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {missedSystems.length === 1
+              ? `"${missedSystems[0].title}" was missed. Use the fallback plan — even 1 minute counts.`
+              : `${missedSystems.length} systems were missed. Start fresh today with the smallest possible action.`}
+          </p>
+        </div>
       </div>
-      <Link href="/checkins">
-        <Button size="sm" variant="outline" className="flex-shrink-0 text-xs h-7">
+      <Link href="/checkins" className="sm:flex-shrink-0">
+        <Button size="sm" variant="outline" className="w-full sm:w-auto text-xs h-7">
           Check in now
         </Button>
       </Link>
