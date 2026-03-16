@@ -14,6 +14,7 @@
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { AiChatWidget } from "@/components/ai/ai-chat";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
@@ -90,6 +91,9 @@ export function AppLayout({ children }: AppLayoutProps) {
           />
         </div>
       </div>
+
+      {/* AI floating chat widget */}
+      <AiChatWidget />
     </SidebarProvider>
   );
 }

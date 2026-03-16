@@ -19,8 +19,9 @@ import {
 import {
   Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
   Trophy, AlertCircle, Star, CheckSquare, Lightbulb,
-  TrendingDown, Heart, Award, Smile, Dumbbell,
+  TrendingDown, Heart, Award, Smile, Dumbbell, Bot, Loader2, Sparkles,
 } from "lucide-react";
+import { generateAnalyticsInsights, type AnalyticsInsight } from "@/services/ai.service";
 import { cn } from "@/lib/utils";
 
 function MetricCard({ label, value, sub, icon: Icon, color }: any) {
@@ -267,6 +268,45 @@ export default function Analytics() {
   const hasData = checkins.length > 0;
   const hasDowData = dayOfWeekStats.some(d => d.totalCount > 0);
 
+  const topSystemForAi = useMemo(() => {
+    const top = [...systemStats].filter(s => s.totalCheckins >= 3).sort((a, b) => b.pct - a.pct)[0];
+    return top?.title;
+  }, [systemStats]);
+
+  const weakestSystemForAi = useMemo(() => {
+    const weak = [...systemStats].filter(s => s.totalCheckins >= 3 && s.missedCount > 0).sort((a, b) => b.missedCount - a.missedCount)[0];
+    return weak?.pct < 50 ? weak?.title : undefined;
+  }, [systemStats]);
+
+  const aiInsightsKey = [
+    "ai-analytics-insights",
+    userId,
+    avgCompletion,
+    topBestStreak,
+    analytics.totalCheckins,
+  ];
+
+  const {
+    data: aiInsights = [],
+    isLoading: aiInsightsLoading,
+    refetch: refetchAiInsights,
+  } = useQuery<AnalyticsInsight[]>({
+    queryKey: aiInsightsKey,
+    queryFn: () =>
+      generateAnalyticsInsights({
+        systemNames: systems.filter(s => s.active).map(s => s.title),
+        avgCompletion,
+        bestStreak: topBestStreak,
+        totalCheckins: analytics.totalCheckins,
+        topSystem: topSystemForAi,
+        weakestSystem: weakestSystemForAi,
+        userName: user?.name,
+      }),
+    enabled: !!userId && analytics.totalCheckins >= 3 && !isLoading,
+    staleTime: 1000 * 60 * 30,
+    retry: false,
+  });
+
   const periodLabel: Record<Period, string> = {
     daily:   "last 14 days",
     weekly:  "last 8 weeks",
@@ -302,6 +342,75 @@ export default function Analytics() {
           Track your consistency and growth over time
         </p>
       </div>
+
+      {/* AI-powered insights */}
+      {analytics.totalCheckins >= 3 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Bot className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight">AI Insights</p>
+                <p className="text-xs text-muted-foreground leading-tight">Personalized analysis of your habits</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => refetchAiInsights()}
+              disabled={aiInsightsLoading}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border hover:bg-muted/40"
+              data-testid="button-refresh-ai-insights"
+            >
+              {aiInsightsLoading ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Analyzing…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3" />
+                  Refresh
+                </>
+              )}
+            </button>
+          </div>
+
+          {aiInsightsLoading ? (
+            <div className="grid sm:grid-cols-3 gap-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-20 rounded-xl border border-border/50 bg-muted/20 animate-pulse" />
+              ))}
+            </div>
+          ) : aiInsights.length > 0 ? (
+            <div className="grid sm:grid-cols-3 gap-3">
+              {aiInsights.map((insight, i) => {
+                const colorMap = {
+                  positive: "bg-chart-3/8 border-chart-3/20",
+                  neutral:  "bg-primary/8 border-primary/20",
+                  tip:      "bg-chart-4/8 border-chart-4/20",
+                };
+                const iconColorMap = {
+                  positive: "text-chart-3",
+                  neutral:  "text-primary",
+                  tip:      "text-chart-4",
+                };
+                return (
+                  <div
+                    key={i}
+                    className={cn("flex items-start gap-3 p-4 rounded-xl border", colorMap[insight.type])}
+                    data-testid={`ai-insight-card-${i}`}
+                  >
+                    <Bot className={cn("w-3.5 h-3.5 flex-shrink-0 mt-0.5", iconColorMap[insight.type])} />
+                    <p className="text-xs text-foreground leading-relaxed">{insight.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      )}
 
       {/* Text-based insight cards */}
       {insightCards.length > 0 && (

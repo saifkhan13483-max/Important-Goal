@@ -8,6 +8,8 @@ import { getGoals } from "@/services/goals.service";
 import { getSystem, createSystem, updateSystem } from "@/services/systems.service";
 import { getPublicTemplates } from "@/services/templates.service";
 import { suggestSystemField } from "@/services/ai.service";
+import { AiSystemGenerator } from "@/components/ai/ai-system-generator";
+import type { GeneratedSystem } from "@/services/ai.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -350,6 +352,19 @@ export default function SystemBuilderPage() {
   const update = (field: keyof FormData, val: string) => setForm(prev => ({ ...prev, [field]: val }));
 
   const [aiSuggesting, setAiSuggesting] = useState<string | null>(null);
+  const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false);
+
+  const handleAiGenerate = (generated: GeneratedSystem) => {
+    setForm(prev => ({
+      ...prev,
+      identityStatement: generated.identityStatement || prev.identityStatement,
+      triggerStatement:  generated.triggerStatement  || prev.triggerStatement,
+      minimumAction:     generated.minimumAction     || prev.minimumAction,
+      rewardPlan:        generated.rewardPlan        || prev.rewardPlan,
+      fallbackPlan:      generated.fallbackPlan      || prev.fallbackPlan,
+    }));
+    toast({ title: "AI system applied!", description: "Review and customize every field to make it yours." });
+  };
 
   const handleAiSuggest = async (field: "trigger" | "minimumAction" | "fallbackPlan") => {
     if (aiSuggesting) return;
@@ -361,7 +376,9 @@ export default function SystemBuilderPage() {
         triggerStatement: form.triggerStatement,
         minimumAction: form.minimumAction,
       });
-      if (suggestion) update(field, suggestion);
+      const formKey: keyof FormData =
+        field === "trigger" ? "triggerStatement" : field;
+      if (suggestion) update(formKey, suggestion);
       toast({ title: "AI suggestion applied!", description: "Feel free to edit it to make it your own." });
     } catch (err: any) {
       toast({ title: "AI suggestion failed", description: err?.message ?? "Please try again.", variant: "destructive" });
@@ -499,6 +516,32 @@ export default function SystemBuilderPage() {
           <span className="text-xs text-muted-foreground">{STEPS.length - step - 1} steps remaining</span>
         </div>
       </div>
+
+      {/* AI System Generator banner — identity step, new systems only */}
+      {currentStepId === "identity" && !isEdit && (
+        <div className="flex items-center gap-3 p-3.5 rounded-xl border border-primary/20 bg-primary/5">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Bot className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground leading-tight">Generate System with AI</p>
+            <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+              Describe your goal — AI will fill every field for you.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="flex-shrink-0 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+            onClick={() => setAiGeneratorOpen(true)}
+            data-testid="button-ai-generate-system"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Generate
+          </Button>
+        </div>
+      )}
 
       {/* Template picker on identity step */}
       {currentStepId === "identity" && !isEdit && templates.length > 0 && (
@@ -979,6 +1022,12 @@ export default function SystemBuilderPage() {
           </div>
         </div>
       </div>
+
+      <AiSystemGenerator
+        open={aiGeneratorOpen}
+        onClose={() => setAiGeneratorOpen(false)}
+        onApply={handleAiGenerate}
+      />
     </div>
   );
 }

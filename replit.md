@@ -47,12 +47,35 @@ Firebase credentials are stored in the `.replit` userenv section and are prefixe
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 
+## AI Integration (Groq)
+
+AI features use the **Groq API** (`llama-3.3-70b-versatile`) called directly from the client via `fetch` — no backend server.
+
+### Environment variable
+- `VITE_GROQ_API_KEY` — Groq API key (stored in `.replit` userenv)
+
+### Files
+- `client/src/services/ai.service.ts` — Core service: `callGroq`, `suggestSystemField`, `generateFullSystem`, `chatWithCoach`, `generateJournalPrompt`, `generateAnalyticsInsights`
+- `client/src/hooks/use-ai.ts` — `useAi<T>(fn)` hook that wraps any AI call with `loading`/`error` state
+- `client/src/components/ai/ai-system-generator.tsx` — Modal dialog: describe a goal → AI fills all system builder fields
+- `client/src/components/ai/ai-chat.tsx` — `<AiChatWidget />` floating bottom-right chat bubble (mounted in `AppLayout`)
+
+### Integration points
+- **System Builder** — "Generate System with AI" banner on step 1 opens `AiSystemGenerator`; per-field "AI Suggest" buttons on trigger/action/fallback steps
+- **Analytics** — "AI Insights" section (TanStack Query cached 30min) with 3 personalized habit insights
+- **AI Coach page** (`/ai-coach`) — Full-page chat with user's system context; accessible via sidebar nav
+- **Floating chat widget** — Available on every authenticated page (bottom-right corner)
+- **Journal** — `generateJournalPrompt` is called when user requests an AI-generated prompt
+
+### Error handling
+All AI calls throw with message `"AI assistant is temporarily unavailable."` on any API failure. Components show toast or inline error — never crash silently.
+
 ## Routes
 - `/` — Landing page (public)
 - `/pricing` — Pricing page (public)
 - `/login`, `/signup`, `/forgot-password` — Auth pages (public only)
 - `/onboarding` — Onboarding flow
-- `/dashboard`, `/goals`, `/systems`, `/templates`, `/checkins`, `/analytics`, `/journal`, `/settings` — Protected app routes
+- `/dashboard`, `/goals`, `/systems`, `/templates`, `/checkins`, `/analytics`, `/journal`, `/settings`, `/ai-coach` — Protected app routes
 
 ## Phase 4 — Visual Design System (implemented)
 All design tokens are defined in `client/src/index.css` and exposed to Tailwind via `tailwind.config.ts`.

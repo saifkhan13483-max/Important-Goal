@@ -1,0 +1,207 @@
+You are a senior full-stack engineer. Your task is to integrate an external LLM API into my existing project called **SystemForge**.
+
+You must follow the current architecture strictly.
+
+---
+
+PROJECT ARCHITECTURE
+
+Framework: React 18 + TypeScript
+Build tool: Vite 7
+Routing: wouter
+Global state: Zustand
+Async state: TanStack Query v5 (object form only)
+UI: shadcn/ui + Radix UI
+Styling: Tailwind CSS
+Backend: None (pure frontend SPA)
+Database: Firebase Firestore
+Auth: Firebase Auth
+Deployment: Vercel static hosting
+
+Important rule:
+Do NOT introduce Express, Node servers, or backend APIs.
+All AI calls must happen directly from the client using fetch.
+
+---
+
+LLM PROVIDER
+
+Provider: Groq
+Model: llama-3.3-70b-versatile
+
+API endpoint:
+
+https://api.groq.com/openai/v1/chat/completions
+
+API key stored in environment variable:
+
+VITE_GROQ_API_KEY
+
+Use this format to access it:
+
+import.meta.env.VITE_GROQ_API_KEY
+
+---
+
+GOAL
+
+Add an AI assistant to SystemForge that helps users:
+
+• convert goals into systems
+• generate identity-based habits
+• improve triggers
+• analyze check-ins
+• generate recovery suggestions
+
+---
+
+IMPLEMENTATION STRUCTURE
+
+Create the following files:
+
+client/src/services/ai.ts
+client/src/hooks/use-ai.ts
+client/src/components/ai/ai-chat.tsx
+client/src/components/ai/ai-system-generator.tsx
+
+---
+
+AI SERVICE
+
+Create a reusable API service in:
+
+client/src/services/ai.ts
+
+Example structure:
+
+export async function callAI(messages) {
+const response = await fetch(
+"https://api.groq.com/openai/v1/chat/completions",
+{
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
+},
+body: JSON.stringify({
+model: "llama-3.3-70b-versatile",
+messages
+})
+}
+);
+
+const data = await response.json();
+
+return data.choices[0].message.content;
+}
+
+---
+
+AI SYSTEM GENERATOR
+
+Add a button on the System Builder page:
+
+"Generate System with AI"
+
+When clicked:
+
+Send prompt to LLM:
+
+User goal: "I want to become consistent at reading"
+
+Expected response format:
+
+Identity:
+"I am someone who reads every day"
+
+Trigger:
+"After I sit on my bed at night"
+
+Action:
+"Read 5 pages"
+
+Reward:
+"Mark system as complete"
+
+Auto-fill the form fields with this output.
+
+---
+
+AI HABIT CHAT
+
+Create a floating chat widget.
+
+Location:
+bottom-right corner of screen.
+
+Features:
+
+• ask habit questions
+• suggest systems
+• motivate users
+• analyze streaks
+
+Messages must include context:
+
+User identity
+Active systems
+Recent checkins
+
+Example:
+
+const context = {
+identity: user.identity,
+systems: systems,
+lastCheckins: checkins.slice(0,7)
+}
+
+Send this context in the system prompt.
+
+---
+
+AI ANALYTICS INSIGHTS
+
+On the analytics page create AI insights.
+
+Example output:
+
+"You complete your meditation system 80% of the time after 8pm."
+
+"You tend to skip workouts on Sundays."
+
+Cache insights with TanStack Query.
+
+---
+
+UI REQUIREMENTS
+
+Follow existing design system:
+
+• Tailwind tokens
+• shadcn components
+• maintain dark mode support
+• WCAG accessibility
+
+---
+
+ERROR HANDLING
+
+Handle API errors gracefully.
+
+If AI fails show message:
+
+"AI assistant is temporarily unavailable."
+
+---
+
+OUTPUT REQUIREMENTS
+
+Provide:
+
+• full TypeScript code
+• React components
+• hooks
+• service file
+• example usage
+
+Ensure the code runs inside a Vite + React + Firebase SPA without backend servers.

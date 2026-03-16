@@ -42,6 +42,7 @@ import Checkins from "@/pages/checkins";
 import Analytics from "@/pages/analytics";
 import Journal from "@/pages/journal";
 import Settings from "@/pages/settings";
+import AiCoach from "@/pages/ai-coach";
 import NotFound from "@/pages/not-found";
 
 /**
@@ -131,6 +132,7 @@ function Router() {
       <Route path="/analytics" component={() => <ProtectedRoute component={Analytics} />} />
       <Route path="/journal" component={() => <ProtectedRoute component={Journal} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+      <Route path="/ai-coach" component={() => <ProtectedRoute component={AiCoach} />} />
 
       {/* 404 */}
       <Route component={NotFound} />

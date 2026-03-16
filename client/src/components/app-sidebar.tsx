@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, Target, Zap, CheckSquare, BarChart2, BookOpen, Settings,
-  Sparkles, LogOut, LayoutGrid, Plus, Calendar,
+  Sparkles, LogOut, LayoutGrid, Plus, Calendar, Bot,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -71,6 +71,12 @@ const navItems = [
     url: "/journal",
     icon: BookOpen,
     hint: "Your daily journal",
+  },
+  {
+    title: "AI Coach",
+    url: "/ai-coach",
+    icon: Bot,
+    hint: "Get personalized habit coaching",
   },
 ];
 
