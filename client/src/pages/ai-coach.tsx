@@ -85,7 +85,6 @@ function TypingDots() {
 function parseMarkdown(text: string) {
   const lines = text.split("\n");
   const elements: JSX.Element[] = [];
-
   lines.forEach((line, idx) => {
     if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
       elements.push(
@@ -107,7 +106,6 @@ function parseMarkdown(text: string) {
       elements.push(<p key={idx}>{renderInline(line)}</p>);
     }
   });
-
   return elements;
 }
 
@@ -148,28 +146,29 @@ function MessageBubble({
 
   return (
     <div
-      className={cn("flex gap-3 group", !isAssistant && "flex-row-reverse")}
+      className={cn("flex gap-2 sm:gap-3 group", !isAssistant && "flex-row-reverse")}
       data-testid={`ai-message-${msg.role}-${index}`}
     >
+      {/* Avatar — hidden on very small screens to save space */}
       <div
         className={cn(
-          "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+          "hidden xs:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full items-center justify-center flex-shrink-0 mt-0.5",
           isAssistant
             ? "bg-primary/10 border border-primary/20"
             : "bg-muted border border-border"
         )}
       >
         {isAssistant ? (
-          <Bot className="w-4 h-4 text-primary" />
+          <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
         ) : (
-          <User className="w-4 h-4 text-muted-foreground" />
+          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
         )}
       </div>
 
-      <div className={cn("flex flex-col gap-1 max-w-[80%]", !isAssistant && "items-end")}>
+      <div className={cn("flex flex-col gap-1 max-w-[88%] sm:max-w-[80%]", !isAssistant && "items-end")}>
         <div
           className={cn(
-            "rounded-2xl px-4 py-3 text-sm leading-relaxed relative",
+            "rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm leading-relaxed",
             isAssistant
               ? "bg-card border border-border/60 text-foreground rounded-tl-sm"
               : "bg-primary text-primary-foreground rounded-tr-sm"
@@ -189,7 +188,8 @@ function MessageBubble({
           {isAssistant && (
             <button
               onClick={handleCopy}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-muted-foreground"
+              /* Always visible on touch; hover-revealed on pointer devices */
+              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-muted-foreground/50 hover:text-muted-foreground"
               aria-label="Copy message"
               data-testid={`button-copy-message-${index}`}
             >
@@ -314,33 +314,35 @@ export default function AiCoach() {
   };
 
   const activeCat = PROMPT_CATEGORIES.find((c) => c.label === activeCategory);
-
   const isFirstMessage = messages.length === 1 && !loading;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+    /* h-full fills the <main> which is flex-1 in the app shell's fixed h-screen column */
+    <div className="flex h-full overflow-hidden">
+
       {/* ── Main chat column ── */}
       <div className="flex flex-col flex-1 min-w-0">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
-          <div className="flex items-center gap-3">
+
+        {/* ── Chat header ── */}
+        <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Bot className="w-5 h-5 text-primary" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-emerald-500 rounded-full border-2 border-background" />
             </div>
             <div>
-              <h1 className="text-base font-semibold leading-tight">AI Habit Coach</h1>
-              <p className="text-xs text-muted-foreground leading-tight">
+              <h1 className="text-sm sm:text-base font-semibold leading-tight">AI Habit Coach</h1>
+              <p className="text-[11px] sm:text-xs text-muted-foreground leading-tight">
                 {loading ? "Thinking…" : "Online · Ready to help"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {sessionMsgCount > 0 && (
-              <Badge variant="secondary" className="text-xs gap-1">
+              <Badge variant="secondary" className="hidden sm:flex text-xs gap-1">
                 <MessageSquare className="w-3 h-3" />
                 {sessionMsgCount} {sessionMsgCount === 1 ? "exchange" : "exchanges"}
               </Badge>
@@ -350,19 +352,48 @@ export default function AiCoach() {
                 variant="ghost"
                 size="sm"
                 onClick={resetChat}
-                className="text-xs text-muted-foreground h-8 gap-1.5"
+                className="text-xs text-muted-foreground h-8 gap-1.5 px-2 sm:px-3"
                 data-testid="button-reset-coach"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                New chat
+                <span className="hidden sm:inline">New chat</span>
               </Button>
             )}
           </div>
         </div>
 
-        {/* Messages area */}
+        {/* ── Mobile stats strip (hidden on lg where sidebar shows this info) ── */}
+        <div className="lg:hidden flex items-center gap-2 px-3 py-2 border-b border-border/50 bg-muted/20 overflow-x-auto flex-shrink-0 scrollbar-none">
+          {bestStreak > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-border/50 flex-shrink-0">
+              <Flame className="w-3 h-3 text-orange-500" />
+              <span className="text-xs font-medium tabular-nums">{bestStreak}d streak</span>
+            </div>
+          )}
+          {totalCheckins > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-border/50 flex-shrink-0">
+              <TrendingUp className="w-3 h-3 text-blue-500" />
+              <span className="text-xs font-medium tabular-nums">{avgCompletion}% avg</span>
+            </div>
+          )}
+          {activeSystems.length > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-border/50 flex-shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="text-xs font-medium">
+                {activeSystems.length} active {activeSystems.length === 1 ? "system" : "systems"}
+              </span>
+            </div>
+          )}
+          {activeSystems.length === 0 && bestStreak === 0 && totalCheckins === 0 && (
+            <p className="text-xs text-muted-foreground/60 px-1">
+              Create habits to personalise your coaching
+            </p>
+          )}
+        </div>
+
+        {/* ── Messages ── */}
         <div
-          className="flex-1 overflow-y-auto px-6 py-5 space-y-5 scroll-smooth"
+          className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5 scroll-smooth"
           data-testid="ai-coach-messages"
         >
           {messages.map((msg, i) => (
@@ -370,11 +401,11 @@ export default function AiCoach() {
           ))}
 
           {loading && (
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-primary/10 border border-primary/20">
-                <Bot className="w-4 h-4 text-primary" />
+            <div className="flex gap-2 sm:gap-3">
+              <div className="hidden xs:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full items-center justify-center flex-shrink-0 bg-primary/10 border border-primary/20">
+                <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
               </div>
-              <div className="bg-card border border-border/60 rounded-2xl rounded-tl-sm px-4 py-3">
+              <div className="bg-card border border-border/60 rounded-2xl rounded-tl-sm px-3 sm:px-4 py-2.5 sm:py-3">
                 <TypingDots />
               </div>
             </div>
@@ -383,29 +414,28 @@ export default function AiCoach() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Quick prompts — shown before first user message */}
+        {/* ── Quick prompts (before first user message) ── */}
         {isFirstMessage && (
-          <div className="px-6 pb-3 space-y-3 flex-shrink-0">
+          <div className="px-3 sm:px-6 pb-3 space-y-2.5 sm:space-y-3 flex-shrink-0">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
               <Sparkles className="w-3 h-3" />
               Choose a topic to get started
             </p>
 
-            <div className="flex flex-wrap gap-2">
+            {/* Category chips — scroll horizontally on very small screens */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:flex-wrap sm:overflow-visible">
               {PROMPT_CATEGORIES.map((cat) => {
                 const Icon = cat.icon;
                 const isActive = activeCategory === cat.label;
                 return (
                   <button
                     key={cat.label}
-                    onClick={() =>
-                      setActiveCategory(isActive ? null : cat.label)
-                    }
+                    onClick={() => setActiveCategory(isActive ? null : cat.label)}
                     className={cn(
-                      "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all font-medium",
+                      "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all font-medium flex-shrink-0 sm:flex-shrink",
                       isActive
                         ? cn(cat.bg, cat.border, cat.color)
-                        : "border-border bg-muted/40 text-muted-foreground hover:border-border hover:bg-muted/80"
+                        : "border-border bg-muted/40 text-muted-foreground hover:bg-muted/80"
                     )}
                     data-testid={`category-${cat.label.toLowerCase()}`}
                   >
@@ -417,12 +447,12 @@ export default function AiCoach() {
             </div>
 
             {activeCat && (
-              <div className={cn("rounded-xl border p-3 space-y-1.5", activeCat.bg, activeCat.border)}>
+              <div className={cn("rounded-xl border p-2.5 sm:p-3 space-y-1.5", activeCat.bg, activeCat.border)}>
                 {activeCat.questions.map((q) => (
                   <button
                     key={q}
                     onClick={() => sendMessage(q)}
-                    className="w-full text-left text-xs px-3 py-2 rounded-lg bg-background/70 hover:bg-background border border-border/40 hover:border-border transition-all flex items-center justify-between gap-2 group"
+                    className="w-full text-left text-xs px-3 py-2 rounded-lg bg-background/70 hover:bg-background active:bg-background border border-border/40 hover:border-border transition-all flex items-center justify-between gap-2 group"
                     data-testid={`starter-question-${q.slice(0, 20).replace(/\s/g, "-")}`}
                   >
                     <span>{q}</span>
@@ -441,22 +471,22 @@ export default function AiCoach() {
           </div>
         )}
 
-        {/* Input area */}
-        <div className="px-6 pb-5 pt-3 border-t border-border flex-shrink-0 bg-background/80 backdrop-blur-sm">
+        {/* ── Input area ── */}
+        <div className="px-3 sm:px-6 pb-4 sm:pb-5 pt-2.5 sm:pt-3 border-t border-border flex-shrink-0 bg-background/80 backdrop-blur-sm">
           <div className="flex gap-2 items-end">
             <div className="flex-1 relative">
               <Textarea
                 ref={textareaRef}
-                placeholder="Ask your coach anything… (Enter to send, Shift+Enter for new line)"
+                placeholder="Ask anything… (Enter to send)"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={2}
-                className="resize-none text-sm pr-2"
+                className="resize-none text-sm pr-8 sm:pr-10"
                 data-testid="input-ai-coach"
               />
               {input.length > 0 && (
-                <span className="absolute bottom-2 right-3 text-[10px] text-muted-foreground/40">
+                <span className="absolute bottom-2.5 right-3 text-[10px] text-muted-foreground/40 pointer-events-none">
                   {input.length}
                 </span>
               )}
@@ -464,20 +494,24 @@ export default function AiCoach() {
             <Button
               onClick={() => sendMessage(input)}
               disabled={!input.trim() || loading}
-              className="self-end h-10 w-10 p-0 flex-shrink-0 rounded-xl"
+              className="self-end h-9 w-9 sm:h-10 sm:w-10 p-0 flex-shrink-0 rounded-xl"
               data-testid="button-send-ai-coach"
               aria-label="Send message"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Button>
           </div>
+          <p className="hidden sm:block text-[10px] text-muted-foreground/40 mt-1.5 text-center">
+            Shift + Enter for new line
+          </p>
         </div>
       </div>
 
-      {/* ── Context sidebar ── */}
+      {/* ── Context sidebar (desktop only) ── */}
       <aside className="hidden lg:flex flex-col w-72 border-l border-border bg-card/40 flex-shrink-0 overflow-y-auto">
         <div className="p-5 space-y-5">
-          {/* Coach section */}
+
+          {/* Coach card */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Your Coach
@@ -488,14 +522,10 @@ export default function AiCoach() {
               </div>
               <div>
                 <p className="text-sm font-medium">AI Habit Coach</p>
-                <p className="text-xs text-muted-foreground">
-                  Powered by behavioral science
-                </p>
+                <p className="text-xs text-muted-foreground">Powered by behavioral science</p>
                 <div className="flex items-center gap-1 mt-1">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                    Online
-                  </span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Online</span>
                 </div>
               </div>
             </div>
@@ -516,7 +546,6 @@ export default function AiCoach() {
                   {bestStreak > 0 ? `${bestStreak}d` : "—"}
                 </span>
               </div>
-
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/50">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
@@ -526,7 +555,6 @@ export default function AiCoach() {
                   {totalCheckins > 0 ? `${avgCompletion}%` : "—"}
                 </span>
               </div>
-
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border/50">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="w-3.5 h-3.5 text-violet-500" />
@@ -558,7 +586,7 @@ export default function AiCoach() {
                 ))}
               </div>
               <p className="text-[10px] text-muted-foreground/60 mt-2 px-1">
-                The coach uses these to personalize responses.
+                The coach uses these to personalise responses.
               </p>
             </div>
           )}
@@ -568,7 +596,7 @@ export default function AiCoach() {
               <Target className="w-4 h-4 text-muted-foreground mx-auto" />
               <p className="text-xs text-muted-foreground">No active systems yet.</p>
               <p className="text-[10px] text-muted-foreground/60">
-                Create a habit system so the coach can give personalized advice.
+                Create a habit system so the coach can give personalised advice.
               </p>
             </div>
           )}
