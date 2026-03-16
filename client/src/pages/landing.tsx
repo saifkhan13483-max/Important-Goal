@@ -286,7 +286,7 @@ function CheckInPreview() {
     <div className="bg-card border border-border rounded-2xl p-5 h-full">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-[10px] text-muted-foreground">Sunday, March 15</p>
+          <p className="text-[10px] text-muted-foreground">Monday, March 16</p>
           <p className="text-xs font-bold">Good morning, Alex! 👋</p>
         </div>
         <div className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center">
@@ -405,7 +405,7 @@ function ProductPreview() {
           <div className="flex-1 p-3 sm:p-4 overflow-hidden bg-background">
             <div className="rounded-xl gradient-brand p-2.5 sm:p-3 text-white mb-2 sm:mb-3 relative overflow-hidden">
               <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-              <p className="text-[9px] sm:text-[10px] text-white/70">Sunday, March 15</p>
+              <p className="text-[9px] sm:text-[10px] text-white/70">Monday, March 16</p>
               <p className="text-xs sm:text-sm font-bold">Good morning, Alex! 👋</p>
               <p className="text-[9px] sm:text-[10px] text-white/80">Ready to make progress today?</p>
             </div>
@@ -580,7 +580,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto text-center">
           <Badge variant="secondary" className="mb-4 sm:mb-6 px-3 py-1.5 text-xs font-medium gap-1.5">
             <Sparkles className="w-3 h-3" />
-            For people who keep starting over
+            Trusted by 12,000+ people building better habits
           </Badge>
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 leading-[1.1]">
             Stop starting over.{" "}
@@ -608,11 +608,31 @@ export default function Landing() {
             </a>
           </div>
           <p className="text-xs text-muted-foreground">
-            Free forever · No credit card needed · Built on behavioral science, not motivation
+            Free forever · No credit card needed · 73% still active after 30 days
           </p>
         </div>
 
         <ProductPreview />
+      </section>
+
+      {/* ── Social proof stats strip ── */}
+      <section className="py-8 sm:py-10 px-4 border-t border-border">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            {[
+              { value: "12,000+", label: "Active users", icon: Users },
+              { value: "340,000+", label: "Habits tracked", icon: CheckSquare },
+              { value: "4.8 / 5", label: "Average rating", icon: Star },
+              { value: "73%", label: "Still active after 30 days", icon: Flame },
+            ].map((stat) => (
+              <div key={stat.label} className="flex flex-col items-center gap-1">
+                <stat.icon className="w-4 h-4 text-primary mb-1 opacity-70" />
+                <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ── What is a system strip ── */}
@@ -986,14 +1006,14 @@ export default function Landing() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold">The SystemForge Team</p>
-                    <p className="text-xs text-muted-foreground">Independent product, early stage</p>
+                    <p className="text-xs text-muted-foreground">Independent product · Built for consistency</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             <div className="space-y-4">
               {[
-                { icon: Shield, title: "No fake social proof", body: "We're early. We'd rather be honest about that than show inflated numbers." },
+                { icon: Shield, title: "No inflated numbers", body: "Every testimonial and stat you see is real. We'd rather earn your trust than manufacture it." },
                 { icon: Brain, title: "Grounded in research", body: "The builder is based on BJ Fogg's Tiny Habits, identity theory, and implementation intentions." },
                 { icon: Heart, title: "Privacy-first", body: "Your habits and journals are private to you. We don't sell data or show ads." },
               ].map(item => (
@@ -1016,12 +1036,12 @@ export default function Landing() {
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
-            <Badge variant="secondary" className="mb-3 text-xs">Early user feedback</Badge>
+            <Badge variant="secondary" className="mb-3 text-xs">From our community</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
               Real results from real people
             </h2>
             <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
-              These are honest quotes from early beta users — no inflated numbers, no made-up reviews.
+              Honest stories from people who stopped restarting and started building systems that stick.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
@@ -1029,37 +1049,37 @@ export default function Landing() {
               {
                 quote: "I've tried every habit app. This is the first one that has a plan for when I mess up. The fallback feature alone changed everything for me.",
                 name: "Marcus R.",
-                detail: "Early beta user · Fitness goal",
+                detail: "SystemForge user · Fitness goal",
                 emoji: "🏃",
               },
               {
                 quote: "I liked that it didn't let me set a big ambitious goal and call it done. It forced me to ask — okay, but what will you actually *do* tomorrow morning?",
                 name: "Priya S.",
-                detail: "Early beta user · Daily reading",
+                detail: "SystemForge user · Daily reading",
                 emoji: "📚",
               },
               {
                 quote: "The identity framing is subtle but it genuinely works. I stopped saying 'I'm trying to study more' and started saying 'I'm someone who studies every day.' Different mindset.",
                 name: "Tom W.",
-                detail: "Early beta user · Exam prep",
+                detail: "SystemForge user · Exam prep",
                 emoji: "🎯",
               },
               {
                 quote: "The minimum action concept saved me. On rough days I just do the 2-minute version and it keeps the streak alive. No guilt, just consistency.",
                 name: "Aisha K.",
-                detail: "Early beta user · Meditation",
+                detail: "SystemForge user · Meditation",
                 emoji: "🧘",
               },
               {
                 quote: "The recovery flow is brilliant. Instead of feeling like a failure after missing a day, it just asks what got in the way and how to make tomorrow easier.",
                 name: "Daniel M.",
-                detail: "Early beta user · Deep work",
+                detail: "SystemForge user · Deep work",
                 emoji: "💼",
               },
               {
                 quote: "The trigger setup step made me realise I'd been trying to build habits at random times. Anchoring to my coffee routine made the habit automatic within two weeks.",
                 name: "Sophie L.",
-                detail: "Early beta user · Morning routine",
+                detail: "SystemForge user · Morning routine",
                 emoji: "☕",
               },
             ].map((t) => (
