@@ -24,12 +24,11 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
   Mic, MicOff, Upload, Play, Pause, RotateCcw, Trash2,
-  Volume2, VolumeX, SkipForward, CheckCircle2, Loader2,
+  Volume2, VolumeX, SkipForward, CheckCircle2,
   AudioWaveform, CloudUpload, AlertCircle,
 } from "lucide-react";
 import {
-  uploadFutureSelfAudioBase64,
-  uploadFutureSelfAudioFile,
+  uploadFutureSelfAudio,
   deleteFutureSelfAudioFromStorage,
   getLocalAudioUrl,
   hasStoredAudio,
@@ -187,35 +186,33 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existin
 
   useEffect(() => () => { stopTimer(); }, []);
 
-  /* ── Upload to Firebase Storage ─────────────────────────────────── */
+  /* ── Upload to Firebase Storage (real progress via uploadBytesResumable) ── */
   const doUpload = useCallback(async (
-    getUrl: () => Promise<string>,
+    blob: Blob,
     b64ForPreview: string,
     mimeType: string,
   ) => {
     setMode("uploading");
+    setUploadProgress(0);
     setUploadError(null);
 
-    // Animate progress while uploading (Firebase SDK doesn't expose granular progress easily with uploadBytes)
-    const ticker = setInterval(() => setUploadProgress(p => Math.min(p + 5, 90)), 200);
     try {
-      const url = await getUrl();
-      clearInterval(ticker);
+      const url = await uploadFutureSelfAudio(
+        blob,
+        mimeType,
+        (pct) => setUploadProgress(pct),
+      );
+
       setUploadProgress(100);
-
-      // Cache locally for instant playback
-      try { localStorage.setItem(LS_AUDIO_URL, url); } catch {}
       try { localStorage.setItem(LS_AUDIO_TYPE, mimeType); } catch {}
-
       setLocalSrc(url);
       setMode("saved");
-      setTimeout(() => setUploadProgress(0), 800);
+      setTimeout(() => setUploadProgress(0), 600);
       onSaved?.(url);
     } catch (err: any) {
-      clearInterval(ticker);
       setUploadProgress(0);
 
-      // If Firebase Storage rejects (rules not configured), fall back to localStorage base64
+      // If Firebase Storage is blocked, fall back to localStorage base64
       if (b64ForPreview.startsWith("data:")) {
         try {
           localStorage.setItem(LS_AUDIO_B64, b64ForPreview);
@@ -223,18 +220,20 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existin
           setLocalSrc(b64ForPreview);
           setMode("saved");
           setUploadError(
-            "Saved locally on this device. Cloud sync unavailable — check Firebase Storage rules."
+            "Saved locally on this device. To sync across devices, configure Firebase Storage rules."
           );
           onSaved?.(b64ForPreview);
           return;
         } catch {}
       }
 
-      setUploadError(
-        err?.message?.includes("storage/unauthorized")
-          ? "Permission denied. Please ensure Firebase Storage rules allow authenticated writes."
-          : (err?.message || "Upload failed. Please try again.")
-      );
+      const msg = err?.code === "storage/unauthorized"
+        ? "Permission denied — Firebase Storage rules need to allow authenticated writes."
+        : err?.message?.includes("timed out")
+          ? "Upload timed out. Check your connection and try again."
+          : (err?.message || "Upload failed. Please try again.");
+
+      setUploadError(msg);
       setMode("preview");
     }
   }, [onSaved]);
@@ -306,23 +305,18 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existin
   };
 
   /* ── Save (trigger Firebase upload) ────────────────────────────── */
-  const saveAudio = () => {
+  const saveAudio = async () => {
     if (!localSrc) return;
     const mime = mimeTypeRef.current;
 
-    if (blobRef.current) {
-      doUpload(
-        () => uploadFutureSelfAudioFile(new File([blobRef.current!], `audio.${mime.split("/")[1] || "audio"}`, { type: mime })),
-        localSrc,
-        mime,
-      );
-    } else {
-      doUpload(
-        () => uploadFutureSelfAudioBase64(localSrc, mime),
-        localSrc,
-        mime,
-      );
+    let blob = blobRef.current;
+    if (!blob && localSrc.startsWith("data:")) {
+      const res = await fetch(localSrc);
+      blob = await res.blob();
     }
+    if (!blob) return;
+
+    doUpload(blob, localSrc, mime);
   };
 
   /* ── Delete ─────────────────────────────────────────────────────── */

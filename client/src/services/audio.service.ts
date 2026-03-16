@@ -4,8 +4,8 @@
  * Uploads the user's personal audio recording to Firebase Storage at:
  *   audio/{userId}/future-self.<ext>
  *
- * The resulting download URL is stored on the Firestore User document
- * (`futureAudioUrl`) and cached in localStorage for fast local playback.
+ * Uses uploadBytesResumable so callers receive real byte-level progress.
+ * Falls back to localStorage base64 if Storage is unreachable or rules block.
  *
  * Storage rules needed in Firebase Console:
  *   match /audio/{userId}/{file} {
@@ -13,14 +13,19 @@
  *   }
  */
 
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 import { storage, auth } from "@/lib/firebase";
 
-const LS_AUDIO_URL   = "sf_future_self_audio_url";
-const LS_AUDIO_B64   = "sf_future_self_audio";
-const LS_AUDIO_TYPE  = "sf_future_self_audio_type";
+const LS_AUDIO_URL  = "sf_future_self_audio_url";
+const LS_AUDIO_B64  = "sf_future_self_audio";
+const LS_AUDIO_TYPE = "sf_future_self_audio_type";
 
-/** Returns the extension for a given MIME type */
+/** Returns the file extension for a given MIME type */
 function extForMime(mimeType: string): string {
   if (mimeType.includes("webm")) return "webm";
   if (mimeType.includes("ogg"))  return "ogg";
@@ -32,49 +37,86 @@ function extForMime(mimeType: string): string {
 }
 
 /**
- * Upload a Blob to Firebase Storage and return the download URL.
- * Also caches the URL in localStorage for offline-first playback.
+ * Upload a Blob to Firebase Storage with real progress callbacks.
+ *
+ * @param blob      - The audio blob to upload
+ * @param mimeType  - MIME type of the blob
+ * @param onProgress - Called with 0–100 as bytes transfer
+ * @param timeoutMs - Abort if upload takes longer than this (default 30 s)
  */
-export async function uploadFutureSelfAudio(
+export function uploadFutureSelfAudio(
   blob: Blob,
   mimeType: string,
+  onProgress?: (pct: number) => void,
+  timeoutMs = 30_000,
 ): Promise<string> {
-  const user = auth.currentUser;
-  if (!user) throw new Error("You must be signed in to save audio.");
+  return new Promise((resolve, reject) => {
+    const user = auth.currentUser;
+    if (!user) {
+      reject(new Error("You must be signed in to save audio."));
+      return;
+    }
 
-  const ext = extForMime(mimeType);
-  const storageRef = ref(storage, `audio/${user.uid}/future-self.${ext}`);
+    const ext = extForMime(mimeType);
+    const storageRef = ref(storage, `audio/${user.uid}/future-self.${ext}`);
+    const task = uploadBytesResumable(storageRef, blob, { contentType: mimeType });
 
-  await uploadBytes(storageRef, blob, { contentType: mimeType });
-  const url = await getDownloadURL(storageRef);
+    const timer = setTimeout(() => {
+      task.cancel();
+      reject(new Error("Upload timed out. Check your internet connection and try again."));
+    }, timeoutMs);
 
-  try { localStorage.setItem(LS_AUDIO_URL, url); } catch {}
-
-  return url;
+    task.on(
+      "state_changed",
+      (snapshot) => {
+        const pct = snapshot.totalBytes > 0
+          ? Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+          : 0;
+        onProgress?.(pct);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+      async () => {
+        clearTimeout(timer);
+        try {
+          const url = await getDownloadURL(task.snapshot.ref);
+          try { localStorage.setItem(LS_AUDIO_URL, url); } catch {}
+          resolve(url);
+        } catch (err) {
+          reject(err);
+        }
+      },
+    );
+  });
 }
 
 /**
- * Convert a base64 data-URL to a Blob and upload it.
- * Used when recording produces a base64 string.
+ * Convert a base64 data-URL to a Blob, then upload with progress.
  */
 export async function uploadFutureSelfAudioBase64(
   base64DataUrl: string,
   mimeType: string,
+  onProgress?: (pct: number) => void,
 ): Promise<string> {
   const res = await fetch(base64DataUrl);
   const blob = await res.blob();
-  return uploadFutureSelfAudio(blob, mimeType);
+  return uploadFutureSelfAudio(blob, mimeType, onProgress);
 }
 
 /**
- * Upload a File object directly (from the file input).
+ * Upload a File object directly (from the file input) with progress.
  */
-export async function uploadFutureSelfAudioFile(file: File): Promise<string> {
-  return uploadFutureSelfAudio(file, file.type || "audio/mpeg");
+export function uploadFutureSelfAudioFile(
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<string> {
+  return uploadFutureSelfAudio(file, file.type || "audio/mpeg", onProgress);
 }
 
 /**
- * Delete the user's stored audio from Firebase Storage.
+ * Delete the user's stored audio file from Firebase Storage.
  */
 export async function deleteFutureSelfAudioFromStorage(
   audioUrl: string,
@@ -86,7 +128,7 @@ export async function deleteFutureSelfAudioFromStorage(
     const storageRef = ref(storage, audioUrl);
     await deleteObject(storageRef);
   } catch {
-    // Ignore — file may already be deleted or path may differ
+    // File may already be deleted or the path may have changed
   }
 
   try {
@@ -97,10 +139,10 @@ export async function deleteFutureSelfAudioFromStorage(
 }
 
 /**
- * Returns the best available audio URL:
- * 1. Cached Firestore URL in localStorage (fastest)
- * 2. The URL passed in from the Firestore User document
- * 3. The legacy base64 from localStorage (for users who haven't re-uploaded)
+ * Returns the best available audio source:
+ *  1. Cached Firebase URL in localStorage (fastest on repeat visits)
+ *  2. The Firestore URL passed from user.futureAudioUrl
+ *  3. Legacy base64 blob in localStorage (pre-cloud-upload recordings)
  */
 export function getLocalAudioUrl(firestoreUrl?: string | null): string | null {
   try {
