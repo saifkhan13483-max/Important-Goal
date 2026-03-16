@@ -559,20 +559,20 @@ function MetricCard({ icon: Icon, label, value, sub, color, hint }: {
 }) {
   return (
     <Card className="hover-elevate">
-      <CardContent className="p-5">
+      <CardContent className="p-3 sm:p-5">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wide">{label}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wide leading-tight">{label}</p>
             <p
-              className="text-2xl font-extrabold leading-none mb-1"
+              className="text-xl sm:text-2xl font-extrabold leading-none mb-1"
               data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}
             >
               {value}
             </p>
-            {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+            {sub && <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">{sub}</p>}
           </div>
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-            <Icon className="w-5 h-5" />
+          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
       </CardContent>
@@ -595,19 +595,19 @@ function EmptyStateCard({
 }) {
   return (
     <Card className="border-primary/20 bg-primary/3">
-      <CardContent className="p-10 md:p-14 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-          <Icon className="w-8 h-8 text-primary" />
+      <CardContent className="p-7 sm:p-10 md:p-14 text-center">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4 sm:mb-5">
+          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
         </div>
-        <h3 className="font-bold text-lg mb-2">{title}</h3>
-        <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto leading-relaxed">{description}</p>
-        <div className="flex gap-3 justify-center flex-wrap">
-          <Link href={primaryAction.href}>
-            <Button data-testid={primaryAction.testId}>{primaryAction.label}</Button>
+        <h3 className="font-bold text-base sm:text-lg mb-2">{title}</h3>
+        <p className="text-muted-foreground text-sm mb-5 sm:mb-6 max-w-sm mx-auto leading-relaxed">{description}</p>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center items-center">
+          <Link href={primaryAction.href} className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto" data-testid={primaryAction.testId}>{primaryAction.label}</Button>
           </Link>
           {secondaryAction && (
-            <Link href={secondaryAction.href}>
-              <Button variant="outline" data-testid={secondaryAction.testId}>
+            <Link href={secondaryAction.href} className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto" data-testid={secondaryAction.testId}>
                 {secondaryAction.label}
               </Button>
             </Link>
@@ -789,16 +789,16 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div
-        className="p-6 max-w-5xl mx-auto space-y-5"
+        className="p-3 sm:p-5 md:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-5"
         aria-busy="true"
         aria-label="Loading dashboard data"
       >
         <span className="sr-only" role="status">Loading your dashboard, please wait…</span>
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        <Skeleton className="h-24 sm:h-28 w-full rounded-2xl" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20 sm:h-24 rounded-xl" />)}
         </div>
-        <Skeleton className="h-40 rounded-xl" />
+        <Skeleton className="h-36 sm:h-40 rounded-xl" />
       </div>
     );
   }
