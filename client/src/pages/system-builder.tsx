@@ -7,6 +7,7 @@ import type { System, Goal, Template } from "@/types/schema";
 import { getGoals } from "@/services/goals.service";
 import { getSystem, createSystem, updateSystem } from "@/services/systems.service";
 import { getPublicTemplates } from "@/services/templates.service";
+import { suggestSystemField } from "@/services/ai.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, ArrowRight, Check, Loader2, Zap, Lightbulb, Target,
-  Clock, Trophy, ShieldCheck, Eye, LayoutTemplate, Brain, Heart, Repeat, Sparkles,
+  Clock, Trophy, ShieldCheck, Eye, LayoutTemplate, Brain, Heart, Repeat, Sparkles, Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -348,6 +349,27 @@ export default function SystemBuilderPage() {
 
   const update = (field: keyof FormData, val: string) => setForm(prev => ({ ...prev, [field]: val }));
 
+  const [aiSuggesting, setAiSuggesting] = useState<string | null>(null);
+
+  const handleAiSuggest = async (field: "trigger" | "minimumAction" | "fallbackPlan") => {
+    if (aiSuggesting) return;
+    setAiSuggesting(field);
+    try {
+      const suggestion = await suggestSystemField(field, {
+        title: form.title,
+        identityStatement: form.identityStatement,
+        triggerStatement: form.triggerStatement,
+        minimumAction: form.minimumAction,
+      });
+      if (suggestion) update(field, suggestion);
+      toast({ title: "AI suggestion applied!", description: "Feel free to edit it to make it your own." });
+    } catch (err: any) {
+      toast({ title: "AI suggestion failed", description: err?.message ?? "Please try again.", variant: "destructive" });
+    } finally {
+      setAiSuggesting(null);
+    }
+  };
+
   const currentStepId = STEPS[step]?.id;
 
   const validationError = (): string | null => {
@@ -629,7 +651,25 @@ export default function SystemBuilderPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold">Describe your trigger</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold">Describe your trigger</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
+                    onClick={() => handleAiSuggest("trigger")}
+                    disabled={!form.title.trim() || !!aiSuggesting}
+                    data-testid="button-ai-suggest-trigger"
+                  >
+                    {aiSuggesting === "trigger" ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Bot className="w-3 h-3" />
+                    )}
+                    AI Suggest
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">Write the exact situation. The more specific, the better it works.</p>
                 <Textarea
                   placeholder="After I [existing habit]… / At [time] when I [context]…"
@@ -648,9 +688,27 @@ export default function SystemBuilderPage() {
           {currentStepId === "action" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="font-semibold">
-                  What's the smallest version of this habit? <span className="text-destructive">*</span>
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold">
+                    What's the smallest version of this habit? <span className="text-destructive">*</span>
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
+                    onClick={() => handleAiSuggest("minimumAction")}
+                    disabled={!form.title.trim() || !!aiSuggesting}
+                    data-testid="button-ai-suggest-action"
+                  >
+                    {aiSuggesting === "minimumAction" ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Bot className="w-3 h-3" />
+                    )}
+                    AI Suggest
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Think: what would you still do if you were sick, tired, or having the worst day? That's your minimum. Keep it tiny on purpose.
                 </p>
@@ -726,7 +784,25 @@ export default function SystemBuilderPage() {
           {currentStepId === "fallback" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="font-semibold">On your worst day, what's the absolute minimum you'll still do?</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold">On your worst day, what's the absolute minimum you'll still do?</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
+                    onClick={() => handleAiSuggest("fallbackPlan")}
+                    disabled={!form.title.trim() || !!aiSuggesting}
+                    data-testid="button-ai-suggest-fallback"
+                  >
+                    {aiSuggesting === "fallbackPlan" ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Bot className="w-3 h-3" />
+                    )}
+                    AI Suggest
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   This is your safety net. It's not failure — it's commitment. Even 1 pushup beats 0 pushups. One sentence beats nothing.
                 </p>

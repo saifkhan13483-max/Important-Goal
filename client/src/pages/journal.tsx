@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
-import type { JournalEntry, Goal } from "@/types/schema";
+import type { JournalEntry, Goal, System } from "@/types/schema";
 import { getJournals, createJournal, updateJournal, deleteJournal } from "@/services/journal.service";
 import { getGoals } from "@/services/goals.service";
+import { getSystems } from "@/services/systems.service";
+import { generateJournalPrompt } from "@/services/ai.service";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
   BookOpen, Plus, Trash2, Pencil, Loader2, X, PenLine,
-  ChevronDown, ChevronUp, Lightbulb, Check, Sparkles,
+  ChevronDown, ChevronUp, Lightbulb, Check, Sparkles, Bot,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -90,12 +92,14 @@ function InlineJournalForm({
   entry,
   userId,
   goals,
+  systemNames = [],
   onClose,
   onSaved,
 }: {
   entry?: JournalEntry;
   userId: string;
   goals: Goal[];
+  systemNames?: string[];
   onClose: () => void;
   onSaved?: () => void;
 }) {
@@ -105,7 +109,22 @@ function InlineJournalForm({
   const [content, setContent] = useState(entry?.content || "");
   const [goalId, setGoalId] = useState(entry?.goalId || "");
   const [showOptions, setShowOptions] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleAiPrompt = async () => {
+    if (aiGenerating) return;
+    setAiGenerating(true);
+    try {
+      const prompt = await generateJournalPrompt({ promptType, systemNames });
+      setAiPrompt(prompt);
+    } catch (err: any) {
+      toast({ title: "Couldn't generate AI prompt", description: err?.message ?? "Please try again.", variant: "destructive" });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const promptInfo = getPromptInfo(promptType);
   const promptData = PROMPTS[promptType] || PROMPTS.daily;
@@ -176,9 +195,36 @@ function InlineJournalForm({
 
       <div className="p-5 space-y-4">
         {/* Prompt display */}
-        <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/15">
-          <Lightbulb className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-foreground leading-relaxed italic">{promptData.prompt}</p>
+        <div className="rounded-xl bg-primary/5 border border-primary/15 overflow-hidden">
+          <div className="flex items-start gap-3 p-3">
+            <Lightbulb className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-foreground leading-relaxed italic flex-1">
+              {aiPrompt || promptData.prompt}
+            </p>
+          </div>
+          {!entry && (
+            <div className="border-t border-primary/10 px-3 py-2 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {aiPrompt ? "AI-generated for your habits" : "Static prompt"}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs gap-1.5 text-primary hover:bg-primary/10"
+                onClick={handleAiPrompt}
+                disabled={aiGenerating}
+                data-testid="button-ai-journal-prompt"
+              >
+                {aiGenerating ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Bot className="w-3 h-3" />
+                )}
+                {aiPrompt ? "Regenerate" : "Personalize with AI"}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Sentence starters */}
