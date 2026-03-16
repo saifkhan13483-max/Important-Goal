@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
 import { getSystems } from "@/services/systems.service";
@@ -120,7 +121,8 @@ export function AiChatWidget() {
     }
   };
 
-  if (!userId) return null;
+  const [location] = useLocation();
+  if (!userId || location === "/ai-coach") return null;
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">

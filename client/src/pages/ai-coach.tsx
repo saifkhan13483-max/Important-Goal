@@ -393,25 +393,28 @@ export default function AiCoach() {
 
         {/* ── Messages ── */}
         <div
-          className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-5 space-y-4 sm:space-y-5 scroll-smooth"
+          className="flex-1 overflow-y-auto px-3 sm:px-6 scroll-smooth"
           data-testid="ai-coach-messages"
         >
-          {messages.map((msg, i) => (
-            <MessageBubble key={i} msg={msg} index={i} />
-          ))}
+          {/* inner flex col pushes messages to the bottom when few exist */}
+          <div className="flex flex-col justify-end min-h-full py-4 sm:py-5 space-y-4 sm:space-y-5">
+            {messages.map((msg, i) => (
+              <MessageBubble key={i} msg={msg} index={i} />
+            ))}
 
-          {loading && (
-            <div className="flex gap-2 sm:gap-3">
-              <div className="hidden xs:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full items-center justify-center flex-shrink-0 bg-primary/10 border border-primary/20">
-                <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+            {loading && (
+              <div className="flex gap-2 sm:gap-3">
+                <div className="hidden xs:flex w-7 h-7 sm:w-8 sm:h-8 rounded-full items-center justify-center flex-shrink-0 bg-primary/10 border border-primary/20">
+                  <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                </div>
+                <div className="bg-card border border-border/60 rounded-2xl rounded-tl-sm px-3 sm:px-4 py-2.5 sm:py-3">
+                  <TypingDots />
+                </div>
               </div>
-              <div className="bg-card border border-border/60 rounded-2xl rounded-tl-sm px-3 sm:px-4 py-2.5 sm:py-3">
-                <TypingDots />
-              </div>
-            </div>
-          )}
+            )}
 
-          <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} />
+          </div>
         </div>
 
         {/* ── Quick prompts (before first user message) ── */}
