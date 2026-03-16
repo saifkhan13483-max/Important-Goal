@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Sparkles, ChevronDown, ArrowRight, HelpCircle } from "lucide-react";
+import { Check, Sparkles, ChevronDown, ArrowRight, HelpCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const plans = [
   {
@@ -150,6 +151,17 @@ function CellValue({ value }: { value: string | boolean }) {
 
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  const handlePaidPlanCTA = (planName: string) => {
+    toast({
+      title: `${planName} plan billing launching soon`,
+      description: "Sign up free now — you'll be first in line to upgrade when paid plans go live.",
+      duration: 5000,
+    });
+    setTimeout(() => navigate("/signup"), 800);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -269,18 +281,35 @@ export default function Pricing() {
                     ))}
                   </div>
 
-                  <Link href={plan.href}>
-                    <Button
-                      variant={plan.ctaVariant}
-                      className={cn(
-                        "w-full",
-                        isPro && "gradient-brand text-white border-0 hover:opacity-90",
-                      )}
-                      data-testid={`button-pricing-${plan.name.toLowerCase().replace(/\s/g, "-")}`}
-                    >
-                      {plan.cta}
-                    </Button>
-                  </Link>
+                  {plan.monthlyPrice === 0 ? (
+                    <Link href={plan.href}>
+                      <Button
+                        variant={plan.ctaVariant}
+                        className="w-full"
+                        data-testid={`button-pricing-${plan.name.toLowerCase().replace(/\s/g, "-")}`}
+                      >
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  ) : (
+                    <div>
+                      <Button
+                        variant={plan.ctaVariant}
+                        className={cn(
+                          "w-full",
+                          isPro && "gradient-brand text-white border-0 hover:opacity-90",
+                        )}
+                        data-testid={`button-pricing-${plan.name.toLowerCase().replace(/\s/g, "-")}`}
+                        onClick={() => handlePaidPlanCTA(plan.name)}
+                      >
+                        {plan.cta}
+                      </Button>
+                      <p className="text-center text-xs text-muted-foreground mt-2 flex items-center justify-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Billing launching soon
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

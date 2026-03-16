@@ -3,6 +3,15 @@
 ## Overview
 SystemForge is a React + Firebase web application that helps users turn goals into daily systems they can follow. It allows users to create goals, break them into repeatable daily actions, track progress, and stay consistent.
 
+## Deployment Status
+- **Deployment target**: Static site (`npm run build` → `dist/`)
+- **Production build**: Verified working (3062 modules, ~558KB gzip)
+- **Market-ready fixes applied**:
+  - Terms & Privacy agreement checkbox added to signup form
+  - Paid plan CTAs on pricing page show "Billing launching soon" note + toast (paid billing not yet integrated)
+  - `robots.txt` and `sitemap.xml` added to `client/public/`
+  - OG image, og:url, twitter:image, twitter:site, and canonical URL meta tags added to `index.html`
+
 ## Architecture
 - **Frontend**: React 18 with TypeScript, Vite as the build tool
 - **Routing**: Wouter (client-side routing)

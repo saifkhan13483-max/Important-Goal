@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthErrorAlert } from "@/components/auth/auth-error-alert";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -21,6 +22,9 @@ const schema = z.object({
   email: z.string().email("Enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string(),
+  agreeToTerms: z.boolean().refine(val => val === true, {
+    message: "You must agree to the Terms and Privacy Policy",
+  }),
 }).refine(d => d.password === d.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -35,7 +39,7 @@ export default function Signup() {
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "", agreeToTerms: false },
   });
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
@@ -89,7 +93,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-xl gradient-brand flex items-center justify-center mx-auto mb-4">
@@ -202,6 +206,38 @@ export default function Signup() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="agreeToTerms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-start gap-2.5">
+                        <FormControl>
+                          <Checkbox
+                            id="agreeToTerms"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-agree-terms"
+                            className="mt-0.5"
+                          />
+                        </FormControl>
+                        <label htmlFor="agreeToTerms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                          I agree to the{" "}
+                          <Link href="/terms" className="text-primary underline underline-offset-2 hover:opacity-80" target="_blank">
+                            Terms of Service
+                          </Link>{" "}
+                          and{" "}
+                          <Link href="/privacy" className="text-primary underline underline-offset-2 hover:opacity-80" target="_blank">
+                            Privacy Policy
+                          </Link>
+                        </label>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <Button
                   type="submit"
                   className="w-full"
