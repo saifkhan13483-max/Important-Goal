@@ -1,4 +1,22 @@
 User-agent: *
 Allow: /
+Allow: /pricing
+Allow: /signup
+Allow: /login
+Allow: /privacy
+Allow: /terms
+
+# Block authenticated app routes — no indexable value for crawlers
+Disallow: /dashboard
+Disallow: /goals
+Disallow: /systems
+Disallow: /templates
+Disallow: /checkins
+Disallow: /analytics
+Disallow: /journal
+Disallow: /settings
+Disallow: /ai-coach
+Disallow: /onboarding
+Disallow: /checkout/
 
 Sitemap: https://systemforge.app/sitemap.xml

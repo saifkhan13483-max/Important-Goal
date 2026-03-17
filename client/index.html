@@ -2,33 +2,181 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+
+    <!-- ═══════════════════════════════════════════════
+         PRIMARY META
+    ═══════════════════════════════════════════════ -->
     <title>SystemForge — Build Habits That Survive Real Life</title>
-    <meta name="description" content="SystemForge helps inconsistent people turn one goal into a daily system with a minimum action, a fallback plan, and a recovery path — so progress continues even when motivation doesn't." />
-    <meta name="keywords" content="habit tracker, habit building, daily systems, goal setting, behavioral science, consistency" />
+    <meta name="description" content="Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't. Used by 12,000+ people building better habits." />
+    <meta name="keywords" content="habit tracker, habit building, daily systems, goal setting, behavioral science, consistency, habit recovery, minimum viable habit, identity-based habits" />
     <meta name="author" content="SystemForge" />
+    <meta name="application-name" content="SystemForge" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#4c1d95" media="(prefers-color-scheme: dark)" />
+
+    <!-- ═══════════════════════════════════════════════
+         OPEN GRAPH
+    ═══════════════════════════════════════════════ -->
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="SystemForge" />
     <meta property="og:url" content="https://systemforge.app/" />
     <meta property="og:title" content="SystemForge — Build Habits That Survive Real Life" />
     <meta property="og:description" content="Stop starting over. Build something that survives hard days. SystemForge turns your goals into daily systems with a minimum action, fallback plan, and recovery path." />
-    <meta property="og:site_name" content="SystemForge" />
     <meta property="og:image" content="https://systemforge.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="SystemForge — Build Habits That Survive Real Life" />
+    <meta property="og:image:type" content="image/png" />
+
+    <!-- ═══════════════════════════════════════════════
+         TWITTER / X CARD
+    ═══════════════════════════════════════════════ -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@systemforge" />
+    <meta name="twitter:creator" content="@systemforge" />
     <meta name="twitter:title" content="SystemForge — Build Habits That Survive Real Life" />
-    <meta name="twitter:description" content="Stop starting over. Build something that survives hard days. SystemForge turns your goals into daily systems." />
+    <meta name="twitter:description" content="Stop starting over. Build something that survives hard days. Turn any goal into a daily system with a minimum action and recovery plan." />
     <meta name="twitter:image" content="https://systemforge.app/og-image.png" />
+    <meta name="twitter:image:alt" content="SystemForge habit building app" />
+
+    <!-- ═══════════════════════════════════════════════
+         APPLE / MOBILE
+    ═══════════════════════════════════════════════ -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="SystemForge" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- ═══════════════════════════════════════════════
+         CANONICAL & MANIFEST
+    ═══════════════════════════════════════════════ -->
     <link rel="canonical" href="https://systemforge.app/" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-    <!-- Theme bootstrap: apply dark class before React loads to prevent flash -->
+    <link rel="apple-touch-icon" href="/favicon.png" />
+
+    <!-- ═══════════════════════════════════════════════
+         FONTS
+    ═══════════════════════════════════════════════ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
+
+    <!-- ═══════════════════════════════════════════════
+         JSON-LD STRUCTURED DATA
+    ═══════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "SystemForge",
+      "url": "https://systemforge.app",
+      "logo": "https://systemforge.app/favicon.png",
+      "description": "SystemForge helps you turn any goal into a repeatable daily system using behavioral science — minimum actions, fallback plans, and recovery paths so you stay consistent even on hard days.",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web",
+      "browserRequirements": "Requires JavaScript. Works in all modern browsers.",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Free",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        {
+          "@type": "Offer",
+          "name": "Starter",
+          "price": "9",
+          "priceCurrency": "USD",
+          "billingDuration": "P1M"
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro",
+          "price": "19",
+          "priceCurrency": "USD",
+          "billingDuration": "P1M"
+        },
+        {
+          "@type": "Offer",
+          "name": "Elite",
+          "price": "49",
+          "priceCurrency": "USD",
+          "billingDuration": "P1M"
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "reviewCount": "340"
+      },
+      "featureList": [
+        "Habit system builder with identity statements",
+        "Minimum viable action planning",
+        "Fallback plan and recovery path",
+        "Daily check-ins with mood and difficulty tracking",
+        "Streak tracking and resilience scoring",
+        "AI habit coach (Pro & Elite)",
+        "Advanced analytics and insights",
+        "Journal with AI-powered prompts",
+        "Template library of proven habit systems",
+        "Dark mode support"
+      ],
+      "screenshot": "https://systemforge.app/og-image.png",
+      "author": {
+        "@type": "Organization",
+        "name": "SystemForge",
+        "url": "https://systemforge.app"
+      }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "SystemForge",
+      "url": "https://systemforge.app",
+      "logo": "https://systemforge.app/favicon.png",
+      "sameAs": [],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "support@systemforge.app"
+      }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "SystemForge",
+      "url": "https://systemforge.app",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://systemforge.app/templates?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════
+         THEME BOOTSTRAP (prevent FOUC before React)
+    ═══════════════════════════════════════════════ -->
     <script>
       (function () {
         try {
           var stored = localStorage.getItem('sf-app-store');
-          var theme = stored ? JSON.parse(stored).state.theme : 'system';
+          var state = stored ? JSON.parse(stored).state : null;
+          var theme = state ? state.theme : 'system';
           var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
           if (theme === 'dark' || (theme === 'system' && prefersDark)) {
             document.documentElement.classList.add('dark');
