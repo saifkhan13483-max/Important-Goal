@@ -18,5 +18,6 @@ Disallow: /settings
 Disallow: /ai-coach
 Disallow: /onboarding
 Disallow: /checkout/
+Disallow: /admin
 
 Sitemap: https://systemforge.app/sitemap.xml

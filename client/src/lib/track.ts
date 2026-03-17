@@ -2,11 +2,14 @@
  * track.ts — Lightweight product analytics event tracker
  *
  * Events are stored in Firestore `analyticsEvents` collection (anonymous-safe)
- * and also forwarded to window.gtag if Google Analytics is configured.
+ * and also forwarded to Google Analytics if VITE_GA_MEASUREMENT_ID is set.
  *
  * Usage:
  *   import { track } from "@/lib/track";
  *   track("checkin_completed", { status: "done", systemId: "..." });
+ *
+ * To enable Google Analytics:
+ *   Set VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX in your environment variables.
  */
 
 import { collection, addDoc } from "firebase/firestore";
@@ -34,6 +37,7 @@ type EventProps = Record<string, string | number | boolean | null | undefined>;
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
+    dataLayer?: unknown[];
   }
 }
 
@@ -43,6 +47,26 @@ try {
   sessionStorage.setItem("sf_session_id", sessionId);
 } catch {
   sessionId = "unknown";
+}
+
+const GA_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
+let gaLoaded = false;
+
+function loadGA(id: string) {
+  if (gaLoaded || typeof window === "undefined") return;
+  gaLoaded = true;
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function gtag() { window.dataLayer!.push(arguments); };
+  window.gtag("js", new Date());
+  window.gtag("config", id, { page_path: window.location.pathname, send_page_view: true });
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+  document.head.appendChild(script);
+}
+
+if (GA_ID && !GA_ID.includes("X")) {
+  loadGA(GA_ID);
 }
 
 export function track(event: EventName, props: EventProps = {}): void {

@@ -420,19 +420,10 @@
 
     <!-- ═══════════════════════════════════════════════
          GOOGLE ANALYTICS 4
-         Replace G-XXXXXXXXXX with your GA4 Measurement ID.
+         Set VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX in your environment to enable.
+         GA is loaded dynamically from track.ts when the env var is present.
          To set up: https://analytics.google.com → Admin → Data Streams → Web
     ═══════════════════════════════════════════════ -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX', {
-        page_path: window.location.pathname,
-        send_page_view: true,
-      });
-    </script>
 
     <!-- ═══════════════════════════════════════════════
          PWA SERVICE WORKER REGISTRATION
