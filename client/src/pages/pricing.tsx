@@ -3,17 +3,21 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Sparkles, ChevronDown, ArrowRight, HelpCircle, Clock } from "lucide-react";
+import { Check, Sparkles, ChevronDown, ArrowRight, HelpCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { getStripe } from "@/lib/stripe";
 
 const plans = [
   {
     name: "Free",
     monthlyPrice: 0,
+    yearlyPrice: 0,
     tagline: "Try system-building for the first time",
     idealFor: "Beginners exploring habit tracking",
     badge: null,
+    stripePriceIdMonthly: null,
+    stripePriceIdYearly: null,
     features: [
       "Up to 2 active goals",
       "Up to 3 active systems",
@@ -36,9 +40,12 @@ const plans = [
   {
     name: "Starter",
     monthlyPrice: 9,
+    yearlyPrice: 7,
     tagline: "Build real consistency",
     idealFor: "Individuals building lasting habits",
     badge: null,
+    stripePriceIdMonthly: import.meta.env.VITE_STRIPE_STARTER_MONTHLY_PRICE_ID || null,
+    stripePriceIdYearly: import.meta.env.VITE_STRIPE_STARTER_YEARLY_PRICE_ID || null,
     features: [
       "Up to 10 active goals",
       "Unlimited systems",
@@ -62,9 +69,12 @@ const plans = [
   {
     name: "Pro",
     monthlyPrice: 19,
+    yearlyPrice: 15,
     tagline: "Deep insights, unlimited potential",
     idealFor: "Ambitious users who want full control",
     badge: "Most Popular",
+    stripePriceIdMonthly: import.meta.env.VITE_STRIPE_PRO_MONTHLY_PRICE_ID || null,
+    stripePriceIdYearly: import.meta.env.VITE_STRIPE_PRO_YEARLY_PRICE_ID || null,
     features: [
       "Unlimited goals",
       "Unlimited systems",
@@ -151,16 +161,50 @@ function CellValue({ value }: { value: string | boolean }) {
 
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
-  const handlePaidPlanCTA = (planName: string) => {
-    toast({
-      title: `${planName} plan billing launching soon`,
-      description: "Sign up free now — you'll be first in line to upgrade when paid plans go live.",
-      duration: 5000,
-    });
-    setTimeout(() => navigate("/signup"), 800);
+  const handlePaidPlanCTA = async (plan: typeof plans[number]) => {
+    const priceId = yearly ? plan.stripePriceIdYearly : plan.stripePriceIdMonthly;
+
+    if (!priceId) {
+      toast({
+        title: "Stripe price not configured",
+        description: "Add VITE_STRIPE_STARTER/PRO_MONTHLY/YEARLY_PRICE_ID env vars with your Stripe Price IDs.",
+        duration: 6000,
+      });
+      return;
+    }
+
+    setLoadingPlan(plan.name);
+    try {
+      const stripe = await getStripe();
+      if (!stripe) {
+        throw new Error("Stripe failed to load. Check your publishable key.");
+      }
+
+      const domain = window.location.origin;
+      const { error } = await stripe.redirectToCheckout({
+        lineItems: [{ price: priceId, quantity: 1 }],
+        mode: "subscription",
+        successUrl: `${domain}/checkout/success?plan=${plan.name.toLowerCase()}`,
+        cancelUrl: `${domain}/pricing`,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    } catch (err: any) {
+      toast({
+        title: "Checkout failed",
+        description: err.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setLoadingPlan(null);
+    }
   };
 
   return (
@@ -229,7 +273,7 @@ export default function Pricing() {
             const price = plan.monthlyPrice === 0
               ? "$0"
               : yearly
-              ? `$${Math.round(plan.monthlyPrice * 0.8)}`
+              ? `$${plan.yearlyPrice}`
               : `$${plan.monthlyPrice}`;
 
             return (
@@ -300,13 +344,20 @@ export default function Pricing() {
                           isPro && "gradient-brand text-white border-0 hover:opacity-90",
                         )}
                         data-testid={`button-pricing-${plan.name.toLowerCase().replace(/\s/g, "-")}`}
-                        onClick={() => handlePaidPlanCTA(plan.name)}
+                        onClick={() => handlePaidPlanCTA(plan)}
+                        disabled={loadingPlan === plan.name}
                       >
-                        {plan.cta}
+                        {loadingPlan === plan.name ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Redirecting...
+                          </>
+                        ) : (
+                          plan.cta
+                        )}
                       </Button>
-                      <p className="text-center text-xs text-muted-foreground mt-2 flex items-center justify-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Billing launching soon
+                      <p className="text-center text-xs text-muted-foreground mt-2">
+                        Powered by Stripe · Secure checkout
                       </p>
                     </div>
                   )}

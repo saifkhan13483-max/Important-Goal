@@ -8,9 +8,21 @@ SystemForge is a React + Firebase web application that helps users turn goals in
 - **Production build**: Verified working (3062 modules, ~558KB gzip)
 - **Market-ready fixes applied**:
   - Terms & Privacy agreement checkbox added to signup form
-  - Paid plan CTAs on pricing page show "Billing launching soon" note + toast (paid billing not yet integrated)
+  - Stripe payment integration added to pricing page (redirectToCheckout)
   - `robots.txt` and `sitemap.xml` added to `client/public/`
   - OG image, og:url, twitter:image, twitter:site, and canonical URL meta tags added to `index.html`
+
+## Stripe Integration
+- **Approach**: Client-side only using `@stripe/stripe-js` `redirectToCheckout` (no backend required)
+- **Keys stored as**: Replit Secrets (`STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`) + env var (`VITE_STRIPE_PUBLISHABLE_KEY` in shared)
+- **NOTE**: Replit Stripe connector was dismissed — keys added manually as secrets instead
+- **Price IDs needed**: Set these env vars with your Stripe Price IDs to enable checkout:
+  - `VITE_STRIPE_STARTER_MONTHLY_PRICE_ID` — Starter plan monthly price ID (price_...)
+  - `VITE_STRIPE_STARTER_YEARLY_PRICE_ID` — Starter plan yearly price ID
+  - `VITE_STRIPE_PRO_MONTHLY_PRICE_ID` — Pro plan monthly price ID
+  - `VITE_STRIPE_PRO_YEARLY_PRICE_ID` — Pro plan yearly price ID
+- **Success page**: `/checkout/success?plan=starter|pro`
+- **Stripe lib**: `client/src/lib/stripe.ts`
 
 ## Architecture
 - **Frontend**: React 18 with TypeScript, Vite as the build tool

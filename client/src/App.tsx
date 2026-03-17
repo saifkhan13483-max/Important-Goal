@@ -45,6 +45,7 @@ import Analytics from "@/pages/analytics";
 import Journal from "@/pages/journal";
 import Settings from "@/pages/settings";
 import AiCoach from "@/pages/ai-coach";
+import CheckoutSuccess from "@/pages/checkout-success";
 import NotFound from "@/pages/not-found";
 
 /**
@@ -137,6 +138,7 @@ function Router() {
       <Route path="/journal" component={() => <ProtectedRoute component={Journal} />} />
       <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
       <Route path="/ai-coach" component={() => <ProtectedRoute component={AiCoach} />} />
+      <Route path="/checkout/success" component={CheckoutSuccess} />
 
       {/* 404 */}
       <Route component={NotFound} />
