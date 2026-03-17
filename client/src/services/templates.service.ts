@@ -112,6 +112,7 @@ export const STATIC_TEMPLATES: Template[] = [
     rewardPlan: "After each session, mark the topic complete and reward with 10 minutes of free time.",
     fallbackPlan: "If I can't do a full session, I will spend 10 minutes reviewing flashcards — any progress counts.",
     isPublic: true,
+    isPremium: true,
   },
   {
     id: "t10",
@@ -124,6 +125,7 @@ export const STATIC_TEMPLATES: Template[] = [
     rewardPlan: "Track how rested and clear-headed I feel the next morning.",
     fallbackPlan: "If the evening is chaotic, I will do 3 slow deep breaths before bed and set tomorrow's top task.",
     isPublic: true,
+    isPremium: true,
   },
   {
     id: "t11",
@@ -136,6 +138,7 @@ export const STATIC_TEMPLATES: Template[] = [
     rewardPlan: "After each session, mark the action done and take a 10-minute walk to clear my head.",
     fallbackPlan: "If I don't have energy to apply, I will spend 10 minutes updating my resume or LinkedIn profile.",
     isPublic: true,
+    isPremium: true,
   },
   {
     id: "t12",
@@ -148,6 +151,7 @@ export const STATIC_TEMPLATES: Template[] = [
     rewardPlan: "After each sprint, take a real break: step outside, make a drink, or listen to one song.",
     fallbackPlan: "If I can only manage 10 minutes, I read one page or watch one short explanation — forward is forward.",
     isPublic: true,
+    isPremium: true,
   },
 ];
 

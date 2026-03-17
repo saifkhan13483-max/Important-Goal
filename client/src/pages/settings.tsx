@@ -519,37 +519,63 @@ export default function Settings() {
         icon={Mic}
         title="Future Self Audio"
         description="A personal message from who you're becoming — played back as a daily reminder"
+        badge={!features.futureSelfAudio ? "Starter+" : undefined}
       >
-        <div className="space-y-6">
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Your recording</p>
-            <FutureSelfAudioSetup
-              compact
-              existingUrl={user?.futureAudioUrl}
-              onSaved={async (url) => {
-                if (url) {
-                  try { await updateProfile({ futureAudioUrl: url } as any); } catch {}
-                } else {
-                  try { await updateProfile({ futureAudioUrl: null } as any); } catch {}
-                }
-              }}
-            />
+        {!features.futureSelfAudio ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-muted/30">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Lock className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium leading-tight">Future Self Audio</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Available on <span className="font-semibold text-primary">Starter</span> and above
+                </p>
+              </div>
+              <Link href="/pricing">
+                <Button size="sm" variant="outline" className="flex-shrink-0 gap-1 text-xs" data-testid="button-upgrade-audio">
+                  Upgrade
+                  <Lock className="w-3 h-3" />
+                </Button>
+              </Link>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed px-1">
+              Record a motivational message to yourself and have it play back automatically to reinforce your identity and keep you on track.
+            </p>
           </div>
-          <div className="border-t border-border/40 pt-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Playback settings</p>
-            <FutureSelfAudioSettings prefs={audioPrefs} onChange={setAudioPrefs} />
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Your recording</p>
+              <FutureSelfAudioSetup
+                compact
+                existingUrl={user?.futureAudioUrl}
+                onSaved={async (url) => {
+                  if (url) {
+                    try { await updateProfile({ futureAudioUrl: url } as any); } catch {}
+                  } else {
+                    try { await updateProfile({ futureAudioUrl: null } as any); } catch {}
+                  }
+                }}
+              />
+            </div>
+            <div className="border-t border-border/40 pt-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Playback settings</p>
+              <FutureSelfAudioSettings prefs={audioPrefs} onChange={setAudioPrefs} />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveAudioPrefs}
+              disabled={updatePending}
+              data-testid="button-save-audio-prefs"
+            >
+              {updatePending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
+              Save Audio Preferences
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSaveAudioPrefs}
-            disabled={updatePending}
-            data-testid="button-save-audio-prefs"
-          >
-            {updatePending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
-            Save Audio Preferences
-          </Button>
-        </div>
+        )}
       </SectionCard>
 
       {/* Data & Privacy */}

@@ -20,6 +20,7 @@ export interface PlanFeatures {
   exportReports: boolean;
   csvPdfExport: boolean;
   darkMode: boolean;
+  futureSelfAudio: boolean;
   prioritySupport: boolean;
 }
 
@@ -46,6 +47,7 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     exportReports: false,
     csvPdfExport: false,
     darkMode: false,
+    futureSelfAudio: false,
     prioritySupport: false,
   },
   starter: {
@@ -63,6 +65,7 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     exportReports: true,
     csvPdfExport: false,
     darkMode: true,
+    futureSelfAudio: true,
     prioritySupport: false,
   },
   pro: {
@@ -80,6 +83,7 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     exportReports: true,
     csvPdfExport: true,
     darkMode: true,
+    futureSelfAudio: true,
     prioritySupport: true,
   },
   elite: {
@@ -97,6 +101,7 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     exportReports: true,
     csvPdfExport: true,
     darkMode: true,
+    futureSelfAudio: true,
     prioritySupport: true,
   },
 };

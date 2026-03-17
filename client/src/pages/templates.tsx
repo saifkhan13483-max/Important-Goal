@@ -120,7 +120,7 @@ export default function TemplatesPage() {
   }, [templates, search, activeCategory]);
 
   const freeTemplates = useMemo(() => {
-    const beginner = templates.filter(t => isBeginnerFriendly(t));
+    const beginner = templates.filter(t => isBeginnerFriendly(t) && !t.isPremium);
     return beginner.slice(0, FREE_TEMPLATE_LIMIT);
   }, [templates]);
 
@@ -234,6 +234,9 @@ export default function TemplatesPage() {
                 {filtered.length} template{filtered.length !== 1 ? "s" : ""}
                 {activeCategory !== "all" ? ` in ${ALL_CATEGORIES.find(c => c.value === activeCategory)?.label}` : ""}
                 {search ? ` matching "${search}"` : ""}
+                {!features.premiumTemplates && (
+                  <span className="ml-1 text-primary font-medium">· 4 Pro templates locked</span>
+                )}
               </>
             ) : (
               <>{FREE_TEMPLATE_LIMIT} starter templates available on your plan</>
@@ -254,22 +257,36 @@ export default function TemplatesPage() {
             </Card>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map(t => (
+              {filtered.map(t => {
+                const isPremiumLocked = !!t.isPremium && !features.premiumTemplates;
+                return (
                 <Card
                   key={t.id}
-                  className="hover-elevate flex flex-col"
+                  className={cn("flex flex-col", isPremiumLocked ? "opacity-70" : "hover-elevate")}
                   data-testid={`template-card-${t.id}`}
                 >
                   <CardContent className="p-5 flex flex-col flex-1">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <h3 className="font-semibold text-sm leading-snug flex-1">{t.title}</h3>
-                      <Badge
-                        variant="outline"
-                        className={`text-xs flex-shrink-0 ${categoryColor(t.category)}`}
-                        data-testid={`badge-category-${t.id}`}
-                      >
-                        {categoryLabel(t.category)}
-                      </Badge>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {isPremiumLocked && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] gap-1 text-primary border-primary/30 bg-primary/5"
+                            data-testid={`badge-premium-${t.id}`}
+                          >
+                            <Sparkles className="w-2.5 h-2.5" />
+                            Pro
+                          </Badge>
+                        )}
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${categoryColor(t.category)}`}
+                          data-testid={`badge-category-${t.id}`}
+                        >
+                          {categoryLabel(t.category)}
+                        </Badge>
+                      </div>
                     </div>
                     {isBeginnerFriendly(t) && (
                       <div className="flex items-center gap-1 mb-2">
@@ -308,24 +325,40 @@ export default function TemplatesPage() {
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        onClick={() => setSelectedTemplate(t)}
+                        onClick={() => !isPremiumLocked && setSelectedTemplate(t)}
+                        disabled={isPremiumLocked}
                         data-testid={`button-view-template-${t.id}`}
                       >
                         Preview
                       </Button>
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleUseTemplate(t)}
-                        data-testid={`button-use-template-${t.id}`}
-                      >
-                        Use Template
-                        <ArrowRight className="w-3 h-3 ml-1" />
-                      </Button>
+                      {isPremiumLocked ? (
+                        <Link href="/pricing" className="flex-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full gap-1 text-primary border-primary/30 bg-primary/5 hover:bg-primary/10"
+                            data-testid={`button-upgrade-template-${t.id}`}
+                          >
+                            <Lock className="w-3 h-3" />
+                            Upgrade to Pro
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleUseTemplate(t)}
+                          data-testid={`button-use-template-${t.id}`}
+                        >
+                          Use Template
+                          <ArrowRight className="w-3 h-3 ml-1" />
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </>

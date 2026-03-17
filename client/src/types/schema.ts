@@ -102,4 +102,5 @@ export interface Template {
   rewardPlan?: string | null;
   fallbackPlan?: string | null;
   isPublic?: boolean | null;
+  isPremium?: boolean | null;
 }

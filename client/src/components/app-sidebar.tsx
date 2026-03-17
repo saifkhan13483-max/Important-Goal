@@ -18,6 +18,7 @@ import { getSystems } from "@/services/systems.service";
 import { getCheckinsByDate } from "@/services/checkins.service";
 import type { System, Checkin } from "@/types/schema";
 import { cn } from "@/lib/utils";
+import { getPlanFeatures } from "@/lib/plan-limits";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,6 +87,7 @@ export function AppSidebar() {
   const { user: appUser } = useAppStore();
   const { toast } = useToast();
   const userId = appUser?.id ?? "";
+  const features = getPlanFeatures(appUser?.plan);
   const today = getTodayKey();
 
   const { data: systems = [] } = useQuery<System[]>({
@@ -170,9 +172,9 @@ export function AppSidebar() {
               {navItems.map((item) => {
                 const isActive = location === item.url || location.startsWith(item.url + "/");
 
-                // Add badge for today's progress on the check-in nav item
                 const showBadge = item.url === "/checkins" && completionPct !== null && !allDone;
                 const showComplete = item.url === "/checkins" && allDone;
+                const showProBadge = item.url === "/ai-coach" && !features.aiCoach;
 
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -193,6 +195,15 @@ export function AppSidebar() {
                             className="ml-auto text-[10px] px-1.5 py-0 h-4 bg-primary/15 text-primary"
                           >
                             {todayDone}/{todayTotal}
+                          </Badge>
+                        )}
+                        {showProBadge && (
+                          <Badge
+                            variant="outline"
+                            className="ml-auto text-[10px] px-1.5 py-0 h-4 border-primary/30 text-primary bg-primary/5"
+                            data-testid="badge-ai-coach-pro"
+                          >
+                            Pro
                           </Badge>
                         )}
                       </Link>
