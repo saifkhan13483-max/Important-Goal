@@ -7,8 +7,9 @@ interface RouteProps {
 }
 
 export function ProtectedRoute({ component: Component }: RouteProps) {
-  const { user } = useAppStore();
+  const { user, isAuthLoading } = useAppStore();
 
+  if (isAuthLoading) return null;
   if (!user) return <Redirect to="/login" />;
   if (!user.onboardingCompleted) return <Redirect to="/onboarding" />;
 
