@@ -9,10 +9,15 @@
  *     the UI immediately reflects it
  *   - The ThemeContext still exposes { theme, setTheme } so every consumer
  *     (AppLayout toggle, Settings page, Onboarding) works unchanged
+ *
+ * Plan enforcement: Free-tier users are restricted to light mode. The stored
+ * theme value is preserved (so it activates automatically if they upgrade),
+ * but the applied CSS class is forced to light when plan === "free".
  */
 
 import { createContext, useContext, useEffect } from "react";
 import { useAppStore, type Theme } from "@/store/auth.store";
+import { getPlanFeatures } from "@/lib/plan-limits";
 
 const ThemeContext = createContext<{
   theme: Theme;
@@ -20,11 +25,16 @@ const ThemeContext = createContext<{
 }>({ theme: "system", setTheme: () => {} });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { theme, setTheme } = useAppStore();
+  const { theme, setTheme, user } = useAppStore();
+  const features = getPlanFeatures(user?.plan);
 
   useEffect(() => {
     const root = document.documentElement;
     const applyTheme = (t: Theme) => {
+      if (!features.darkMode) {
+        root.classList.remove("dark");
+        return;
+      }
       const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const isDark = t === "dark" || (t === "system" && systemDark);
       root.classList.toggle("dark", isDark);
@@ -32,13 +42,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     applyTheme(theme);
 
-    if (theme === "system") {
+    if (features.darkMode && theme === "system") {
       const mql = window.matchMedia("(prefers-color-scheme: dark)");
       const handler = () => applyTheme("system");
       mql.addEventListener("change", handler);
       return () => mql.removeEventListener("change", handler);
     }
-  }, [theme]);
+  }, [theme, features.darkMode]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
