@@ -457,25 +457,47 @@ function RecoveryFlowModal({
             </div>
           )}
 
-          {/* ── MISSED: step 3 — final ── */}
+          {/* ── MISSED: step 3 — micro-commitment ── */}
           {checkinStatus === "skipped" && step === 3 && (
-            <div className="space-y-4 text-center">
-              <div className="text-5xl">🔁</div>
-              <p className="text-lg font-bold text-foreground">System still alive.</p>
-              <div className="text-sm text-muted-foreground leading-relaxed space-y-1">
-                <p>It's paused, not broken.</p>
-                <p className="font-semibold text-foreground">Showing up tomorrow is what matters.</p>
-              </div>
+            <div className="space-y-4">
+              <div className="text-4xl text-center">🎯</div>
+              <p className="text-lg font-bold text-center">One commitment before you go.</p>
+              <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                Name the single thing you'll do tomorrow to restart. Make it so small it almost feels like cheating.
+              </p>
               {intention && (
-                <div className="bg-primary/8 border border-primary/20 rounded-xl p-3 text-left">
-                  <p className="text-xs font-semibold text-primary mb-1">Your plan:</p>
+                <div className="bg-primary/8 border border-primary/20 rounded-xl p-3">
+                  <p className="text-xs font-semibold text-primary mb-1">Your recovery plan:</p>
                   <p className="text-sm text-foreground">{intention}</p>
                 </div>
               )}
-              <Button className="w-full" onClick={handleFinish} data-testid="button-recovery-finish">
+              <Textarea
+                placeholder="e.g. Tomorrow at 7am I'll do just 5 minutes of my habit — nothing more."
+                value={customNote}
+                onChange={e => setCustomNote(e.target.value)}
+                rows={3}
+                className="text-sm"
+                data-testid="input-recovery-micro-commitment"
+                autoFocus
+              />
+              <Button
+                className="w-full"
+                onClick={() => {
+                  if (customNote.trim()) setIntention(customNote.trim());
+                  handleFinish();
+                }}
+                data-testid="button-recovery-finish"
+              >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                I'll be back tomorrow
+                I commit — see you tomorrow
               </Button>
+              <button
+                className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+                onClick={handleFinish}
+                data-testid="button-recovery-skip-commitment"
+              >
+                Skip for now
+              </button>
             </div>
           )}
         </div>

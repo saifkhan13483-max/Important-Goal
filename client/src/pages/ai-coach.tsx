@@ -215,11 +215,15 @@ export default function AiCoach() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const [input, setInput] = useState("");
+  const welcomeMessage = useMemo(() => {
+    const name = user?.name ? `, ${user.name.split(" ")[0]}` : "";
+    return `Hi${name}! I'm your AI habit coach — I know your systems, your streaks, and where you're headed.\n\nI'm here to help you build unbreakable consistency, work through setbacks, and keep your habits aligned with your goals. No generic advice — everything I tell you is specific to you.\n\nWhat's on your mind today?`;
+  }, [user?.name]);
+
   const [messages, setMessages] = useState<(ChatMessage & { timestamp?: Date })[]>([
     {
       role: "assistant",
-      content:
-        "Hi! I'm your AI habit coach. I know about your systems and can help you design better habits, stay consistent, and work through challenges.\n\nWhat's on your mind today?",
+      content: welcomeMessage,
       timestamp: new Date(),
     },
   ]);
@@ -254,6 +258,25 @@ export default function AiCoach() {
     return Math.round((done / totalCheckins) * 100);
   }, [allCheckins, totalCheckins]);
 
+  const consecutiveMissedDays = useMemo(() => {
+    if (!allCheckins.length) return 0;
+    const today = new Date();
+    let missed = 0;
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const dayCheckins = allCheckins.filter((c) => c.date === key);
+      const hasDone = dayCheckins.some((c) => c.status === "done" || c.status === "partial");
+      if (!hasDone && activeSystems.length > 0) {
+        missed++;
+      } else {
+        break;
+      }
+    }
+    return missed;
+  }, [allCheckins, activeSystems]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -274,7 +297,7 @@ export default function AiCoach() {
     try {
       const reply = await chatWithCoach(
         updatedMessages.map(({ role, content }) => ({ role, content })),
-        { systemNames, bestStreak, userName: user?.name }
+        { systemNames, bestStreak, userName: user?.name, avgCompletion, consecutiveMissedDays }
       );
       setMessages((prev) => [
         ...prev,
@@ -302,8 +325,7 @@ export default function AiCoach() {
     setMessages([
       {
         role: "assistant",
-        content:
-          "Hi! I'm your AI habit coach. I know about your systems and can help you design better habits, stay consistent, and work through challenges.\n\nWhat's on your mind today?",
+        content: welcomeMessage,
         timestamp: new Date(),
       },
     ]);
