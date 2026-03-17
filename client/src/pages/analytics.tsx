@@ -305,7 +305,7 @@ export default function Analytics() {
         weakestSystem: weakestSystemForAi,
         userName: user?.name,
       }),
-    enabled: !!userId && analytics.totalCheckins >= 3 && !isLoading,
+    enabled: !!userId && features.aiAnalyticsInsights && analytics.totalCheckins >= 3 && !isLoading,
     staleTime: 1000 * 60 * 30,
     retry: false,
   });

@@ -12,6 +12,7 @@ import {
   Bot, Send, X, MessageCircle, Loader2, Minimize2, User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getPlanFeatures } from "@/lib/plan-limits";
 import type { System, Checkin } from "@/types/schema";
 
 const STARTER_QUESTIONS = [
@@ -93,6 +94,7 @@ export function AiChatWidget() {
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const features = getPlanFeatures(user?.plan);
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -218,7 +220,7 @@ export function AiChatWidget() {
   };
 
   const [location] = useLocation();
-  if (!userId || location === "/ai-coach") return null;
+  if (!userId || !features.aiCoach || location === "/ai-coach") return null;
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
