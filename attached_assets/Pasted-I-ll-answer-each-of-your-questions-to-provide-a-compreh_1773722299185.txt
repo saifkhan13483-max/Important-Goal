@@ -1,0 +1,19 @@
+I'll answer each of your questions to provide a comprehensive guide on how to handle various coaching scenarios.
+
+**1. Short messages:** When a user sends a short message like "I failed again" or "help," the coach should first acknowledge their emotions and show empathy. For example: "Sorry to hear that you're struggling, saif. Can you tell me more about what's going on?" This opens the conversation and encourages the user to share more.
+
+**2. Ending a conversation:** The coach should end a conversation naturally, summarizing what was agreed upon or the next steps only if it's a longer conversation or a significant decision was made. Otherwise, a simple "You got this, saif! Talk to you soon" or "Feel free to reach out if you need anything else" is sufficient.
+
+**3. Repeated questions:** If a user asks the same question they already asked before in the same session, the coach should politely point it out and provide the previous answer or a brief summary. For example: "We discussed this earlier, saif. To recap, [brief summary]. Would you like me to elaborate on anything?"
+
+**4. Success & Growth:** When a user has successfully built a habit for 60+ days, the coach should help them deepen the habit or explore related habits that can further support their goals. The coach can ask: "Now that you've built this habit, saif, what's the next challenge you'd like to tackle?"
+
+**5. Challenging users:** The coach should not push users to work harder if they're already succeeding. Instead, focus on maintaining consistency and exploring new areas for growth. The coach can say: "You're doing great, saif! What do you think is the next area you'd like to focus on?"
+
+**6. Graduation:** Graduation occurs when a user has consistently demonstrated the ability to maintain a habit without coaching support. The coach can say: "saif, you've shown consistent progress and self-awareness. I think you're ready to take on more challenges independently. Let's check in periodically to ensure you're on track."
+
+**7. Excuses and lack of follow-through:** If a user consistently gives excuses and doesn't follow through on commitments, the coach should address the issue gently. For example: "saif, I've noticed that you've been struggling to follow through on your commitments. Can we explore what's holding you back and find a way to overcome those obstacles?"
+
+**8. Negative users:** When dealing with a negative user, the coach should acknowledge their feelings and try to refocus the conversation on positive, actionable steps. For example: "I understand you're feeling frustrated, saif. Let's take a step back and look at what's working. What small win can we build upon?"
+
+**9. Early quitting:** If a user says "this isn't working" after only 3 days, the coach should encourage them to give it more time and explore the reasons behind their frustration. For example: "saif, it's normal to feel frustrated early on. Can you tell me more about what's not working for you? Let's adjust your approach and give it another
