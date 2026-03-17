@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Bot, Send, X, MessageCircle, Loader2, Minimize2,
+  Bot, Send, X, MessageCircle, Loader2, Minimize2, User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { System, Checkin } from "@/types/schema";
@@ -21,6 +21,72 @@ const STARTER_QUESTIONS = [
   "What's my minimum action for tomorrow?",
 ];
 
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={i}>{part.slice(2, -2)}</strong>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
+function parseMarkdown(text: string) {
+  const lines = text.split("\n");
+  const elements: JSX.Element[] = [];
+  lines.forEach((line, idx) => {
+    if (line.startsWith("### ")) {
+      elements.push(
+        <p key={idx} className="font-semibold text-xs mt-1.5 first:mt-0">
+          {renderInline(line.slice(4))}
+        </p>
+      );
+    } else if (line.startsWith("## ")) {
+      elements.push(
+        <p key={idx} className="font-bold text-xs mt-1.5 first:mt-0">
+          {renderInline(line.slice(3))}
+        </p>
+      );
+    } else if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
+      elements.push(
+        <p key={idx} className="font-semibold mt-1 first:mt-0">
+          {line.slice(2, -2)}
+        </p>
+      );
+    } else if (line.match(/^[\-\*•]\s/)) {
+      elements.push(
+        <li key={idx} className="ml-3 list-disc list-outside">
+          {renderInline(line.replace(/^[\-\*•]\s/, ""))}
+        </li>
+      );
+    } else if (line.match(/^\d+\.\s/)) {
+      elements.push(
+        <li key={idx} className="ml-3 list-decimal list-outside">
+          {renderInline(line.replace(/^\d+\.\s/, ""))}
+        </li>
+      );
+    } else if (line.startsWith("> ")) {
+      elements.push(
+        <p key={idx} className="border-l-2 border-primary/40 pl-2 italic text-muted-foreground">
+          {renderInline(line.slice(2))}
+        </p>
+      );
+    } else if (line.trim() === "") {
+      if (idx > 0 && lines[idx - 1].trim() !== "") {
+        elements.push(<div key={idx} className="h-1" />);
+      }
+    } else {
+      elements.push(<p key={idx}>{renderInline(line)}</p>);
+    }
+  });
+  return elements;
+}
+
 export function AiChatWidget() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
@@ -30,11 +96,14 @@ export function AiChatWidget() {
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
+
+  const welcomeMessage = useMemo(() => {
+    const name = user?.name ? `, ${user.name.split(" ")[0]}` : "";
+    return `Hi${name}! I'm your AI habit coach. Ask me anything about building better habits or staying consistent.`;
+  }, [user?.name]);
+
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content: "Hi! I'm your AI habit coach. Ask me anything about building better habits or staying consistent.",
-    },
+    { role: "assistant", content: welcomeMessage },
   ]);
   const [loading, setLoading] = useState(false);
 
@@ -53,7 +122,7 @@ export function AiChatWidget() {
   const activeSystems = systems.filter((s) => s.active);
   const systemNames = activeSystems.map((s) => s.title);
 
-  const bestStreak = (() => {
+  const bestStreak = useMemo(() => {
     if (!allCheckins.length) return 0;
     const grouped: Record<string, string[]> = {};
     for (const c of allCheckins) {
@@ -75,7 +144,32 @@ export function AiChatWidget() {
       best = Math.max(best, max);
     }
     return best;
-  })();
+  }, [allCheckins]);
+
+  const avgCompletion = useMemo(() => {
+    if (!allCheckins.length) return 0;
+    const done = allCheckins.filter((c) => c.status === "done").length;
+    return Math.round((done / allCheckins.length) * 100);
+  }, [allCheckins]);
+
+  const consecutiveMissedDays = useMemo(() => {
+    if (!allCheckins.length) return 0;
+    const today = new Date();
+    let missed = 0;
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const dayCheckins = allCheckins.filter((c) => c.dateKey === key);
+      const hasDone = dayCheckins.some((c) => c.status === "done" || c.status === "partial");
+      if (!hasDone && activeSystems.length > 0) {
+        missed++;
+      } else {
+        break;
+      }
+    }
+    return missed;
+  }, [allCheckins, activeSystems]);
 
   useEffect(() => {
     if (open) {
@@ -101,6 +195,8 @@ export function AiChatWidget() {
         systemNames,
         bestStreak,
         userName: user?.name,
+        avgCompletion,
+        consecutiveMissedDays,
       });
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err: any) {
@@ -126,7 +222,6 @@ export function AiChatWidget() {
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
-      {/* Chat panel */}
       {open && (
         <div
           className="w-[340px] sm:w-[380px] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up"
@@ -182,12 +277,11 @@ export function AiChatWidget() {
                       : "bg-muted border border-border",
                   )}
                 >
-                  <Bot
-                    className={cn(
-                      "w-3 h-3",
-                      msg.role === "assistant" ? "text-primary" : "text-muted-foreground",
-                    )}
-                  />
+                  {msg.role === "assistant" ? (
+                    <Bot className="w-3 h-3 text-primary" />
+                  ) : (
+                    <User className="w-3 h-3 text-muted-foreground" />
+                  )}
                 </div>
                 <div
                   className={cn(
@@ -197,7 +291,11 @@ export function AiChatWidget() {
                       : "bg-primary text-primary-foreground",
                   )}
                 >
-                  {msg.content}
+                  {msg.role === "assistant" ? (
+                    <div className="space-y-0.5">{parseMarkdown(msg.content)}</div>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               </div>
             ))}

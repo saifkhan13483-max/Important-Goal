@@ -86,7 +86,19 @@ function parseMarkdown(text: string) {
   const lines = text.split("\n");
   const elements: JSX.Element[] = [];
   lines.forEach((line, idx) => {
-    if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
+    if (line.startsWith("### ")) {
+      elements.push(
+        <p key={idx} className="font-semibold text-sm mt-2 first:mt-0">
+          {renderInline(line.slice(4))}
+        </p>
+      );
+    } else if (line.startsWith("## ")) {
+      elements.push(
+        <p key={idx} className="font-bold text-sm mt-2 first:mt-0">
+          {renderInline(line.slice(3))}
+        </p>
+      );
+    } else if (line.startsWith("**") && line.endsWith("**") && line.length > 4) {
       elements.push(
         <p key={idx} className="font-semibold mt-1 first:mt-0">
           {line.slice(2, -2)}
@@ -97,6 +109,19 @@ function parseMarkdown(text: string) {
         <li key={idx} className="ml-3 list-disc list-outside">
           {renderInline(line.replace(/^[\-\*•]\s/, ""))}
         </li>
+      );
+    } else if (line.match(/^\d+\.\s/)) {
+      const content = line.replace(/^\d+\.\s/, "");
+      elements.push(
+        <li key={idx} className="ml-3 list-decimal list-outside">
+          {renderInline(content)}
+        </li>
+      );
+    } else if (line.startsWith("> ")) {
+      elements.push(
+        <p key={idx} className="border-l-2 border-primary/40 pl-3 italic text-muted-foreground">
+          {renderInline(line.slice(2))}
+        </p>
       );
     } else if (line.trim() === "") {
       if (idx > 0 && lines[idx - 1].trim() !== "") {
@@ -266,7 +291,7 @@ export default function AiCoach() {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const dayCheckins = allCheckins.filter((c) => c.date === key);
+      const dayCheckins = allCheckins.filter((c) => c.dateKey === key);
       const hasDone = dayCheckins.some((c) => c.status === "done" || c.status === "partial");
       if (!hasDone && activeSystems.length > 0) {
         missed++;

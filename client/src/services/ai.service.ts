@@ -745,7 +745,7 @@ export async function chatWithCoach(
       },
       ...messages,
     ],
-    650,
+    800,
   );
 }
 
