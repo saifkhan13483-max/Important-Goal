@@ -1,21 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import type { ViteDevServer } from "vite";
+import type { IncomingMessage, ServerResponse } from "http";
 
 const isReplit = process.env.REPL_ID !== undefined;
 
-/**
- * Vite plugin that silences the PostCSS "no `from` option" warning.
- *
- * Root cause: Tailwind CSS v3 makes internal `postcss().process(css)` calls
- * without passing `from` in opts. PostCSS 8.5.8 (lazy-result.js:428) emits
- * the warning via `console.warn` — unconditionally, before any plugin
- * lifecycle hook runs. In Vite 7 (ESM), patching the CJS module cache has
- * no effect because PostCSS is loaded as an ES module.
- *
- * Fix: intercept `console.warn` at config-resolution time and drop only the
- * specific "from option" message. All other warnings pass through unchanged.
- */
 function suppressPostCSSFromWarning() {
   return {
     name: "suppress-postcss-from-warning",
@@ -35,6 +25,61 @@ function suppressPostCSSFromWarning() {
   };
 }
 
+/**
+ * groqProxyPlugin — adds a server-side /api/groq-proxy endpoint to the Vite
+ * dev server so the GROQ_API_KEY never reaches the browser. The key is read
+ * from process.env.GROQ_API_KEY (no VITE_ prefix, therefore not bundled).
+ */
+function groqProxyPlugin() {
+  return {
+    name: "groq-proxy",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(
+        "/api/groq-proxy",
+        (req: IncomingMessage, res: ServerResponse) => {
+          if (req.method !== "POST") {
+            res.statusCode = 405;
+            res.end("Method Not Allowed");
+            return;
+          }
+          const key = process.env.GROQ_API_KEY;
+          if (!key) {
+            res.statusCode = 503;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: "AI unavailable" }));
+            return;
+          }
+          let body = "";
+          req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+          req.on("end", async () => {
+            try {
+              const upstream = await fetch(
+                "https://api.groq.com/openai/v1/chat/completions",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${key}`,
+                  },
+                  body,
+                },
+              );
+              const data = await upstream.json();
+              res.statusCode = upstream.status;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify(data));
+            } catch {
+              res.statusCode = 502;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: "AI unavailable" }));
+            }
+          });
+        },
+      );
+    },
+  };
+}
+
 export default defineConfig(async () => {
   const replitPlugins = isReplit
     ? await Promise.all([
@@ -45,7 +90,7 @@ export default defineConfig(async () => {
     : [];
 
   return {
-    plugins: [suppressPostCSSFromWarning(), react(), ...replitPlugins],
+    plugins: [suppressPostCSSFromWarning(), groqProxyPlugin(), react(), ...replitPlugins],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "client", "src"),

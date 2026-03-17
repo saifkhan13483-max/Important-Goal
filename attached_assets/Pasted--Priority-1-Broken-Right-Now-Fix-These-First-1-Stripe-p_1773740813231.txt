@@ -1,0 +1,59 @@
+🔴 Priority 1 — Broken Right Now (Fix These First)
+1. Stripe payment links are empty
+Every VITE_STRIPE_*_LINK env variable is an empty string. Users who click "Get Starter," "Get Pro," or "Get Elite" go nowhere. You have a full pricing page but zero revenue path. Set up your Stripe payment links and fill in those environment variables.
+
+2. GROQ API key is exposed in the browser
+Your AI Coach calls the Groq API directly from the frontend, which means your secret API key (VITE_GROQ_API_KEY) is visible to any user who opens browser DevTools. Any person can copy it and use it for free. This needs to move behind a server-side proxy endpoint.
+
+3. The OG social share image doesn't exist
+Your og:image and twitter:image both point to https://systemforge.app/og-image.png — a file that doesn't exist. Every link shared on Twitter, LinkedIn, or WhatsApp shows a broken image, which destroys first impressions at the top of the funnel.
+
+4. Google Analytics is wired up but the script is never loaded
+Your track.ts calls window.gtag(...) but there is no GA script tag in index.html. You're sending zero analytics data, meaning you have no visibility into traffic, conversions, or drop-off.
+
+🟠 Priority 2 — Conversion & Growth Killers
+5. No sitemap.xml or robots.txt
+Your public pages (/, /pricing, /templates, /privacy, /terms) are not crawlable in a structured way. Google can find them eventually, but without a sitemap you're leaving organic SEO speed on the table. A robots.txt also prevents auth pages from being indexed.
+
+6. No JSON-LD structured data
+You have solid meta tags, but no Schema.org markup. Adding WebApplication and FAQPage structured data to your landing page can unlock rich results in Google (your FAQ section is a perfect candidate) and meaningfully improve CTR.
+
+7. No scroll restoration on route change
+When a user navigates between pages, scroll position isn't reset. Users land mid-page on /pricing after clicking from the landing page. Small UX detail, massive friction signal.
+
+8. No referral or social sharing flow
+You have a Share2 icon in the dashboard and a streak_shared event in your tracking, but there's no actual sharing mechanic. A "Share your streak" feature with a pre-written tweet or link is a zero-cost viral loop that compounds over time.
+
+9. The "12,000+ users" social proof is static copy
+This number is hardcoded in the landing page. If it's not real yet, sophisticated users will notice the disconnect. Either replace it with a real live counter from Firestore or swap it for vaguer social proof ("Join thousands of people building better habits") until the number is accurate.
+
+🟡 Priority 3 — Retention & Experience Gaps
+10. No push notification or reminder delivery
+Your settings page has a bell icon and toggle for reminders, and ReminderChecker runs in App.tsx, but there's no actual push notification delivery (no service worker push, no scheduled email). Users who opt in to reminders receive nothing, which erodes trust.
+
+11. No service worker or offline support
+You have a manifest.json (PWA-ready), but no service worker. The app can't be installed reliably and has zero offline capability. A basic service worker caching static assets would make the app feel significantly faster on repeat visits and enable genuine "Add to Home Screen" on mobile — very relevant for a daily habit app.
+
+12. No email verification enforcement
+Firebase Auth is set up but email verification isn't enforced before users access the app. This means junk signups inflate your user count and your "12,000+ users" stat becomes less meaningful. A post-signup "verify your email" gate would improve data quality and reduce churn from abandoned accounts.
+
+13. No data export (despite being listed as a paid feature)
+Export reports appear on the Starter and Pro plan feature lists but the functionality isn't implemented anywhere in the codebase. This is a trust issue — users pay for something listed as included and find it missing.
+
+14. No rate limiting on the AI Coach
+Free-tier users can send unlimited messages to the AI Coach. The PlanGate component gates access at the page level, but there's no per-user message limit enforced once a free user finds a workaround or if the gate is bypassed. This will burn API budget quickly at scale.
+
+🟢 Priority 4 — Polish & Long-Term Health
+15. No error tracking (Sentry or equivalent)
+You have an ErrorBoundary component which is great, but errors are silently swallowed with no external reporting. You'll never know when real users are hitting crashes unless you add error tracking.
+
+16. No A/B testing on the CTA
+The landing page has one primary CTA ("Build My System Free"). Even a simple experiment on CTA copy, button color, or hero headline could meaningfully improve signup conversion. The event tracking infrastructure you already built is a solid foundation for this.
+
+17. No loading state on the landing page email capture
+The email capture form in the landing page uses a Loader2 spinner but the submit state experience could be tightened — currently there's no success confirmation message that persists after submission, just a toast that disappears.
+
+18. No canonical tags on inner pages
+Your index.html has a single canonical URL (https://systemforge.app/) but dynamic pages like /pricing and /terms don't set their own canonical. In a SPA, this should be handled via a head management library (like react-helmet-async) so each route declares its own canonical and title — important once you have multiple indexed pages.
+
+Bottom line: The three things that need to be fixed before anything else are the Stripe links (no revenue), the Groq API key exposure (security risk), and the missing OG image (broken social sharing). Everything else is a growth and retention issue, not a broken product issue.

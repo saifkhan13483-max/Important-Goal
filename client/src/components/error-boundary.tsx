@@ -1,6 +1,24 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+function reportErrorToFirestore(error: Error, componentStack: string | null | undefined) {
+  try {
+    addDoc(collection(db, "errorReports"), {
+      message: error.message,
+      name: error.name,
+      stack: error.stack ?? "",
+      componentStack: componentStack ?? "",
+      path: typeof window !== "undefined" ? window.location.pathname : "/",
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+  } catch {
+    // Never let error reporting crash the app
+  }
+}
 
 interface Props {
   children: ReactNode;
@@ -40,6 +58,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("[ErrorBoundary] Uncaught error:", error, info.componentStack);
+
+    if (!isChunkLoadError(error)) {
+      reportErrorToFirestore(error, info.componentStack);
+    }
 
     if (isChunkLoadError(error)) {
       const alreadyRetried = sessionStorage.getItem(CHUNK_RELOAD_KEY);

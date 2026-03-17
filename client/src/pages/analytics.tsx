@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useAppStore } from "@/store/auth.store";
@@ -19,12 +19,37 @@ import {
 import {
   Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
   Trophy, AlertCircle, Star, CheckSquare, Lightbulb,
-  TrendingDown, Heart, Award, Smile, Dumbbell, Bot, Loader2, Sparkles,
+  TrendingDown, Heart, Award, Smile, Dumbbell, Bot, Loader2, Sparkles, Download,
 } from "lucide-react";
 import { generateAnalyticsInsights, type AnalyticsInsight } from "@/services/ai.service";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
 import { PlanGate } from "@/components/plan-gate";
+
+function exportToCsv(rows: Record<string, unknown>[], filename: string) {
+  if (rows.length === 0) return;
+  const headers = Object.keys(rows[0]);
+  const lines = [
+    headers.join(","),
+    ...rows.map((r) =>
+      headers
+        .map((h) => {
+          const val = r[h] == null ? "" : String(r[h]);
+          return val.includes(",") || val.includes('"') || val.includes("\n")
+            ? `"${val.replace(/"/g, '""')}"`
+            : val;
+        })
+        .join(","),
+    ),
+  ];
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function MetricCard({ label, value, sub, icon: Icon, color }: any) {
   const rawNum = typeof value === "number" ? value : parseFloat(String(value).replace(/[^0-9.]/g, ""));
@@ -98,6 +123,28 @@ export default function Analytics() {
   });
 
   const isLoading = systemsLoading || goalsLoading || checkinsLoading;
+
+  const handleExportCsv = useCallback(() => {
+    const systemsById = Object.fromEntries(systems.map((s) => [s.id, s.title]));
+    const goalsById = Object.fromEntries(goals.map((g) => [g.id, g.title]));
+
+    const checkinsRows = checkins.map((c) => ({
+      date: c.date,
+      systemTitle: systemsById[c.systemId] ?? c.systemId,
+      goalTitle: c.goalId ? (goalsById[c.goalId] ?? c.goalId) : "",
+      done: c.done ? "yes" : "no",
+      mood: c.mood ?? "",
+      difficulty: c.difficulty ?? "",
+      note: c.note ?? "",
+    }));
+
+    if (checkinsRows.length === 0) {
+      alert("No data to export yet — complete some check-ins first!");
+      return;
+    }
+
+    exportToCsv(checkinsRows, `systemforge-checkins-${new Date().toISOString().slice(0, 10)}.csv`);
+  }, [checkins, systems, goals]);
 
   const analytics = useMemo(
     () => computeAnalytics(checkins, systems, goals),
@@ -339,11 +386,23 @@ export default function Analytics() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Progress Insights</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Track your consistency and growth over time
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold">Progress Insights</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Track your consistency and growth over time
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleExportCsv}
+          disabled={isLoading || checkins.length === 0}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+          data-testid="button-export-csv"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Export CSV
+        </button>
       </div>
 
       {/* AI-powered insights — Pro/Elite only */}

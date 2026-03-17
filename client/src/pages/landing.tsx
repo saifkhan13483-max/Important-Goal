@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,21 @@ import {
 import { cn } from "@/lib/utils";
 import { captureEmailLead } from "@/services/user.service";
 import { track } from "@/lib/track";
+import { Helmet } from "react-helmet-async";
+
+function useCtaVariant(): "A" | "B" {
+  return useMemo(() => {
+    try {
+      const stored = localStorage.getItem("sf_cta_variant");
+      if (stored === "A" || stored === "B") return stored;
+      const v = Math.random() < 0.5 ? "A" : "B";
+      localStorage.setItem("sf_cta_variant", v);
+      return v;
+    } catch {
+      return "A";
+    }
+  }, []);
+}
 
 const allFeatures = [
   {
@@ -632,6 +647,7 @@ export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("onboarding");
+  const ctaVariant = useCtaVariant();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -641,6 +657,11 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Helmet>
+        <title>SystemForge — Build Habits That Survive Hard Days</title>
+        <link rel="canonical" href="https://systemforge.app/" />
+        <meta name="description" content="Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't. Free to start." />
+      </Helmet>
       {/* Phase 5 — Skip link for keyboard users */}
       <a href="#main-content" className="skip-to-content">
         Skip to main content
@@ -733,7 +754,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto text-center">
           <Badge variant="secondary" className="mb-4 sm:mb-6 px-3 py-1.5 text-xs font-medium gap-1.5 inline-flex flex-wrap justify-center">
             <Sparkles className="w-3 h-3 flex-shrink-0" />
-            Trusted by 12,000+ people building better habits
+            Trusted by thousands of people building better habits
           </Badge>
           <h1 className="text-[1.75rem] leading-[1.15] sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 sm:leading-[1.1]">
             Stop starting over.{" "}
@@ -749,8 +770,14 @@ export default function Landing() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4 sm:mb-6 px-2 sm:px-0">
             <Link href="/signup" className="w-full sm:w-auto">
-              <Button size="lg" className="btn-scale gap-2 h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full" data-testid="button-hero-cta">
-                Build My System Free
+              <Button
+                size="lg"
+                className="btn-scale gap-2 h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full"
+                data-testid="button-hero-cta"
+                data-cta-variant={ctaVariant}
+                onClick={() => track("hero_cta_click", { variant: ctaVariant })}
+              >
+                {ctaVariant === "A" ? "Build My System Free" : "Start Building — It's Free"}
                 <ArrowRight className="w-4 h-4 flex-shrink-0" />
               </Button>
             </Link>
@@ -775,7 +802,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { value: "12,000+", label: "Active users", icon: Users },
+              { value: "10K+", label: "Active users", icon: Users },
               { value: "340,000+", label: "Habits tracked", icon: CheckSquare },
               { value: "4.8 / 5", label: "Average rating", icon: Star },
               { value: "73%", label: "Still active after 30 days", icon: Flame },

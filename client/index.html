@@ -8,7 +8,7 @@
          PRIMARY META
     ═══════════════════════════════════════════════ -->
     <title>SystemForge — Build Habits That Survive Real Life</title>
-    <meta name="description" content="Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't. Used by 12,000+ people building better habits." />
+    <meta name="description" content="Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't. Join thousands of people building habits that survive real life." />
     <meta name="keywords" content="habit tracker, habit building, daily systems, goal setting, behavioral science, consistency, habit recovery, minimum viable habit, identity-based habits" />
     <meta name="author" content="SystemForge" />
     <meta name="application-name" content="SystemForge" />
@@ -416,6 +416,22 @@
         }
       ]
     }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════
+         GOOGLE ANALYTICS 4
+         Replace G-XXXXXXXXXX with your GA4 Measurement ID.
+         To set up: https://analytics.google.com → Admin → Data Streams → Web
+    ═══════════════════════════════════════════════ -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX', {
+        page_path: window.location.pathname,
+        send_page_view: true,
+      });
     </script>
 
     <!-- ═══════════════════════════════════════════════

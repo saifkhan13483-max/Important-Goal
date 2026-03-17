@@ -1,23 +1,64 @@
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 
-function getApiKey(): string {
-  return (import.meta as any).env?.VITE_GROQ_API_KEY ?? "";
+// ---------------------------------------------------------------------------
+// Rate limiting — stored in localStorage, keyed by UTC date.
+// Limits: free = 15 messages/day, starter = 60, pro/elite = unlimited.
+// ---------------------------------------------------------------------------
+const DAILY_AI_LIMITS: Record<string, number> = {
+  free: 15,
+  starter: 60,
+  pro: Infinity,
+  elite: Infinity,
+};
+
+const RATE_LIMIT_KEY = "sf_ai_usage";
+
+interface AiUsage {
+  date: string;
+  count: number;
 }
 
+function getTodayKey(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
+function getAiUsage(): AiUsage {
+  try {
+    const raw = localStorage.getItem(RATE_LIMIT_KEY);
+    if (!raw) return { date: getTodayKey(), count: 0 };
+    const parsed = JSON.parse(raw) as AiUsage;
+    if (parsed.date !== getTodayKey()) return { date: getTodayKey(), count: 0 };
+    return parsed;
+  } catch {
+    return { date: getTodayKey(), count: 0 };
+  }
+}
+
+function incrementAiUsage(): void {
+  const usage = getAiUsage();
+  try {
+    localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ date: usage.date, count: usage.count + 1 }));
+  } catch { /* ignore */ }
+}
+
+export function checkAiRateLimit(plan: string | null | undefined): { allowed: boolean; remaining: number; limit: number } {
+  const tier = plan ?? "free";
+  const limit = DAILY_AI_LIMITS[tier] ?? DAILY_AI_LIMITS.free;
+  const usage = getAiUsage();
+  const remaining = Math.max(0, limit === Infinity ? 999 : limit - usage.count);
+  return { allowed: usage.count < limit, remaining, limit };
+}
+
+// ---------------------------------------------------------------------------
+// Proxy call — routes through /api/groq-proxy so the API key stays server-side.
+// ---------------------------------------------------------------------------
 async function callGroq(
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
   maxTokens = 512,
 ): Promise<string> {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new Error("AI assistant is temporarily unavailable.");
-
-  const response = await fetch(GROQ_API_URL, {
+  const response = await fetch("/api/groq-proxy", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: GROQ_MODEL,
       messages,
@@ -27,15 +68,12 @@ async function callGroq(
   });
 
   if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(
-      body.includes("invalid_api_key")
-        ? "AI assistant is temporarily unavailable."
-        : "AI assistant is temporarily unavailable.",
-    );
+    throw new Error("AI assistant is temporarily unavailable.");
   }
 
   const data = await response.json();
+  if (data.error) throw new Error("AI assistant is temporarily unavailable.");
+  incrementAiUsage();
   return (data.choices?.[0]?.message?.content ?? "").trim();
 }
 
