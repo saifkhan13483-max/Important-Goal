@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, Target, Zap, CheckSquare, BarChart2, BookOpen, Settings,
-  Sparkles, LogOut, LayoutGrid, Plus, Calendar, Bot,
+  Sparkles, LogOut, LayoutGrid, Plus, Calendar, Bot, Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -78,6 +78,12 @@ const navItems = [
     url: "/ai-coach",
     icon: Bot,
     hint: "Get personalized habit coaching",
+  },
+  {
+    title: "Team Workspace",
+    url: "/workspace",
+    icon: Users,
+    hint: "Collaborate with your team",
   },
 ];
 
@@ -175,6 +181,7 @@ export function AppSidebar() {
                 const showBadge = item.url === "/checkins" && completionPct !== null && !allDone;
                 const showComplete = item.url === "/checkins" && allDone;
                 const showProBadge = item.url === "/ai-coach" && !features.aiCoach;
+                const showEliteBadge = item.url === "/workspace" && !features.teamWorkspace;
 
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -204,6 +211,14 @@ export function AppSidebar() {
                             data-testid="badge-ai-coach-pro"
                           >
                             Pro
+                          </Badge>
+                        )}
+                        {showEliteBadge && (
+                          <Badge
+                            className="ml-auto text-[10px] px-1.5 py-0 h-4 bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0"
+                            data-testid="badge-workspace-elite"
+                          >
+                            Elite
                           </Badge>
                         )}
                       </Link>

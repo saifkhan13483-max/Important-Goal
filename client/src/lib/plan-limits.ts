@@ -15,6 +15,7 @@ export interface PlanFeatures {
   moodCorrelation: boolean;
   fullTemplates: boolean;
   premiumTemplates: boolean;
+  customTemplates: boolean;
   advancedJournaling: boolean;
   aiJournalPrompt: boolean;
   exportReports: boolean;
@@ -22,6 +23,9 @@ export interface PlanFeatures {
   darkMode: boolean;
   futureSelfAudio: boolean;
   prioritySupport: boolean;
+  dedicatedSupport: boolean;
+  teamWorkspace: boolean;
+  coachDashboard: boolean;
 }
 
 const LIMITS: Record<PlanTier, PlanLimits> = {
@@ -42,6 +46,7 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     moodCorrelation: false,
     fullTemplates: false,
     premiumTemplates: false,
+    customTemplates: false,
     advancedJournaling: false,
     aiJournalPrompt: false,
     exportReports: false,
@@ -49,6 +54,9 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     darkMode: false,
     futureSelfAudio: false,
     prioritySupport: false,
+    dedicatedSupport: false,
+    teamWorkspace: false,
+    coachDashboard: false,
   },
   starter: {
     aiCoach: false,
@@ -60,6 +68,7 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     moodCorrelation: false,
     fullTemplates: true,
     premiumTemplates: false,
+    customTemplates: false,
     advancedJournaling: true,
     aiJournalPrompt: false,
     exportReports: true,
@@ -67,6 +76,9 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     darkMode: true,
     futureSelfAudio: true,
     prioritySupport: false,
+    dedicatedSupport: false,
+    teamWorkspace: false,
+    coachDashboard: false,
   },
   pro: {
     aiCoach: true,
@@ -78,6 +90,7 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     moodCorrelation: true,
     fullTemplates: true,
     premiumTemplates: true,
+    customTemplates: false,
     advancedJournaling: true,
     aiJournalPrompt: true,
     exportReports: true,
@@ -85,6 +98,9 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     darkMode: true,
     futureSelfAudio: true,
     prioritySupport: true,
+    dedicatedSupport: false,
+    teamWorkspace: false,
+    coachDashboard: false,
   },
   elite: {
     aiCoach: true,
@@ -96,6 +112,7 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     moodCorrelation: true,
     fullTemplates: true,
     premiumTemplates: true,
+    customTemplates: true,
     advancedJournaling: true,
     aiJournalPrompt: true,
     exportReports: true,
@@ -103,6 +120,9 @@ const FEATURES: Record<PlanTier, PlanFeatures> = {
     darkMode: true,
     futureSelfAudio: true,
     prioritySupport: true,
+    dedicatedSupport: true,
+    teamWorkspace: true,
+    coachDashboard: true,
   },
 };
 

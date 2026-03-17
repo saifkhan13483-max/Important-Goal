@@ -104,3 +104,20 @@ export interface Template {
   isPublic?: boolean | null;
   isPremium?: boolean | null;
 }
+
+export interface WorkspaceMember {
+  userId: string;
+  email: string;
+  name: string;
+  role: "owner" | "member";
+  joinedAt: string;
+}
+
+export interface Workspace {
+  id: string;
+  ownerId: string;
+  name: string;
+  inviteCode: string;
+  members: WorkspaceMember[];
+  createdAt: string;
+}

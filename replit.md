@@ -60,7 +60,21 @@ SystemForge is a React + Firebase web application that helps users turn goals in
   - **Analytics** (`/analytics`): Free → 4 stat cards only; Starter+ → charts, streaks, consistency, goal breakdown; Pro/Elite → AI insights + mood correlation
   - **Templates** (`/templates`): Free → 3 beginner templates (no search/filter) + upgrade notice; Starter+ → full library with search and filters
   - **Journal** (`/journal`): Free/Starter → "Personalize with AI" button shown as locked; Pro/Elite → active AI journal prompt
+  - **Team Workspace** (`/workspace`): Free/Starter/Pro → PlanGate wall; Elite → full workspace with multi-user collaboration and coach dashboard
 - **Pattern**: `{features.someFlag && <Component />}` for section-level gating; `<PlanGate compact>` for inline upgrade prompts
+
+## Elite Plan Features (Team Workspace)
+- **Route**: `/workspace` — protected, lazy-loaded
+- **Service**: `client/src/services/workspace.service.ts` — Firestore `workspaces` collection
+- **Types**: `Workspace`, `WorkspaceMember` added to `client/src/types/schema.ts`
+- **Features**:
+  - Create workspace with custom name + auto-generated 6-char invite code
+  - Join workspace by entering invite code (any plan can join)
+  - Members tab: per-member card with active systems, best streak, completion rate, weekly rate, 7-day heat bar
+  - Coach Dashboard tab: table view of all members with systems, streak, and 7-day rate
+  - Owner can remove members; non-owners can leave
+  - Owner can regenerate invite code (invalidates old invites)
+- **Sidebar**: "Team Workspace" nav item; shows "Elite" badge for non-elite users; still navigable to trigger PlanGate
 
 ## Architecture
 - **Frontend**: React 18 with TypeScript, Vite as the build tool
