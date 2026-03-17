@@ -21,6 +21,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { isAtSystemLimit, getPlanLimits, planDisplayName } from "@/lib/plan-limits";
 
 const frequencyLabels: Record<string, string> = {
   daily: "Daily",
@@ -276,8 +277,35 @@ export default function SystemsPage() {
     return goals.find(g => g.id === goalId)?.title;
   };
 
+  const plan = user?.plan;
+  const systemLimit = getPlanLimits(plan).systems;
+  const atSystemLimit = isAtSystemLimit(plan, systems.length);
+
   const activeSystems = systems.filter(s => s.active);
   const pausedSystems = systems.filter(s => !s.active);
+
+  const handleNewSystem = (e: React.MouseEvent) => {
+    if (atSystemLimit) {
+      e.preventDefault();
+      toast({
+        title: `System limit reached`,
+        description: `Your ${planDisplayName(plan)} plan allows up to ${systemLimit} systems. Upgrade to create more.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDuplicate = (system: System) => {
+    if (atSystemLimit) {
+      toast({
+        title: `System limit reached`,
+        description: `Your ${planDisplayName(plan)} plan allows up to ${systemLimit} systems. Upgrade to create more.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    duplicateMutation.mutate(system);
+  };
 
   return (
     <div className="p-5 md:p-6 max-w-5xl mx-auto space-y-6">
@@ -294,10 +322,15 @@ export default function SystemsPage() {
               : `${activeSystems.length} active · ${pausedSystems.length} paused`}
           </p>
         </div>
-        <Link href="/systems/new">
-          <Button className="gap-2" data-testid="button-new-system">
+        <Link href="/systems/new" onClick={handleNewSystem}>
+          <Button
+            className="gap-2"
+            data-testid="button-new-system"
+            variant={atSystemLimit ? "outline" : "default"}
+            disabled={atSystemLimit}
+          >
             <Plus className="w-4 h-4" />
-            Build System
+            {atSystemLimit ? `Limit reached (${systems.length}/${systemLimit})` : "Build System"}
           </Button>
         </Link>
       </div>
@@ -423,7 +456,7 @@ export default function SystemsPage() {
                     systemCheckins={allCheckins.filter(c => c.systemId === system.id)}
                     streak={streaks[system.id] ?? 0}
                     onToggleActive={(id, active) => toggleActive.mutate({ id, active })}
-                    onDuplicate={duplicateMutation.mutate}
+                    onDuplicate={handleDuplicate}
                     onDelete={setDeleteSystemItem}
                   />
                 ))}
@@ -448,7 +481,7 @@ export default function SystemsPage() {
                     systemCheckins={allCheckins.filter(c => c.systemId === system.id)}
                     streak={streaks[system.id] ?? 0}
                     onToggleActive={(id, active) => toggleActive.mutate({ id, active })}
-                    onDuplicate={duplicateMutation.mutate}
+                    onDuplicate={handleDuplicate}
                     onDelete={setDeleteSystemItem}
                   />
                 ))}
@@ -459,7 +492,7 @@ export default function SystemsPage() {
       )}
 
       {/* Nudge to build more */}
-      {systems.length > 0 && activeSystems.length < 5 && (
+      {systems.length > 0 && activeSystems.length < 5 && !atSystemLimit && (
         <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50">
           <div>
             <p className="text-sm font-medium">Ready to build another system?</p>
@@ -468,6 +501,24 @@ export default function SystemsPage() {
           <Link href="/systems/new">
             <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" data-testid="button-build-another">
               Build another
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Upgrade nudge when at system limit */}
+      {atSystemLimit && (
+        <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
+          <div>
+            <p className="text-sm font-medium">System limit reached</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Your {planDisplayName(plan)} plan allows up to {systemLimit} systems. Upgrade to create more.
+            </p>
+          </div>
+          <Link href="/pricing">
+            <Button size="sm" className="gap-1.5 flex-shrink-0" data-testid="button-upgrade-systems">
+              Upgrade
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </Link>

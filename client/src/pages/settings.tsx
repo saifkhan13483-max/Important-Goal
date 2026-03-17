@@ -15,13 +15,14 @@ import {
   Loader2, Sun, Moon, Monitor, LogOut, User, Palette, Globe,
   Bell, Shield, HelpCircle, Sparkles, Zap, Target, BookOpen,
   ChevronRight, ExternalLink, Heart, BellRing, BellOff, Mic,
-  CreditCard, Crown,
+  CreditCard, Crown, Lock,
 } from "lucide-react";
 import { STRIPE_CUSTOMER_PORTAL_URL } from "@/lib/stripe";
 import type { PlanTier } from "@/types/schema";
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { FutureSelfAudioSetup, FutureSelfAudioSettings } from "@/components/future-self-audio";
+import { getPlanFeatures } from "@/lib/plan-limits";
 
 const timezones = [
   "UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
@@ -170,6 +171,7 @@ function BillingCard({ plan }: { plan: PlanTier }) {
 
 export default function Settings() {
   const { user } = useAppStore();
+  const features = getPlanFeatures(user?.plan);
   const { updateProfile, updatePending, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -353,29 +355,48 @@ export default function Settings() {
         description="Customize how SystemForge looks"
       >
         <div className="space-y-2">
-          <Label>Theme</Label>
+          <div className="flex items-center justify-between">
+            <Label>Theme</Label>
+            {!features.darkMode && (
+              <Link href="/pricing">
+                <Badge variant="secondary" className="text-[10px] cursor-pointer hover:bg-primary/10 gap-1">
+                  <Lock className="w-2.5 h-2.5" />
+                  Starter+ only
+                </Badge>
+              </Link>
+            )}
+          </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { value: "light", label: "Light", icon: Sun, desc: "Clean and bright" },
-              { value: "dark", label: "Dark", icon: Moon, desc: "Easy on the eyes" },
-              { value: "system", label: "System", icon: Monitor, desc: "Follows your OS" },
-            ].map(({ value, label, icon: Icon, desc }) => (
-              <button
-                key={value}
-                onClick={() => setTheme(value as any)}
-                data-testid={`button-theme-${value}`}
-                className={cn(
-                  "flex flex-col items-center gap-1.5 p-4 rounded-xl border transition-all",
-                  theme === value
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
-                )}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="text-xs font-semibold">{label}</span>
-                <span className="text-[10px] text-muted-foreground">{desc}</span>
-              </button>
-            ))}
+              { value: "light", label: "Light", icon: Sun, desc: "Clean and bright", requiresDarkMode: false },
+              { value: "dark", label: "Dark", icon: Moon, desc: "Easy on the eyes", requiresDarkMode: true },
+              { value: "system", label: "System", icon: Monitor, desc: "Follows your OS", requiresDarkMode: true },
+            ].map(({ value, label, icon: Icon, desc, requiresDarkMode }) => {
+              const locked = requiresDarkMode && !features.darkMode;
+              return (
+                <button
+                  key={value}
+                  onClick={() => !locked && setTheme(value as any)}
+                  data-testid={`button-theme-${value}`}
+                  disabled={locked}
+                  className={cn(
+                    "relative flex flex-col items-center gap-1.5 p-4 rounded-xl border transition-all",
+                    locked
+                      ? "border-border/40 text-muted-foreground/40 cursor-not-allowed opacity-50"
+                      : theme === value
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-xs font-semibold">{label}</span>
+                  <span className="text-[10px] text-muted-foreground">{desc}</span>
+                  {locked && (
+                    <Lock className="w-3 h-3 absolute top-2 right-2 text-muted-foreground/60" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </SectionCard>

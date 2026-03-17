@@ -5,7 +5,8 @@ import { useLocation, useRoute, useSearch } from "wouter";
 import { useAppStore } from "@/store/auth.store";
 import type { System, Goal, Template } from "@/types/schema";
 import { getGoals } from "@/services/goals.service";
-import { getSystem, createSystem, updateSystem } from "@/services/systems.service";
+import { getSystem, createSystem, updateSystem, getSystems } from "@/services/systems.service";
+import { isAtSystemLimit, getPlanLimits, planDisplayName } from "@/lib/plan-limits";
 import { getPublicTemplates } from "@/services/templates.service";
 import { suggestSystemField } from "@/services/ai.service";
 import { AiSystemGenerator } from "@/components/ai/ai-system-generator";
@@ -274,6 +275,27 @@ export default function SystemBuilderPage() {
     queryFn: () => getSystem(params!.id),
     enabled: !!isEdit,
   });
+
+  const { data: allSystems = [] } = useQuery<System[]>({
+    queryKey: ["systems", userId],
+    queryFn: () => getSystems(userId),
+    enabled: !!userId && !isEdit,
+  });
+
+  const plan = user?.plan;
+  const systemLimit = getPlanLimits(plan).systems;
+  const atSystemLimit = !isEdit && isAtSystemLimit(plan, allSystems.length);
+
+  useEffect(() => {
+    if (atSystemLimit && allSystems.length > 0) {
+      toast({
+        title: "System limit reached",
+        description: `Your ${planDisplayName(plan)} plan allows up to ${systemLimit} systems. Upgrade to create more.`,
+        variant: "destructive",
+      });
+      navigate("/systems");
+    }
+  }, [atSystemLimit, allSystems.length]);
 
   const [templateApplied, setTemplateApplied] = useState(false);
 
