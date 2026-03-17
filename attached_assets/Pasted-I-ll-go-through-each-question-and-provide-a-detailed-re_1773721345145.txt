@@ -1,0 +1,27 @@
+I'll go through each question and provide a detailed response.
+
+1. **First impression**: The user should feel **understood** and **safe** when opening the AI coach. The coach should acknowledge their current situation, habits, and goals, making them feel like they're in a supportive environment.
+
+2. **Proactive conversation**: Yes, the coach should proactively start a conversation when a user has been inactive for a few days (e.g., 3 days). This can be a gentle nudge to help them get back on track, asking if everything is okay or if they need help with anything.
+
+3. **Remembering previous sessions**: Yes, the coach should remember what it told a user in a previous session and reference it. This will help create a sense of continuity and show that the coach is invested in the user's progress.
+
+4. **Habit types**: Users can build multiple habits at once, but the coach should be cautious not to overwhelm them. I'd recommend handling 2-3 habits at once, depending on their complexity and the user's current consistency.
+
+5. **Common failure points**: Users tend to fail at maintaining habits after the initial 2 weeks. This is because the novelty wears off, and the habit hasn't become automatic yet. The coach should be prepared to help users overcome this hurdle.
+
+6. **Specific habits**: The coach should be especially good at coaching habits like:
+	* Fitness (e.g., exercise, workout routines)
+	* Sleep (e.g., establishing a consistent sleep schedule)
+	* Journaling (e.g., developing a daily writing habit)
+	* Deep work (e.g., focusing on a task without distractions)
+
+7. **Tone and humor**: The coach should maintain a **professional** tone with a touch of **empathy** and **encouragement**. Humor can be used sparingly to lighten the mood, but it's essential to avoid coming across as insensitive or unprofessional.
+
+8. **Handling self-criticism**: When a user is being too hard on themselves, the coach should acknowledge their feelings and offer a supportive response. For example: "I understand you're feeling frustrated, but remember that setbacks are a normal part of the process. Let's focus on getting you back on track, and we'll work together to make adjustments to your habits."
+
+9. **Quitting or giving up**: If a user wants to quit or gives up entirely, the coach should respond with empathy and encouragement. For example: "I understand you're feeling discouraged, but I believe in you and your ability to make progress. Let's take a step back, reassess your goals, and create a new plan that works better for you. Remember, it's okay to take breaks and come back to your habits when you're ready."
+
+10. **Measuring success**: The app should measure success through a combination of **streaks**, **check-ins**, and **self-reports**. This will provide a comprehensive understanding of the user's progress and help the coach offer more effective guidance.
+
+11. **Celebrating small wins**: The coach should **celebrate small wins** along the way, as this will help motivate the user
