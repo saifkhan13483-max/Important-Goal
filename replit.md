@@ -11,6 +11,28 @@ SystemForge is a React + Firebase web application that helps users turn goals in
   - Stripe payment integration added to pricing page (redirectToCheckout)
   - `robots.txt` and `sitemap.xml` added to `client/public/`
   - OG image, og:url, twitter:image, twitter:site, and canonical URL meta tags added to `index.html`
+  - JSON-LD structured data (SoftwareApplication, FAQPage, WebSite, Reviews) added to `index.html`
+  - Testimonials upgraded with DiceBear persona photo avatars (lazy-loaded)
+  - Interactive "Watch Demo" video section added to landing page (YouTube embed via `VITE_DEMO_VIDEO_ID`)
+  - EmailJS welcome email integration added for signup and newsletter capture
+
+## EmailJS Integration
+- **Package**: `@emailjs/browser`
+- **Lib**: `client/src/lib/emailjs.ts`
+- **Triggers**:
+  - New account signup → `sendSignupWelcome(name, email)`
+  - Newsletter email capture → `sendNewsletterWelcome(email)`
+- **Required env vars** (optional — emails silently skip if not set):
+  - `VITE_EMAILJS_SERVICE_ID` — EmailJS Service ID
+  - `VITE_EMAILJS_PUBLIC_KEY` — EmailJS Public Key
+  - `VITE_EMAILJS_WELCOME_TEMPLATE` — Template ID for newsletter welcome email
+  - `VITE_EMAILJS_SIGNUP_TEMPLATE` — Template ID for new account welcome email
+- **Setup**: Create account at https://www.emailjs.com/, add a service + templates, set env vars
+
+## Video Demo
+- **Section**: "See it in 2 minutes" section on landing page (after hero, before stats)
+- **Env var**: `VITE_DEMO_VIDEO_ID` — set to a YouTube video ID (e.g. `dQw4w9WgXcQ`)
+- **Fallback**: Shows og-image.png thumbnail with "Video coming soon" text if no video ID is set
 
 ## Stripe Integration
 - **Approach**: Client-side only using **Stripe Payment Links** (no backend required, replaces deprecated `redirectToCheckout`)

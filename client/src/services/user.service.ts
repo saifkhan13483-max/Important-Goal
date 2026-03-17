@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { User } from "@/types/schema";
+import { sendNewsletterWelcome } from "@/lib/emailjs";
 
 export async function getUser(uid: string): Promise<User | null> {
   const fetchPromise = getDoc(doc(db, "users", uid));
@@ -35,5 +36,6 @@ export async function captureEmailLead(email: string, source = "landing"): Promi
     source,
     subscribedAt: new Date().toISOString(),
   });
+  sendNewsletterWelcome(email.toLowerCase().trim()).catch(() => {});
   return { success: true, alreadyExists: false };
 }

@@ -1,0 +1,57 @@
+3. Email Capture / Lead Generation
+There's no email opt-in — no newsletter signup, no "Get early access" form, no exit-intent capture. Every visitor who leaves without signing up is lost forever. An email list is the most durable growth asset you can build.
+
+
+4. Functional Payment Gates (Feature Limiting)
+Even though tiers are defined (e.g., "Free = 2 goals, 3 systems"), there's no enforcement in the app. Any user can access all features regardless of plan. This makes paid tiers meaningless and kills upgrade motivation.
+
+
+Tier 2 — High Impact (Conversion & Trust)
+5. Real Testimonials with Photos & Names
+The hero says "Trusted by 12,000+ people" but there are no named quotes, avatars, or verifiable social proof beneath that claim. Specific testimonials with faces dramatically increase conversion — generic trust badges alone do not.
+
+
+6. Cookie Consent / GDPR Banner
+There is no cookie consent mechanism. This is a legal requirement in the EU and increasingly expected globally, especially for a product that uses Firebase (which sets cookies). Non-compliance is a liability.
+
+
+7. Interactive Product Demo / Video
+The "See How It Works" CTA scrolls to a steps section, but there's no actual product video or interactive preview. Users should be able to see the check-in flow, system builder, or dashboard before signing up — this is one of the highest-leverage conversion tools for SaaS.
+
+
+8. Forgot Password / Auth Error Handling
+A forgot-password.tsx page exists but needs to be verified as actually functional end-to-end. Auth failures that drop users silently are one of the top causes of signup abandonment.
+
+
+Tier 3 — Strong UX & Retention Improvements
+9. Onboarding Completion Checklist
+After signup, new users land in the app with no clear "next step." A simple onboarding checklist ("Create your first goal → Build a system → Complete your first check-in") dramatically reduces early churn by giving users a win within the first session.
+
+
+10. Email Notifications / Drip Sequence
+Push notifications exist in concept, but there are no transactional emails (welcome email, streak reminders, weekly digest). Email is far more reliable for re-engagement than browser push, especially on desktop.
+
+
+11. Structured Data (JSON-LD)
+Adding schema markup (WebApplication, FAQPage, Review types) to the landing page can earn rich snippets in Google — ratings, FAQs, and app information displayed directly in search results. This is a free traffic amplifier.
+
+
+12. Referral / Share-Your-Streak Feature
+There's no way for users to share their streak or system publicly. A "Share my 30-day streak" card (image or link) is a zero-cost viral loop — it brings in qualified users who see a friend succeeding.
+
+
+Tier 4 — Performance & Technical Debt
+13. Image & Asset Optimization
+No evidence of lazy-loaded images, WebP conversion, or a CDN for static assets. Landing page load speed directly affects both SEO rankings (Core Web Vitals) and bounce rate.
+
+
+14. PWA / Installable App
+The app is mobile-first in design but not installable. Adding a Web App Manifest and service worker would allow users to "install" SystemForge on their home screen, improving daily check-in rates significantly.
+
+
+15. Analytics Event Tracking
+There's an analytics.service.ts but no clear integration with a product analytics tool (Mixpanel, PostHog, or even GA4 events). Without funnel tracking, you cannot tell where users drop off during onboarding or which features drive retention.
+
+
+16. Error Boundary & 404 Handling
+A not-found.tsx exists, but there's no global React error boundary to gracefully catch runtime crashes. An unhandled error currently likely shows a blank white screen, which destroys trust.

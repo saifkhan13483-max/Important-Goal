@@ -17,6 +17,7 @@ import { SiGoogle } from "react-icons/si";
 import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
 import { useQueryClient } from "@tanstack/react-query";
+import { sendSignupWelcome } from "@/lib/emailjs";
 
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -48,6 +49,7 @@ export default function Signup() {
     try {
       await signup({ name: data.name, email: data.email, password: data.password });
       track("signup_completed", { method: "email" });
+      sendSignupWelcome(data.name, data.email).catch(() => {});
       navigate("/onboarding");
     } catch (err: any) {
       setAuthError(err);

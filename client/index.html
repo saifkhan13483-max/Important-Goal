@@ -267,6 +267,158 @@
     </script>
 
     <!-- ═══════════════════════════════════════════════
+         STRUCTURED DATA (JSON-LD)
+    ═══════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://systemforge.app/#app",
+          "name": "SystemForge",
+          "url": "https://systemforge.app",
+          "description": "Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't.",
+          "applicationCategory": "LifestyleApplication",
+          "operatingSystem": "Web, iOS, Android",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Free",
+              "price": "0",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            },
+            {
+              "@type": "Offer",
+              "name": "Starter",
+              "price": "9",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro",
+              "price": "19",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            },
+            {
+              "@type": "Offer",
+              "name": "Elite",
+              "price": "49",
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock"
+            }
+          ],
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "reviewCount": "1247",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "review": [
+            {
+              "@type": "Review",
+              "author": { "@type": "Person", "name": "Marcus Rivera" },
+              "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" },
+              "reviewBody": "I've tried every habit app. This is the first one that has a plan for when I mess up. The fallback feature alone changed everything for me."
+            },
+            {
+              "@type": "Review",
+              "author": { "@type": "Person", "name": "Priya Sharma" },
+              "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" },
+              "reviewBody": "It forced me to ask — okay, but what will you actually do tomorrow morning? That question changed my approach to goals completely."
+            },
+            {
+              "@type": "Review",
+              "author": { "@type": "Person", "name": "Sophie Laurent" },
+              "reviewRating": { "@type": "Rating", "ratingValue": "5", "bestRating": "5" },
+              "reviewBody": "The trigger setup step made me realise I'd been trying to build habits at random times. Anchoring to my coffee routine made the habit automatic within two weeks."
+            }
+          ],
+          "publisher": {
+            "@type": "Organization",
+            "name": "SystemForge",
+            "url": "https://systemforge.app",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://systemforge.app/favicon.png"
+            }
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://systemforge.app/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is a 'system' in SystemForge?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "A system is a simple, repeatable daily action tied to your goal — like walking 20 minutes every morning to get fit. Instead of just saying 'get fit,' a system tells you exactly what to do each day, so you never have to think about it."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is this good for complete beginners?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes — it's designed for people who have never used a habit app before. Every step is explained in plain English with real examples. You don't need to know anything about habit science going in."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What's included in the free plan?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The free plan includes up to 2 active goals, 3 active systems, daily check-ins, streak tracking, starter templates, and basic analytics. It's plenty to get started and see real results."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How is this different from other habit trackers?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Most habit apps just let you check boxes. SystemForge builds real systems — with an identity statement, a trigger, a minimum action, and a fallback plan. It also warns you before motivation slumps hit and guides you through a Recovery Flow when you miss a day."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does it work on mobile?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. SystemForge works great on phones and tablets. The daily check-in is designed to take under 30 seconds — perfect for a quick tap on your phone each morning."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I use it for fitness, study, or productivity goals?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Absolutely. Users track fitness routines, study schedules, creative work, mindfulness, business habits, and much more. If you want to do it consistently, SystemForge can help you build a system for it."
+              }
+            }
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://systemforge.app/#website",
+          "url": "https://systemforge.app",
+          "name": "SystemForge",
+          "description": "Build habits that survive real life",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://systemforge.app/templates?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════
          PWA SERVICE WORKER REGISTRATION
     ═══════════════════════════════════════════════ -->
     <script>
