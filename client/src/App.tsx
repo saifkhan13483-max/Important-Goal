@@ -58,6 +58,7 @@ const Journal         = lazy(() => import("@/pages/journal"));
 const Settings        = lazy(() => import("@/pages/settings"));
 const AiCoach         = lazy(() => import("@/pages/ai-coach"));
 const CheckoutSuccess = lazy(() => import("@/pages/checkout-success"));
+const AdminPage       = lazy(() => import("@/pages/admin"));
 
 /**
  * PageLoader — minimal skeleton shown while a lazy chunk is downloading.
@@ -182,6 +183,7 @@ function Router() {
           <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
           <Route path="/ai-coach" component={() => <ProtectedRoute component={AiCoach} />} />
           <Route path="/checkout/success" component={CheckoutSuccess} />
+          <Route path="/admin" component={AdminPage} />
 
           {/* 404 */}
           <Route component={NotFound} />

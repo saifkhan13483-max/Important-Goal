@@ -15,7 +15,7 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && isOwner(userId);
     }
 
-    // Goals: only the owner can CRUD their own goals
+    // Goals: only the owner can CRUD their own goalsowner
     match /goals/{goalId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
