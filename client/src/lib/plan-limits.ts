@@ -5,6 +5,24 @@ export interface PlanLimits {
   systems: number | null;
 }
 
+export interface PlanFeatures {
+  aiCoach: boolean;
+  aiCoachUnlimited: boolean;
+  aiCoachDailyLimit: number | null;
+  advancedAnalytics: boolean;
+  betterAnalytics: boolean;
+  aiAnalyticsInsights: boolean;
+  moodCorrelation: boolean;
+  fullTemplates: boolean;
+  premiumTemplates: boolean;
+  advancedJournaling: boolean;
+  aiJournalPrompt: boolean;
+  exportReports: boolean;
+  csvPdfExport: boolean;
+  darkMode: boolean;
+  prioritySupport: boolean;
+}
+
 const LIMITS: Record<PlanTier, PlanLimits> = {
   free:    { goals: 2,    systems: 3    },
   starter: { goals: 10,   systems: null },
@@ -12,8 +30,83 @@ const LIMITS: Record<PlanTier, PlanLimits> = {
   elite:   { goals: null, systems: null },
 };
 
+const FEATURES: Record<PlanTier, PlanFeatures> = {
+  free: {
+    aiCoach: false,
+    aiCoachUnlimited: false,
+    aiCoachDailyLimit: 0,
+    advancedAnalytics: false,
+    betterAnalytics: false,
+    aiAnalyticsInsights: false,
+    moodCorrelation: false,
+    fullTemplates: false,
+    premiumTemplates: false,
+    advancedJournaling: false,
+    aiJournalPrompt: false,
+    exportReports: false,
+    csvPdfExport: false,
+    darkMode: false,
+    prioritySupport: false,
+  },
+  starter: {
+    aiCoach: false,
+    aiCoachUnlimited: false,
+    aiCoachDailyLimit: 0,
+    advancedAnalytics: false,
+    betterAnalytics: true,
+    aiAnalyticsInsights: false,
+    moodCorrelation: false,
+    fullTemplates: true,
+    premiumTemplates: false,
+    advancedJournaling: true,
+    aiJournalPrompt: false,
+    exportReports: true,
+    csvPdfExport: false,
+    darkMode: true,
+    prioritySupport: false,
+  },
+  pro: {
+    aiCoach: true,
+    aiCoachUnlimited: false,
+    aiCoachDailyLimit: 10,
+    advancedAnalytics: true,
+    betterAnalytics: true,
+    aiAnalyticsInsights: true,
+    moodCorrelation: true,
+    fullTemplates: true,
+    premiumTemplates: true,
+    advancedJournaling: true,
+    aiJournalPrompt: true,
+    exportReports: true,
+    csvPdfExport: true,
+    darkMode: true,
+    prioritySupport: true,
+  },
+  elite: {
+    aiCoach: true,
+    aiCoachUnlimited: true,
+    aiCoachDailyLimit: null,
+    advancedAnalytics: true,
+    betterAnalytics: true,
+    aiAnalyticsInsights: true,
+    moodCorrelation: true,
+    fullTemplates: true,
+    premiumTemplates: true,
+    advancedJournaling: true,
+    aiJournalPrompt: true,
+    exportReports: true,
+    csvPdfExport: true,
+    darkMode: true,
+    prioritySupport: true,
+  },
+};
+
 export function getPlanLimits(plan?: PlanTier | null): PlanLimits {
   return LIMITS[plan ?? "free"];
+}
+
+export function getPlanFeatures(plan?: PlanTier | null): PlanFeatures {
+  return FEATURES[plan ?? "free"];
 }
 
 export function isAtGoalLimit(plan: PlanTier | null | undefined, activeGoalCount: number): boolean {
@@ -34,4 +127,19 @@ export function goalLimitLabel(plan?: PlanTier | null): string {
 export function systemLimitLabel(plan?: PlanTier | null): string {
   const limit = getPlanLimits(plan).systems;
   return limit === null ? "Unlimited" : String(limit);
+}
+
+const PLAN_ORDER: PlanTier[] = ["free", "starter", "pro", "elite"];
+export function planRank(plan?: PlanTier | null): number {
+  return PLAN_ORDER.indexOf(plan ?? "free");
+}
+
+export function planDisplayName(plan?: PlanTier | null): string {
+  const names: Record<PlanTier, string> = {
+    free: "Free",
+    starter: "Starter",
+    pro: "Pro",
+    elite: "Elite",
+  };
+  return names[plan ?? "free"];
 }

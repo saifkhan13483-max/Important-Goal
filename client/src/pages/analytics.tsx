@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { generateAnalyticsInsights, type AnalyticsInsight } from "@/services/ai.service";
 import { cn } from "@/lib/utils";
+import { getPlanFeatures } from "@/lib/plan-limits";
+import { PlanGate } from "@/components/plan-gate";
 
 function MetricCard({ label, value, sub, icon: Icon, color }: any) {
   const rawNum = typeof value === "number" ? value : parseFloat(String(value).replace(/[^0-9.]/g, ""));
@@ -75,6 +77,7 @@ export default function Analytics() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
   const [period, setPeriod] = useState<Period>("daily");
+  const features = getPlanFeatures(user?.plan);
 
   const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
     queryKey: ["systems", userId],
@@ -343,8 +346,8 @@ export default function Analytics() {
         </p>
       </div>
 
-      {/* AI-powered insights */}
-      {analytics.totalCheckins >= 3 && (
+      {/* AI-powered insights — Pro/Elite only */}
+      {features.aiAnalyticsInsights && analytics.totalCheckins >= 3 && (
         <div>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -503,8 +506,18 @@ export default function Analytics() {
         />
       </div>
 
-      {/* Per-system consistency metrics */}
-      {hasData && systems.filter(s => s.active).length > 0 && (
+      {/* Upgrade prompt for free users — shown below summary metrics */}
+      {!features.betterAnalytics && (
+        <PlanGate
+          requiredPlan="starter"
+          featureLabel="Charts & Detailed Insights"
+          description="Upgrade to Starter to unlock habit charts, streak tracking, consistency metrics, and per-system breakdowns."
+          compact
+        />
+      )}
+
+      {/* Per-system consistency metrics — Starter+ */}
+      {features.betterAnalytics && hasData && systems.filter(s => s.active).length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -618,8 +631,8 @@ export default function Analytics() {
         </Card>
       )}
 
-      {/* Daily / Weekly / Monthly completion bar chart */}
-      <Card>
+      {/* Daily / Weekly / Monthly completion bar chart — Starter+ */}
+      {features.betterAnalytics && <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <CardTitle className="text-base flex items-center gap-2">
@@ -654,10 +667,10 @@ export default function Analytics() {
             </ResponsiveContainer>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* Completion % trend line */}
-      <Card>
+      {/* Completion % trend line — Starter+ */}
+      {features.betterAnalytics && <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">
             Completion % Trend — {periodLabel[period]}
@@ -689,10 +702,10 @@ export default function Analytics() {
             </ResponsiveContainer>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* Day-of-week patterns */}
-      <Card>
+      {/* Day-of-week Patterns — Starter+ */}
+      {features.betterAnalytics && <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Calendar className="w-4 h-4 text-chart-2" />
@@ -746,10 +759,10 @@ export default function Analytics() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* Mood vs Completion + Difficulty vs Completion */}
-      {(hasMoodData || hasDifficultyData) && (
+      {/* Mood vs Completion + Difficulty vs Completion — Pro/Elite only */}
+      {features.moodCorrelation && (hasMoodData || hasDifficultyData) && (
         <div className="grid md:grid-cols-2 gap-4">
           {hasMoodData && (
             <Card>
@@ -812,8 +825,8 @@ export default function Analytics() {
         </div>
       )}
 
-      {/* Current streaks + Best-ever streaks */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Current streaks + Best-ever streaks — Starter+ */}
+      {features.betterAnalytics && <div className="grid md:grid-cols-2 gap-4">
         {/* Current streaks */}
         <Card>
           <CardHeader className="pb-2">
@@ -899,10 +912,10 @@ export default function Analytics() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
-      {/* Goals by category */}
-      <Card>
+      {/* Goals by category — Starter+ */}
+      {features.betterAnalytics && <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Goals by Category</CardTitle>
         </CardHeader>
@@ -927,10 +940,10 @@ export default function Analytics() {
             </ResponsiveContainer>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
-      {/* Most consistent + most missed systems */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Most consistent + most missed systems — Starter+ */}
+      {features.betterAnalytics && <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1002,10 +1015,10 @@ export default function Analytics() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div>}
 
-      {/* Completion by goal */}
-      {goalCompletion.length > 0 && (
+      {/* Completion by goal — Starter+ */}
+      {features.betterAnalytics && goalCompletion.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">

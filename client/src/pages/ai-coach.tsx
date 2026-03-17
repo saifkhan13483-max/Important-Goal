@@ -16,6 +16,8 @@ import {
   TrendingUp, Clock, MessageSquare, Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getPlanFeatures } from "@/lib/plan-limits";
+import { PlanGate } from "@/components/plan-gate";
 
 const PROMPT_CATEGORIES = [
   {
@@ -231,6 +233,22 @@ function MessageBubble({
   );
 }
 
+const PRO_DAILY_LIMIT = 10;
+
+function getDailyUsageKey() {
+  return `sf_ai_coach_usage_${new Date().toISOString().split("T")[0]}`;
+}
+
+function getDailyUsage(): number {
+  return parseInt(localStorage.getItem(getDailyUsageKey()) ?? "0", 10);
+}
+
+function incrementDailyUsage() {
+  const key = getDailyUsageKey();
+  const current = getDailyUsage();
+  localStorage.setItem(key, String(current + 1));
+}
+
 export default function AiCoach() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
@@ -238,8 +256,10 @@ export default function AiCoach() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-
   const [input, setInput] = useState("");
+
+  const features = getPlanFeatures(user?.plan);
+
   const welcomeMessage = useMemo(() => {
     const name = user?.name ? `, ${user.name.split(" ")[0]}` : "";
     return `Hi${name}! I'm your AI habit coach — I know your systems, your streaks, and where you're headed.\n\nI'm here to help you build unbreakable consistency, work through setbacks, and keep your habits aligned with your goals. No generic advice — everything I tell you is specific to you.\n\nWhat's on your mind today?`;
@@ -254,17 +274,18 @@ export default function AiCoach() {
   ]);
   const [loading, setLoading] = useState(false);
   const [sessionMsgCount, setSessionMsgCount] = useState(0);
+  const [dailyUsage, setDailyUsage] = useState(() => getDailyUsage());
 
   const { data: systems = [] } = useQuery<System[]>({
     queryKey: ["systems", userId],
     queryFn: () => getSystems(userId),
-    enabled: !!userId,
+    enabled: !!userId && features.aiCoach,
   });
 
   const { data: allCheckins = [] } = useQuery<Checkin[]>({
     queryKey: ["checkins", userId],
     queryFn: () => getCheckins(userId),
-    enabled: !!userId,
+    enabled: !!userId && features.aiCoach,
   });
 
   const analytics = useMemo(
@@ -306,8 +327,34 @@ export default function AiCoach() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  if (!features.aiCoach) {
+    return (
+      <div className="flex items-center justify-center h-full p-6">
+        <div className="w-full max-w-md">
+          <PlanGate
+            requiredPlan="pro"
+            featureLabel="AI Habit Coach"
+            description="Get personalized coaching powered by behavioral science. Ask anything about your habits, streaks, and systems — the AI coach knows your data and gives advice specific to you."
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const isProLimited = !features.aiCoachUnlimited && features.aiCoachDailyLimit !== null;
+  const dailyLimitReached = isProLimited && dailyUsage >= PRO_DAILY_LIMIT;
+  const remainingMessages = isProLimited ? Math.max(0, PRO_DAILY_LIMIT - dailyUsage) : null;
+
   const sendMessage = async (content: string) => {
     if (!content.trim() || loading) return;
+    if (dailyLimitReached) {
+      toast({
+        title: "Daily limit reached",
+        description: `Pro plan includes ${PRO_DAILY_LIMIT} AI Coach messages per day. Upgrade to Elite for unlimited access.`,
+        variant: "destructive",
+      });
+      return;
+    }
     setInput("");
     setActiveCategory(null);
     const userMsg: ChatMessage & { timestamp: Date } = {
@@ -319,6 +366,10 @@ export default function AiCoach() {
     setMessages(updatedMessages);
     setLoading(true);
     setSessionMsgCount((n) => n + 1);
+    if (isProLimited) {
+      incrementDailyUsage();
+      setDailyUsage(getDailyUsage());
+    }
     try {
       const reply = await chatWithCoach(
         updatedMessages.map(({ role, content }) => ({ role, content })),
@@ -388,7 +439,20 @@ export default function AiCoach() {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {sessionMsgCount > 0 && (
+            {isProLimited && remainingMessages !== null && (
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "hidden sm:flex text-xs gap-1",
+                  remainingMessages <= 3 && "bg-destructive/10 text-destructive border-destructive/20",
+                )}
+                data-testid="badge-remaining-messages"
+              >
+                <Clock className="w-3 h-3" />
+                {remainingMessages} / {PRO_DAILY_LIMIT} left today
+              </Badge>
+            )}
+            {sessionMsgCount > 0 && !isProLimited && (
               <Badge variant="secondary" className="hidden sm:flex text-xs gap-1">
                 <MessageSquare className="w-3 h-3" />
                 {sessionMsgCount} {sessionMsgCount === 1 ? "exchange" : "exchanges"}
@@ -521,21 +585,34 @@ export default function AiCoach() {
           </div>
         )}
 
+        {/* ── Daily limit reached banner ── */}
+        {dailyLimitReached && (
+          <div className="mx-3 sm:mx-6 mb-2 flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-destructive/8 border border-destructive/20 flex-shrink-0" data-testid="banner-limit-reached">
+            <p className="text-xs text-destructive font-medium">
+              You've used all {PRO_DAILY_LIMIT} AI Coach messages for today. Resets at midnight.
+            </p>
+            <a href="/pricing" className="text-xs font-semibold text-primary hover:underline flex-shrink-0">
+              Upgrade to Elite →
+            </a>
+          </div>
+        )}
+
         {/* ── Input area ── */}
         <div className="px-3 sm:px-6 pb-4 sm:pb-5 pt-2.5 sm:pt-3 border-t border-border flex-shrink-0 bg-background/80 backdrop-blur-sm">
           <div className="flex gap-2 items-end">
             <div className="flex-1 relative">
               <Textarea
                 ref={textareaRef}
-                placeholder="Ask anything… (Enter to send)"
+                placeholder={dailyLimitReached ? "Daily limit reached — upgrade for unlimited access" : "Ask anything… (Enter to send)"}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 rows={2}
-                className="resize-none text-sm pr-8 sm:pr-10"
+                disabled={dailyLimitReached}
+                className="resize-none text-sm pr-8 sm:pr-10 disabled:opacity-60"
                 data-testid="input-ai-coach"
               />
-              {input.length > 0 && (
+              {input.length > 0 && !dailyLimitReached && (
                 <span className="absolute bottom-2.5 right-3 text-[10px] text-muted-foreground/40 pointer-events-none">
                   {input.length}
                 </span>
@@ -543,7 +620,7 @@ export default function AiCoach() {
             </div>
             <Button
               onClick={() => sendMessage(input)}
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || dailyLimitReached}
               className="self-end h-9 w-9 sm:h-10 sm:w-10 p-0 flex-shrink-0 rounded-xl"
               data-testid="button-send-ai-coach"
               aria-label="Send message"

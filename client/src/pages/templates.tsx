@@ -13,9 +13,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Search, LayoutGrid, Brain, Zap, CheckSquare, Trophy, ShieldCheck,
-  BookOpen, Sparkles, ArrowRight, Star,
+  BookOpen, Sparkles, ArrowRight, Star, Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getPlanFeatures } from "@/lib/plan-limits";
+import { Link } from "wouter";
+
+const FREE_TEMPLATE_LIMIT = 3;
 
 const ALL_CATEGORIES = [
   { value: "all", label: "All" },
@@ -88,6 +92,8 @@ export default function TemplatesPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
 
+  const features = getPlanFeatures(user?.plan);
+
   const { data: templates = [], isLoading } = useQuery<Template[]>({
     queryKey: ["public-templates"],
     queryFn: () => getPublicTemplates(),
@@ -101,7 +107,7 @@ export default function TemplatesPage() {
 
   const isFirstTime = systems.length === 0;
 
-  const filtered = useMemo(() => {
+  const allFiltered = useMemo(() => {
     return templates.filter(t => {
       const matchesCategory = activeCategory === "all"
         || (activeCategory === "beginner" && isBeginnerFriendly(t))
@@ -112,6 +118,13 @@ export default function TemplatesPage() {
       return matchesCategory && matchesSearch;
     });
   }, [templates, search, activeCategory]);
+
+  const freeTemplates = useMemo(() => {
+    const beginner = templates.filter(t => isBeginnerFriendly(t));
+    return beginner.slice(0, FREE_TEMPLATE_LIMIT);
+  }, [templates]);
+
+  const filtered = features.fullTemplates ? allFiltered : freeTemplates;
 
   const handleUseTemplate = (t: Template) => {
     navigate(`/systems/new?template=${t.id}`);
@@ -153,36 +166,59 @@ export default function TemplatesPage() {
         </Card>
       )}
 
-      {/* Search + Filters */}
-      <div className="space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search templates…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9"
-            data-testid="input-template-search"
-          />
+      {/* Search + Filters — only available with full template access */}
+      {features.fullTemplates && (
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search templates…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-9"
+              data-testid="input-template-search"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {ALL_CATEGORIES.map(cat => (
+              <button
+                key={cat.value}
+                onClick={() => setActiveCategory(cat.value)}
+                data-testid={`filter-category-${cat.value}`}
+                className={cn(
+                  "px-3 py-1 rounded-full text-xs font-medium border transition-all",
+                  activeCategory === cat.value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/40 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                )}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {ALL_CATEGORIES.map(cat => (
-            <button
-              key={cat.value}
-              onClick={() => setActiveCategory(cat.value)}
-              data-testid={`filter-category-${cat.value}`}
-              className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium border transition-all",
-                activeCategory === cat.value
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-muted/40 text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-              )}
-            >
-              {cat.label}
-            </button>
-          ))}
+      )}
+
+      {/* Free plan restriction notice */}
+      {!features.fullTemplates && !isLoading && (
+        <div className="flex items-center justify-between gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5" data-testid="template-plan-notice">
+          <div className="flex items-start gap-3">
+            <Lock className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium">You have access to {FREE_TEMPLATE_LIMIT} starter templates</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Upgrade to <span className="font-semibold text-primary">Starter</span> to unlock the full library of {templates.length}+ templates
+              </p>
+            </div>
+          </div>
+          <Link href="/pricing">
+            <Button size="sm" className="flex-shrink-0 gap-1.5 text-xs" data-testid="button-unlock-templates">
+              <Sparkles className="w-3 h-3" />
+              Unlock All
+            </Button>
+          </Link>
         </div>
-      </div>
+      )}
 
       {/* Loading skeletons */}
       {isLoading ? (
@@ -193,9 +229,15 @@ export default function TemplatesPage() {
         <>
           {/* Template count */}
           <p className="text-xs text-muted-foreground">
-            {filtered.length} template{filtered.length !== 1 ? "s" : ""}
-            {activeCategory !== "all" ? ` in ${ALL_CATEGORIES.find(c => c.value === activeCategory)?.label}` : ""}
-            {search ? ` matching "${search}"` : ""}
+            {features.fullTemplates ? (
+              <>
+                {filtered.length} template{filtered.length !== 1 ? "s" : ""}
+                {activeCategory !== "all" ? ` in ${ALL_CATEGORIES.find(c => c.value === activeCategory)?.label}` : ""}
+                {search ? ` matching "${search}"` : ""}
+              </>
+            ) : (
+              <>{FREE_TEMPLATE_LIMIT} starter templates available on your plan</>
+            )}
           </p>
 
           {/* Empty state */}

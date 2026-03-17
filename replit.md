@@ -29,6 +29,17 @@ SystemForge is a React + Firebase web application that helps users turn goals in
 - **Settings page**: Shows real plan from Firestore + "Manage billing" link to Stripe Customer Portal
 - **Stripe lib**: `client/src/lib/stripe.ts`
 
+## Plan-Based Feature Gating
+- **Plan tiers**: free | starter | pro | elite
+- **Feature flags**: `client/src/lib/plan-limits.ts` — `getPlanFeatures(plan)` returns a `PlanFeatures` object
+- **PlanGate component**: `client/src/components/plan-gate.tsx` — full-wall and compact upgrade prompts
+- **Enforcement by page**:
+  - **AI Coach** (`/ai-coach`): Free/Starter → full wall; Pro → 10 msgs/day via localStorage + banner; Elite → unlimited
+  - **Analytics** (`/analytics`): Free → 4 stat cards only; Starter+ → charts, streaks, consistency, goal breakdown; Pro/Elite → AI insights + mood correlation
+  - **Templates** (`/templates`): Free → 3 beginner templates (no search/filter) + upgrade notice; Starter+ → full library with search and filters
+  - **Journal** (`/journal`): Free/Starter → "Personalize with AI" button shown as locked; Pro/Elite → active AI journal prompt
+- **Pattern**: `{features.someFlag && <Component />}` for section-level gating; `<PlanGate compact>` for inline upgrade prompts
+
 ## Architecture
 - **Frontend**: React 18 with TypeScript, Vite as the build tool
 - **Routing**: Wouter (client-side routing)

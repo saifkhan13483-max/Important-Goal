@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
+import { getPlanFeatures } from "@/lib/plan-limits";
 import type { JournalEntry, Goal, System } from "@/types/schema";
 import { getJournals, createJournal, updateJournal, deleteJournal } from "@/services/journal.service";
 import { getGoals } from "@/services/goals.service";
@@ -17,8 +18,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
   BookOpen, Plus, Trash2, Pencil, Loader2, X, PenLine,
-  ChevronDown, ChevronUp, Lightbulb, Check, Sparkles, Bot,
+  ChevronDown, ChevronUp, Lightbulb, Check, Sparkles, Bot, Lock,
 } from "lucide-react";
+import { Link } from "wouter";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +105,8 @@ function InlineJournalForm({
   onClose: () => void;
   onSaved?: () => void;
 }) {
+  const { user: currentUser } = useAppStore();
+  const features = getPlanFeatures(currentUser?.plan);
   const qc = useQueryClient();
   const { toast } = useToast();
   const [promptType, setPromptType] = useState(entry?.promptType || "daily");
@@ -202,7 +206,7 @@ function InlineJournalForm({
               {aiPrompt || promptData.prompt}
             </p>
           </div>
-          {!entry && (
+          {!entry && features.aiJournalPrompt && (
             <div className="border-t border-primary/10 px-3 py-2 flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
                 {aiPrompt ? "AI-generated for your habits" : "Static prompt"}
@@ -223,6 +227,24 @@ function InlineJournalForm({
                 )}
                 {aiPrompt ? "Regenerate" : "Personalize with AI"}
               </Button>
+            </div>
+          )}
+          {!entry && !features.aiJournalPrompt && (
+            <div className="border-t border-primary/10 px-3 py-2 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Static prompt</span>
+              <Link href="/pricing">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs gap-1.5 text-muted-foreground hover:text-primary"
+                  data-testid="button-ai-journal-prompt-locked"
+                >
+                  <Bot className="w-3 h-3" />
+                  Personalize with AI
+                  <Lock className="w-3 h-3" />
+                </Button>
+              </Link>
             </div>
           )}
         </div>
