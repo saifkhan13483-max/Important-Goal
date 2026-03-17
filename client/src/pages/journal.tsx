@@ -17,20 +17,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
-  BookOpen, Plus, Trash2, Pencil, Loader2, X, PenLine,
+  BookOpen, Trash2, Pencil, Loader2, X, PenLine,
   ChevronDown, ChevronUp, Lightbulb, Check, Sparkles, Bot, Lock,
 } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PlanGate } from "@/components/plan-gate";
 
 const PROMPT_TYPES = [
-  { value: "daily",    label: "Daily Reflection",   emoji: "🌅", color: "text-primary" },
-  { value: "weekly",   label: "Weekly Review",       emoji: "📆", color: "text-chart-2" },
-  { value: "win",      label: "Capture a Win",       emoji: "🏆", color: "text-chart-3" },
-  { value: "struggle", label: "Process a Struggle",  emoji: "🧩", color: "text-chart-4" },
-  { value: "insight",  label: "Record an Insight",   emoji: "💡", color: "text-primary" },
-  { value: "freeform", label: "Freeform Notes",      emoji: "📝", color: "text-muted-foreground" },
+  { value: "daily",    label: "Daily Reflection",   emoji: "🌅", color: "text-primary",            advanced: false },
+  { value: "weekly",   label: "Weekly Review",       emoji: "📆", color: "text-chart-2",            advanced: true  },
+  { value: "win",      label: "Capture a Win",       emoji: "🏆", color: "text-chart-3",            advanced: true  },
+  { value: "struggle", label: "Process a Struggle",  emoji: "🧩", color: "text-chart-4",            advanced: true  },
+  { value: "insight",  label: "Record an Insight",   emoji: "💡", color: "text-primary",            advanced: true  },
+  { value: "freeform", label: "Freeform Notes",      emoji: "📝", color: "text-muted-foreground",   advanced: false },
 ];
 
 const PROMPTS: Record<string, { prompt: string; starters: string[] }> = {
@@ -177,22 +178,39 @@ function InlineJournalForm({
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Entry type:</span>
           <div className="flex flex-wrap gap-2">
-            {PROMPT_TYPES.map(p => (
-              <button
-                key={p.value}
-                onClick={() => setPromptType(p.value)}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all",
-                  promptType === p.value
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
-                )}
-                data-testid={`tab-prompt-${p.value}`}
-              >
-                <span>{p.emoji}</span>
-                {p.label}
-              </button>
-            ))}
+            {PROMPT_TYPES.map(p => {
+              const locked = p.advanced && !features.advancedJournaling;
+              if (locked) {
+                return (
+                  <Link key={p.value} href="/pricing">
+                    <button
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-border/40 bg-muted/30 text-muted-foreground/50 cursor-pointer opacity-60 hover:opacity-80 transition-all"
+                      data-testid={`tab-prompt-${p.value}-locked`}
+                    >
+                      <span>{p.emoji}</span>
+                      {p.label}
+                      <Lock className="w-2.5 h-2.5" />
+                    </button>
+                  </Link>
+                );
+              }
+              return (
+                <button
+                  key={p.value}
+                  onClick={() => setPromptType(p.value)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all",
+                    promptType === p.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                  )}
+                  data-testid={`tab-prompt-${p.value}`}
+                >
+                  <span>{p.emoji}</span>
+                  {p.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -436,6 +454,7 @@ function JournalEntryCard({
 export default function Journal() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
+  const features = getPlanFeatures(user?.plan);
 
   const { data: entries = [], isLoading } = useQuery<JournalEntry[]>({
     queryKey: ["journals", userId],
@@ -500,6 +519,16 @@ export default function Journal() {
           </Button>
         )}
       </div>
+
+      {/* Advanced journaling gate for free users */}
+      {!features.advancedJournaling && (
+        <PlanGate
+          requiredPlan="starter"
+          featureLabel="Advanced Journal Entry Types"
+          description="Unlock Weekly Review, Capture a Win, Process a Struggle, and Record an Insight — four structured entry types designed to deepen your self-awareness."
+          compact
+        />
+      )}
 
       {/* Identity motivational card */}
       {user?.identityStatement && (
