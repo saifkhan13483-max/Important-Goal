@@ -1,0 +1,98 @@
+13:54:59.364 Running build in Washington, D.C., USA (East) – iad1
+13:54:59.364 Build machine configuration: 2 cores, 8 GB
+13:54:59.484 Cloning github.com/saifkhan13483-max/Important-Goal (Branch: main, Commit: dc14e82)
+13:55:00.044 Cloning completed: 560.000ms
+13:55:00.572 Restored build cache from previous deployment (9yLKz3rcZ3PuGg5wGzAVXdzQSPFn)
+13:55:00.853 Running "vercel build"
+13:55:01.497 Vercel CLI 50.32.4
+13:55:02.025 Running "install" command: `npm install`...
+13:55:05.278 
+13:55:05.279 added 2 packages, removed 1 package, changed 24 packages, and audited 512 packages in 3s
+13:55:05.280 
+13:55:05.280 75 packages are looking for funding
+13:55:05.280   run `npm fund` for details
+13:55:05.288 
+13:55:05.288 4 vulnerabilities (1 low, 1 moderate, 2 high)
+13:55:05.289 
+13:55:05.289 To address all issues, run:
+13:55:05.290   npm audit fix
+13:55:05.290 
+13:55:05.290 Run `npm audit` for details.
+13:55:05.506 
+13:55:05.507 > rest-express@1.0.0 build
+13:55:05.507 > tsx script/build.ts
+13:55:05.507 
+13:55:06.467 Building client...
+13:55:06.564 [36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+13:55:07.253 transforming...
+13:55:08.617 
+13:55:08.618 A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+13:55:15.773 [32m✓[39m 3093 modules transformed.
+13:55:16.346 rendering chunks...
+13:55:16.977 computing gzip size...
+13:55:17.038 [2m../dist/[22m[32mindex.html                            [39m[1m[2m   20.59 kB[22m[1m[22m[2m │ gzip:   4.12 kB[22m
+13:55:17.038 [2m../dist/[22m[2massets/[22m[35mindex-C1iAkRs6.css             [39m[1m[2m  129.73 kB[22m[1m[22m[2m │ gzip:  20.12 kB[22m
+13:55:17.038 [2m../dist/[22m[2massets/[22m[36msubDays-GKdHgY67.js            [39m[1m[2m    0.09 kB[22m[1m[22m[2m │ gzip:   0.10 kB[22m
+13:55:17.039 [2m../dist/[22m[2massets/[22m[36mchevron-up-BIFi24Fp.js         [39m[1m[2m    0.12 kB[22m[1m[22m[2m │ gzip:   0.14 kB[22m
+13:55:17.039 [2m../dist/[22m[2massets/[22m[36maddDays-BMOtjNJD.js            [39m[1m[2m    0.15 kB[22m[1m[22m[2m │ gzip:   0.15 kB[22m
+13:55:17.039 [2m../dist/[22m[2massets/[22m[36msearch-CivDLv6H.js             [39m[1m[2m    0.17 kB[22m[1m[22m[2m │ gzip:   0.17 kB[22m
+13:55:17.039 [2m../dist/[22m[2massets/[22m[36mmessage-square-BeuZUjG9.js     [39m[1m[2m    0.18 kB[22m[1m[22m[2m │ gzip:   0.17 kB[22m
+13:55:17.039 [2m../dist/[22m[2massets/[22m[36mlock-CHd4ML3K.js               [39m[1m[2m    0.20 kB[22m[1m[22m[2m │ gzip:   0.19 kB[22m
+13:55:17.039 [2m../dist/[22m[2massets/[22m[36mpause-C40Ogd0k.js              [39m[1m[2m    0.21 kB[22m[1m[22m[2m │ gzip:   0.16 kB[22m
+13:55:17.040 [2m../dist/[22m[2massets/[22m[36mflag-rM0eJI-R.js               [39m[1m[2m    0.22 kB[22m[1m[22m[2m │ gzip:   0.20 kB[22m
+13:55:17.040 [2m../dist/[22m[2massets/[22m[36mactivity-DxBUJfJi.js           [39m[1m[2m    0.23 kB[22m[1m[22m[2m │ gzip:   0.20 kB[22m
+13:55:17.040 [2m../dist/[22m[2massets/[22m[36mellipsis-vertical-CRUMO55Y.js  [39m[1m[2m    0.23 kB[22m[1m[22m[2m │ gzip:   0.17 kB[22m
+13:55:17.040 [2m../dist/[22m[2massets/[22m[36meye-DNOV0t4G.js                [39m[1m[2m    0.25 kB[22m[1m[22m[2m │ gzip:   0.20 kB[22m
+13:55:17.041 [2m../dist/[22m[2massets/[22m[36mpencil-BzYkcsoL.js             [39m[1m[2m    0.27 kB[22m[1m[22m[2m │ gzip:   0.22 kB[22m
+13:55:17.041 [2m../dist/[22m[2massets/[22m[36mlightbulb-B0oGHqwj.js          [39m[1m[2m    0.28 kB[22m[1m[22m[2m │ gzip:   0.22 kB[22m
+13:55:17.041 [2m../dist/[22m[2massets/[22m[36mshield-check-B2uho0Qc.js       [39m[1m[2m    0.32 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+13:55:17.041 [2m../dist/[22m[2massets/[22m[36mtrash-2-CTEaBIOc.js            [39m[1m[2m    0.35 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+13:55:17.042 [2m../dist/[22m[2massets/[22m[36misWithinInterval-DxqvLWwk.js   [39m[1m[2m    0.43 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+13:55:17.042 [2m../dist/[22m[2massets/[22m[36mtrophy-Ht03Kl2w.js             [39m[1m[2m    0.46 kB[22m[1m[22m[2m │ gzip:   0.28 kB[22m
+13:55:17.043 [2m../dist/[22m[2massets/[22m[36mcalendar-days-DQkGW-ms.js      [39m[1m[2m    0.49 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+13:55:17.043 [2m../dist/[22m[2massets/[22m[36mdumbbell-Bq51cfXT.js           [39m[1m[2m    0.56 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
+13:55:17.043 [2m../dist/[22m[2massets/[22m[36mjournal.service-DGzPrUpP.js    [39m[1m[2m    0.73 kB[22m[1m[22m[2m │ gzip:   0.39 kB[22m
+13:55:17.043 [2m../dist/[22m[2massets/[22m[36mgoals.service-DIQnxkUd.js      [39m[1m[2m    0.80 kB[22m[1m[22m[2m │ gzip:   0.41 kB[22m
+13:55:17.044 [2m../dist/[22m[2massets/[22m[36mprogress-CjNG_eBu.js           [39m[1m[2m    1.90 kB[22m[1m[22m[2m │ gzip:   0.95 kB[22m
+13:55:17.044 [2m../dist/[22m[2massets/[22m[36mindex-B7kvYeVA.js              [39m[1m[2m    2.08 kB[22m[1m[22m[2m │ gzip:   1.06 kB[22m
+13:55:17.044 [2m../dist/[22m[2massets/[22m[36mdialog-CY0T8m8T.js             [39m[1m[2m    2.12 kB[22m[1m[22m[2m │ gzip:   0.82 kB[22m
+13:55:17.044 [2m../dist/[22m[2massets/[22m[36mplan-gate-DnPWHCL5.js          [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:   0.86 kB[22m
+13:55:17.044 [2m../dist/[22m[2massets/[22m[36mparseISO--ZIWkzM-.js           [39m[1m[2m    2.77 kB[22m[1m[22m[2m │ gzip:   1.25 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36mcheckout-success-DSBo1aC0.js   [39m[1m[2m    2.80 kB[22m[1m[22m[2m │ gzip:   1.26 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36malert-dialog-CM9GPdsH.js       [39m[1m[2m    4.69 kB[22m[1m[22m[2m │ gzip:   1.71 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36manalytics.service-C4orxG9V.js  [39m[1m[2m    5.93 kB[22m[1m[22m[2m │ gzip:   2.38 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36mtemplates.service-CvZMeT4j.js  [39m[1m[2m    7.57 kB[22m[1m[22m[2m │ gzip:   2.88 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36mprivacy-ClBOMS1T.js            [39m[1m[2m    9.39 kB[22m[1m[22m[2m │ gzip:   2.58 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36mterms-B_W2AZwz.js              [39m[1m[2m   11.24 kB[22m[1m[22m[2m │ gzip:   3.09 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36mtemplates-tgX2FS8A.js          [39m[1m[2m   11.36 kB[22m[1m[22m[2m │ gzip:   3.56 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36msystem-detail-2eH6ES7J.js      [39m[1m[2m   11.53 kB[22m[1m[22m[2m │ gzip:   3.81 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36monboarding-DmgpTjx-.js         [39m[1m[2m   12.70 kB[22m[1m[22m[2m │ gzip:   4.24 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36msystems-Dh-dEesL.js            [39m[1m[2m   14.37 kB[22m[1m[22m[2m │ gzip:   4.52 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36mgoal-detail-M8v_iumU.js        [39m[1m[2m   16.11 kB[22m[1m[22m[2m │ gzip:   4.61 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36mpricing-BydLE6-L.js            [39m[1m[2m   16.42 kB[22m[1m[22m[2m │ gzip:   5.03 kB[22m
+13:55:17.050 [2m../dist/[22m[2massets/[22m[36mjournal-CHOkQawI.js            [39m[1m[2m   16.53 kB[22m[1m[22m[2m │ gzip:   5.50 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36mai-coach-CynY-RMb.js           [39m[1m[2m   18.93 kB[22m[1m[22m[2m │ gzip:   5.92 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36mformat-Bp3TZiyw.js             [39m[1m[2m   19.54 kB[22m[1m[22m[2m │ gzip:   5.57 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36mselect-BfzX0Z-f.js             [39m[1m[2m   20.75 kB[22m[1m[22m[2m │ gzip:   7.21 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36msettings-CCPz0YQY.js           [39m[1m[2m   20.83 kB[22m[1m[22m[2m │ gzip:   6.13 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36mfuture-self-audio-DHPnYPdc.js  [39m[1m[2m   24.72 kB[22m[1m[22m[2m │ gzip:   7.67 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36mgoals-BJSmQ81M.js              [39m[1m[2m   28.62 kB[22m[1m[22m[2m │ gzip:   7.83 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36msystem-builder-yK8VbD14.js     [39m[1m[2m   37.10 kB[22m[1m[22m[2m │ gzip:  10.28 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36mcheckins-D9jVCbED.js           [39m[1m[2m   41.88 kB[22m[1m[22m[2m │ gzip:  11.33 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36mdashboard-yxMtBfiG.js          [39m[1m[2m   45.94 kB[22m[1m[22m[2m │ gzip:  11.63 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36manalytics-DW2kuQky.js          [39m[1m[2m  420.86 kB[22m[1m[22m[2m │ gzip: 115.14 kB[22m
+13:55:17.051 [2m../dist/[22m[2massets/[22m[36mindex-CDNkL7iU.js              [39m[1m[33m1,051.22 kB[39m[22m[2m │ gzip: 329.59 kB[22m
+13:55:17.051 [33m
+13:55:17.051 (!) Some chunks are larger than 500 kB after minification. Consider:
+13:55:17.051 - Using dynamic import() to code-split the application
+13:55:17.051 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+13:55:17.051 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+13:55:17.055 [32m✓ built in 10.20s[39m
+13:55:17.055 Build complete. Static files in dist/
+13:55:17.244 Build Completed in /vercel/output [15s]
+13:55:17.348 Deploying outputs...
+13:55:19.348 Deployment completed
+13:55:20.351 Creating build cache...
+13:55:38.936 Created build cache: 19s
+13:55:38.937 Uploading build cache [101.12 MB]
+13:55:40.325 Build cache uploaded: 1.395s
