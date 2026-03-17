@@ -4,6 +4,37 @@ import path from "path";
 
 const isReplit = process.env.REPL_ID !== undefined;
 
+/**
+ * Vite plugin that silences the PostCSS "no `from` option" warning.
+ *
+ * Root cause: Tailwind CSS v3 makes internal `postcss().process(css)` calls
+ * without passing `from` in opts. PostCSS 8.5.8 (lazy-result.js:428) emits
+ * the warning via `console.warn` — unconditionally, before any plugin
+ * lifecycle hook runs. In Vite 7 (ESM), patching the CJS module cache has
+ * no effect because PostCSS is loaded as an ES module.
+ *
+ * Fix: intercept `console.warn` at config-resolution time and drop only the
+ * specific "from option" message. All other warnings pass through unchanged.
+ */
+function suppressPostCSSFromWarning() {
+  return {
+    name: "suppress-postcss-from-warning",
+    enforce: "pre" as const,
+    configResolved() {
+      const original = console.warn.bind(console);
+      console.warn = (...args: unknown[]) => {
+        if (
+          typeof args[0] === "string" &&
+          args[0].includes("`from` option")
+        ) {
+          return;
+        }
+        original(...args);
+      };
+    },
+  };
+}
+
 export default defineConfig(async () => {
   const replitPlugins = isReplit
     ? await Promise.all([
@@ -14,7 +45,7 @@ export default defineConfig(async () => {
     : [];
 
   return {
-    plugins: [react(), ...replitPlugins],
+    plugins: [suppressPostCSSFromWarning(), react(), ...replitPlugins],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -30,35 +61,27 @@ export default defineConfig(async () => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            // React core — always loaded first
             if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
               return "react-vendor";
             }
-            // Firebase — large but only needed when authenticated
             if (id.includes("node_modules/firebase/") || id.includes("node_modules/@firebase/")) {
               return "firebase";
             }
-            // Recharts + D3 — only loaded on analytics page
             if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-") || id.includes("node_modules/victory-")) {
               return "charts";
             }
-            // Framer Motion — animation library
             if (id.includes("node_modules/framer-motion")) {
               return "motion";
             }
-            // Radix UI primitives — UI component library
             if (id.includes("node_modules/@radix-ui/")) {
               return "radix";
             }
-            // Stripe
             if (id.includes("node_modules/@stripe/") || id.includes("node_modules/stripe")) {
               return "stripe";
             }
-            // EmailJS
             if (id.includes("node_modules/@emailjs/")) {
               return "emailjs";
             }
-            // General utilities — date-fns, zod, wouter, etc.
             if (
               id.includes("node_modules/date-fns") ||
               id.includes("node_modules/zod") ||
