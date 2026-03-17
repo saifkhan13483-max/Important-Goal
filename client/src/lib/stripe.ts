@@ -43,6 +43,5 @@ export function buildPaymentLinkUrl(
   const url = new URL(baseUrl);
   if (opts.email) url.searchParams.set("prefilled_email", opts.email);
   if (opts.userId) url.searchParams.set("client_reference_id", opts.userId);
-  url.searchParams.set("metadata[plan]", opts.plan);
   return url.toString();
 }

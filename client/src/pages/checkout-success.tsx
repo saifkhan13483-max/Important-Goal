@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/auth.store";
@@ -8,8 +8,7 @@ import type { PlanTier } from "@/types/schema";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function CheckoutSuccess() {
-  const [locationPath] = useLocation();
-  const params = new URLSearchParams(locationPath.split("?")[1] || "");
+  const params = new URLSearchParams(window.location.search);
   const plan = (params.get("plan") || "starter") as PlanTier;
   const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1);
 
