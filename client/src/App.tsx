@@ -12,8 +12,12 @@
  *  - PublicOnlyRoute: accessible only when NOT logged in (login, signup)
  *  - ProtectedRoute:  requires auth + onboarding completion; redirects otherwise
  *  - Open routes:     onboarding, 404 (not behind auth guard)
+ *
+ * Performance: all heavy app routes are lazy-loaded via React.lazy/Suspense
+ * so the initial bundle only includes the landing, auth, and shell code.
  */
 
+import { lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
@@ -26,29 +30,51 @@ import { ProtectedRoute, PublicOnlyRoute } from "@/components/auth/protected-rou
 import { useAuth } from "@/hooks/use-auth";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { CookieConsent } from "@/components/cookie-consent";
+import { Skeleton } from "@/components/ui/skeleton";
 
+/* ── Eagerly loaded (critical path / small pages) ── */
 import Landing from "@/pages/landing";
-import Pricing from "@/pages/pricing";
-import PrivacyPolicy from "@/pages/privacy";
-import TermsOfService from "@/pages/terms";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import ForgotPassword from "@/pages/forgot-password";
-import Onboarding from "@/pages/onboarding";
-import Dashboard from "@/pages/dashboard";
-import Goals from "@/pages/goals";
-import GoalDetail from "@/pages/goal-detail";
-import SystemsPage from "@/pages/systems";
-import SystemBuilderPage from "@/pages/system-builder";
-import SystemDetailPage from "@/pages/system-detail";
-import TemplatesPage from "@/pages/templates";
-import Checkins from "@/pages/checkins";
-import Analytics from "@/pages/analytics";
-import Journal from "@/pages/journal";
-import Settings from "@/pages/settings";
-import AiCoach from "@/pages/ai-coach";
-import CheckoutSuccess from "@/pages/checkout-success";
 import NotFound from "@/pages/not-found";
+
+/* ── Lazy-loaded (heavy app routes — deferred until needed) ── */
+const Pricing         = lazy(() => import("@/pages/pricing"));
+const PrivacyPolicy   = lazy(() => import("@/pages/privacy"));
+const TermsOfService  = lazy(() => import("@/pages/terms"));
+const Onboarding      = lazy(() => import("@/pages/onboarding"));
+const Dashboard       = lazy(() => import("@/pages/dashboard"));
+const Goals           = lazy(() => import("@/pages/goals"));
+const GoalDetail      = lazy(() => import("@/pages/goal-detail"));
+const SystemsPage     = lazy(() => import("@/pages/systems"));
+const SystemBuilderPage  = lazy(() => import("@/pages/system-builder"));
+const SystemDetailPage   = lazy(() => import("@/pages/system-detail"));
+const TemplatesPage   = lazy(() => import("@/pages/templates"));
+const Checkins        = lazy(() => import("@/pages/checkins"));
+const Analytics       = lazy(() => import("@/pages/analytics"));
+const Journal         = lazy(() => import("@/pages/journal"));
+const Settings        = lazy(() => import("@/pages/settings"));
+const AiCoach         = lazy(() => import("@/pages/ai-coach"));
+const CheckoutSuccess = lazy(() => import("@/pages/checkout-success"));
+
+/**
+ * PageLoader — minimal skeleton shown while a lazy chunk is downloading.
+ * Keeps the layout stable (no layout shift) during the ~100–200 ms delay.
+ */
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-background flex flex-col gap-4 p-6">
+      <Skeleton className="h-8 w-48 rounded-xl" />
+      <Skeleton className="h-4 w-72 rounded-lg" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} className="h-32 rounded-2xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /**
  * AuthInitializer — Sets up the Firebase onAuthStateChanged listener at the
@@ -112,40 +138,42 @@ function ReminderChecker() {
 function Router() {
   const [location] = useLocation();
   return (
-    <AnimatePresence mode="wait" initial={false}>
-    <Switch key={location}>
-      {/* Public routes */}
-      <Route path="/" component={() => <PublicOnlyRoute component={Landing} />} />
-      <Route path="/pricing" component={Pricing} />
-      <Route path="/privacy" component={PrivacyPolicy} />
-      <Route path="/terms" component={TermsOfService} />
-      <Route path="/login" component={() => <PublicOnlyRoute component={Login} />} />
-      <Route path="/signup" component={() => <PublicOnlyRoute component={Signup} />} />
-      <Route path="/forgot-password" component={() => <PublicOnlyRoute component={ForgotPassword} />} />
+    <Suspense fallback={<PageLoader />}>
+      <AnimatePresence mode="wait" initial={false}>
+        <Switch key={location}>
+          {/* Public routes */}
+          <Route path="/" component={() => <PublicOnlyRoute component={Landing} />} />
+          <Route path="/pricing" component={Pricing} />
+          <Route path="/privacy" component={PrivacyPolicy} />
+          <Route path="/terms" component={TermsOfService} />
+          <Route path="/login" component={() => <PublicOnlyRoute component={Login} />} />
+          <Route path="/signup" component={() => <PublicOnlyRoute component={Signup} />} />
+          <Route path="/forgot-password" component={() => <PublicOnlyRoute component={ForgotPassword} />} />
 
-      {/* Onboarding — accessible to authed users who haven't completed it */}
-      <Route path="/onboarding" component={Onboarding} />
+          {/* Onboarding — accessible to authed users who haven't completed it */}
+          <Route path="/onboarding" component={Onboarding} />
 
-      {/* Protected app routes */}
-      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
-      <Route path="/goals" component={() => <ProtectedRoute component={Goals} />} />
-      <Route path="/goals/:id" component={() => <ProtectedRoute component={GoalDetail} />} />
-      <Route path="/systems" component={() => <ProtectedRoute component={SystemsPage} />} />
-      <Route path="/systems/new" component={() => <ProtectedRoute component={SystemBuilderPage} />} />
-      <Route path="/systems/:id/edit" component={() => <ProtectedRoute component={SystemBuilderPage} />} />
-      <Route path="/systems/:id" component={() => <ProtectedRoute component={SystemDetailPage} />} />
-      <Route path="/templates" component={() => <ProtectedRoute component={TemplatesPage} />} />
-      <Route path="/checkins" component={() => <ProtectedRoute component={Checkins} />} />
-      <Route path="/analytics" component={() => <ProtectedRoute component={Analytics} />} />
-      <Route path="/journal" component={() => <ProtectedRoute component={Journal} />} />
-      <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
-      <Route path="/ai-coach" component={() => <ProtectedRoute component={AiCoach} />} />
-      <Route path="/checkout/success" component={CheckoutSuccess} />
+          {/* Protected app routes */}
+          <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
+          <Route path="/goals" component={() => <ProtectedRoute component={Goals} />} />
+          <Route path="/goals/:id" component={() => <ProtectedRoute component={GoalDetail} />} />
+          <Route path="/systems" component={() => <ProtectedRoute component={SystemsPage} />} />
+          <Route path="/systems/new" component={() => <ProtectedRoute component={SystemBuilderPage} />} />
+          <Route path="/systems/:id/edit" component={() => <ProtectedRoute component={SystemBuilderPage} />} />
+          <Route path="/systems/:id" component={() => <ProtectedRoute component={SystemDetailPage} />} />
+          <Route path="/templates" component={() => <ProtectedRoute component={TemplatesPage} />} />
+          <Route path="/checkins" component={() => <ProtectedRoute component={Checkins} />} />
+          <Route path="/analytics" component={() => <ProtectedRoute component={Analytics} />} />
+          <Route path="/journal" component={() => <ProtectedRoute component={Journal} />} />
+          <Route path="/settings" component={() => <ProtectedRoute component={Settings} />} />
+          <Route path="/ai-coach" component={() => <ProtectedRoute component={AiCoach} />} />
+          <Route path="/checkout/success" component={CheckoutSuccess} />
 
-      {/* 404 */}
-      <Route component={NotFound} />
-    </Switch>
-    </AnimatePresence>
+          {/* 404 */}
+          <Route component={NotFound} />
+        </Switch>
+      </AnimatePresence>
+    </Suspense>
   );
 }
 
