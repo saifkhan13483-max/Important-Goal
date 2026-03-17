@@ -11,21 +11,22 @@ function generateInviteCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
+async function setUserWorkspaceId(userId: string, workspaceId: string | null) {
+  await updateDoc(doc(db, "users", userId), { workspaceId });
+}
+
+export async function getWorkspaceById(workspaceId: string): Promise<Workspace | null> {
+  const snap = await getDoc(doc(db, "workspaces", workspaceId));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() } as Workspace;
+}
+
 export async function getWorkspaceByOwner(ownerId: string): Promise<Workspace | null> {
   const q = query(col(), where("ownerId", "==", ownerId));
   const snap = await getDocs(q);
   if (snap.empty) return null;
   const d = snap.docs[0];
   return { id: d.id, ...d.data() } as Workspace;
-}
-
-export async function getWorkspaceByMember(userId: string): Promise<Workspace | null> {
-  const snap = await getDocs(col());
-  for (const d of snap.docs) {
-    const ws = { id: d.id, ...d.data() } as Workspace;
-    if (ws.members.some((m) => m.userId === userId)) return ws;
-  }
-  return null;
 }
 
 export async function getWorkspaceByCode(inviteCode: string): Promise<Workspace | null> {
@@ -58,7 +59,9 @@ export async function createWorkspace(
     createdAt: now,
   };
   const ref = await addDoc(col(), data);
-  return { id: ref.id, ...data };
+  const workspaceId = ref.id;
+  await setUserWorkspaceId(ownerId, workspaceId);
+  return { id: workspaceId, ...data };
 }
 
 export async function joinWorkspace(
@@ -73,6 +76,7 @@ export async function joinWorkspace(
   if (!alreadyMember) {
     const updatedMembers = [...ws.members, member];
     await updateDoc(ref, { members: updatedMembers });
+    await setUserWorkspaceId(member.userId, workspaceId);
     return { ...ws, members: updatedMembers };
   }
   return ws;
@@ -88,6 +92,7 @@ export async function leaveWorkspace(
   const ws = { id: snap.id, ...snap.data() } as Workspace;
   const updatedMembers = ws.members.filter((m) => m.userId !== userId);
   await updateDoc(ref, { members: updatedMembers });
+  await setUserWorkspaceId(userId, null);
 }
 
 export async function removeMemberFromWorkspace(
@@ -100,6 +105,7 @@ export async function removeMemberFromWorkspace(
   const ws = { id: snap.id, ...snap.data() } as Workspace;
   const updatedMembers = ws.members.filter((m) => m.userId !== memberId);
   await updateDoc(ref, { members: updatedMembers });
+  await setUserWorkspaceId(memberId, null);
   return { ...ws, members: updatedMembers };
 }
 

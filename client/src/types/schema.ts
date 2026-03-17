@@ -23,6 +23,7 @@ export interface User {
   plan?: PlanTier | null;
   planUpdatedAt?: string | null;
   stripeCustomerId?: string | null;
+  workspaceId?: string | null;
 }
 
 export interface GoalMilestone {

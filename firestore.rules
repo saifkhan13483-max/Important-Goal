@@ -10,33 +10,69 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // Users: only the owner can read/write their own document
-    match /users/{userId} {
-      allow read, write: if isSignedIn() && isOwner(userId);
+    // Returns the workspaceId stored on the requesting user's profile
+    function myWorkspaceId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.workspaceId;
     }
 
-    // Goals: only the owner can CRUD their own goalsowner
+    // Returns the workspaceId stored on a target user's profile
+    function targetWorkspaceId(targetUserId) {
+      return get(/databases/$(database)/documents/users/$(targetUserId)).data.workspaceId;
+    }
+
+    // True when the requesting user shares a workspace with targetUserId
+    function inSameWorkspace(targetUserId) {
+      let mine = myWorkspaceId();
+      let theirs = targetWorkspaceId(targetUserId);
+      return mine != null && theirs != null && mine == theirs;
+    }
+
+    // Users: owner can read/write their own doc; workspace members can read profiles
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+      allow read: if isSignedIn() && inSameWorkspace(userId);
+    }
+
+    // Goals: only the owner can CRUD their own goals
     match /goals/{goalId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
     }
 
-    // Systems: only the owner can CRUD their own systems
+    // Systems: owner has full access; workspace members can read
     match /systems/{systemId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow read: if isSignedIn() && inSameWorkspace(resource.data.userId);
     }
 
-    // Checkins: only the owner can CRUD their own checkins
+    // Checkins: owner has full access; workspace members can read
     match /checkins/{checkinId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow read: if isSignedIn() && inSameWorkspace(resource.data.userId);
     }
 
     // Journal entries: only the owner can CRUD their own entries
     match /journalEntries/{entryId} {
       allow read, write: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+    }
+
+    // Workspaces: any signed-in user may read (needed for invite code lookup) and create;
+    // updates allowed for owner (manage members, regen code) or any signed-in user (joining).
+    match /workspaces/{workspaceId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.uid in resource.data.members.map(m, m.userId)
+      );
+    }
+
+    // Email leads: write-only (captured from landing page)
+    match /emailLeads/{leadId} {
+      allow create: if true;
     }
   }
 }
