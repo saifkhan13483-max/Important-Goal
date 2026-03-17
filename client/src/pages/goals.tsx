@@ -17,10 +17,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight, Zap, Lightbulb, ArrowLeft, ArrowRight, Flag, CheckCircle2, Milestone, Eye } from "lucide-react";
+import { Target, Plus, Pencil, Trash2, Search, Calendar, Check, Archive, Loader2, MoreVertical, ChevronRight, Zap, Lightbulb, ArrowLeft, ArrowRight, Flag, CheckCircle2, Milestone, Eye, Lock, Sparkles } from "lucide-react";
 import { format, isPast, isWithinInterval, addDays, startOfDay } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link } from "wouter";
+import { isAtGoalLimit, getPlanLimits } from "@/lib/plan-limits";
+import type { PlanTier } from "@/types/schema";
 
 const categories = ["fitness", "study", "career", "business", "relationship", "mindset", "health", "finance", "creativity", "other"];
 const priorities = ["low", "medium", "high"];
@@ -445,6 +447,7 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
 export default function Goals() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
+  const plan = (user?.plan ?? "free") as PlanTier;
   const { data: goals = [], isLoading } = useQuery<Goal[]>({
     queryKey: ["goals", userId],
     queryFn: () => getGoals(userId),
@@ -459,6 +462,20 @@ export default function Goals() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editGoal, setEditGoal] = useState<Goal | undefined>();
   const [deleteGoalItem, setDeleteGoalItem] = useState<Goal | undefined>();
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+
+  const activeGoals = goals.filter(g => g.status === "active");
+  const goalLimit = getPlanLimits(plan).goals;
+  const atGoalLimit = isAtGoalLimit(plan, activeGoals.length);
+
+  const handleNewGoal = () => {
+    if (atGoalLimit) {
+      setUpgradeOpen(true);
+      return;
+    }
+    setEditGoal(undefined);
+    setDialogOpen(true);
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteGoal(id),
@@ -511,11 +528,29 @@ export default function Goals() {
           <h1 className="text-2xl font-bold">My Goals</h1>
           <p className="text-muted-foreground text-sm mt-0.5">{goals.length} goal{goals.length !== 1 ? "s" : ""} total</p>
         </div>
-        <Button onClick={() => { setEditGoal(undefined); setDialogOpen(true); }} data-testid="button-new-goal">
-          <Plus className="w-4 h-4 mr-2" />
+        <Button onClick={handleNewGoal} data-testid="button-new-goal" variant={atGoalLimit ? "outline" : "default"}>
+          {atGoalLimit ? <Lock className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
           New Goal
         </Button>
       </div>
+
+      {/* Plan limit banner */}
+      {goalLimit !== null && (
+        <div className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border text-sm ${atGoalLimit ? "bg-destructive/5 border-destructive/30 text-destructive" : "bg-muted/40 border-border text-muted-foreground"}`} data-testid="banner-goal-limit">
+          <span className="flex items-center gap-2">
+            {atGoalLimit ? <Lock className="w-4 h-4 flex-shrink-0" /> : <Target className="w-4 h-4 flex-shrink-0" />}
+            {atGoalLimit
+              ? `You've reached the ${goalLimit}-goal limit on the Free plan.`
+              : `${activeGoals.length} / ${goalLimit} active goals used on the Free plan.`}
+          </span>
+          <Link href="/pricing">
+            <button className="flex items-center gap-1 text-xs font-semibold underline-offset-2 hover:underline whitespace-nowrap text-primary" data-testid="link-upgrade-plan">
+              <Sparkles className="w-3.5 h-3.5" />
+              Upgrade
+            </button>
+          </Link>
+        </div>
+      )}
 
       {/* Educational hint: goals vs systems — shown to new users */}
       {goals.length === 0 && !isLoading && (
@@ -661,6 +696,42 @@ export default function Goals() {
             <DialogTitle>{editGoal ? "Edit Goal" : "Create New Goal"}</DialogTitle>
           </DialogHeader>
           <GoalForm goal={editGoal} userId={userId} onClose={() => { setDialogOpen(false); setEditGoal(undefined); }} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
+        <DialogContent className="max-w-sm text-center" data-testid="dialog-goal-limit">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2">
+              <Lock className="w-5 h-5 text-destructive" />
+              Goal Limit Reached
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              The <span className="font-semibold text-foreground">Free plan</span> allows up to{" "}
+              <span className="font-semibold text-foreground">{goalLimit} active goals</span>.
+              Upgrade to create unlimited goals and unlock all features.
+            </p>
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1 text-left">
+              <p className="font-semibold text-foreground mb-1.5">Upgrade benefits</p>
+              <p>✓ Unlimited active goals</p>
+              <p>✓ Unlimited systems &amp; habits</p>
+              <p>✓ AI Coach, insights &amp; reflections</p>
+              <p>✓ Priority support</p>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+            <Link href="/pricing">
+              <Button className="w-full gap-2" onClick={() => setUpgradeOpen(false)} data-testid="button-upgrade-from-limit">
+                <Sparkles className="w-4 h-4" />
+                View Upgrade Plans
+              </Button>
+            </Link>
+            <Button variant="ghost" className="w-full" onClick={() => setUpgradeOpen(false)}>
+              Maybe later
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
