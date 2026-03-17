@@ -3,21 +3,21 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check, Sparkles, ChevronDown, ArrowRight, HelpCircle, Loader2 } from "lucide-react";
+import { Check, Sparkles, ChevronDown, ArrowRight, HelpCircle, Loader2, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { getStripe } from "@/lib/stripe";
+import { PLAN_PAYMENT_LINKS, buildPaymentLinkUrl } from "@/lib/stripe";
+import { useAppStore } from "@/store/auth.store";
 
 const plans = [
   {
     name: "Free",
+    planKey: "free",
     monthlyPrice: 0,
     yearlyPrice: 0,
     tagline: "Try system-building for the first time",
     idealFor: "Beginners exploring habit tracking",
     badge: null,
-    stripePriceIdMonthly: null,
-    stripePriceIdYearly: null,
     features: [
       "Up to 2 active goals",
       "Up to 3 active systems",
@@ -39,13 +39,12 @@ const plans = [
   },
   {
     name: "Starter",
+    planKey: "starter",
     monthlyPrice: 9,
     yearlyPrice: 7,
     tagline: "Build real consistency",
     idealFor: "Individuals building lasting habits",
     badge: null,
-    stripePriceIdMonthly: import.meta.env.VITE_STRIPE_STARTER_MONTHLY_PRICE_ID || null,
-    stripePriceIdYearly: import.meta.env.VITE_STRIPE_STARTER_YEARLY_PRICE_ID || null,
     features: [
       "Up to 10 active goals",
       "Unlimited systems",
@@ -64,17 +63,15 @@ const plans = [
     ],
     cta: "Get Starter",
     ctaVariant: "outline" as const,
-    href: "/signup",
   },
   {
     name: "Pro",
+    planKey: "pro",
     monthlyPrice: 19,
     yearlyPrice: 15,
     tagline: "Deep insights, unlimited potential",
     idealFor: "Ambitious users who want full control",
     badge: "Most Popular",
-    stripePriceIdMonthly: import.meta.env.VITE_STRIPE_PRO_MONTHLY_PRICE_ID || null,
-    stripePriceIdYearly: import.meta.env.VITE_STRIPE_PRO_YEARLY_PRICE_ID || null,
     features: [
       "Unlimited goals",
       "Unlimited systems",
@@ -88,11 +85,32 @@ const plans = [
     notIncluded: [
       "Multi-user workspace",
       "Team progress overview",
-      "Coach dashboard",
+      "AI Coach (unlimited)",
     ],
     cta: "Get Pro",
     ctaVariant: "default" as const,
-    href: "/signup",
+  },
+  {
+    name: "Elite",
+    planKey: "elite",
+    monthlyPrice: 49,
+    yearlyPrice: 37,
+    tagline: "For serious systems builders",
+    idealFor: "Power users & high-performance individuals",
+    badge: "Best Value",
+    features: [
+      "Everything in Pro",
+      "Unlimited AI Coach sessions",
+      "Multi-user workspace",
+      "Team progress overview",
+      "Coach dashboard",
+      "Custom habit templates",
+      "White-glove onboarding",
+      "Dedicated support",
+    ],
+    notIncluded: [],
+    cta: "Get Elite",
+    ctaVariant: "default" as const,
   },
 ];
 
@@ -115,21 +133,27 @@ const faqs = [
   },
   {
     q: "Can I pay yearly?",
-    a: "Yes. Choosing yearly billing saves you 20% compared to monthly. You can toggle between monthly and yearly billing on this page.",
+    a: "Yes. Choosing yearly billing saves you around 20–25% compared to monthly. You can toggle between monthly and yearly billing on this page.",
+  },
+  {
+    q: "How do I manage or cancel my subscription?",
+    a: "After subscribing, you'll receive a Stripe receipt email. You can manage or cancel your subscription at any time from the billing portal — accessible via Settings → Manage Billing in your account.",
   },
 ];
 
 const comparisonRows = [
-  { feature: "Active Goals", free: "2", starter: "10", pro: "Unlimited" },
-  { feature: "Active Systems", free: "3", starter: "Unlimited", pro: "Unlimited" },
-  { feature: "Daily Check-ins", free: true, starter: true, pro: true },
-  { feature: "Streak Tracking", free: "Basic", starter: "Advanced", pro: "Advanced" },
-  { feature: "Templates", free: "3 starter", starter: "Full library", pro: "Premium" },
-  { feature: "Analytics", free: "Light", starter: "Better", pro: "Advanced" },
-  { feature: "Journaling", free: "Basic", starter: true, pro: "Advanced" },
-  { feature: "Export Reports", free: false, starter: "Basic", pro: "CSV / PDF" },
-  { feature: "Dark Mode", free: false, starter: true, pro: true },
-  { feature: "Priority Support", free: false, starter: false, pro: true },
+  { feature: "Active Goals", free: "2", starter: "10", pro: "Unlimited", elite: "Unlimited" },
+  { feature: "Active Systems", free: "3", starter: "Unlimited", pro: "Unlimited", elite: "Unlimited" },
+  { feature: "Daily Check-ins", free: true, starter: true, pro: true, elite: true },
+  { feature: "Streak Tracking", free: "Basic", starter: "Advanced", pro: "Advanced", elite: "Advanced" },
+  { feature: "Templates", free: "3 starter", starter: "Full library", pro: "Premium", elite: "Custom" },
+  { feature: "Analytics", free: "Light", starter: "Better", pro: "Advanced", elite: "Advanced" },
+  { feature: "Journaling", free: "Basic", starter: true, pro: "Advanced", elite: "Advanced" },
+  { feature: "Export Reports", free: false, starter: "Basic", pro: "CSV / PDF", elite: "CSV / PDF" },
+  { feature: "Dark Mode", free: false, starter: true, pro: true, elite: true },
+  { feature: "Priority Support", free: false, starter: false, pro: true, elite: "Dedicated" },
+  { feature: "AI Coach", free: false, starter: false, pro: "Limited", elite: "Unlimited" },
+  { feature: "Team Workspace", free: false, starter: false, pro: false, elite: true },
 ];
 
 function FAQItem({ q, a }: { q: string; a: string }) {
@@ -162,49 +186,32 @@ function CellValue({ value }: { value: string | boolean }) {
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAppStore();
 
-  const handlePaidPlanCTA = async (plan: typeof plans[number]) => {
-    const priceId = yearly ? plan.stripePriceIdYearly : plan.stripePriceIdMonthly;
+  const handlePaidPlanCTA = (plan: typeof plans[number]) => {
+    const interval = yearly ? "yearly" : "monthly";
+    const links = PLAN_PAYMENT_LINKS[plan.planKey];
+    const paymentLink = links?.[interval] || null;
 
-    if (!priceId) {
+    if (!paymentLink) {
       toast({
-        title: "Stripe price not configured",
-        description: "Add VITE_STRIPE_STARTER/PRO_MONTHLY/YEARLY_PRICE_ID env vars with your Stripe Price IDs.",
+        title: "Payment link not configured",
+        description: `Contact support to upgrade to ${plan.name}, or try again shortly.`,
         duration: 6000,
       });
       return;
     }
 
     setLoadingPlan(plan.name);
-    try {
-      const stripe = await getStripe();
-      if (!stripe) {
-        throw new Error("Stripe failed to load. Check your publishable key.");
-      }
 
-      const domain = window.location.origin;
-      const { error } = await stripe.redirectToCheckout({
-        lineItems: [{ price: priceId, quantity: 1 }],
-        mode: "subscription",
-        successUrl: `${domain}/checkout/success?plan=${plan.name.toLowerCase()}`,
-        cancelUrl: `${domain}/pricing`,
-      });
+    const url = buildPaymentLinkUrl(paymentLink, {
+      email: user?.email,
+      userId: user?.id,
+      plan: plan.planKey,
+    });
 
-      if (error) {
-        throw new Error(error.message);
-      }
-    } catch (err: any) {
-      toast({
-        title: "Checkout failed",
-        description: err.message || "Something went wrong. Please try again.",
-        variant: "destructive",
-        duration: 5000,
-      });
-    } finally {
-      setLoadingPlan(null);
-    }
+    window.location.href = url;
   };
 
   return (
@@ -246,6 +253,7 @@ export default function Pricing() {
           <div className="inline-flex items-center gap-3 bg-muted rounded-xl p-1">
             <button
               onClick={() => setYearly(false)}
+              data-testid="button-billing-monthly"
               className={cn(
                 "px-4 py-1.5 rounded-lg text-sm font-medium transition-all",
                 !yearly ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
@@ -255,6 +263,7 @@ export default function Pricing() {
             </button>
             <button
               onClick={() => setYearly(true)}
+              data-testid="button-billing-yearly"
               className={cn(
                 "px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
                 yearly ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
@@ -267,8 +276,9 @@ export default function Pricing() {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-16 max-w-4xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
           {plans.map((plan) => {
+            const isElite = plan.planKey === "elite";
             const isPro = plan.badge === "Most Popular";
             const price = plan.monthlyPrice === 0
               ? "$0"
@@ -282,18 +292,27 @@ export default function Pricing() {
                 className={cn(
                   "relative flex flex-col border-border/60 hover-elevate",
                   isPro && "border-primary/40 ring-1 ring-primary/20 shadow-md",
+                  isElite && "border-amber-400/40 ring-1 ring-amber-400/20 shadow-md",
                 )}
               >
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="gradient-brand text-white border-0 px-3 py-0.5 text-xs shadow-sm">
+                    <Badge
+                      className={cn(
+                        "text-white border-0 px-3 py-0.5 text-xs shadow-sm",
+                        isElite ? "bg-amber-500" : "gradient-brand",
+                      )}
+                    >
                       {plan.badge}
                     </Badge>
                   </div>
                 )}
                 <CardContent className="p-5 flex flex-col flex-1">
                   <div className="mb-5">
-                    <p className="font-bold text-base mb-0.5">{plan.name}</p>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      {isElite && <Crown className="w-4 h-4 text-amber-500" />}
+                      <p className="font-bold text-base">{plan.name}</p>
+                    </div>
                     <p className="text-xs text-muted-foreground mb-1">{plan.idealFor}</p>
                     <p className="text-xs text-muted-foreground/70 mb-4 italic">{plan.tagline}</p>
                     <div className="flex items-baseline gap-1">
@@ -313,7 +332,7 @@ export default function Pricing() {
                   <div className="space-y-2 mb-6 flex-1">
                     {plan.features.map((feature) => (
                       <div key={feature} className="flex items-start gap-2">
-                        <Check className="w-4 h-4 text-chart-3 flex-shrink-0 mt-0.5" />
+                        <Check className={cn("w-4 h-4 flex-shrink-0 mt-0.5", isElite ? "text-amber-500" : "text-chart-3")} />
                         <span className="text-sm text-foreground leading-snug">{feature}</span>
                       </div>
                     ))}
@@ -326,11 +345,11 @@ export default function Pricing() {
                   </div>
 
                   {plan.monthlyPrice === 0 ? (
-                    <Link href={plan.href}>
+                    <Link href="/signup">
                       <Button
                         variant={plan.ctaVariant}
                         className="w-full"
-                        data-testid={`button-pricing-${plan.name.toLowerCase().replace(/\s/g, "-")}`}
+                        data-testid="button-pricing-free"
                       >
                         {plan.cta}
                       </Button>
@@ -342,15 +361,16 @@ export default function Pricing() {
                         className={cn(
                           "w-full",
                           isPro && "gradient-brand text-white border-0 hover:opacity-90",
+                          isElite && "bg-amber-500 hover:bg-amber-600 text-white border-0",
                         )}
-                        data-testid={`button-pricing-${plan.name.toLowerCase().replace(/\s/g, "-")}`}
+                        data-testid={`button-pricing-${plan.planKey}`}
                         onClick={() => handlePaidPlanCTA(plan)}
                         disabled={loadingPlan === plan.name}
                       >
                         {loadingPlan === plan.name ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Redirecting...
+                            Redirecting…
                           </>
                         ) : (
                           plan.cta
@@ -375,11 +395,18 @@ export default function Pricing() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40">
-                  <th className="text-left p-4 font-semibold text-sm w-1/3">Feature</th>
+                  <th className="text-left p-4 font-semibold text-sm w-1/4">Feature</th>
                   {plans.map(p => (
-                    <th key={p.name} className={cn("text-center p-4 font-semibold text-sm", p.badge && "text-primary")}>
+                    <th key={p.name} className={cn("text-center p-4 font-semibold text-sm",
+                      p.badge === "Most Popular" && "text-primary",
+                      p.planKey === "elite" && "text-amber-600 dark:text-amber-400",
+                    )}>
                       {p.name}
-                      {p.badge && <Badge className="ml-1 text-xs gradient-brand text-white border-0 px-1.5">★</Badge>}
+                      {p.badge && (
+                        <Badge className={cn("ml-1 text-xs border-0 px-1.5", p.planKey === "elite" ? "bg-amber-500 text-white" : "gradient-brand text-white")}>
+                          {p.planKey === "elite" ? "👑" : "★"}
+                        </Badge>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -391,6 +418,7 @@ export default function Pricing() {
                     <td className="p-4"><CellValue value={row.free} /></td>
                     <td className="p-4"><CellValue value={row.starter} /></td>
                     <td className="p-4 bg-primary/3"><CellValue value={row.pro} /></td>
+                    <td className="p-4 bg-amber-500/5"><CellValue value={row.elite} /></td>
                   </tr>
                 ))}
               </tbody>

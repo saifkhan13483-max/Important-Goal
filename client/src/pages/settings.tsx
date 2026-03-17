@@ -15,7 +15,10 @@ import {
   Loader2, Sun, Moon, Monitor, LogOut, User, Palette, Globe,
   Bell, Shield, HelpCircle, Sparkles, Zap, Target, BookOpen,
   ChevronRight, ExternalLink, Heart, BellRing, BellOff, Mic,
+  CreditCard, Crown,
 } from "lucide-react";
+import { STRIPE_CUSTOMER_PORTAL_URL } from "@/lib/stripe";
+import type { PlanTier } from "@/types/schema";
 import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { FutureSelfAudioSetup, FutureSelfAudioSettings } from "@/components/future-self-audio";
@@ -59,6 +62,109 @@ function SectionCard({
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
+  );
+}
+
+const PLAN_DETAILS: Record<PlanTier, { label: string; description: string; color: string; icon: any }> = {
+  free: {
+    label: "Free",
+    description: "Up to 2 goals, 3 systems",
+    color: "secondary",
+    icon: Sparkles,
+  },
+  starter: {
+    label: "Starter",
+    description: "Up to 10 goals · Full template library",
+    color: "default",
+    icon: Zap,
+  },
+  pro: {
+    label: "Pro",
+    description: "Unlimited goals · Advanced analytics · Priority support",
+    color: "default",
+    icon: Sparkles,
+  },
+  elite: {
+    label: "Elite",
+    description: "Everything in Pro · AI Coach · Team workspace",
+    color: "default",
+    icon: Crown,
+  },
+};
+
+function BillingCard({ plan }: { plan: PlanTier }) {
+  const details = PLAN_DETAILS[plan] || PLAN_DETAILS.free;
+  const isPaid = plan !== "free";
+
+  return (
+    <SectionCard
+      icon={CreditCard}
+      title="Subscription & Billing"
+      description="Your current plan and billing options"
+    >
+      <div className="space-y-3">
+        <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border border-border/40">
+          <div>
+            <p className="text-sm font-medium">Current plan</p>
+            <p className="text-xs text-muted-foreground">{details.description}</p>
+          </div>
+          <Badge
+            variant={isPaid ? "default" : "secondary"}
+            className={cn(
+              "flex items-center gap-1 flex-shrink-0",
+              plan === "elite" && "bg-amber-500 hover:bg-amber-500 text-white",
+              plan === "pro" && "gradient-brand text-white border-0",
+              plan === "starter" && "bg-primary/80 text-white border-0",
+            )}
+            data-testid="badge-current-plan"
+          >
+            <details.icon className="w-3 h-3" />
+            {details.label}
+          </Badge>
+        </div>
+
+        {isPaid ? (
+          STRIPE_CUSTOMER_PORTAL_URL ? (
+            <a href={STRIPE_CUSTOMER_PORTAL_URL} target="_blank" rel="noopener noreferrer">
+              <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border border-border/40 cursor-pointer hover:bg-muted/50 transition-colors">
+                <div>
+                  <p className="text-sm font-medium">Manage billing</p>
+                  <p className="text-xs text-muted-foreground">Update payment method, cancel or change plan</p>
+                </div>
+                <Button size="sm" variant="outline" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-manage-billing" asChild>
+                  <span>
+                    <ExternalLink className="w-3 h-3" />
+                    Billing portal
+                  </span>
+                </Button>
+              </div>
+            </a>
+          ) : (
+            <div className="p-3 rounded-md bg-muted/20 border border-border/40">
+              <p className="text-xs text-muted-foreground">
+                To manage your subscription, visit your Stripe billing portal.{" "}
+                <a href="mailto:support@systemforge.app" className="underline hover:text-foreground transition-colors">Contact support</a> if you need help.
+              </p>
+            </div>
+          )
+        ) : (
+          <Link href="/pricing">
+            <div className="flex items-center justify-between p-3 rounded-md bg-chart-3/5 border border-chart-3/20 cursor-pointer hover:bg-chart-3/10 transition-colors">
+              <div>
+                <p className="text-sm font-medium text-chart-3">Upgrade your plan</p>
+                <p className="text-xs text-muted-foreground">Unlock unlimited goals, systems, and advanced analytics</p>
+              </div>
+              <Button size="sm" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-upgrade" asChild>
+                <span>
+                  <Sparkles className="w-3 h-3" />
+                  Upgrade
+                </span>
+              </Button>
+            </div>
+          </Link>
+        )}
+      </div>
+    </SectionCard>
   );
 }
 
@@ -476,36 +582,15 @@ export default function Settings() {
         </div>
       </SectionCard>
 
+      {/* Subscription / Billing */}
+      <BillingCard plan={(user?.plan as PlanTier | null | undefined) || "free"} />
+
       {/* Account */}
       <SectionCard
         icon={User}
         title="Account"
       >
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border border-border/40">
-            <div>
-              <p className="text-sm font-medium">Current plan</p>
-              <p className="text-xs text-muted-foreground">Free — up to 2 goals, 3 systems</p>
-            </div>
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              Free
-            </Badge>
-          </div>
-          <Link href="/pricing">
-            <div className="flex items-center justify-between p-3 rounded-md bg-chart-3/5 border border-chart-3/20 cursor-pointer hover:bg-chart-3/10 transition-colors">
-              <div>
-                <p className="text-sm font-medium text-chart-3">Upgrade to Pro</p>
-                <p className="text-xs text-muted-foreground">Unlimited goals, systems + advanced analytics</p>
-              </div>
-              <Button size="sm" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-upgrade" asChild>
-                <span>
-                  <Sparkles className="w-3 h-3" />
-                  Upgrade
-                </span>
-              </Button>
-            </div>
-          </Link>
           <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border border-border/40">
             <div>
               <p className="text-sm font-medium">Sign out</p>

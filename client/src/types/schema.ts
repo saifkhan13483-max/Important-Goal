@@ -1,3 +1,5 @@
+export type PlanTier = "free" | "starter" | "pro" | "elite";
+
 export interface User {
   id: string;
   email: string;
@@ -18,6 +20,9 @@ export interface User {
   futureAudioAutoplay?: boolean | null;
   futureAudioMuted?: boolean | null;
   futureAudioLabel?: string | null;
+  plan?: PlanTier | null;
+  planUpdatedAt?: string | null;
+  stripeCustomerId?: string | null;
 }
 
 export interface GoalMilestone {

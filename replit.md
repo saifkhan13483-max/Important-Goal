@@ -13,15 +13,20 @@ SystemForge is a React + Firebase web application that helps users turn goals in
   - OG image, og:url, twitter:image, twitter:site, and canonical URL meta tags added to `index.html`
 
 ## Stripe Integration
-- **Approach**: Client-side only using `@stripe/stripe-js` `redirectToCheckout` (no backend required)
-- **Keys stored as**: Replit Secrets (`STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`) + env var (`VITE_STRIPE_PUBLISHABLE_KEY` in shared)
-- **NOTE**: Replit Stripe connector was dismissed — keys added manually as secrets instead
-- **Price IDs needed**: Set these env vars with your Stripe Price IDs to enable checkout:
-  - `VITE_STRIPE_STARTER_MONTHLY_PRICE_ID` — Starter plan monthly price ID (price_...)
-  - `VITE_STRIPE_STARTER_YEARLY_PRICE_ID` — Starter plan yearly price ID
-  - `VITE_STRIPE_PRO_MONTHLY_PRICE_ID` — Pro plan monthly price ID
-  - `VITE_STRIPE_PRO_YEARLY_PRICE_ID` — Pro plan yearly price ID
-- **Success page**: `/checkout/success?plan=starter|pro`
+- **Approach**: Client-side only using **Stripe Payment Links** (no backend required, replaces deprecated `redirectToCheckout`)
+- **Plans**: Free ($0), Starter ($9/mo), Pro ($19/mo), Elite ($49/mo) — all with monthly + yearly pricing
+- **Publishable key**: `VITE_STRIPE_PUBLISHABLE_KEY` (shared env var)
+- **Payment Links** — create these in Stripe dashboard (Products → Payment Links) and set as env vars:
+  - `VITE_STRIPE_STARTER_MONTHLY_LINK` — Payment Link URL for Starter monthly
+  - `VITE_STRIPE_STARTER_YEARLY_LINK` — Payment Link URL for Starter yearly
+  - `VITE_STRIPE_PRO_MONTHLY_LINK` — Payment Link URL for Pro monthly
+  - `VITE_STRIPE_PRO_YEARLY_LINK` — Payment Link URL for Pro yearly
+  - `VITE_STRIPE_ELITE_MONTHLY_LINK` — Payment Link URL for Elite monthly
+  - `VITE_STRIPE_ELITE_YEARLY_LINK` — Payment Link URL for Elite yearly
+  - `VITE_STRIPE_CUSTOMER_PORTAL_URL` — Stripe Customer Portal URL (Billing → Customer Portal)
+- **Success page**: `/checkout/success?plan=starter|pro|elite` — saves plan to Firestore `users/{uid}.plan`
+- **Plan stored on**: `User.plan` field (PlanTier: "free" | "starter" | "pro" | "elite")
+- **Settings page**: Shows real plan from Firestore + "Manage billing" link to Stripe Customer Portal
 - **Stripe lib**: `client/src/lib/stripe.ts`
 
 ## Architecture
