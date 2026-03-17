@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 
-const ADMIN_EMAILS = ["saifkhan13483@gmail.com", "saifkhan16381@gmail.com"];
+const ADMIN_EMAILS = ["saifkhan13483@gmail.com"];
 
 export default function AdminPage() {
   const { user, setUser } = useAppStore();
