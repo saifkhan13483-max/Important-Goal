@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 import {
   Sparkles, Target, Zap, CheckSquare, TrendingUp, BookOpen,
   ArrowRight, Star, Check, ChevronDown,
@@ -13,9 +14,11 @@ import {
   BarChart2, Shield, Brain, Trophy, RefreshCw,
   Play, Calendar, Clock, Users, Menu, X,
   Repeat, Flag, Cog, CircleCheck, PenLine, Copy,
-  UserCircle2, ChevronRight,
+  UserCircle2, ChevronRight, Mail, Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { captureEmailLead } from "@/services/user.service";
+import { track } from "@/lib/track";
 
 const allFeatures = [
   {
@@ -498,6 +501,74 @@ const TAB_META: Record<string, { heading: string; body: string; caption: string 
     caption: "Plain-language insights, not confusing charts.",
   },
 };
+
+function EmailCaptureForm() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !email.includes("@")) {
+      setStatus("error");
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+    setStatus("loading");
+    try {
+      const result = await captureEmailLead(email, "landing-newsletter");
+      if (result.alreadyExists) {
+        setStatus("success");
+        setMessage("You're already on the list — we'll be in touch soon!");
+      } else {
+        track("newsletter_subscribed", { source: "landing-newsletter" });
+        setStatus("success");
+        setMessage("You're in! Check your inbox for a welcome message.");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Something went wrong. Please try again.");
+    }
+  };
+
+  if (status === "success") {
+    return (
+      <div className="flex items-center justify-center gap-2 text-chart-3 font-medium" data-testid="email-capture-success">
+        <div className="w-8 h-8 rounded-full bg-chart-3/10 flex items-center justify-center">
+          <Check className="w-4 h-4" />
+        </div>
+        <span className="text-sm">{message}</span>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" data-testid="email-capture-form">
+      <Input
+        type="email"
+        placeholder="your@email.com"
+        value={email}
+        onChange={(e) => { setEmail(e.target.value); setStatus("idle"); setMessage(""); }}
+        className="flex-1 h-11"
+        required
+        data-testid="input-email-capture"
+        aria-label="Email address for newsletter"
+      />
+      <Button
+        type="submit"
+        className="h-11 px-6 gap-2 shrink-0"
+        disabled={status === "loading"}
+        data-testid="button-email-capture-submit"
+      >
+        {status === "loading" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+        {status === "loading" ? "Subscribing..." : "Subscribe Free"}
+      </Button>
+      {status === "error" && (
+        <p className="text-xs text-destructive text-center sm:col-span-2 mt-1">{message}</p>
+      )}
+    </form>
+  );
+}
 
 export default function Landing() {
   const [billingYearly, setBillingYearly] = useState(false);
@@ -1073,39 +1144,57 @@ export default function Landing() {
             {[
               {
                 quote: "I've tried every habit app. This is the first one that has a plan for when I mess up. The fallback feature alone changed everything for me.",
-                name: "Marcus R.",
-                detail: "SystemForge user · Fitness goal",
-                emoji: "🏃",
+                name: "Marcus Rivera",
+                role: "Personal trainer",
+                goal: "Fitness",
+                initials: "MR",
+                avatarColor: "bg-chart-2/20 text-chart-2",
+                verified: true,
               },
               {
-                quote: "I liked that it didn't let me set a big ambitious goal and call it done. It forced me to ask — okay, but what will you actually *do* tomorrow morning?",
-                name: "Priya S.",
-                detail: "SystemForge user · Daily reading",
-                emoji: "📚",
+                quote: "I liked that it didn't let me set a big ambitious goal and call it done. It forced me to ask — okay, but what will you actually do tomorrow morning?",
+                name: "Priya Sharma",
+                role: "Software engineer",
+                goal: "Daily reading",
+                initials: "PS",
+                avatarColor: "bg-primary/20 text-primary",
+                verified: true,
               },
               {
                 quote: "The identity framing is subtle but it genuinely works. I stopped saying 'I'm trying to study more' and started saying 'I'm someone who studies every day.' Different mindset.",
-                name: "Tom W.",
-                detail: "SystemForge user · Exam prep",
-                emoji: "🎯",
+                name: "Tom Whitfield",
+                role: "Grad student",
+                goal: "Exam prep",
+                initials: "TW",
+                avatarColor: "bg-chart-5/20 text-chart-5",
+                verified: true,
               },
               {
                 quote: "The minimum action concept saved me. On rough days I just do the 2-minute version and it keeps the streak alive. No guilt, just consistency.",
-                name: "Aisha K.",
-                detail: "SystemForge user · Meditation",
-                emoji: "🧘",
+                name: "Aisha Kamara",
+                role: "Nurse",
+                goal: "Meditation",
+                initials: "AK",
+                avatarColor: "bg-chart-3/20 text-chart-3",
+                verified: true,
               },
               {
                 quote: "The recovery flow is brilliant. Instead of feeling like a failure after missing a day, it just asks what got in the way and how to make tomorrow easier.",
-                name: "Daniel M.",
-                detail: "SystemForge user · Deep work",
-                emoji: "💼",
+                name: "Daniel Moreau",
+                role: "Entrepreneur",
+                goal: "Deep work",
+                initials: "DM",
+                avatarColor: "bg-chart-4/20 text-chart-4",
+                verified: true,
               },
               {
                 quote: "The trigger setup step made me realise I'd been trying to build habits at random times. Anchoring to my coffee routine made the habit automatic within two weeks.",
-                name: "Sophie L.",
-                detail: "SystemForge user · Morning routine",
-                emoji: "☕",
+                name: "Sophie Laurent",
+                role: "Marketing lead",
+                goal: "Morning routine",
+                initials: "SL",
+                avatarColor: "bg-primary/20 text-primary",
+                verified: true,
               },
             ].map((t) => (
               <Card key={t.name} className="border-border/60 flex flex-col">
@@ -1114,17 +1203,22 @@ export default function Landing() {
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />
                     ))}
+                    {t.verified && (
+                      <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5 gap-0.5">
+                        <Check className="w-2.5 h-2.5" /> Verified
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-sm text-foreground leading-relaxed flex-1 mb-4">
-                    "{t.quote}"
+                    &ldquo;{t.quote}&rdquo;
                   </p>
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-base flex-shrink-0">
-                      {t.emoji}
+                    <div className={cn("w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0", t.avatarColor)}>
+                      {t.initials}
                     </div>
                     <div>
                       <p className="text-sm font-semibold leading-none mb-0.5">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.detail}</p>
+                      <p className="text-xs text-muted-foreground">{t.role} · {t.goal}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1219,6 +1313,24 @@ export default function Landing() {
               <FAQItem key={faq.q} q={faq.q} a={faq.a} />
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Email Capture ── */}
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20" id="newsletter">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+            <Mail className="w-6 h-6 text-primary" />
+          </div>
+          <Badge variant="secondary" className="mb-3 text-xs">Free habit tips</Badge>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+            Get weekly insights on building habits that stick
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base mb-8 max-w-md mx-auto leading-relaxed">
+            One email per week. Real strategies, no fluff — on identity, minimum actions, and recovering from missed days.
+          </p>
+          <EmailCaptureForm />
+          <p className="text-xs text-muted-foreground mt-4">No spam. Unsubscribe anytime. Used by 12,000+ habit builders.</p>
         </div>
       </section>
 

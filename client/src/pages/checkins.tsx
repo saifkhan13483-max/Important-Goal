@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { track } from "@/lib/track";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
 import type { System, Checkin } from "@/types/schema";
@@ -632,6 +633,7 @@ function SystemCheckinCard({
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
+      if (status === "done") { track("checkin_completed", { status: "done" }); } else if (status === "missed") { track("checkin_missed"); }
       if (status === "done") {
         localStorage.removeItem("sf_missed_yesterday");
         if (pulseDoneTimer.current) clearTimeout(pulseDoneTimer.current);

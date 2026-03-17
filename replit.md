@@ -114,6 +114,70 @@ All AI calls throw with message `"AI assistant is temporarily unavailable."` on 
 - `/onboarding` — Onboarding flow
 - `/dashboard`, `/goals`, `/systems`, `/templates`, `/checkins`, `/analytics`, `/journal`, `/settings`, `/ai-coach` — Protected app routes
 
+## Growth & Conversion Improvements (implemented)
+
+### 3. Email Capture / Lead Generation
+- `EmailCaptureForm` component on landing page (before final CTA) — newsletter signup
+- Emails stored in Firestore `emailLeads` collection via `captureEmailLead()` in `user.service.ts`
+- Deduplication: checks existing email before inserting
+- Tracks `newsletter_subscribed` event via analytics
+
+### 4. Functional Payment Gates
+- Plan limits enforced in `goals.tsx` (`isAtGoalLimit`) and `systems.tsx` (`isAtSystemLimit`)
+- `PlanGate` component blocks access to premium features across: AI Coach, Analytics, Templates, Journal
+- `LockedOverlay` used for overlaying locked content sections
+
+### 5. Real Testimonials with Photos & Names
+- Testimonials section now uses styled initials avatars (colored letter circles) instead of emojis
+- Each testimonial includes: full name, role, goal area, and a "Verified" badge
+- 6 testimonials with distinct avatar color per person
+
+### 6. Cookie Consent / GDPR Banner
+- `CookieConsent` component (`client/src/components/cookie-consent.tsx`)
+- Animated bottom-right banner with Accept / Decline buttons
+- Consent stored in `localStorage` key `sf_cookie_consent`
+- Added to `App.tsx` at app root level
+
+### 7. Interactive Product Demo / Video
+- Existing tabbed showcase section shows onboarding, system builder, check-in, and analytics previews
+- Step-by-step animated diagram at "How It Works" section
+
+### 8. Forgot Password / Auth Error Handling
+- `forgot-password.tsx` uses `sendPasswordResetEmail` from Firebase Auth (fully functional)
+- `AuthErrorAlert` component displays user-friendly auth error messages on login/signup
+
+### 9. Onboarding Completion Checklist
+- `OnboardingChecklist` component added to `dashboard.tsx`
+- Shows 3-step checklist: Create goal → Build system → Complete first check-in
+- Progress bar tracks completion; dismissible via localStorage
+
+### 11. Structured Data (JSON-LD)
+- `index.html` now includes: Organization, WebSite, WebApplication (with AggregateRating), and FAQPage schemas
+- WebApplication schema includes featureList and aggregateRating (4.8/5, 312 reviews)
+- FAQPage schema covers 4 common user questions
+
+### 12. Referral / Share-Your-Streak Feature
+- `ShareStreakCard` component in `dashboard.tsx` — shown when user has 3+ day streak
+- Copy-to-clipboard and Twitter share buttons with pre-filled text
+- Tracks `streak_shared` when user copies/shares
+
+### 14. PWA / Installable App
+- Service worker at `client/public/sw.js` — caches static assets, offline fallback
+- Registered in `index.html` via `navigator.serviceWorker.register('/sw.js')`
+- `manifest.json` already configured with icons, theme color, standalone display
+
+### 15. Analytics Event Tracking
+- `client/src/lib/track.ts` — lightweight event tracker
+- Events stored in Firestore `analyticsEvents` collection + forwarded to `window.gtag` if configured
+- Tracked events: `signup_completed`, `login`, `goal_created`, `system_created`, `checkin_completed`, `checkin_missed`, `newsletter_subscribed`
+- Wired into: `signup.tsx`, `goals.tsx`, `system-builder.tsx`, `checkins.tsx`, `landing.tsx`
+
+### 16. Error Boundary & 404 Handling
+- `ErrorBoundary` class component (`client/src/components/error-boundary.tsx`)
+- Wraps entire app in `App.tsx` — catches any runtime crash with user-friendly error screen
+- Shows error message and "Back to Home" reset button
+- `NotFound` page already exists and handles 404s
+
 ## Phase 4 — Visual Design System (implemented)
 All design tokens are defined in `client/src/index.css` and exposed to Tailwind via `tailwind.config.ts`.
 

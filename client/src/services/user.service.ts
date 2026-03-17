@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { User } from "@/types/schema";
 
@@ -24,4 +24,16 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<User
   await updateDoc(ref, { ...data });
   const snap = await getDoc(ref);
   return { id: snap.id, ...snap.data() } as User;
+}
+
+export async function captureEmailLead(email: string, source = "landing"): Promise<{ success: boolean; alreadyExists: boolean }> {
+  const leadsRef = collection(db, "emailLeads");
+  const existing = await getDocs(query(leadsRef, where("email", "==", email.toLowerCase().trim())));
+  if (!existing.empty) return { success: true, alreadyExists: true };
+  await addDoc(leadsRef, {
+    email: email.toLowerCase().trim(),
+    source,
+    subscribedAt: new Date().toISOString(),
+  });
+  return { success: true, alreadyExists: false };
 }

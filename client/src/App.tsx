@@ -24,6 +24,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ProtectedRoute, PublicOnlyRoute } from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { CookieConsent } from "@/components/cookie-consent";
 
 import Landing from "@/pages/landing";
 import Pricing from "@/pages/pricing";
@@ -149,15 +151,18 @@ function Router() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TooltipProvider>
-          <AuthInitializer />
-          <ReminderChecker />
-          <Router />
-          <Toaster />
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <TooltipProvider>
+            <AuthInitializer />
+            <ReminderChecker />
+            <Router />
+            <Toaster />
+            <CookieConsent />
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

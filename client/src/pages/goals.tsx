@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { track } from "@/lib/track";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -122,6 +123,7 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
         : createGoal(userId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goals", userId] });
+      if (!goal) track("goal_created", { category });
       toast({ title: goal ? "Goal updated!" : "Goal created!", description: goal ? "Changes saved." : "Ready to build a system." });
       onClose();
     },

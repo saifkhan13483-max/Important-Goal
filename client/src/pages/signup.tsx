@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
+import { track } from "@/lib/track";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ export default function Signup() {
     setAuthError(null);
     try {
       await signup({ name: data.name, email: data.email, password: data.password });
+      track("signup_completed", { method: "email" });
       navigate("/onboarding");
     } catch (err: any) {
       setAuthError(err);
@@ -78,9 +80,11 @@ export default function Signup() {
           // If offline, still navigate — user can retry later
         }
         qc.invalidateQueries({ queryKey: ["user"] });
+        track("signup_completed", { method: "google" });
         navigate("/onboarding");
       } else {
         qc.invalidateQueries({ queryKey: ["user"] });
+        track("login", { method: "google" });
         navigate("/dashboard");
       }
     } catch (err: any) {

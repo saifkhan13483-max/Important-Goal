@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { track } from "@/lib/track";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useRoute, useSearch } from "wouter";
@@ -348,9 +349,11 @@ export default function SystemBuilderPage() {
         toast({ title: "System updated!", description: "Your changes have been saved." });
         navigate("/systems");
       } else if (quickMode) {
+        track("system_created", { mode: "quick" });
         toast({ title: "System activated!", description: "Your system is live. Complete your first check-in now." });
         navigate("/checkins");
       } else {
+        track("system_created", { mode: "full" });
         toast({ title: "System created!", description: "Your system is ready to use." });
         navigate("/checkins");
       }

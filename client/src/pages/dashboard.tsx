@@ -18,7 +18,7 @@ import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
   Calendar, BookOpen, Check, Minus, X, BarChart2, PenLine, Sparkles,
   Lightbulb, Star, Loader2, AlertCircle, RefreshCw, Trophy, Heart,
-  LayoutGrid, Flag, TrendingDown, Brain,
+  LayoutGrid, Flag, TrendingDown, Brain, Share2, Copy,
 } from "lucide-react";
 import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/future-self-audio";
 import { format, parseISO, subDays } from "date-fns";
@@ -702,6 +702,146 @@ function QuickCheckinRow({
   );
 }
 
+function OnboardingChecklist({ hasGoals, hasSystems, hasCheckins }: {
+  hasGoals: boolean;
+  hasSystems: boolean;
+  hasCheckins: boolean;
+}) {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem("sf_onboarding_checklist_dismissed") === "true"; } catch { return false; }
+  });
+
+  if (dismissed || (hasGoals && hasSystems && hasCheckins)) return null;
+
+  const steps = [
+    { done: hasGoals, label: "Create your first goal", href: "/goals", icon: Target, testId: "onboarding-step-goals" },
+    { done: hasSystems, label: "Build a habit system", href: "/systems/new", icon: Zap, testId: "onboarding-step-systems" },
+    { done: hasCheckins, label: "Complete your first check-in", href: "/checkins", icon: CheckSquare, testId: "onboarding-step-checkins" },
+  ];
+
+  const doneCount = steps.filter(s => s.done).length;
+
+  return (
+    <Card className="border-primary/20 bg-primary/5" data-testid="onboarding-checklist">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Get started</p>
+              <p className="text-xs text-muted-foreground">{doneCount} of {steps.length} complete</p>
+            </div>
+          </div>
+          <button
+            onClick={() => { localStorage.setItem("sf_onboarding_checklist_dismissed", "true"); setDismissed(true); }}
+            className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+            aria-label="Dismiss checklist"
+            data-testid="button-dismiss-checklist"
+          >
+            ✕
+          </button>
+        </div>
+        <Progress value={(doneCount / steps.length) * 100} className="h-1.5 mb-4" />
+        <div className="space-y-2">
+          {steps.map(({ done, label, href, icon: Icon, testId }) => (
+            <Link key={label} href={href}>
+              <div
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all",
+                  done
+                    ? "bg-chart-3/5 border-chart-3/20 opacity-70"
+                    : "bg-background border-border hover:border-primary/40 hover:bg-primary/5 cursor-pointer",
+                )}
+                data-testid={testId}
+              >
+                <div className={cn(
+                  "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-xs",
+                  done ? "bg-chart-3 text-white" : "bg-muted text-muted-foreground",
+                )}>
+                  {done ? <Check className="w-3 h-3" /> : <Icon className="w-3 h-3" />}
+                </div>
+                <span className={cn("text-sm flex-1", done && "line-through text-muted-foreground")}>{label}</span>
+                {!done && <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />}
+              </div>
+            </Link>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ShareStreakCard({ streak, systemTitle, userName }: {
+  streak: number;
+  systemTitle: string;
+  userName: string;
+}) {
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  if (streak < 3) return null;
+
+  const shareText = `🔥 ${streak}-day streak on "${systemTitle}"!\n\nBuilding habits that survive real life with SystemForge — free at systemforge.app`;
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: "Copied!", description: "Share text copied to clipboard." });
+    } catch {
+      toast({ title: "Couldn't copy", variant: "destructive" });
+    }
+  };
+
+  const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+
+  return (
+    <Card className="border-chart-4/30 bg-chart-4/5" data-testid="share-streak-card">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-chart-4/15 flex items-center justify-center flex-shrink-0">
+            <Trophy className="w-4 h-4 text-chart-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold mb-0.5">
+              {streak}-day streak 🔥
+            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+              You're on a roll with <span className="font-medium text-foreground">"{systemTitle}"</span>. Share your progress and inspire someone else!
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1.5"
+                onClick={copyToClipboard}
+                data-testid="button-share-streak-copy"
+              >
+                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                {copied ? "Copied!" : "Copy"}
+              </Button>
+              <a href={tweetUrl} target="_blank" rel="noopener noreferrer">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs gap-1.5"
+                  data-testid="button-share-streak-twitter"
+                >
+                  <Share2 className="w-3 h-3" />
+                  Share
+                </Button>
+              </a>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
@@ -848,6 +988,13 @@ export default function Dashboard() {
       {/* Recovery banner */}
       <RecoveryBanner missedSystems={missedYesterday} />
 
+      {/* Onboarding Checklist — shown until user has completed all 3 first steps */}
+      <OnboardingChecklist
+        hasGoals={activeGoals.length > 0}
+        hasSystems={activeSystems.length > 0}
+        hasCheckins={allCheckins.length > 0}
+      />
+
       {/* Future Self Audio player */}
       {hasFutureSelfAudio(user?.futureAudioUrl) && (
         missedYesterday.length > 0 ? (
@@ -946,6 +1093,19 @@ export default function Dashboard() {
             <span className="text-lg font-extrabold flex-shrink-0">{Math.round((weekDone / 7) * 100)}%</span>
           </div>
         );
+      })()}
+
+      {/* Share Streak Card — shown when user has a notable streak */}
+      {topStreaks.length > 0 && (() => {
+        const [topSystemId, topStreak] = topStreaks[0];
+        const topSystem = systems.find(s => s.id === topSystemId);
+        return topSystem ? (
+          <ShareStreakCard
+            streak={topStreak as number}
+            systemTitle={topSystem.title}
+            userName={user?.name ?? ""}
+          />
+        ) : null;
       })()}
 
       {/* Next Milestone + One Insight row */}
