@@ -134,126 +134,148 @@ function groqProxyPlugin() {
   };
 }
 
+async function handleWorkspaceRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
+  const url = (req.url || "").split("?")[0]; // strip query string
+  const method = req.method || "GET";
+
+  const token = extractToken(req);
+  if (!token) { jsonRes(res, 401, { error: "Unauthorized" }); return; }
+
+  let caller: { uid: string; email: string } | null = null;
+  try {
+    caller = await verifyToken(token);
+  } catch (e) {
+    console.error("[workspace-api] verifyToken error:", e);
+    jsonRes(res, 500, { error: "Token verification failed" });
+    return;
+  }
+  if (!caller) { jsonRes(res, 401, { error: "Invalid token" }); return; }
+  const { uid, email: callerEmail } = caller;
+
+  const store = loadStore();
+
+  /* GET /api/workspace */
+  if (method === "GET" && url === "/api/workspace") {
+    const ws = Object.values(store).find(w => w.members.some(m => m.userId === uid));
+    jsonRes(res, 200, ws || null);
+    return;
+  }
+
+  /* GET /api/workspace/by-code/:code */
+  const byCodeMatch = url.match(/^\/api\/workspace\/by-code\/([^/?]+)/);
+  if (method === "GET" && byCodeMatch) {
+    const code = decodeURIComponent(byCodeMatch[1]).toUpperCase();
+    const ws = Object.values(store).find(w => w.inviteCode === code);
+    if (!ws) { jsonRes(res, 404, { error: "Workspace not found" }); return; }
+    jsonRes(res, 200, ws);
+    return;
+  }
+
+  /* POST /api/workspace/create */
+  if (method === "POST" && url === "/api/workspace/create") {
+    const body = await readBody(req);
+    const existing = Object.values(store).find(w => w.members.some(m => m.userId === uid));
+    if (existing) { jsonRes(res, 409, { error: "Already in a workspace", workspace: existing }); return; }
+    const now = new Date().toISOString();
+    const ws: WorkspaceRecord = {
+      id: generateId(),
+      ownerId: uid,
+      name: (body.name as string)?.trim() || `${(body.displayName as string) || "My"} Team`,
+      inviteCode: generateCode(),
+      members: [{ userId: uid, email: (body.email as string) || callerEmail, name: (body.displayName as string) || "You", role: "owner", joinedAt: now }],
+      createdAt: now,
+    };
+    store[ws.id] = ws;
+    saveStore(store);
+    jsonRes(res, 200, ws);
+    return;
+  }
+
+  /* POST /api/workspace/join */
+  if (method === "POST" && url === "/api/workspace/join") {
+    const body = await readBody(req);
+    const alreadyIn = Object.values(store).find(w => w.members.some(m => m.userId === uid));
+    if (alreadyIn) { jsonRes(res, 409, { error: "Already in a workspace", workspace: alreadyIn }); return; }
+    const code = ((body.code as string) || "").toUpperCase();
+    const ws = Object.values(store).find(w => w.inviteCode === code);
+    if (!ws) { jsonRes(res, 404, { error: "Workspace not found. Check the invite code." }); return; }
+    ws.members.push({ userId: uid, email: (body.email as string) || callerEmail, name: (body.displayName as string) || "Member", role: "member", joinedAt: new Date().toISOString() });
+    store[ws.id] = ws;
+    saveStore(store);
+    jsonRes(res, 200, ws);
+    return;
+  }
+
+  /* POST /api/workspace/leave */
+  if (method === "POST" && url === "/api/workspace/leave") {
+    const ws = Object.values(store).find(w => w.members.some(m => m.userId === uid));
+    if (!ws) { jsonRes(res, 404, { error: "Not in a workspace" }); return; }
+    ws.members = ws.members.filter(m => m.userId !== uid);
+    store[ws.id] = ws;
+    saveStore(store);
+    jsonRes(res, 200, { ok: true });
+    return;
+  }
+
+  /* DELETE /api/workspace/members/:memberId */
+  const removeMemberMatch = url.match(/^\/api\/workspace\/members\/([^/?]+)/);
+  if (method === "DELETE" && removeMemberMatch) {
+    const memberId = removeMemberMatch[1];
+    const ws = Object.values(store).find(w => w.ownerId === uid);
+    if (!ws) { jsonRes(res, 403, { error: "Not a workspace owner" }); return; }
+    ws.members = ws.members.filter(m => m.userId !== memberId);
+    store[ws.id] = ws;
+    saveStore(store);
+    jsonRes(res, 200, ws);
+    return;
+  }
+
+  /* POST /api/workspace/regen-code */
+  if (method === "POST" && url === "/api/workspace/regen-code") {
+    const ws = Object.values(store).find(w => w.ownerId === uid);
+    if (!ws) { jsonRes(res, 403, { error: "Not a workspace owner" }); return; }
+    ws.inviteCode = generateCode();
+    store[ws.id] = ws;
+    saveStore(store);
+    jsonRes(res, 200, { inviteCode: ws.inviteCode });
+    return;
+  }
+
+  /* POST /api/workspace/sync-stats */
+  if (method === "POST" && url === "/api/workspace/sync-stats") {
+    const body = await readBody(req);
+    const ws = Object.values(store).find(w => w.members.some(m => m.userId === uid));
+    if (!ws) { jsonRes(res, 404, { error: "Not in a workspace" }); return; }
+    const member = ws.members.find(m => m.userId === uid);
+    if (member && body.stats) {
+      member.stats = { ...(body.stats as object), syncedAt: new Date().toISOString() } as WorkspaceMemberStats;
+      store[ws.id] = ws;
+      saveStore(store);
+    }
+    jsonRes(res, 200, { ok: true });
+    return;
+  }
+
+  jsonRes(res, 404, { error: "Unknown workspace route" });
+}
+
 function workspacePlugin() {
   return {
     name: "workspace-api",
     configureServer(server: ViteDevServer) {
-      server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
-        const url = req.url || "";
-        const method = req.method || "GET";
-
+      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
+        const url = (req.url || "").split("?")[0];
         if (!url.startsWith("/api/workspace")) { next(); return; }
-
-        const token = extractToken(req);
-        if (!token) { jsonRes(res, 401, { error: "Unauthorized" }); return; }
-        const caller = await verifyToken(token);
-        if (!caller) { jsonRes(res, 401, { error: "Invalid token" }); return; }
-
-        const store = loadStore();
-
-        /* GET /api/workspace */
-        if (method === "GET" && url === "/api/workspace") {
-          const ws = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
-          jsonRes(res, 200, ws || null);
-          return;
-        }
-
-        /* GET /api/workspace/by-code/:code */
-        const byCodeMatch = url.match(/^\/api\/workspace\/by-code\/([^/?]+)/);
-        if (method === "GET" && byCodeMatch) {
-          const code = decodeURIComponent(byCodeMatch[1]).toUpperCase();
-          const ws = Object.values(store).find(w => w.inviteCode === code);
-          if (!ws) { jsonRes(res, 404, { error: "Workspace not found" }); return; }
-          jsonRes(res, 200, ws);
-          return;
-        }
-
-        /* POST /api/workspace/create */
-        if (method === "POST" && url === "/api/workspace/create") {
-          const body = await readBody(req);
-          const existing = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
-          if (existing) { jsonRes(res, 409, { error: "Already in a workspace", workspace: existing }); return; }
-          const now = new Date().toISOString();
-          const ws: WorkspaceRecord = {
-            id: generateId(),
-            ownerId: caller.uid,
-            name: (body.name as string)?.trim() || `${body.displayName || "My"} Team`,
-            inviteCode: generateCode(),
-            members: [{ userId: caller.uid, email: body.email || caller.email, name: body.displayName || "You", role: "owner", joinedAt: now }],
-            createdAt: now,
-          };
-          store[ws.id] = ws;
-          saveStore(store);
-          jsonRes(res, 200, ws);
-          return;
-        }
-
-        /* POST /api/workspace/join */
-        if (method === "POST" && url === "/api/workspace/join") {
-          const body = await readBody(req);
-          const alreadyIn = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
-          if (alreadyIn) { jsonRes(res, 409, { error: "Already in a workspace", workspace: alreadyIn }); return; }
-          const code = (body.code as string)?.toUpperCase();
-          const ws = Object.values(store).find(w => w.inviteCode === code);
-          if (!ws) { jsonRes(res, 404, { error: "Workspace not found. Check the invite code." }); return; }
-          ws.members.push({ userId: caller.uid, email: body.email || caller.email, name: body.displayName || "Member", role: "member", joinedAt: new Date().toISOString() });
-          store[ws.id] = ws;
-          saveStore(store);
-          jsonRes(res, 200, ws);
-          return;
-        }
-
-        /* POST /api/workspace/leave */
-        if (method === "POST" && url === "/api/workspace/leave") {
-          const ws = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
-          if (!ws) { jsonRes(res, 404, { error: "Not in a workspace" }); return; }
-          ws.members = ws.members.filter(m => m.userId !== caller.uid);
-          store[ws.id] = ws;
-          saveStore(store);
-          jsonRes(res, 200, { ok: true });
-          return;
-        }
-
-        /* DELETE /api/workspace/members/:memberId */
-        const removeMemberMatch = url.match(/^\/api\/workspace\/members\/([^/?]+)/);
-        if (method === "DELETE" && removeMemberMatch) {
-          const memberId = removeMemberMatch[1];
-          const ws = Object.values(store).find(w => w.ownerId === caller.uid);
-          if (!ws) { jsonRes(res, 403, { error: "Not a workspace owner" }); return; }
-          ws.members = ws.members.filter(m => m.userId !== memberId);
-          store[ws.id] = ws;
-          saveStore(store);
-          jsonRes(res, 200, ws);
-          return;
-        }
-
-        /* POST /api/workspace/regen-code */
-        if (method === "POST" && url === "/api/workspace/regen-code") {
-          const ws = Object.values(store).find(w => w.ownerId === caller.uid);
-          if (!ws) { jsonRes(res, 403, { error: "Not a workspace owner" }); return; }
-          ws.inviteCode = generateCode();
-          store[ws.id] = ws;
-          saveStore(store);
-          jsonRes(res, 200, { inviteCode: ws.inviteCode });
-          return;
-        }
-
-        /* POST /api/workspace/sync-stats */
-        if (method === "POST" && url === "/api/workspace/sync-stats") {
-          const body = await readBody(req);
-          const ws = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
-          if (!ws) { jsonRes(res, 404, { error: "Not in a workspace" }); return; }
-          const member = ws.members.find(m => m.userId === caller.uid);
-          if (member && body.stats) {
-            member.stats = { ...body.stats, syncedAt: new Date().toISOString() };
-            store[ws.id] = ws;
-            saveStore(store);
+        // Hand off to async handler; catch all errors and always send a JSON response
+        handleWorkspaceRequest(req, res).catch((err) => {
+          console.error("[workspace-api] Unhandled error:", err);
+          if (!res.headersSent) {
+            jsonRes(res, 500, { error: String(err?.message ?? "Server error") });
           }
-          jsonRes(res, 200, { ok: true });
-          return;
-        }
-
-        next();
+        });
       });
     },
   };
