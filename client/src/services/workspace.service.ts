@@ -1,86 +1,105 @@
-import { auth } from "@/lib/firebase";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+} from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import type { Workspace, WorkspaceMember } from "@/types/schema";
 
-async function getIdToken(): Promise<string> {
-  const user = auth.currentUser;
-  if (!user) throw new Error("Not authenticated");
-  return user.getIdToken();
+export interface MemberStats {
+  activeSystems: number;
+  bestStreak: number;
+  completionRate: number;
+  weeklyRate: number;
+  last7: Array<{ dateKey: string; done: number; total: number }>;
+  syncedAt?: string;
 }
 
-async function apiFetch<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const token = await getIdToken();
-  const res = await fetch(path, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...(options.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    let errMsg = `HTTP ${res.status}`;
-    try {
-      const data = await res.json();
-      if (data?.error) errMsg = data.error;
-    } catch { /* non-JSON body */ }
-    throw new Error(errMsg);
-  }
-  return res.json() as Promise<T>;
+interface WorkspaceDoc {
+  id: string;
+  ownerId: string;
+  name: string;
+  inviteCode: string;
+  memberIds: string[];
+  members: WorkspaceMember[];
+  memberStats: Record<string, MemberStats>;
+  createdAt: string;
 }
 
-/* ── Helpers to shape server response into shared Workspace type ── */
-function toWorkspace(raw: any): Workspace {
+function generateCode(): string {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+function toWorkspace(raw: WorkspaceDoc): Workspace & { members: (WorkspaceMember & { stats?: MemberStats })[] } {
+  const stats = raw.memberStats || {};
   return {
     id: raw.id,
     ownerId: raw.ownerId,
     name: raw.name,
     inviteCode: raw.inviteCode,
-    members: (raw.members || []).map((m: any): WorkspaceMember => ({
-      userId: m.userId,
-      email: m.email,
-      name: m.name,
-      role: m.role,
-      joinedAt: m.joinedAt,
+    members: (raw.members || []).map((m) => ({
+      ...m,
+      stats: stats[m.userId] ?? undefined,
     })),
     createdAt: raw.createdAt,
   };
 }
 
 export async function getMyWorkspace(): Promise<Workspace | null> {
-  const raw = await apiFetch<any>("/api/workspace");
-  return raw ? toWorkspace(raw) : null;
-}
+  const uid = auth.currentUser?.uid;
+  if (!uid) return null;
 
-export async function getWorkspaceByCode(code: string): Promise<Workspace | null> {
-  try {
-    const raw = await apiFetch<any>(`/api/workspace/by-code/${encodeURIComponent(code.toUpperCase())}`);
-    return raw ? toWorkspace(raw) : null;
-  } catch {
-    return null;
-  }
+  const q = query(collection(db, "workspaces"), where("memberIds", "array-contains", uid));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+
+  const raw = { id: snap.docs[0].id, ...snap.docs[0].data() } as WorkspaceDoc;
+  return toWorkspace(raw);
 }
 
 export async function createWorkspace(
-  _ownerId: string,
+  ownerId: string,
   email: string,
   displayName: string,
   name: string,
 ): Promise<Workspace> {
-  const raw = await apiFetch<any>("/api/workspace/create", {
-    method: "POST",
-    body: JSON.stringify({ name, email, displayName }),
-  });
-  return toWorkspace(raw);
-}
+  const existing = await getMyWorkspace();
+  if (existing) throw new Error("Already in a workspace");
 
-export async function joinWorkspace(
-  _workspaceId: string,
-  member: WorkspaceMember,
-): Promise<Workspace> {
-  throw new Error("Use joinWorkspaceByCode instead");
+  const ref = doc(collection(db, "workspaces"));
+  const id = ref.id;
+  const inviteCode = generateCode();
+  const now = new Date().toISOString();
+
+  const member: WorkspaceMember = {
+    userId: ownerId,
+    email,
+    name: displayName,
+    role: "owner",
+    joinedAt: now,
+  };
+
+  const wsData: WorkspaceDoc = {
+    id,
+    ownerId,
+    name: name.trim() || `${displayName}'s Team`,
+    inviteCode,
+    memberIds: [ownerId],
+    members: [member],
+    memberStats: {},
+    createdAt: now,
+  };
+
+  await setDoc(ref, wsData);
+  await updateDoc(doc(db, "users", ownerId), { workspaceId: id });
+
+  return toWorkspace(wsData);
 }
 
 export async function joinWorkspaceByCode(
@@ -88,49 +107,99 @@ export async function joinWorkspaceByCode(
   email: string,
   displayName: string,
 ): Promise<Workspace> {
-  const raw = await apiFetch<any>("/api/workspace/join", {
-    method: "POST",
-    body: JSON.stringify({ code, email, displayName }),
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error("Not authenticated");
+
+  const existing = await getMyWorkspace();
+  if (existing) throw new Error("Already in a workspace");
+
+  const q = query(
+    collection(db, "workspaces"),
+    where("inviteCode", "==", code.trim().toUpperCase()),
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) throw new Error("Workspace not found. Check the invite code.");
+
+  const wsDoc = snap.docs[0];
+  const wsData = { id: wsDoc.id, ...wsDoc.data() } as WorkspaceDoc;
+
+  if (wsData.memberIds.includes(uid)) {
+    return toWorkspace(wsData);
+  }
+
+  const newMember: WorkspaceMember = {
+    userId: uid,
+    email,
+    name: displayName,
+    role: "member",
+    joinedAt: new Date().toISOString(),
+  };
+
+  const updatedMembers = [...wsData.members, newMember];
+  const updatedMemberIds = [...wsData.memberIds, uid];
+
+  await updateDoc(wsDoc.ref, {
+    members: updatedMembers,
+    memberIds: updatedMemberIds,
   });
-  return toWorkspace(raw);
+
+  await updateDoc(doc(db, "users", uid), { workspaceId: wsDoc.id });
+
+  return toWorkspace({ ...wsData, members: updatedMembers, memberIds: updatedMemberIds });
 }
 
-export async function leaveWorkspace(
-  _workspaceId: string,
-  _userId: string,
-): Promise<void> {
-  await apiFetch<any>("/api/workspace/leave", { method: "POST", body: "{}" });
+export async function leaveWorkspace(workspaceId: string, userId: string): Promise<void> {
+  const wsRef = doc(db, "workspaces", workspaceId);
+  const snap = await getDoc(wsRef);
+  if (!snap.exists()) throw new Error("Workspace not found");
+
+  const wsData = { id: snap.id, ...snap.data() } as WorkspaceDoc;
+
+  if (wsData.ownerId === userId) {
+    await deleteDoc(wsRef);
+    for (const m of wsData.members) {
+      await updateDoc(doc(db, "users", m.userId), { workspaceId: null });
+    }
+  } else {
+    await updateDoc(wsRef, {
+      members: wsData.members.filter((m) => m.userId !== userId),
+      memberIds: wsData.memberIds.filter((id) => id !== userId),
+    });
+    await updateDoc(doc(db, "users", userId), { workspaceId: null });
+  }
 }
 
 export async function removeMemberFromWorkspace(
-  _workspaceId: string,
+  workspaceId: string,
   memberId: string,
 ): Promise<Workspace> {
-  const raw = await apiFetch<any>(`/api/workspace/members/${memberId}`, {
-    method: "DELETE",
-  });
-  return toWorkspace(raw);
+  const wsRef = doc(db, "workspaces", workspaceId);
+  const snap = await getDoc(wsRef);
+  const wsData = { id: snap.id, ...snap.data() } as WorkspaceDoc;
+
+  const updatedMembers = wsData.members.filter((m) => m.userId !== memberId);
+  const updatedMemberIds = wsData.memberIds.filter((id) => id !== memberId);
+
+  await updateDoc(wsRef, { members: updatedMembers, memberIds: updatedMemberIds });
+  await updateDoc(doc(db, "users", memberId), { workspaceId: null });
+
+  return toWorkspace({ ...wsData, members: updatedMembers, memberIds: updatedMemberIds });
 }
 
-export async function regenerateInviteCode(_workspaceId: string): Promise<string> {
-  const data = await apiFetch<{ inviteCode: string }>("/api/workspace/regen-code", {
-    method: "POST",
-    body: "{}",
-  });
-  return data.inviteCode;
-}
-
-export interface MemberStats {
-  activeSystems: number;
-  bestStreak: number;
-  completionRate: number;
-  weeklyRate: number;
-  last7: { dateKey: string; done: number; total: number }[];
+export async function regenerateInviteCode(workspaceId: string): Promise<string> {
+  const newCode = generateCode();
+  await updateDoc(doc(db, "workspaces", workspaceId), { inviteCode: newCode });
+  return newCode;
 }
 
 export async function syncMemberStats(stats: MemberStats): Promise<void> {
-  await apiFetch<any>("/api/workspace/sync-stats", {
-    method: "POST",
-    body: JSON.stringify({ stats }),
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+
+  const ws = await getMyWorkspace();
+  if (!ws) return;
+
+  await updateDoc(doc(db, "workspaces", ws.id), {
+    [`memberStats.${uid}`]: { ...stats, syncedAt: new Date().toISOString() },
   });
 }

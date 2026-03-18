@@ -60,14 +60,16 @@ service cloud.firestore {
     }
 
     // Workspaces: any signed-in user may read (needed for invite code lookup) and create;
-    // updates allowed for owner (manage members, regen code) or any signed-in user (joining).
+    // updates allowed for owner, existing members (stats sync), or a new user adding themselves (joining).
     match /workspaces/{workspaceId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update: if isSignedIn() && (
         resource.data.ownerId == request.auth.uid ||
-        request.auth.uid in resource.data.members.map(m, m.userId)
+        request.auth.uid in resource.data.memberIds ||
+        request.auth.uid in request.resource.data.memberIds
       );
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
     // Email leads: write-only (captured from landing page)
