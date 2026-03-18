@@ -2,13 +2,14 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import fs from "fs";
-import type { ViteDevServer } from "vite";
+import http from "http";
 import type { IncomingMessage, ServerResponse } from "http";
 
 const isReplit = process.env.REPL_ID !== undefined;
 
 const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY || "";
 const STORE_PATH = path.join(process.cwd(), "server", "workspaces_data.json");
+const API_PORT = 35001;
 
 /* ─────────────────────────────────────────────
    Workspace data store helpers
@@ -87,60 +88,48 @@ function jsonRes(res: ServerResponse, status: number, body: unknown) {
 }
 
 /* ─────────────────────────────────────────────
-   Vite plugins
+   Standalone API HTTP server (avoids Vite middleware issues)
 ───────────────────────────────────────────── */
-function suppressPostCSSFromWarning() {
-  return {
-    name: "suppress-postcss-from-warning",
-    enforce: "pre" as const,
-    configResolved() {
-      const original = console.warn.bind(console);
-      console.warn = (...args: unknown[]) => {
-        if (typeof args[0] === "string" && args[0].includes("`from` option")) return;
-        original(...args);
-      };
-    },
-  };
-}
-
-function groqProxyPlugin() {
-  return {
-    name: "groq-proxy",
-    enforce: "pre" as const,
-    configureServer(server: ViteDevServer) {
-      server.middlewares.use(
-        "/api/groq-proxy",
-        (req: IncomingMessage, res: ServerResponse) => {
-          if (req.method !== "POST") { res.statusCode = 405; res.end("Method Not Allowed"); return; }
-          const key = process.env.GROQ_API_KEY;
-          if (!key) { jsonRes(res, 503, { error: "AI unavailable" }); return; }
-          let body = "";
-          req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
-          req.on("end", async () => {
-            try {
-              const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-                body,
-              });
-              const data = await upstream.json();
-              res.statusCode = upstream.status;
-              res.setHeader("Content-Type", "application/json");
-              res.end(JSON.stringify(data));
-            } catch { jsonRes(res, 502, { error: "AI unavailable" }); }
-          });
-        },
-      );
-    },
-  };
-}
-
-async function handleWorkspaceRequest(
-  req: IncomingMessage,
-  res: ServerResponse,
-): Promise<void> {
-  const url = (req.url || "").split("?")[0]; // strip query string
+async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const url = (req.url || "").split("?")[0];
   const method = req.method || "GET";
+
+  // CORS headers (needed for proxy setup)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (method === "OPTIONS") { res.statusCode = 204; res.end(); return; }
+
+  /* ── Groq proxy ── */
+  if (url === "/api/groq-proxy") {
+    if (method !== "POST") { res.statusCode = 405; res.end("Method Not Allowed"); return; }
+    const key = process.env.GROQ_API_KEY;
+    if (!key) { jsonRes(res, 503, { error: "AI unavailable" }); return; }
+    const body = await new Promise<string>((resolve) => {
+      let b = "";
+      req.on("data", (c: Buffer) => { b += c.toString(); });
+      req.on("end", () => resolve(b));
+      req.on("error", () => resolve(""));
+    });
+    try {
+      const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body,
+      });
+      const data = await upstream.json();
+      res.statusCode = upstream.status;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify(data));
+    } catch { jsonRes(res, 502, { error: "AI unavailable" }); }
+    return;
+  }
+
+  /* ── Workspace API ── */
+  if (!url.startsWith("/api/workspace")) {
+    jsonRes(res, 404, { error: "Not found" });
+    return;
+  }
 
   const token = extractToken(req);
   if (!token) { jsonRes(res, 401, { error: "Unauthorized" }); return; }
@@ -149,7 +138,7 @@ async function handleWorkspaceRequest(
   try {
     caller = await verifyToken(token);
   } catch (e) {
-    console.error("[workspace-api] verifyToken error:", e);
+    console.error("[api-server] verifyToken error:", e);
     jsonRes(res, 500, { error: "Token verification failed" });
     return;
   }
@@ -263,22 +252,66 @@ async function handleWorkspaceRequest(
   jsonRes(res, 404, { error: "Unknown workspace route" });
 }
 
-function workspacePlugin() {
+function startApiServer() {
+  const server = http.createServer((req, res) => {
+    handleRequest(req, res).catch((err) => {
+      console.error("[api-server] Unhandled error:", err);
+      if (!res.headersSent) jsonRes(res, 500, { error: String(err?.message ?? "Server error") });
+    });
+  });
+  server.listen(API_PORT, "127.0.0.1", () => {
+    console.log(`[api-server] Listening on port ${API_PORT}`);
+  });
+  server.on("error", (err) => {
+    console.error("[api-server] Failed to start:", err);
+  });
+  return server;
+}
+
+/* ─────────────────────────────────────────────
+   Vite plugins
+───────────────────────────────────────────── */
+function suppressPostCSSFromWarning() {
   return {
-    name: "workspace-api",
+    name: "suppress-postcss-from-warning",
     enforce: "pre" as const,
-    configureServer(server: ViteDevServer) {
-      server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
-        const url = (req.url || "").split("?")[0];
-        if (!url.startsWith("/api/workspace")) { next(); return; }
-        // Hand off to async handler; catch all errors and always send a JSON response
-        handleWorkspaceRequest(req, res).catch((err) => {
-          console.error("[workspace-api] Unhandled error:", err);
-          if (!res.headersSent) {
-            jsonRes(res, 500, { error: String(err?.message ?? "Server error") });
-          }
-        });
-      });
+    configResolved() {
+      const original = console.warn.bind(console);
+      console.warn = (...args: unknown[]) => {
+        if (typeof args[0] === "string" && args[0].includes("`from` option")) return;
+        original(...args);
+      };
+    },
+  };
+}
+
+function apiPlugin() {
+  let apiServer: ReturnType<typeof http.createServer> | null = null;
+  return {
+    name: "api-plugin",
+    enforce: "pre" as const,
+    config() {
+      return {
+        server: {
+          proxy: {
+            "/api/workspace": {
+              target: `http://127.0.0.1:${API_PORT}`,
+              changeOrigin: false,
+              secure: false,
+            },
+            "/api/groq-proxy": {
+              target: `http://127.0.0.1:${API_PORT}`,
+              changeOrigin: false,
+              secure: false,
+            },
+          },
+        },
+      };
+    },
+    configureServer() {
+      if (!apiServer) {
+        apiServer = startApiServer();
+      }
     },
   };
 }
@@ -293,7 +326,7 @@ export default defineConfig(async () => {
     : [];
 
   return {
-    plugins: [suppressPostCSSFromWarning(), groqProxyPlugin(), workspacePlugin(), react(), ...replitPlugins],
+    plugins: [suppressPostCSSFromWarning(), apiPlugin(), react(), ...replitPlugins],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "client", "src"),
