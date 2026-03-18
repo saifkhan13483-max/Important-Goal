@@ -106,6 +106,7 @@ function suppressPostCSSFromWarning() {
 function groqProxyPlugin() {
   return {
     name: "groq-proxy",
+    enforce: "pre" as const,
     configureServer(server: ViteDevServer) {
       server.middlewares.use(
         "/api/groq-proxy",
@@ -265,6 +266,7 @@ async function handleWorkspaceRequest(
 function workspacePlugin() {
   return {
     name: "workspace-api",
+    enforce: "pre" as const,
     configureServer(server: ViteDevServer) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next: () => void) => {
         const url = (req.url || "").split("?")[0];
