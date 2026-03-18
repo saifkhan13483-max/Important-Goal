@@ -1,11 +1,94 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import fs from "fs";
 import type { ViteDevServer } from "vite";
 import type { IncomingMessage, ServerResponse } from "http";
 
 const isReplit = process.env.REPL_ID !== undefined;
 
+const FIREBASE_API_KEY = process.env.VITE_FIREBASE_API_KEY || "";
+const STORE_PATH = path.join(process.cwd(), "server", "workspaces_data.json");
+
+/* ─────────────────────────────────────────────
+   Workspace data store helpers
+───────────────────────────────────────────── */
+interface WorkspaceMemberStats {
+  activeSystems: number;
+  bestStreak: number;
+  completionRate: number;
+  weeklyRate: number;
+  last7: { dateKey: string; done: number; total: number }[];
+  syncedAt: string;
+}
+interface WorkspaceMember {
+  userId: string;
+  email: string;
+  name: string;
+  role: "owner" | "member";
+  joinedAt: string;
+  stats?: WorkspaceMemberStats;
+}
+interface WorkspaceRecord {
+  id: string;
+  ownerId: string;
+  name: string;
+  inviteCode: string;
+  members: WorkspaceMember[];
+  createdAt: string;
+}
+
+function loadStore(): Record<string, WorkspaceRecord> {
+  try {
+    if (fs.existsSync(STORE_PATH)) return JSON.parse(fs.readFileSync(STORE_PATH, "utf-8"));
+  } catch { /* */ }
+  return {};
+}
+function saveStore(store: Record<string, WorkspaceRecord>) {
+  try { fs.writeFileSync(STORE_PATH, JSON.stringify(store, null, 2), "utf-8"); } catch { /* */ }
+}
+function generateId() { return Math.random().toString(36).substring(2, 10) + Date.now().toString(36); }
+function generateCode() { return Math.random().toString(36).substring(2, 8).toUpperCase(); }
+
+async function verifyToken(idToken: string): Promise<{ uid: string; email: string } | null> {
+  if (!FIREBASE_API_KEY) return null;
+  try {
+    const resp = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) },
+    );
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (!data.users?.length) return null;
+    const u = data.users[0];
+    return { uid: u.localId, email: u.email || "" };
+  } catch { return null; }
+}
+
+function readBody(req: IncomingMessage): Promise<Record<string, any>> {
+  return new Promise((resolve) => {
+    let body = "";
+    req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
+    req.on("end", () => { try { resolve(body ? JSON.parse(body) : {}); } catch { resolve({}); } });
+    req.on("error", () => resolve({}));
+  });
+}
+
+function extractToken(req: IncomingMessage): string | null {
+  const auth = req.headers["authorization"] as string | undefined;
+  if (auth?.startsWith("Bearer ")) return auth.slice(7);
+  return null;
+}
+
+function jsonRes(res: ServerResponse, status: number, body: unknown) {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(body));
+}
+
+/* ─────────────────────────────────────────────
+   Vite plugins
+───────────────────────────────────────────── */
 function suppressPostCSSFromWarning() {
   return {
     name: "suppress-postcss-from-warning",
@@ -13,23 +96,13 @@ function suppressPostCSSFromWarning() {
     configResolved() {
       const original = console.warn.bind(console);
       console.warn = (...args: unknown[]) => {
-        if (
-          typeof args[0] === "string" &&
-          args[0].includes("`from` option")
-        ) {
-          return;
-        }
+        if (typeof args[0] === "string" && args[0].includes("`from` option")) return;
         original(...args);
       };
     },
   };
 }
 
-/**
- * groqProxyPlugin — adds a server-side /api/groq-proxy endpoint to the Vite
- * dev server so the GROQ_API_KEY never reaches the browser. The key is read
- * from process.env.GROQ_API_KEY (no VITE_ prefix, therefore not bundled).
- */
 function groqProxyPlugin() {
   return {
     name: "groq-proxy",
@@ -37,45 +110,151 @@ function groqProxyPlugin() {
       server.middlewares.use(
         "/api/groq-proxy",
         (req: IncomingMessage, res: ServerResponse) => {
-          if (req.method !== "POST") {
-            res.statusCode = 405;
-            res.end("Method Not Allowed");
-            return;
-          }
+          if (req.method !== "POST") { res.statusCode = 405; res.end("Method Not Allowed"); return; }
           const key = process.env.GROQ_API_KEY;
-          if (!key) {
-            res.statusCode = 503;
-            res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ error: "AI unavailable" }));
-            return;
-          }
+          if (!key) { jsonRes(res, 503, { error: "AI unavailable" }); return; }
           let body = "";
           req.on("data", (chunk: Buffer) => { body += chunk.toString(); });
           req.on("end", async () => {
             try {
-              const upstream = await fetch(
-                "https://api.groq.com/openai/v1/chat/completions",
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${key}`,
-                  },
-                  body,
-                },
-              );
+              const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+                body,
+              });
               const data = await upstream.json();
               res.statusCode = upstream.status;
               res.setHeader("Content-Type", "application/json");
               res.end(JSON.stringify(data));
-            } catch {
-              res.statusCode = 502;
-              res.setHeader("Content-Type", "application/json");
-              res.end(JSON.stringify({ error: "AI unavailable" }));
-            }
+            } catch { jsonRes(res, 502, { error: "AI unavailable" }); }
           });
         },
       );
+    },
+  };
+}
+
+function workspacePlugin() {
+  return {
+    name: "workspace-api",
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
+        const url = req.url || "";
+        const method = req.method || "GET";
+
+        if (!url.startsWith("/api/workspace")) { next(); return; }
+
+        const token = extractToken(req);
+        if (!token) { jsonRes(res, 401, { error: "Unauthorized" }); return; }
+        const caller = await verifyToken(token);
+        if (!caller) { jsonRes(res, 401, { error: "Invalid token" }); return; }
+
+        const store = loadStore();
+
+        /* GET /api/workspace */
+        if (method === "GET" && url === "/api/workspace") {
+          const ws = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
+          jsonRes(res, 200, ws || null);
+          return;
+        }
+
+        /* GET /api/workspace/by-code/:code */
+        const byCodeMatch = url.match(/^\/api\/workspace\/by-code\/([^/?]+)/);
+        if (method === "GET" && byCodeMatch) {
+          const code = decodeURIComponent(byCodeMatch[1]).toUpperCase();
+          const ws = Object.values(store).find(w => w.inviteCode === code);
+          if (!ws) { jsonRes(res, 404, { error: "Workspace not found" }); return; }
+          jsonRes(res, 200, ws);
+          return;
+        }
+
+        /* POST /api/workspace/create */
+        if (method === "POST" && url === "/api/workspace/create") {
+          const body = await readBody(req);
+          const existing = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
+          if (existing) { jsonRes(res, 409, { error: "Already in a workspace", workspace: existing }); return; }
+          const now = new Date().toISOString();
+          const ws: WorkspaceRecord = {
+            id: generateId(),
+            ownerId: caller.uid,
+            name: (body.name as string)?.trim() || `${body.displayName || "My"} Team`,
+            inviteCode: generateCode(),
+            members: [{ userId: caller.uid, email: body.email || caller.email, name: body.displayName || "You", role: "owner", joinedAt: now }],
+            createdAt: now,
+          };
+          store[ws.id] = ws;
+          saveStore(store);
+          jsonRes(res, 200, ws);
+          return;
+        }
+
+        /* POST /api/workspace/join */
+        if (method === "POST" && url === "/api/workspace/join") {
+          const body = await readBody(req);
+          const alreadyIn = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
+          if (alreadyIn) { jsonRes(res, 409, { error: "Already in a workspace", workspace: alreadyIn }); return; }
+          const code = (body.code as string)?.toUpperCase();
+          const ws = Object.values(store).find(w => w.inviteCode === code);
+          if (!ws) { jsonRes(res, 404, { error: "Workspace not found. Check the invite code." }); return; }
+          ws.members.push({ userId: caller.uid, email: body.email || caller.email, name: body.displayName || "Member", role: "member", joinedAt: new Date().toISOString() });
+          store[ws.id] = ws;
+          saveStore(store);
+          jsonRes(res, 200, ws);
+          return;
+        }
+
+        /* POST /api/workspace/leave */
+        if (method === "POST" && url === "/api/workspace/leave") {
+          const ws = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
+          if (!ws) { jsonRes(res, 404, { error: "Not in a workspace" }); return; }
+          ws.members = ws.members.filter(m => m.userId !== caller.uid);
+          store[ws.id] = ws;
+          saveStore(store);
+          jsonRes(res, 200, { ok: true });
+          return;
+        }
+
+        /* DELETE /api/workspace/members/:memberId */
+        const removeMemberMatch = url.match(/^\/api\/workspace\/members\/([^/?]+)/);
+        if (method === "DELETE" && removeMemberMatch) {
+          const memberId = removeMemberMatch[1];
+          const ws = Object.values(store).find(w => w.ownerId === caller.uid);
+          if (!ws) { jsonRes(res, 403, { error: "Not a workspace owner" }); return; }
+          ws.members = ws.members.filter(m => m.userId !== memberId);
+          store[ws.id] = ws;
+          saveStore(store);
+          jsonRes(res, 200, ws);
+          return;
+        }
+
+        /* POST /api/workspace/regen-code */
+        if (method === "POST" && url === "/api/workspace/regen-code") {
+          const ws = Object.values(store).find(w => w.ownerId === caller.uid);
+          if (!ws) { jsonRes(res, 403, { error: "Not a workspace owner" }); return; }
+          ws.inviteCode = generateCode();
+          store[ws.id] = ws;
+          saveStore(store);
+          jsonRes(res, 200, { inviteCode: ws.inviteCode });
+          return;
+        }
+
+        /* POST /api/workspace/sync-stats */
+        if (method === "POST" && url === "/api/workspace/sync-stats") {
+          const body = await readBody(req);
+          const ws = Object.values(store).find(w => w.members.some(m => m.userId === caller.uid));
+          if (!ws) { jsonRes(res, 404, { error: "Not in a workspace" }); return; }
+          const member = ws.members.find(m => m.userId === caller.uid);
+          if (member && body.stats) {
+            member.stats = { ...body.stats, syncedAt: new Date().toISOString() };
+            store[ws.id] = ws;
+            saveStore(store);
+          }
+          jsonRes(res, 200, { ok: true });
+          return;
+        }
+
+        next();
+      });
     },
   };
 }
@@ -90,7 +269,7 @@ export default defineConfig(async () => {
     : [];
 
   return {
-    plugins: [suppressPostCSSFromWarning(), groqProxyPlugin(), react(), ...replitPlugins],
+    plugins: [suppressPostCSSFromWarning(), groqProxyPlugin(), workspacePlugin(), react(), ...replitPlugins],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -106,37 +285,14 @@ export default defineConfig(async () => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
-              return "react-vendor";
-            }
-            if (id.includes("node_modules/firebase/") || id.includes("node_modules/@firebase/")) {
-              return "firebase";
-            }
-            if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-") || id.includes("node_modules/victory-")) {
-              return "charts";
-            }
-            if (id.includes("node_modules/framer-motion")) {
-              return "motion";
-            }
-            if (id.includes("node_modules/@radix-ui/")) {
-              return "radix";
-            }
-            if (id.includes("node_modules/@stripe/") || id.includes("node_modules/stripe")) {
-              return "stripe";
-            }
-            if (id.includes("node_modules/@emailjs/")) {
-              return "emailjs";
-            }
-            if (
-              id.includes("node_modules/date-fns") ||
-              id.includes("node_modules/zod") ||
-              id.includes("node_modules/wouter") ||
-              id.includes("node_modules/clsx") ||
-              id.includes("node_modules/class-variance-authority") ||
-              id.includes("node_modules/tailwind-merge")
-            ) {
-              return "utils";
-            }
+            if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) return "react-vendor";
+            if (id.includes("node_modules/firebase/") || id.includes("node_modules/@firebase/")) return "firebase";
+            if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-") || id.includes("node_modules/victory-")) return "charts";
+            if (id.includes("node_modules/framer-motion")) return "motion";
+            if (id.includes("node_modules/@radix-ui/")) return "radix";
+            if (id.includes("node_modules/@stripe/") || id.includes("node_modules/stripe")) return "stripe";
+            if (id.includes("node_modules/@emailjs/")) return "emailjs";
+            if (id.includes("node_modules/date-fns") || id.includes("node_modules/zod") || id.includes("node_modules/wouter") || id.includes("node_modules/clsx") || id.includes("node_modules/class-variance-authority") || id.includes("node_modules/tailwind-merge")) return "utils";
           },
         },
       },
@@ -145,14 +301,8 @@ export default defineConfig(async () => {
       port: 5000,
       host: "0.0.0.0",
       allowedHosts: true,
-      fs: {
-        strict: true,
-        deny: ["**/.*"],
-      },
+      fs: { strict: true, deny: ["**/.*"] },
     },
-    preview: {
-      port: 5000,
-      host: "0.0.0.0",
-    },
+    preview: { port: 5000, host: "0.0.0.0" },
   };
 });
