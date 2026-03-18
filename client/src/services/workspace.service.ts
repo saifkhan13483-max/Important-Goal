@@ -15,6 +15,7 @@ import type { Workspace, WorkspaceMember } from "@/types/schema";
 export interface MemberStats {
   activeSystems: number;
   bestStreak: number;
+  currentStreak: number;
   completionRate: number;
   weeklyRate: number;
   last7: Array<{ dateKey: string; done: number; total: number }>;
@@ -190,6 +191,23 @@ export async function regenerateInviteCode(workspaceId: string): Promise<string>
   const newCode = generateCode();
   await updateDoc(doc(db, "workspaces", workspaceId), { inviteCode: newCode });
   return newCode;
+}
+
+export async function renameWorkspace(workspaceId: string, newName: string): Promise<void> {
+  await updateDoc(doc(db, "workspaces", workspaceId), { name: newName.trim() });
+}
+
+export async function deleteWorkspace(workspaceId: string): Promise<void> {
+  const wsRef = doc(db, "workspaces", workspaceId);
+  const snap = await getDoc(wsRef);
+  if (!snap.exists()) throw new Error("Workspace not found");
+  const wsData = { id: snap.id, ...snap.data() } as WorkspaceDoc;
+  await deleteDoc(wsRef);
+  for (const m of wsData.members) {
+    try {
+      await updateDoc(doc(db, "users", m.userId), { workspaceId: null });
+    } catch { /* */ }
+  }
 }
 
 export async function syncMemberStats(stats: MemberStats): Promise<void> {
