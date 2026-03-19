@@ -15,6 +15,7 @@ import {
   CreditCard,
   BarChart2,
   Bot,
+  Globe,
 } from "lucide-react";
 
 const faqs = [
@@ -209,6 +210,26 @@ export default function Support() {
             happy to help.
           </p>
         </div>
+
+        {/* ── Website creation banner ── */}
+        <a
+          href="mailto:saifkhan@strivo.life?subject=Website+Creation+Enquiry"
+          data-testid="link-website-creation"
+          className="flex items-center gap-4 p-5 rounded-2xl border-2 border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors group mb-6"
+        >
+          <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center shrink-0 group-hover:bg-primary/25 transition-colors">
+            <Globe className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm mb-0.5">Need a Website Built?</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Want to create any type of website? Get in touch and we'll make it happen.
+            </p>
+          </div>
+          <p className="text-xs text-primary font-semibold shrink-0 hidden sm:block">
+            saifkhan@strivo.life →
+          </p>
+        </a>
 
         {/* ── Contact cards ── */}
         <div className="grid sm:grid-cols-2 gap-4 mb-12">
