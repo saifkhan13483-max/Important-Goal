@@ -8,40 +8,47 @@
  * Falls back to localStorage base64 if Cloudinary is unreachable.
  */
 
-const CLOUD_NAME   = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string;
+import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from "@/lib/cloudinary";
+import { db } from "@/lib/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 
-const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
-const DELETE_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/delete_by_token`;
+const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
+const DELETE_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/delete_by_token`;
 
-const LS_AUDIO_URL         = "sf_future_self_audio_url";
 const LS_AUDIO_B64         = "sf_future_self_audio";
 const LS_AUDIO_TYPE        = "sf_future_self_audio_type";
 const LS_AUDIO_DELETE_TOKEN = "sf_future_self_audio_delete_token";
 
+function lsAudioUrlKey(userId: string) {
+  return `futureAudioUrl_${userId}`;
+}
+
 /**
  * Upload a Blob to Cloudinary with real progress callbacks.
+ * Saves the returned URL to Firestore and localStorage on success.
  *
  * @param blob       - The audio blob to upload
  * @param mimeType   - MIME type of the blob
+ * @param userId     - Firebase UID of the current user (for Firestore + localStorage keys)
  * @param onProgress - Called with 0–100 as bytes transfer
  * @param timeoutMs  - Abort if upload takes longer than this (default 60 s)
  */
 export function uploadFutureSelfAudio(
   blob: Blob,
   mimeType: string,
+  userId: string,
   onProgress?: (pct: number) => void,
   timeoutMs = 60_000,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!CLOUD_NAME || !UPLOAD_PRESET) {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
       reject(new Error("Cloudinary is not configured. Check your environment variables."));
       return;
     }
 
     const formData = new FormData();
     formData.append("file", blob);
-    formData.append("upload_preset", UPLOAD_PRESET);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
     formData.append("folder", "future-self-audio");
     formData.append("resource_type", "auto");
 
@@ -59,7 +66,7 @@ export function uploadFutureSelfAudio(
       }
     };
 
-    xhr.onload = () => {
+    xhr.onload = async () => {
       clearTimeout(timer);
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
@@ -67,7 +74,13 @@ export function uploadFutureSelfAudio(
           const url: string = data.secure_url;
           const deleteToken: string = data.delete_token ?? "";
 
-          try { localStorage.setItem(LS_AUDIO_URL, url); } catch {}
+          // Persist URL to Firestore
+          try {
+            await updateDoc(doc(db, "users", userId), { futureAudioUrl: url });
+          } catch { /* non-fatal — resolve regardless */ }
+
+          // Cache in localStorage with user-scoped key
+          try { localStorage.setItem(lsAudioUrlKey(userId), url); } catch {}
           try { localStorage.setItem(LS_AUDIO_DELETE_TOKEN, deleteToken); } catch {}
 
           resolve(url);
@@ -105,11 +118,12 @@ export function uploadFutureSelfAudio(
 export async function uploadFutureSelfAudioBase64(
   base64DataUrl: string,
   mimeType: string,
+  userId: string,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
   const res = await fetch(base64DataUrl);
   const blob = await res.blob();
-  return uploadFutureSelfAudio(blob, mimeType, onProgress);
+  return uploadFutureSelfAudio(blob, mimeType, userId, onProgress);
 }
 
 /**
@@ -117,9 +131,10 @@ export async function uploadFutureSelfAudioBase64(
  */
 export function uploadFutureSelfAudioFile(
   file: File,
+  userId: string,
   onProgress?: (pct: number) => void,
 ): Promise<string> {
-  return uploadFutureSelfAudio(file, file.type || "audio/mpeg", onProgress);
+  return uploadFutureSelfAudio(file, file.type || "audio/mpeg", userId, onProgress);
 }
 
 /**
@@ -140,7 +155,6 @@ export async function deleteFutureSelfAudioFromStorage(
   } catch {}
 
   try {
-    localStorage.removeItem(LS_AUDIO_URL);
     localStorage.removeItem(LS_AUDIO_B64);
     localStorage.removeItem(LS_AUDIO_TYPE);
     localStorage.removeItem(LS_AUDIO_DELETE_TOKEN);
@@ -153,14 +167,14 @@ export async function deleteFutureSelfAudioFromStorage(
  *  2. The Firestore URL passed from user.futureAudioUrl
  *  3. Legacy base64 blob in localStorage (pre-cloud-upload recordings)
  */
-export function getLocalAudioUrl(firestoreUrl?: string | null): string | null {
+export function getLocalAudioUrl(userId: string, firestoreUrl?: string | null): string | null {
   try {
-    const cached = localStorage.getItem(LS_AUDIO_URL);
+    const cached = localStorage.getItem(lsAudioUrlKey(userId));
     if (cached) return cached;
   } catch {}
 
   if (firestoreUrl) {
-    try { localStorage.setItem(LS_AUDIO_URL, firestoreUrl); } catch {}
+    try { localStorage.setItem(lsAudioUrlKey(userId), firestoreUrl); } catch {}
     return firestoreUrl;
   }
 
@@ -171,6 +185,6 @@ export function getLocalAudioUrl(firestoreUrl?: string | null): string | null {
   return null;
 }
 
-export function hasStoredAudio(firestoreUrl?: string | null): boolean {
-  return !!getLocalAudioUrl(firestoreUrl);
+export function hasStoredAudio(userId: string, firestoreUrl?: string | null): boolean {
+  return !!getLocalAudioUrl(userId, firestoreUrl);
 }

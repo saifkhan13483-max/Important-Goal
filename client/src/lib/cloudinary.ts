@@ -1,11 +1,10 @@
-export const CLOUDINARY_CLOUD_NAME =
-  import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string;
 
-export const CLOUDINARY_UPLOAD_PRESET =
-  import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string;
+export { CLOUD_NAME as CLOUDINARY_CLOUD_NAME, UPLOAD_PRESET as CLOUDINARY_UPLOAD_PRESET };
 
 export const CLOUDINARY_UPLOAD_URL =
-  `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`;
+  `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
 
 /**
  * Uploads a File or Blob to Cloudinary using an unsigned upload preset.
@@ -13,37 +12,33 @@ export const CLOUDINARY_UPLOAD_URL =
  */
 export async function uploadToCloudinary(
   file: File | Blob,
-  folder?: string
+  folder: string
 ): Promise<string> {
-  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
     throw new Error("Cloudinary environment variables are not configured.");
   }
 
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-  if (folder) formData.append("folder", folder);
+  formData.append("upload_preset", UPLOAD_PRESET);
+  formData.append("folder", folder);
 
-  const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+  const res = await fetch(CLOUDINARY_UPLOAD_URL, {
     method: "POST",
     body: formData,
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(
-      error.error?.message ?? "Cloudinary upload failed"
-    );
+  if (!res.ok) {
+    throw new Error(`Cloudinary upload failed: ${res.statusText}`);
   }
 
-  const data = await response.json();
+  const data = await res.json();
   return data.secure_url as string;
 }
 
 /**
- * Convenience wrapper — kept for backwards compatibility with
- * existing image-upload call sites.
+ * Convenience wrapper for image uploads.
  */
-export async function uploadImage(file: File): Promise<string> {
-  return uploadToCloudinary(file);
+export async function uploadImage(file: File, folder = "systemforge/images"): Promise<string> {
+  return uploadToCloudinary(file, folder);
 }

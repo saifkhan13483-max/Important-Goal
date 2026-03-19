@@ -996,7 +996,7 @@ export default function Dashboard() {
       />
 
       {/* Future Self Audio player */}
-      {hasFutureSelfAudio(user?.futureAudioUrl) && (
+      {hasFutureSelfAudio(user?.id ?? "", user?.futureAudioUrl) && (
         missedYesterday.length > 0 ? (
           <FutureSelfAudioPlayer
             context="missedDay"

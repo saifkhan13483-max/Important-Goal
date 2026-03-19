@@ -16,6 +16,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useAppStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -41,8 +42,8 @@ const LS_AUDIO_TYPE = "sf_future_self_audio_type";
 export const LS_LAST_PLAYED = "sf_future_self_last_played";
 
 /** @deprecated use hasStoredAudio() from audio.service instead */
-export function hasFutureSelfAudio(firestoreUrl?: string | null): boolean {
-  return hasStoredAudio(firestoreUrl);
+export function hasFutureSelfAudio(userId: string, firestoreUrl?: string | null): boolean {
+  return hasStoredAudio(userId, firestoreUrl);
 }
 
 export function deleteFutureSelfAudio(): void {
@@ -161,7 +162,9 @@ interface SetupProps {
 }
 
 export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existingUrl }: SetupProps) {
-  const initialSrc = getLocalAudioUrl(existingUrl);
+  const { user } = useAppStore();
+  const userId = user?.id ?? "";
+  const initialSrc = getLocalAudioUrl(userId, existingUrl);
   const [mode, setMode] = useState<"idle" | "record" | "upload" | "preview" | "uploading" | "saved">(
     initialSrc ? "saved" : "idle"
   );
@@ -200,6 +203,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existin
       const url = await uploadFutureSelfAudio(
         blob,
         mimeType,
+        userId,
         (pct) => setUploadProgress(pct),
       );
 
@@ -319,7 +323,7 @@ export function FutureSelfAudioSetup({ onSaved, onSkip, compact = false, existin
 
   /* ── Delete ─────────────────────────────────────────────────────── */
   const deleteAudio = async () => {
-    const existing = getLocalAudioUrl(existingUrl);
+    const existing = getLocalAudioUrl(userId, existingUrl);
     if (existing && existing.startsWith("http")) {
       await deleteFutureSelfAudioFromStorage(existing).catch(() => {});
     }
@@ -726,6 +730,8 @@ export function FutureSelfAudioPlayer({
   muted: mutedPref = false,
   onDismiss,
 }: PlayerProps) {
+  const { user } = useAppStore();
+  const userId = user?.id ?? "";
   const [visible, setVisible] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(mutedPref);
@@ -739,7 +745,7 @@ export function FutureSelfAudioPlayer({
   const copy = CONTEXT_COPY[context];
 
   const shouldShow = useCallback(() => {
-    const src = getLocalAudioUrl(firestoreUrl);
+    const src = getLocalAudioUrl(userId, firestoreUrl);
     if (!src) return false;
     const today = new Date().toISOString().split("T")[0];
     if (context === "firstVisit") {
@@ -754,7 +760,7 @@ export function FutureSelfAudioPlayer({
   useEffect(() => {
     if (!shouldShow()) return;
 
-    const src = getLocalAudioUrl(firestoreUrl);
+    const src = getLocalAudioUrl(userId, firestoreUrl);
     if (!src) return;
 
     setVisible(true);

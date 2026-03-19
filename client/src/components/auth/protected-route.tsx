@@ -74,7 +74,11 @@ function EmailVerificationBanner() {
 export function ProtectedRoute({ component: Component }: RouteProps) {
   const { user, isAuthLoading } = useAppStore();
 
-  if (isAuthLoading) return null;
+  if (isAuthLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+    </div>
+  );
   if (!user) return <Redirect to="/login" />;
   if (!user.onboardingCompleted) return <Redirect to="/onboarding" />;
 
