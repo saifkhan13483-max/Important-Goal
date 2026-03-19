@@ -96,7 +96,10 @@ client/
     types/         # TypeScript type definitions
     services/      # Firebase service layer
     constants/     # App constants
-vite.config.ts     # Vite configuration (root: client/, serves on port 5000)
+api/
+  groq-proxy.ts   # Vercel serverless function — proxies Groq API requests
+vite.config.ts     # Vite configuration (root: client/, serves on port 5000; also runs local Groq proxy for dev)
+vercel.json        # Vercel deployment config (static build + SPA rewrites)
 package.json       # Dependencies and scripts
 ```
 
@@ -108,8 +111,8 @@ package.json       # Dependencies and scripts
 
 ## Running the App
 - **Dev**: `npm run dev` (starts Vite on port 5000)
-- **Build**: `npm run build`
-- **Production**: `npm run start`
+- **Build**: `npm run build` (runs `vite build`, outputs to `dist/`)
+- **Deployed on**: Vercel (static site + serverless API functions)
 
 ## Firebase Configuration
 Firebase credentials are stored in the `.replit` userenv section and are prefixed with `VITE_FIREBASE_`:
@@ -125,8 +128,8 @@ Firebase credentials are stored in the `.replit` userenv section and are prefixe
 AI features use the **Groq API** (`llama-3.3-70b-versatile`) via a server-side proxy (`/api/groq-proxy`) embedded in `vite.config.ts`. The proxy is served on port 35001 internally and proxied through the Vite dev server.
 
 ### Environment variable
-- `GROQ_API_KEY` — Groq API key (server-only, **no VITE_ prefix**). Read by `vite.config.ts` apiPlugin and `server/index.ts`.
-- **Note**: Replit currently has `VITE_GROQ_API_KEY` stored. Set `GROQ_API_KEY` (without prefix) for the AI proxy to work in dev.
+- `GROQ_API_KEY` — Groq API key (server-only, **no VITE_ prefix**). Read by `vite.config.ts` apiPlugin (dev) and `api/groq-proxy.ts` (Vercel serverless).
+- **Note**: Set `GROQ_API_KEY` (without VITE_ prefix) so the key is never exposed to the browser.
 
 ### Files
 - `client/src/services/ai.service.ts` — Core service: `callGroq`, `suggestSystemField`, `generateFullSystem`, `chatWithCoach`, `generateJournalPrompt`, `generateAnalyticsInsights`
