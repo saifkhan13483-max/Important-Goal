@@ -1,0 +1,140 @@
+You are migrating the SystemForge codebase from a traditional Express/PostgreSQL/Drizzle 
+backend to a fully Firebase + Firestore + Cloudinary architecture. The app is already 
+partially migrated — your job is to complete, clean up, and verify the migration end-to-end.
+
+Read this entire prompt before making any changes. Follow every instruction in order.
+
+════════════════════════════════════════════════════════════════
+SECTION 1 — CONTEXT & GROUND RULES
+════════════════════════════════════════════════════════════════
+
+WHAT THE APP IS:
+SystemForge is a React 18 + TypeScript SPA built with Vite 7. It is a goal-setting and 
+habit-formation app. There is NO traditional backend for application data. All CRUD 
+operations go directly from the browser to Firebase Firestore. The only server-side code 
+that must remain is server/index.ts — a slim Express server used exclusively for:
+  1. Proxying requests to the Groq AI API (/api/groq-proxy)
+  2. Serving the built React SPA in production
+
+ABSOLUTE RULES — NEVER VIOLATE THESE:
+- Never add Express routes for app data (goals, systems, users, etc.)
+- Never use Firebase Storage — use Cloudinary (lib/cloudinary.ts) for ALL file uploads
+- Never import React explicitly — Vite JSX transform handles it
+- Never use npx vite — use the local binary: vite
+- Never add GROQ_API_KEY as a VITE_ prefixed variable — it is server-only
+- All browser-accessible env vars MUST be VITE_ prefixed
+- Do not modify vite.config.ts or server/index.ts unless a specific section below instructs it
+- Do not add Drizzle, PostgreSQL, or any SQL-based code — those packages in package.json 
+  are dead scaffolding and must be ignored (do not remove them either, just ignore)
+- Payments are Stripe Payment Links only — no server-side Stripe SDK, no webhooks
+- Port 5000 is the single external port
+
+PATH ALIASES (already configured in tsconfig and vite.config.ts):
+  @/        → client/src/
+  @shared/  → client/src/types/
+  @assets/  → attached_assets/
+
+════════════════════════════════════════════════════════════════
+SECTION 2 — ENVIRONMENT VARIABLES
+════════════════════════════════════════════════════════════════
+
+Create or verify a .env file in the project root with exactly these keys.
+I will provide the values — insert them exactly as given:
+
+# Firebase (browser-accessible)
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+
+# Cloudinary (browser-accessible)
+VITE_CLOUDINARY_CLOUD_NAME=
+VITE_CLOUDINARY_UPLOAD_PRESET=
+
+# Groq (server-only — NO VITE_ prefix)
+GROQ_API_KEY=
+
+# EmailJS (browser-accessible)
+VITE_EMAILJS_SERVICE_ID=
+VITE_EMAILJS_TEMPLATE_ID=
+VITE_EMAILJS_PUBLIC_KEY=
+
+# Stripe (browser-accessible Payment Links only)
+VITE_STRIPE_STARTER_LINK=
+VITE_STRIPE_PRO_LINK=
+VITE_STRIPE_ELITE_LINK=
+
+IMPORTANT: After writing the .env file, verify that client/src/lib/firebase.ts reads 
+from these exact VITE_ variable names. If the variable names in firebase.ts differ, 
+update firebase.ts to match — do NOT change the .env keys.
+
+════════════════════════════════════════════════════════════════
+SECTION 3 — PACKAGE CLEANUP
+════════════════════════════════════════════════════════════════
+
+Open package.json. Do the following:
+
+1. VERIFY these packages are present (add if missing):
+   Dependencies:
+   - firebase (latest v10.x)
+   - @tanstack/react-query (v5)
+   - zustand
+   - wouter
+   - react-hook-form
+   - @hookform/resolvers
+   - zod
+   - framer-motion
+   - @radix-ui/* (all shadcn/ui primitives already in use)
+   - tailwindcss
+   - lucide-react
+   - react-icons
+   - emailjs-browser
+   - axios (if used in audio.service.ts for XHR progress)
+
+   DevDependencies:
+   - vite (v7)
+   - @vitejs/plugin-react
+   - typescript
+   - @types/react
+   - @types/react-dom
+   - tailwindcss
+   - autoprefixer
+   - postcss
+
+2. DO NOT remove: drizzle-orm, drizzle-zod, @neondatabase/serverless, pg — leave them 
+   as dead dependencies, do not import or use them anywhere.
+
+3. Verify the scripts section contains:
+   "dev": "vite --port 5000"
+   "build": "vite build"
+   "start": "node dist/index.cjs"
+   (Do NOT use npx vite anywhere)
+
+4. Run: npm install
+   If there are peer dependency conflicts, use --legacy-peer-deps.
+
+════════════════════════════════════════════════════════════════
+SECTION 4 — FIREBASE INITIALIZATION
+════════════════════════════════════════════════════════════════
+
+Open client/src/lib/firebase.ts. Rewrite it to match this exact structure:
+
+```typescript
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+CRITICAL: There must be NO reference to Firebase Storage anywhere in this file. If getStorage is imported anywhere in the codebase, find it and remove it — replace with Cloudinary calls from lib/cloudinary.ts.
