@@ -1,7 +1,7 @@
-# SystemForge
+# Strivo
 
 ## Overview
-SystemForge is a React + Firebase web application that helps users turn goals into daily systems they can follow. It allows users to create goals, break them into repeatable daily actions, track progress, and stay consistent.
+Strivo is a React + Firebase web application that helps users turn goals into daily systems they can follow. It allows users to create goals, break them into repeatable daily actions, track progress, and stay consistent.
 
 ## Deployment Status
 - **Deployment target**: Static site (`npm run build` → `dist/`)
