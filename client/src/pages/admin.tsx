@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { SiteLogo } from "@/components/site-logo";
 import { useAppStore } from "@/store/auth.store";
 import { updateUser } from "@/services/user.service";
 import { getGoals } from "@/services/goals.service";
@@ -155,11 +156,7 @@ function AdminSidebar({
             <ShieldCheck className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
-            <img
-              src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-              alt="Strivo"
-              className="h-5 w-auto object-contain"
-            />
+            <SiteLogo className="h-5" />
             <p className="text-[10px] text-violet-500 font-medium">Admin Panel</p>
           </div>
         </div>

@@ -19,6 +19,7 @@ import { getCheckinsByDate } from "@/services/checkins.service";
 import type { System, Checkin } from "@/types/schema";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
+import { SiteLogo } from "@/components/site-logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,11 +128,7 @@ export function AppSidebar() {
     <Sidebar role="navigation" aria-label="Application navigation">
       <SidebarHeader className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center gap-2.5">
-          <img
-            src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-            alt="Strivo"
-            className="h-8 w-auto object-contain"
-          />
+          <SiteLogo className="h-8" />
         </div>
       </SidebarHeader>
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
+import { SiteLogo } from "@/components/site-logo";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/auth.store";
@@ -55,11 +56,7 @@ export default function CheckoutSuccess() {
             </div>
 
             <div className="flex items-center justify-center mb-3">
-              <img
-                src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-                alt="Strivo"
-                className="h-9 w-auto object-contain"
-              />
+              <SiteLogo className="h-9" />
             </div>
 
             <h1 className="text-3xl font-bold mb-3" data-testid="text-checkout-success-heading">

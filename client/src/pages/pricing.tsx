@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { SiteLogo } from "@/components/site-logo";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -227,11 +228,7 @@ export default function Pricing() {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center cursor-pointer">
-              <img
-                src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-                alt="Strivo"
-                className="h-9 w-auto object-contain"
-              />
+              <SiteLogo className="h-9" />
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -473,11 +470,7 @@ export default function Pricing() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
             <div>
               <div className="flex items-center mb-3">
-                <img
-                  src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-                  alt="Strivo"
-                  className="h-7 w-auto object-contain"
-                />
+                <SiteLogo className="h-7" />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Built for people who are tired of starting over.

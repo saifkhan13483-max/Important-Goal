@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
+import { SiteLogo } from "@/components/site-logo";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -294,11 +295,7 @@ function ProductPreview() {
           {/* Sidebar — hidden on mobile */}
           <div className="w-36 sm:w-44 border-r border-border bg-sidebar hidden sm:flex flex-col p-3 gap-1">
             <div className="flex items-center p-2 mb-2">
-              <img
-                src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-                alt="Strivo"
-                className="h-5 w-auto object-contain"
-              />
+              <SiteLogo className="h-5" />
             </div>
             {[
               { icon: BarChart2, label: "Dashboard", active: true  },
@@ -553,11 +550,7 @@ export default function Landing() {
       >
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center">
-            <img
-              src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-              alt="Strivo"
-              className="h-9 w-auto object-contain"
-            />
+            <SiteLogo className="h-9" />
           </div>
 
           <div className="hidden md:flex items-center gap-7 text-sm text-muted-foreground font-medium">
@@ -588,11 +581,7 @@ export default function Landing() {
               </SheetTrigger>
               <SheetContent side="right" className="w-72 p-6">
                 <div className="flex items-center mb-8">
-                  <img
-                    src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-                    alt="Strivo"
-                    className="h-8 w-auto object-contain"
-                  />
+                  <SiteLogo className="h-8" />
                 </div>
                 <div className="flex flex-col gap-1 mb-8">
                   {navLinks.map((link) => (
@@ -1285,11 +1274,7 @@ export default function Landing() {
             {/* Brand */}
             <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center mb-3">
-                <img
-                  src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
-                  alt="Strivo"
-                  className="h-7 w-auto object-contain"
-                />
+                <SiteLogo className="h-7" />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">
                 Built for people who are tired of starting over.
