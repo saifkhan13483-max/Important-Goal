@@ -91,10 +91,9 @@ export default function Login() {
             <img
               src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
               alt="Strivo"
-              className="h-10 w-auto object-contain"
+              className="h-12 w-auto object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold">Strivo</h1>
           <p className="text-muted-foreground text-sm mt-1">Build systems, not just goals.</p>
         </div>
 

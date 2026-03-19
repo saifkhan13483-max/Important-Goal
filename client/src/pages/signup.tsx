@@ -106,10 +106,9 @@ export default function Signup() {
             <img
               src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
               alt="Strivo"
-              className="h-10 w-auto object-contain"
+              className="h-12 w-auto object-contain"
             />
           </div>
-          <h1 className="text-2xl font-bold">Strivo</h1>
           <p className="text-muted-foreground text-sm mt-1">Turn your goals into daily systems.</p>
         </div>
 
