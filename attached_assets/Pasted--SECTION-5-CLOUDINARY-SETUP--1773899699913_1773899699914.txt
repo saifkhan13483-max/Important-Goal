@@ -1,0 +1,101 @@
+════════════════════════════════════════════════════════════════ SECTION 5 — CLOUDINARY SETUP ════════════════════════════════════════════════════════════════
+
+Open (or create) client/src/lib/cloudinary.ts. Ensure it contains:
+
+Copyconst CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+export async function uploadToCloudinary(
+  file: File | Blob,
+  folder: string
+): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', UPLOAD_PRESET);
+  formData.append('folder', folder);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
+    { method: 'POST', body: formData }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Cloudinary upload failed: ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  return data.secure_url as string;
+}
+
+export async function uploadImage(file: File, folder = 'systemforge/images'): Promise<string> {
+  return uploadToCloudinary(file, folder);
+}
+Then open client/src/services/audio.service.ts. Ensure it:
+
+Imports uploadToCloudinary from @/lib/cloudinary
+Uses XHR (not fetch) for upload so it can report progress via onprogress callback
+Has a 60-second timeout
+On success, saves the returned secure_url to: (a) the user's Firestore document at users/{userId}.futureAudioUrl (b) localStorage as 'futureAudioUrl_${userId}' (base64 fallback only if Cloudinary fails)
+Does NOT reference Firebase Storage in any way
+════════════════════════════════════════════════════════════════ SECTION 6 — AUTHENTICATION LAYER ════════════════════════════════════════════════════════════════
+
+Verify client/src/hooks/use-auth.ts:
+
+Calls onAuthStateChanged from firebase/auth using the auth singleton from lib/firebase.ts
+When a user is detected, fetches their profile from Firestore collection 'users' using getDoc(doc(db, 'users', uid))
+Writes the profile into the Zustand auth store (client/src/store/auth.store.ts)
+Handles the loading state (isAuthLoading) so ProtectedRoute doesn't flash a redirect
+Verify client/src/store/auth.store.ts:
+
+Zustand store with fields: user (Firebase User | null), profile (UserProfile | null), isAuthLoading (boolean)
+Actions: setUser, setProfile, setAuthLoading, clearAuth
+Verify client/src/components/auth/ProtectedRoute.tsx:
+
+If isAuthLoading is true: render a loading spinner, do NOT redirect
+If user is null: redirect to /login
+If profile.onboardingCompleted is false: redirect to /onboarding
+Otherwise: render children
+Verify client/src/components/auth/PublicOnlyRoute.tsx:
+
+If user is authenticated: redirect to /dashboard
+Otherwise: render children
+Verify App.tsx contains an component that calls useAuth() at the top level so the auth listener is registered on app load.
+
+════════════════════════════════════════════════════════════════ SECTION 7 — FIRESTORE SERVICE LAYER ════════════════════════════════════════════════════════════════
+
+These are the required service files in client/src/services/. For each one listed, verify it exists and follows these rules:
+
+Imports db from @/lib/firebase (never initializes its own Firebase instance)
+Uses only Firestore SDK methods (collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, query, where, orderBy, limit, onSnapshot)
+NEVER makes HTTP calls to any Express endpoint for CRUD
+Exports typed async functions that UI components call via TanStack Query
+Required services and their Firestore collections:
+
+auth.service.ts → Firebase Auth only (signIn, signUp, signOut, Google OAuth, password reset, email verification) user.service.ts → 'users' collection (getUser, createUser, updateUser, deleteUser) goals.service.ts → 'goals' collection (CRUD, filter by userId) systems.service.ts → 'systems' collection (CRUD, filter by userId and goalId) checkins.service.ts → 'checkins' collection (CRUD, filter by userId, systemId, dateKey) journal.service.ts → 'journalEntries' collection (CRUD, filter by userId and dateKey) workspace.service.ts → 'workspaces' collection (create, join by inviteCode, leave, removeMember, transferOwnership, rename, delete, regenerateInviteCode, syncMemberStats) audio.service.ts → Cloudinary upload only (see Section 5) templates.service.ts → 'templates' collection (list public, list premium, get by id, create — admin only) ai.service.ts → callGroq() function that POSTs to /api/groq-proxy with rate limiting based on user plan: Free: 15/day, Starter: 60/day, Pro/Elite: unlimited Rate limit state tracked in localStorage keyed by userId + date
+
+For workspace.service.ts specifically, verify:
+
+Workspace documents have both memberIds (string[]) and members (object[]) fields
+memberIds is used for array-contains Firestore queries
+memberStats is a map keyed by userId with performance stats
+syncMemberStats(workspaceId, userId, stats) does a Firestore updateDoc with dot-notation field paths: memberStats.${userId}
+════════════════════════════════════════════════════════════════ SECTION 8 — TANSTACK QUERY CONFIGURATION ════════════════════════════════════════════════════════════════
+
+Open client/src/lib/queryClient.ts. Ensure it exports a QueryClient with:
+
+Copyimport { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,        // 60 seconds
+      refetchOnWindowFocus: false,  // keep Firestore reads low
+      retry: 1,
+    },
+  },
+});
+Verify App.tsx wraps the entire app in .
+
+Query key conventions to enforce throughout all hooks/pages: ["user", userId] ["goals", userId] ["goal", goalId] ["systems", userId] ["systems", "byGoal", goalId] ["checkins", userId, dateKey] ["checkins", "bySystem", systemId] ["journal", userId, dateKey] ["workspace", workspaceId] ["templates"] ["templates", "premium"]
+
+After every mutation, call queryClient.invalidateQueries({ queryKey: [relevantKey] }).
