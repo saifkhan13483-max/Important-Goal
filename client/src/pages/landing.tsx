@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +10,18 @@ import { Input } from "@/components/ui/input";
 import {
   Sparkles, Target, Zap, CheckSquare, TrendingUp, BookOpen,
   ArrowRight, Star, Check, ChevronDown,
-  Flame, LayoutGrid, Lightbulb, Heart, Quote,
+  Flame, LayoutGrid, Heart, Quote,
   BarChart2, Shield, Brain, Trophy, RefreshCw,
   Play, Calendar, Clock, Users, Menu, X,
   Repeat, Flag, Cog, CircleCheck, PenLine, Copy,
-  UserCircle2, ChevronRight, Mail, Loader2,
+  UserCircle2, ChevronRight, Mail, Loader2, MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { captureEmailLead } from "@/services/user.service";
 import { track } from "@/lib/track";
 import { Helmet } from "react-helmet-async";
 
+// ─── A/B variant ───────────────────────────────────────────────────────────
 function useCtaVariant(): "A" | "B" {
   return useMemo(() => {
     try {
@@ -35,181 +36,98 @@ function useCtaVariant(): "A" | "B" {
   }, []);
 }
 
+// ─── Animated counter ──────────────────────────────────────────────────────
+function useCountUp(target: number, duration = 1400) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  useEffect(() => {
+    if (!inView) return;
+    let start = 0;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start = Math.min(start + step, target);
+      setCount(Math.round(start));
+      if (start >= target) clearInterval(timer);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [inView, target, duration]);
+
+  return { ref, count };
+}
+
+// ─── Data ──────────────────────────────────────────────────────────────────
 const allFeatures = [
-  {
-    icon: Target,
-    title: "Define what you want to achieve",
-    desc: "Set a goal with a category, priority, and timeline. See all your goals in one clear place.",
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    icon: Cog,
-    title: "Turn your goal into a daily plan",
-    desc: "A guided wizard that builds your habit step by step — no guessing, no overwhelm.",
-    color: "bg-chart-2/10 text-chart-2",
-  },
-  {
-    icon: CircleCheck,
-    title: "Track how today went in seconds",
-    desc: "Mark each habit as done, partial, or missed. Takes less than 10 seconds per habit.",
-    color: "bg-chart-3/10 text-chart-3",
-  },
-  {
-    icon: Flame,
-    title: "Stay consistent — even when motivation drops",
-    desc: "Chain Calendar shows your unbroken run of days. Consistency alerts warn you before a slump hits, so your system carries you when motivation doesn't.",
-    color: "bg-chart-4/10 text-chart-4",
-  },
-  {
-    icon: BarChart2,
-    title: "See what's working",
-    desc: "Simple charts and plain-language insights — no confusing dashboards, just clarity.",
-    color: "bg-chart-5/10 text-chart-5",
-  },
-  {
-    icon: PenLine,
-    title: "Reflect on your progress",
-    desc: "Daily, weekly, and freeform journaling with prompts to help you grow faster.",
-    color: "bg-primary/10 text-primary",
-  },
-  {
-    icon: Copy,
-    title: "Start with proven systems",
-    desc: "Pre-built habit plans for fitness, study, wellness, morning routines, and more.",
-    color: "bg-chart-2/10 text-chart-2",
-  },
-  {
-    icon: RefreshCw,
-    title: "Bounce back when life gets in the way",
-    desc: "Recovery Flow guides you after a missed day. Tomorrow Intention lets you pre-commit to the next one. Broken streaks don't have to become broken habits.",
-    color: "bg-chart-3/10 text-chart-3",
-  },
+  { icon: Target,     title: "Define what you want to achieve",       desc: "Set a goal with a category, priority, and timeline. See all your goals in one clear place.",                                                                                      color: "bg-primary/10 text-primary"         },
+  { icon: Cog,        title: "Turn your goal into a daily plan",       desc: "A guided wizard that builds your habit step by step — no guessing, no overwhelm.",                                                                                                   color: "bg-chart-2/10 text-chart-2"         },
+  { icon: CircleCheck,title: "Track how today went in seconds",        desc: "Mark each habit as done, partial, or missed. Takes less than 10 seconds per habit.",                                                                                                 color: "bg-chart-3/10 text-chart-3"         },
+  { icon: Flame,      title: "Stay consistent — even when motivation drops", desc: "Chain Calendar shows your unbroken run of days. Consistency alerts warn you before a slump hits.",                                                                            color: "bg-chart-4/10 text-chart-4"         },
+  { icon: BarChart2,  title: "See what's working",                     desc: "Simple charts and plain-language insights — no confusing dashboards, just clarity.",                                                                                                 color: "bg-chart-5/10 text-chart-5"         },
+  { icon: PenLine,    title: "Reflect on your progress",               desc: "Daily, weekly, and freeform journaling with prompts to help you grow faster.",                                                                                                      color: "bg-primary/10 text-primary"         },
+  { icon: Copy,       title: "Start with proven systems",              desc: "Pre-built habit plans for fitness, study, wellness, morning routines, and more.",                                                                                                    color: "bg-chart-2/10 text-chart-2"         },
+  { icon: RefreshCw,  title: "Bounce back when life gets in the way",  desc: "Recovery Flow guides you after a missed day. Tomorrow Intention lets you pre-commit to the next one.",                                                                              color: "bg-chart-3/10 text-chart-3"         },
 ];
 
 const steps = [
-  {
-    step: "1",
-    title: "Choose who you're becoming",
-    desc: "Pick an identity to build through repetition — consistent, focused, fit, calm. Not a goal, a persona.",
-    icon: UserCircle2,
-  },
-  {
-    step: "2",
-    title: "Set your worst-day minimum",
-    desc: "Define the smallest version that still counts. This is what keeps the system alive when full effort isn't possible.",
-    icon: Zap,
-  },
-  {
-    step: "3",
-    title: "Keep going without restarting",
-    desc: "On good days, do more. On hard days, do the minimum. If you miss, the recovery flow guides you back without guilt.",
-    icon: RefreshCw,
-  },
+  { step: "1", title: "Choose who you're becoming",    desc: "Pick an identity to build through repetition — consistent, focused, fit, calm. Not a goal, a persona.",                                                               icon: UserCircle2 },
+  { step: "2", title: "Set your worst-day minimum",    desc: "Define the smallest version that still counts. This is what keeps the system alive when full effort isn't possible.",                                                  icon: Zap         },
+  { step: "3", title: "Keep going without restarting", desc: "On good days, do more. On hard days, do the minimum. If you miss, the recovery flow guides you back without guilt.",                                                   icon: RefreshCw   },
 ];
 
 const faqs = [
-  {
-    q: "What is a 'system' in SystemForge?",
-    a: "A system is a simple, repeatable daily action tied to your goal — like walking 20 minutes every morning to get fit. Instead of just saying 'get fit,' a system tells you exactly what to do each day, so you never have to think about it.",
-  },
-  {
-    q: "Is this good for complete beginners?",
-    a: "Yes — it's designed for people who have never used a habit app before. Every step is explained in plain English with real examples. You don't need to know anything about habit science going in.",
-  },
-  {
-    q: "Can I use it for fitness, study, or productivity goals?",
-    a: "Absolutely. Users track fitness routines, study schedules, creative work, mindfulness, business habits, and much more. If you want to do it consistently, SystemForge can help you build a system for it.",
-  },
-  {
-    q: "Does it work on mobile?",
-    a: "Yes. SystemForge works great on phones and tablets. The daily check-in is designed to take under 30 seconds — perfect for a quick tap on your phone each morning.",
-  },
-  {
-    q: "What's included in the free plan?",
-    a: "The free plan includes up to 2 active goals, 3 active systems, daily check-ins, streak tracking, starter templates, and basic analytics. It's plenty to get started and see real results.",
-  },
-  {
-    q: "How is this different from other habit trackers?",
-    a: "Most habit apps just let you check boxes. SystemForge builds real systems — with an identity statement, a trigger, a minimum action, and a fallback plan. It also warns you before motivation slumps hit (Hype Drop alerts), visualises your unbroken chain on a Calendar, and guides you through a Recovery Flow when you miss a day. It's designed to survive real life, not just work when you're motivated.",
-  },
+  { q: "What is a 'system' in SystemForge?",                  a: "A system is a simple, repeatable daily action tied to your goal — like walking 20 minutes every morning to get fit. Instead of just saying 'get fit,' a system tells you exactly what to do each day, so you never have to think about it." },
+  { q: "Is this good for complete beginners?",                 a: "Yes — it's designed for people who have never used a habit app before. Every step is explained in plain English with real examples. You don't need to know anything about habit science going in." },
+  { q: "Can I use it for fitness, study, or productivity goals?", a: "Absolutely. Users track fitness routines, study schedules, creative work, mindfulness, business habits, and much more. If you want to do it consistently, SystemForge can help you build a system for it." },
+  { q: "Does it work on mobile?",                              a: "Yes. SystemForge works great on phones and tablets. The daily check-in is designed to take under 30 seconds — perfect for a quick tap on your phone each morning." },
+  { q: "What's included in the free plan?",                    a: "The free plan includes up to 2 active goals, 3 active systems, daily check-ins, streak tracking, starter templates, and basic analytics. It's plenty to get started and see real results." },
+  { q: "How is this different from other habit trackers?",     a: "Most habit apps just let you check boxes. SystemForge builds real systems — with an identity statement, a trigger, a minimum action, and a fallback plan. It also warns you before motivation slumps hit, visualises your unbroken chain on a Calendar, and guides you through a Recovery Flow when you miss a day. It's designed to survive real life, not just work when you're motivated." },
 ];
 
 const pricingPlans = [
   {
-    name: "Free",
-    price: "$0",
-    yearlyPrice: "$0",
-    period: "/month",
-    tagline: "Perfect for trying it out",
-    badge: null,
-    features: [
-      "Up to 2 active goals",
-      "Up to 3 active systems",
-      "Daily check-ins",
-      "Basic streak tracking",
-      "3 starter templates",
-      "Light analytics",
-      "Basic journaling",
-    ],
-    cta: "Get Started",
-    ctaVariant: "outline" as const,
-    href: "/signup",
+    name: "Free", price: "$0", yearlyPrice: "$0", period: "/month",
+    tagline: "Perfect for trying it out", badge: null,
+    features: ["Up to 2 active goals", "Up to 3 active systems", "Daily check-ins", "Basic streak tracking", "3 starter templates", "Light analytics", "Basic journaling"],
+    cta: "Get Started", ctaVariant: "outline" as const, href: "/signup",
   },
   {
-    name: "Starter",
-    price: "$9",
-    yearlyPrice: "$7",
-    period: "/month",
-    tagline: "For people building consistency",
-    badge: null,
-    features: [
-      "Up to 10 active goals",
-      "Unlimited systems",
-      "Full template library",
-      "Advanced streak tracking",
-      "Weekly reflection prompts",
-      "Better analytics",
-      "Dark mode",
-      "Export basic reports",
-    ],
-    cta: "Start Free Trial",
-    ctaVariant: "outline" as const,
-    href: "/signup",
+    name: "Starter", price: "$9", yearlyPrice: "$7", period: "/month",
+    tagline: "For people building consistency", badge: null,
+    features: ["Up to 10 active goals", "Unlimited systems", "Full template library", "Advanced streak tracking", "Weekly reflection prompts", "Better analytics", "Dark mode", "Export basic reports"],
+    cta: "Start Free Trial", ctaVariant: "outline" as const, href: "/signup",
   },
   {
-    name: "Pro",
-    price: "$19",
-    yearlyPrice: "$15",
-    period: "/month",
-    tagline: "For ambitious, data-driven users",
-    badge: "Most Popular",
-    features: [
-      "Unlimited goals",
-      "Unlimited systems",
-      "Advanced analytics dashboard",
-      "Mood & habit correlation insights",
-      "Premium templates",
-      "Advanced journaling",
-      "CSV / PDF exports",
-      "Priority support",
-    ],
-    cta: "Start Free Trial",
-    ctaVariant: "default" as const,
-    href: "/signup",
+    name: "Pro", price: "$19", yearlyPrice: "$15", period: "/month",
+    tagline: "For ambitious, data-driven users", badge: "Most Popular",
+    features: ["Unlimited goals", "Unlimited systems", "Advanced analytics dashboard", "Mood & habit correlation insights", "Premium templates", "Advanced journaling", "CSV / PDF exports", "Priority support"],
+    cta: "Start Free Trial", ctaVariant: "default" as const, href: "/signup",
   },
 ];
 
 const navLinks = [
-  { label: "Features", href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Templates", href: "#templates" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Features",    href: "#features"    },
+  { label: "How It Works",href: "#how-it-works"},
+  { label: "Templates",   href: "#templates"   },
+  { label: "Pricing",     href: "#pricing"     },
+  { label: "FAQ",         href: "#faq"         },
 ];
+
+const testimonials = [
+  { quote: "I've tried every habit app. This is the first one that has a plan for when I mess up. The fallback feature alone changed everything for me.",                                                                                                       name: "Marcus Rivera",  role: "Personal trainer",  goal: "Fitness",         initials: "MR", avatarColor: "bg-chart-2/20 text-chart-2",  verified: true },
+  { quote: "I liked that it didn't let me set a big ambitious goal and call it done. It forced me to ask — okay, but what will you actually do tomorrow morning?",                                                                                             name: "Priya Sharma",   role: "Software engineer", goal: "Daily reading",    initials: "PS", avatarColor: "bg-primary/20 text-primary",   verified: true },
+  { quote: "The identity framing is subtle but it genuinely works. I stopped saying 'I'm trying to study more' and started saying 'I'm someone who studies every day.' Different mindset.",                                                                    name: "Tom Whitfield",  role: "Grad student",      goal: "Exam prep",        initials: "TW", avatarColor: "bg-chart-5/20 text-chart-5",  verified: true },
+  { quote: "The minimum action concept saved me. On rough days I just do the 2-minute version and it keeps the streak alive. No guilt, just consistency.",                                                                                                     name: "Aisha Kamara",   role: "Nurse",             goal: "Meditation",       initials: "AK", avatarColor: "bg-chart-3/20 text-chart-3",  verified: true },
+  { quote: "The recovery flow is brilliant. Instead of feeling like a failure after missing a day, it just asks what got in the way and how to make tomorrow easier.",                                                                                         name: "Daniel Moreau",  role: "Entrepreneur",      goal: "Deep work",        initials: "DM", avatarColor: "bg-chart-4/20 text-chart-4",  verified: true },
+  { quote: "The trigger setup step made me realise I'd been trying to build habits at random times. Anchoring to my coffee routine made the habit automatic within two weeks.",                                                                                 name: "Sophie Laurent", role: "Marketing lead",    goal: "Morning routine",  initials: "SL", avatarColor: "bg-primary/20 text-primary",   verified: true },
+];
+
+// ─── Sub-components ─────────────────────────────────────────────────────────
 
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-border rounded-xl overflow-hidden">
+    <div className="border border-border rounded-2xl overflow-hidden">
       <button
         className="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-muted/40 transition-colors"
         onClick={() => setOpen(!open)}
@@ -217,9 +135,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
         data-testid={`faq-item-${q.slice(0, 20).replace(/\s/g, "-").toLowerCase()}`}
       >
         <span className="font-medium text-sm md:text-base leading-snug">{q}</span>
-        <ChevronDown
-          className={cn("w-4 h-4 flex-shrink-0 text-muted-foreground transition-transform duration-200", open && "rotate-180")}
-        />
+        <ChevronDown className={cn("w-4 h-4 flex-shrink-0 text-muted-foreground transition-transform duration-200", open && "rotate-180")} />
       </button>
       <AnimatePresence initial={false}>
         {open && (
@@ -230,7 +146,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
             exit={{ height: 0, opacity: 0, transition: { duration: 0.18, ease: "easeIn" } }}
             style={{ overflow: "hidden" }}
           >
-            <div className="px-5 pb-5">
+            <div className="px-5 pb-5 border-t border-border/40 pt-4">
               <p className="text-sm text-muted-foreground leading-relaxed">{a}</p>
             </div>
           </motion.div>
@@ -252,15 +168,7 @@ function OnboardingPreview() {
       <h3 className="font-bold text-sm mb-4">What do you want to improve?</h3>
       <div className="grid grid-cols-2 gap-2 mb-4">
         {["🏃 Fitness", "📚 Study", "💼 Work", "🧘 Mindfulness", "🎨 Creativity", "❤️ Health"].map((item, i) => (
-          <div
-            key={item}
-            className={cn(
-              "rounded-xl border p-2.5 text-xs font-medium text-center cursor-pointer transition-all",
-              i === 0
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border text-foreground hover:border-primary/50",
-            )}
-          >
+          <div key={item} className={cn("rounded-xl border p-2.5 text-xs font-medium text-center cursor-pointer transition-all", i === 0 ? "border-primary bg-primary/10 text-primary" : "border-border text-foreground hover:border-primary/50")}>
             {item}
           </div>
         ))}
@@ -283,12 +191,7 @@ function SystemBuilderPreview() {
       <p className="text-xs text-muted-foreground mb-1 font-medium">Step 3 of 7 — Set Frequency</p>
       <h3 className="font-bold text-sm mb-3">How often will you do this?</h3>
       <div className="grid grid-cols-2 gap-2 mb-3">
-        {[
-          { label: "Every day", active: true },
-          { label: "Weekdays only", active: false },
-          { label: "3× per week", active: false },
-          { label: "Custom", active: false },
-        ].map((opt) => (
+        {[{ label: "Every day", active: true }, { label: "Weekdays only", active: false }, { label: "3× per week", active: false }, { label: "Custom", active: false }].map((opt) => (
           <div key={opt.label} className={cn("rounded-xl border p-2.5 text-xs font-medium text-center", opt.active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground")}>
             {opt.label}
           </div>
@@ -313,9 +216,9 @@ function CheckInPreview() {
       </div>
       <div className="space-y-2">
         {[
-          { name: "Morning Movement", goal: "Get Fit", done: true, partial: false, missed: false, streak: 12 },
-          { name: "Daily Reading", goal: "Learn More", done: true, partial: false, missed: false, streak: 7 },
-          { name: "Focus Block", goal: "Be Productive", done: false, partial: false, missed: false, streak: 4 },
+          { name: "Morning Movement", goal: "Get Fit",       done: true,  streak: 12 },
+          { name: "Daily Reading",    goal: "Learn More",    done: true,  streak: 7  },
+          { name: "Focus Block",      goal: "Be Productive", done: false, streak: 4  },
         ].map((item) => (
           <div key={item.name} className="rounded-xl border border-border p-2.5">
             <div className="flex items-center justify-between mb-1.5">
@@ -346,26 +249,15 @@ function AnalyticsPreview() {
       <div className="flex items-end gap-1.5 h-20 mb-2">
         {bars.map((h, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-1">
-            <div
-              className="w-full rounded-t-md"
-              style={{
-                height: `${h}%`,
-                background: h === 100 ? "linear-gradient(135deg, hsl(258 84% 62%) 0%, hsl(280 80% 65%) 100%)" : "hsl(var(--primary) / 0.25)",
-              }}
-            />
+            <div className="w-full rounded-t-md" style={{ height: `${h}%`, background: h === 100 ? "linear-gradient(135deg, hsl(258 84% 62%) 0%, hsl(280 80% 65%) 100%)" : "hsl(var(--primary) / 0.25)" }} />
           </div>
         ))}
       </div>
-      <div className="flex gap-1.5">
-        {days.map((d, i) => (
-          <div key={i} className="flex-1 text-center text-[9px] text-muted-foreground">{d}</div>
-        ))}
+      <div className="flex gap-1.5 mb-3">
+        {days.map((d, i) => <div key={i} className="flex-1 text-center text-[9px] text-muted-foreground">{d}</div>)}
       </div>
-      <div className="mt-3 space-y-1.5">
-        {[
-          "You're most consistent on weekdays.",
-          "Mood is higher on days you check in.",
-        ].map((insight) => (
+      <div className="space-y-1.5">
+        {["You're most consistent on weekdays.", "Mood is higher on days you check in."].map((insight) => (
           <div key={insight} className="flex items-start gap-1.5">
             <Sparkles className="w-2.5 h-2.5 text-primary flex-shrink-0 mt-0.5" />
             <p className="text-[10px] text-foreground leading-snug">{insight}</p>
@@ -392,7 +284,6 @@ function ProductPreview() {
             <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">systemforge.app/dashboard</div>
           </div>
         </div>
-
         <div className="flex h-56 sm:h-72 md:h-80">
           {/* Sidebar — hidden on mobile */}
           <div className="w-36 sm:w-44 border-r border-border bg-sidebar hidden sm:flex flex-col p-3 gap-1">
@@ -403,82 +294,50 @@ function ProductPreview() {
               <span className="text-xs font-bold text-sidebar-foreground">SystemForge</span>
             </div>
             {[
-              { icon: BarChart2, label: "Dashboard", active: true },
-              { icon: Target, label: "My Goals", active: false },
-              { icon: Zap, label: "My Systems", active: false },
+              { icon: BarChart2, label: "Dashboard", active: true  },
+              { icon: Target,    label: "My Goals",  active: false },
+              { icon: Zap,       label: "My Systems", active: false },
               { icon: CheckSquare, label: "Check-ins", active: false },
-              { icon: TrendingUp, label: "Analytics", active: false },
+              { icon: TrendingUp,  label: "Analytics", active: false },
             ].map(item => (
-              <div
-                key={item.label}
-                className={cn(
-                  "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-all",
-                  item.active
-                    ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50",
-                )}
-              >
+              <div key={item.label} className={cn("flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs transition-all", item.active ? "bg-sidebar-accent text-sidebar-primary font-medium" : "text-muted-foreground hover:bg-sidebar-accent/50")}>
                 <item.icon className="w-3.5 h-3.5 flex-shrink-0" />
                 {item.label}
               </div>
             ))}
           </div>
-
           {/* Main content */}
           <div className="flex-1 p-2.5 sm:p-4 overflow-hidden bg-background flex flex-col gap-2 sm:gap-3">
-            {/* Mobile bottom nav strip */}
             <div className="flex sm:hidden items-center justify-around border-b border-border pb-2 mb-0.5">
-              {[
-                { icon: BarChart2, label: "Home", active: true },
-                { icon: Target, label: "Goals", active: false },
-                { icon: Zap, label: "Systems", active: false },
-                { icon: CheckSquare, label: "Today", active: false },
-              ].map(item => (
+              {[{ icon: BarChart2, label: "Home", active: true }, { icon: Target, label: "Goals", active: false }, { icon: Zap, label: "Systems", active: false }, { icon: CheckSquare, label: "Today", active: false }].map(item => (
                 <div key={item.label} className={cn("flex flex-col items-center gap-0.5", item.active ? "text-primary" : "text-muted-foreground")}>
                   <item.icon className="w-3.5 h-3.5" />
                   <span className="text-[8px] font-medium">{item.label}</span>
                 </div>
               ))}
             </div>
-
-            {/* Welcome banner */}
             <div className="rounded-lg sm:rounded-xl gradient-brand p-2 sm:p-3 text-white relative overflow-hidden flex-shrink-0">
               <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 translate-x-1/2 -translate-y-1/2 pointer-events-none" />
               <p className="text-[9px] sm:text-[10px] text-white/70">Monday, March 16</p>
               <p className="text-[11px] sm:text-sm font-bold">Good morning, Alex! 👋</p>
               <p className="text-[9px] sm:text-[10px] text-white/80 hidden sm:block">Ready to make progress today?</p>
             </div>
-
-            {/* Stats grid */}
             <div className="grid grid-cols-4 gap-1.5 sm:gap-2 flex-shrink-0">
-              {[
-                { label: "Goals", value: "3", color: "text-primary" },
-                { label: "Systems", value: "5", color: "text-chart-2" },
-                { label: "Today", value: "2/5", color: "text-chart-3" },
-                { label: "Streak", value: "12d", color: "text-chart-4" },
-              ].map(m => (
+              {[{ label: "Goals", value: "3", color: "text-primary" }, { label: "Systems", value: "5", color: "text-chart-2" }, { label: "Today", value: "2/5", color: "text-chart-3" }, { label: "Streak", value: "12d", color: "text-chart-4" }].map(m => (
                 <div key={m.label} className="bg-card border border-border rounded-lg p-1.5 sm:p-2 text-center">
                   <p className={`text-[11px] sm:text-sm font-bold ${m.color}`}>{m.value}</p>
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground">{m.label}</p>
                 </div>
               ))}
             </div>
-
-            {/* Today's systems */}
             <div className="bg-card border border-border rounded-lg p-2 sm:p-2.5 flex-1 min-h-0 overflow-hidden">
               <p className="text-[10px] sm:text-xs font-semibold mb-1.5 sm:mb-2">Today's Systems</p>
               <div className="space-y-1 sm:space-y-1.5">
-                {[
-                  { title: "Morning Movement", done: true },
-                  { title: "Daily Reading", done: true },
-                  { title: "Focus Block", done: false },
-                ].map(s => (
+                {[{ title: "Morning Movement", done: true }, { title: "Daily Reading", done: true }, { title: "Focus Block", done: false }].map(s => (
                   <div key={s.title} className="flex items-center justify-between gap-2">
                     <span className="text-[9px] sm:text-[10px] text-foreground truncate">{s.title}</span>
                     <div className="flex gap-1 flex-shrink-0">
-                      <div className={cn("w-4 h-4 sm:w-5 sm:h-5 rounded text-[7px] sm:text-[8px] flex items-center justify-center border", s.done ? "bg-chart-3 text-white border-chart-3" : "bg-muted border-border")}>
-                        {s.done ? "✓" : ""}
-                      </div>
+                      <div className={cn("w-4 h-4 sm:w-5 sm:h-5 rounded text-[7px] sm:text-[8px] flex items-center justify-center border", s.done ? "bg-chart-3 text-white border-chart-3" : "bg-muted border-border")}>{s.done ? "✓" : ""}</div>
                       <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center border bg-muted border-border" />
                       <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center border bg-muted border-border" />
                     </div>
@@ -495,26 +354,10 @@ function ProductPreview() {
 }
 
 const TAB_META: Record<string, { heading: string; body: string; caption: string }> = {
-  onboarding: {
-    heading: "Personalize in 2 minutes",
-    body: "Tell us what matters to you and we'll tailor your entire experience. No overwhelming options — just the essentials, set up in a few taps.",
-    caption: "Your personal setup — done in 2 minutes.",
-  },
-  "system-builder": {
-    heading: "Build any habit, step by step",
-    body: "A guided 5-step wizard turns a vague intention into a concrete daily action — complete with identity statement, trigger, minimum action, and a Structure Preview before you commit. No guesswork, no blank slate.",
-    caption: "A guided wizard that builds your habit step by step.",
-  },
-  checkin: {
-    heading: "Check in under 30 seconds",
-    body: "One tap per habit — Done, Partial, or Missed. No lengthy journaling, no friction. Just a quick, honest record that keeps you moving.",
-    caption: "One tap to track each habit — under 30 seconds total.",
-  },
-  analytics: {
-    heading: "See patterns, not just numbers",
-    body: "Plain-language insights show which days you're strongest and where to focus next. No data science degree required.",
-    caption: "Plain-language insights, not confusing charts.",
-  },
+  onboarding:       { heading: "Personalize in 2 minutes",         body: "Tell us what matters to you and we'll tailor your entire experience. No overwhelming options — just the essentials, set up in a few taps.",                                                                             caption: "Your personal setup — done in 2 minutes."               },
+  "system-builder": { heading: "Build any habit, step by step",    body: "A guided 5-step wizard turns a vague intention into a concrete daily action — complete with identity statement, trigger, minimum action, and a Structure Preview before you commit. No guesswork, no blank slate.",   caption: "A guided wizard that builds your habit step by step."    },
+  checkin:          { heading: "Check in under 30 seconds",         body: "One tap per habit — Done, Partial, or Missed. No lengthy journaling, no friction. Just a quick, honest record that keeps you moving.",                                                                                 caption: "One tap to track each habit — under 30 seconds total."   },
+  analytics:        { heading: "See patterns, not just numbers",    body: "Plain-language insights show which days you're strongest and where to focus next. No data science degree required.",                                                                                                   caption: "Plain-language insights, not confusing charts."          },
 };
 
 function EmailCaptureForm() {
@@ -558,30 +401,27 @@ function EmailCaptureForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" data-testid="email-capture-form">
-      <Input
-        type="email"
-        placeholder="your@email.com"
-        value={email}
-        onChange={(e) => { setEmail(e.target.value); setStatus("idle"); setMessage(""); }}
-        className="flex-1 h-11"
-        required
-        data-testid="input-email-capture"
-        aria-label="Email address for newsletter"
-      />
-      <Button
-        type="submit"
-        className="h-11 px-6 gap-2 shrink-0"
-        disabled={status === "loading"}
-        data-testid="button-email-capture-submit"
-      >
-        {status === "loading" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-        {status === "loading" ? "Subscribing..." : "Subscribe Free"}
-      </Button>
+    <div className="max-w-md mx-auto">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3" data-testid="email-capture-form">
+        <Input
+          type="email"
+          placeholder="your@email.com"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); setStatus("idle"); setMessage(""); }}
+          className="flex-1 h-11 rounded-xl"
+          required
+          data-testid="input-email-capture"
+          aria-label="Email address for newsletter"
+        />
+        <Button type="submit" className="h-11 px-6 gap-2 shrink-0 rounded-xl" disabled={status === "loading"} data-testid="button-email-capture-submit">
+          {status === "loading" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+          {status === "loading" ? "Subscribing..." : "Subscribe Free"}
+        </Button>
+      </form>
       {status === "error" && (
-        <p className="text-xs text-destructive text-center sm:col-span-2 mt-1">{message}</p>
+        <p className="text-xs text-destructive text-center mt-2">{message}</p>
       )}
-    </form>
+    </div>
   );
 }
 
@@ -599,10 +439,7 @@ function VideoDemoSection() {
         <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto mb-8">
           Watch how a vague intention becomes a daily habit system — with an identity, a trigger, a minimum action, and a recovery plan.
         </p>
-        <div
-          className="relative max-w-3xl mx-auto rounded-2xl overflow-hidden border border-border shadow-2xl bg-black"
-          style={{ aspectRatio: "16/9" }}
-        >
+        <div className="relative max-w-3xl mx-auto rounded-2xl overflow-hidden border border-border shadow-2xl bg-black" style={{ aspectRatio: "16/9" }}>
           {playing && DEMO_VIDEO_ID ? (
             <iframe
               src={`https://www.youtube.com/embed/${DEMO_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`}
@@ -613,12 +450,7 @@ function VideoDemoSection() {
             />
           ) : (
             <div className="relative w-full h-full group cursor-pointer" onClick={() => setPlaying(true)} role="button" aria-label="Play product demo" data-testid="button-play-demo">
-              <img
-                src="/og-image.png"
-                alt="SystemForge dashboard preview"
-                loading="lazy"
-                className="absolute inset-0 w-full h-full object-cover opacity-70"
-              />
+              <img src="/og-image.png" alt="SystemForge dashboard preview" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 flex flex-col items-center justify-center gap-4 p-6">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 border-2 border-white/40 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-white/20 transition-all duration-200">
                   <Play className="w-7 h-7 sm:w-9 sm:h-9 text-white fill-white ml-1" />
@@ -642,6 +474,89 @@ function VideoDemoSection() {
   );
 }
 
+// ─── Animated stat ──────────────────────────────────────────────────────────
+function AnimatedStat({ value, label, icon: Icon, suffix = "" }: { value: number; label: string; icon: any; suffix?: string }) {
+  const { ref, count } = useCountUp(value, 1200);
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <Icon className="w-4 h-4 text-primary mb-1 opacity-70" />
+      <p ref={ref} className="text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums">
+        {count.toLocaleString()}{suffix}
+      </p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+// ─── Sticky mobile CTA bar ──────────────────────────────────────────────────
+function MobileCtaBar({ ctaVariant }: { ctaVariant: "A" | "B" }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => setVisible(window.scrollY > 500);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ y: 80, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 80, opacity: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed bottom-0 left-0 right-0 z-40 md:hidden px-4 py-3 bg-background/95 backdrop-blur-xl border-t border-border safe-area-pb"
+        >
+          <Link href="/signup">
+            <Button
+              size="lg"
+              className="w-full rounded-full gap-2 h-12 font-semibold"
+              data-testid="button-sticky-cta"
+              onClick={() => track("sticky_cta_click", { variant: ctaVariant })}
+            >
+              {ctaVariant === "A" ? "Build My System Free" : "Start Building — It's Free"}
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── Social proof avatar cluster ────────────────────────────────────────────
+const AVATAR_SEEDS = ["Marcus Rivera", "Priya Sharma", "Tom Whitfield", "Aisha Kamara", "Daniel Moreau"];
+
+function SocialProofRow() {
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+      <div className="flex -space-x-2.5">
+        {AVATAR_SEEDS.map((seed, i) => (
+          <img
+            key={seed}
+            src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`}
+            alt={`User ${i + 1}`}
+            width={32} height={32}
+            className="w-8 h-8 rounded-full border-2 border-background object-cover bg-muted flex-shrink-0"
+            loading="lazy"
+          />
+        ))}
+        <div className="w-8 h-8 rounded-full border-2 border-background bg-primary flex items-center justify-center text-[9px] font-bold text-primary-foreground flex-shrink-0">
+          +
+        </div>
+      </div>
+      <div className="text-center sm:text-left">
+        <p className="text-sm font-semibold text-foreground">Join 10,000+ habit builders</p>
+        <div className="flex items-center justify-center sm:justify-start gap-1 mt-0.5">
+          {[1,2,3,4,5].map(s => <Star key={s} className="w-3 h-3 text-chart-4 fill-chart-4" />)}
+          <span className="text-xs text-muted-foreground ml-1">4.8 / 5</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page ───────────────────────────────────────────────────────────────
 export default function Landing() {
   const [billingYearly, setBillingYearly] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -661,20 +576,20 @@ export default function Landing() {
         <title>SystemForge — Build Habits That Survive Hard Days</title>
         <link rel="canonical" href="https://systemforge.app/" />
         <meta name="description" content="Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't. Free to start." />
+        <meta property="og:title" content="SystemForge — Build Habits That Survive Hard Days" />
+        <meta property="og:description" content="Turn any goal into a daily system with a minimum action and a recovery plan. Free to start." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
-      {/* Phase 5 — Skip link for keyboard users */}
-      <a href="#main-content" className="skip-to-content">
-        Skip to main content
-      </a>
 
-      {/* ── Navbar ── */}
+      <a href="#main-content" className="skip-to-content">Skip to main content</a>
+
+      {/* ── Navbar ──────────────────────────────────────────────── */}
       <nav
         aria-label="Main navigation"
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          scrolled
-            ? "border-b border-border bg-background/80 backdrop-blur-xl shadow-sm"
-            : "bg-transparent border-transparent",
+          scrolled ? "border-b border-border bg-background/90 backdrop-blur-xl shadow-sm" : "bg-transparent border-transparent",
         )}
       >
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -744,18 +659,21 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* ── Hero ── */}
+      {/* ── Hero ──────────────────────────────────────────────────── */}
       <section id="main-content" className="relative pt-20 sm:pt-32 pb-8 px-4 overflow-hidden sm:min-h-[85vh] sm:flex sm:flex-col sm:justify-center" aria-label="Hero">
-        <div className="absolute inset-0 -z-10">
+        {/* Background blobs */}
+        <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-3xl" />
           <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-chart-2/5 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-chart-5/5 rounded-full blur-3xl" />
         </div>
+
         <div className="max-w-4xl mx-auto text-center">
-          <Badge variant="secondary" className="mb-4 sm:mb-6 px-3 py-1.5 text-xs font-medium gap-1.5 inline-flex flex-wrap justify-center">
-            <Sparkles className="w-3 h-3 flex-shrink-0" />
-            Trusted by thousands of people building better habits
-          </Badge>
+          {/* Social proof cluster */}
+          <div className="mb-5 sm:mb-6 flex justify-center">
+            <SocialProofRow />
+          </div>
+
           <h1 className="text-[1.75rem] leading-[1.15] sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 sm:leading-[1.1]">
             Stop starting over.{" "}
             <span className="gradient-text block sm:inline">Build something that survives hard days.</span>
@@ -763,11 +681,15 @@ export default function Landing() {
           <p className="text-sm sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-5 sm:mb-7 leading-relaxed px-1 sm:px-0">
             Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't.
           </p>
+
+          {/* Trust bullets */}
           <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6 sm:gap-y-1 text-sm text-muted-foreground mb-6 sm:mb-10">
             <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No perfect routines needed</span>
             <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No guilt spirals</span>
             <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No "start again Monday"</span>
           </div>
+
+          {/* CTA row */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4 sm:mb-6 px-2 sm:px-0">
             <Link href="/signup" className="w-full sm:w-auto">
               <Button
@@ -797,27 +719,23 @@ export default function Landing() {
 
       <VideoDemoSection />
 
-      {/* ── Social proof stats strip ── */}
+      {/* ── Social proof stats strip ───────────────────────────── */}
       <section className="py-8 sm:py-10 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            {[
-              { value: "10K+", label: "Active users", icon: Users },
-              { value: "340,000+", label: "Habits tracked", icon: CheckSquare },
-              { value: "4.8 / 5", label: "Average rating", icon: Star },
-              { value: "73%", label: "Still active after 30 days", icon: Flame },
-            ].map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-1">
-                <stat.icon className="w-4 h-4 text-primary mb-1 opacity-70" />
-                <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
+            <AnimatedStat value={10000} suffix="+" label="Active users"              icon={Users}      />
+            <AnimatedStat value={340000} suffix="+" label="Habits tracked"            icon={CheckSquare} />
+            <div className="flex flex-col items-center gap-1">
+              <Star className="w-4 h-4 text-primary mb-1 opacity-70" />
+              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">4.8<span className="text-base font-semibold">/5</span></p>
+              <p className="text-xs text-muted-foreground">Average rating</p>
+            </div>
+            <AnimatedStat value={73} suffix="%" label="Still active after 30 days"   icon={Flame}       />
           </div>
         </div>
       </section>
 
-      {/* ── What is a system strip ── */}
+      {/* ── What is a system strip ─────────────────────────────── */}
       <section className="py-10 sm:py-14 px-4 border-t border-border bg-muted/20">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-xs text-muted-foreground mb-4 uppercase tracking-widest font-medium">What is a system?</p>
@@ -826,11 +744,11 @@ export default function Landing() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {[
-              { icon: UserCircle2, label: "An identity", sub: "Who you're becoming", color: "text-primary bg-primary/10" },
-              { icon: Zap, label: "A minimum action", sub: "What still counts on your worst day", color: "text-chart-4 bg-chart-4/10" },
-              { icon: RefreshCw, label: "A recovery plan", sub: "How the system adapts when life gets messy", color: "text-chart-3 bg-chart-3/10" },
+              { icon: UserCircle2, label: "An identity",      sub: "Who you're becoming",                       color: "text-primary bg-primary/10"   },
+              { icon: Zap,         label: "A minimum action", sub: "What still counts on your worst day",        color: "text-chart-4 bg-chart-4/10"   },
+              { icon: RefreshCw,   label: "A recovery plan",  sub: "How the system adapts when life gets messy", color: "text-chart-3 bg-chart-3/10"   },
             ].map(item => (
-              <div key={item.label} className="flex flex-col items-center gap-2 p-5 rounded-xl border bg-background/60">
+              <div key={item.label} className="flex flex-col items-center gap-2 p-5 rounded-2xl border bg-background/60">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
                   <item.icon className="w-5 h-5" />
                 </div>
@@ -842,7 +760,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Why other tools fail ── */}
+      {/* ── Why other tools fail ───────────────────────────────── */}
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-3xl mx-auto text-center">
           <Badge variant="secondary" className="mb-3 text-xs">The problem with most habit apps</Badge>
@@ -852,12 +770,12 @@ export default function Landing() {
           </p>
           <div className="grid sm:grid-cols-3 gap-4 text-left">
             {[
-              { icon: Zap, title: "A smaller action", body: "Your minimum action is what keeps the system alive when full effort isn't possible.", color: "text-primary bg-primary/10" },
-              { icon: Shield, title: "A better fallback", body: "Every system includes a recovery plan for when life gets messy — not as failure insurance, but as built-in intelligence.", color: "text-chart-4 bg-chart-4/10" },
-              { icon: RefreshCw, title: "A recovery path", body: "Missing a day doesn't break the system. The recovery flow guides you back without shame or losing momentum.", color: "text-chart-3 bg-chart-3/10" },
+              { icon: Zap,       title: "A smaller action",  body: "Your minimum action is what keeps the system alive when full effort isn't possible.",                                                              color: "text-primary bg-primary/10"  },
+              { icon: Shield,    title: "A better fallback", body: "Every system includes a recovery plan for when life gets messy — not as failure insurance, but as built-in intelligence.",                          color: "text-chart-4 bg-chart-4/10"  },
+              { icon: RefreshCw, title: "A recovery path",   body: "Missing a day doesn't break the system. The recovery flow guides you back without shame or losing momentum.",                                       color: "text-chart-3 bg-chart-3/10"  },
             ].map(item => (
-              <div key={item.title} className="p-5 rounded-xl border bg-background/60 space-y-2">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${item.color}`}>
+              <div key={item.title} className="p-5 rounded-2xl border bg-background/60 space-y-2">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.color}`}>
                   <item.icon className="w-4 h-4" />
                 </div>
                 <p className="font-semibold text-sm">{item.title}</p>
@@ -868,7 +786,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Section 3: Why Systems Work Better Than Goals ── */}
+      {/* ── Goals vs Systems ────────────────────────────────────── */}
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
@@ -878,7 +796,6 @@ export default function Landing() {
               A goal tells you where to go. A system gets you there — one day at a time.
             </p>
           </div>
-
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             {/* Goals column */}
             <Card className="border-destructive/20 bg-destructive/5">
@@ -893,13 +810,7 @@ export default function Landing() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {[
-                    "Get fit",
-                    "Read more books",
-                    "Be more productive",
-                    "Learn a new skill",
-                    "Eat healthier",
-                  ].map((goal) => (
+                  {["Get fit", "Read more books", "Be more productive", "Learn a new skill", "Eat healthier"].map((goal) => (
                     <div key={goal} className="flex items-center gap-3 p-3 rounded-xl bg-background/60 border border-destructive/10">
                       <div className="w-5 h-5 rounded-full bg-destructive/15 flex items-center justify-center flex-shrink-0">
                         <X className="w-3 h-3 text-destructive" />
@@ -911,7 +822,6 @@ export default function Landing() {
                 <p className="text-xs text-destructive/70 mt-4 font-medium">❌ Vague. No daily action. Easy to forget.</p>
               </CardContent>
             </Card>
-
             {/* Systems column */}
             <Card className="border-chart-3/30 bg-chart-3/5">
               <CardContent className="p-6 md:p-8">
@@ -925,13 +835,7 @@ export default function Landing() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {[
-                    "Walk 20 min every morning",
-                    "Read 10 pages after dinner",
-                    "Write for 15 min before work",
-                    "Practice 20 min after breakfast",
-                    "Cook one new recipe on Sundays",
-                  ].map((system) => (
+                  {["Walk 20 min every morning", "Read 10 pages after dinner", "Write for 15 min before work", "Practice 20 min after breakfast", "Cook one new recipe on Sundays"].map((system) => (
                     <div key={system} className="flex items-center gap-3 p-3 rounded-xl bg-background/60 border border-chart-3/15">
                       <div className="w-5 h-5 rounded-full bg-chart-3/15 flex items-center justify-center flex-shrink-0">
                         <Check className="w-3 h-3 text-chart-3" />
@@ -944,7 +848,6 @@ export default function Landing() {
               </CardContent>
             </Card>
           </div>
-
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-primary/8 border border-primary/20 rounded-2xl px-6 py-3">
               <Sparkles className="w-4 h-4 text-primary" />
@@ -956,7 +859,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── How it works ── */}
+      {/* ── How it works ────────────────────────────────────────── */}
       <section id="how-it-works" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 md:mb-16">
@@ -984,28 +887,25 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Feature Highlights (8 cards, 4x2) ── */}
+      {/* ── Feature highlights (8 cards) ────────────────────────── */}
       <section id="features" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 md:mb-16">
             <Badge variant="secondary" className="mb-3 text-xs">Everything you need</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Simple tools. Powerful results.</h2>
             <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
-              Every feature is designed to be instantly understandable — even if you've never used a productivity app before.
+              Everything built around one idea: make it easier to show up on hard days.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {allFeatures.map((f) => (
-              <Card
-                key={f.title}
-                className="card-interactive border-border/60"
-              >
-                <CardContent className="p-5">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${f.color}`}>
-                    <f.icon className="w-5 h-5" />
+              <Card key={f.title} className="card-interactive border-border/60 transition-all">
+                <CardContent className="p-4 sm:p-5">
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center mb-3 ${f.color}`}>
+                    <f.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <h3 className="font-semibold text-sm mb-1.5 leading-snug">{f.title}</h3>
-                  <p className="text-muted-foreground text-xs leading-relaxed">{f.desc}</p>
+                  <h3 className="font-semibold text-xs sm:text-sm mb-1.5 leading-snug">{f.title}</h3>
+                  <p className="text-muted-foreground text-[11px] sm:text-xs leading-relaxed hidden sm:block">{f.desc}</p>
                 </CardContent>
               </Card>
             ))}
@@ -1013,7 +913,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Section 6: Product Preview (Tabbed Showcase) ── */}
+      {/* ── Tabbed product showcase ──────────────────────────────── */}
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
@@ -1027,96 +927,42 @@ export default function Landing() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {/* Tab bar: 2×2 grid on mobile, single row on sm+ */}
             <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-2xl mx-auto mb-8 h-auto p-1 gap-1 bg-muted rounded-2xl">
-              <TabsTrigger
-                value="onboarding"
-                className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                data-testid="tab-onboarding"
-              >
-                <span className="sm:hidden">Setup</span>
-                <span className="hidden sm:inline">Personalization</span>
+              <TabsTrigger value="onboarding"     className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm" data-testid="tab-onboarding">
+                <span className="sm:hidden">Setup</span><span className="hidden sm:inline">Personalization</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="system-builder"
-                className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                data-testid="tab-system-builder"
-              >
-                <span className="sm:hidden">Builder</span>
-                <span className="hidden sm:inline">System Builder</span>
+              <TabsTrigger value="system-builder" className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm" data-testid="tab-system-builder">
+                <span className="sm:hidden">Builder</span><span className="hidden sm:inline">System Builder</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="checkin"
-                className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                data-testid="tab-checkin"
-              >
-                <span className="sm:hidden">Check-In</span>
-                <span className="hidden sm:inline">Daily Check-In</span>
+              <TabsTrigger value="checkin"        className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm" data-testid="tab-checkin">
+                <span className="sm:hidden">Check-In</span><span className="hidden sm:inline">Daily Check-In</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="analytics"
-                className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                data-testid="tab-analytics"
-              >
+              <TabsTrigger value="analytics"      className="rounded-xl text-xs py-2.5 leading-tight data-[state=active]:bg-background data-[state=active]:shadow-sm" data-testid="tab-analytics">
                 Analytics
               </TabsTrigger>
             </TabsList>
 
-            {/* Body: stacked on mobile/tablet, side-by-side on lg+ */}
             <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-14 lg:items-center max-w-4xl mx-auto">
-              {/* Left column: context description — desktop only */}
               <div className="hidden lg:block">
                 <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, x: -14 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 14 }}
-                    transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <h3 className="text-2xl font-bold mb-3 leading-snug">
-                      {TAB_META[activeTab].heading}
-                    </h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {TAB_META[activeTab].body}
-                    </p>
+                  <motion.div key={activeTab} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
+                    <h3 className="text-2xl font-bold mb-3 leading-snug">{TAB_META[activeTab].heading}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{TAB_META[activeTab].body}</p>
                   </motion.div>
                 </AnimatePresence>
               </div>
-
-              {/* Right column (or only column on mobile): the preview card */}
               <div className="w-full max-w-xs sm:max-w-sm mx-auto lg:max-w-none">
-                <TabsContent value="onboarding" className="mt-0">
-                  <OnboardingPreview />
-                  <p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">
-                    {TAB_META.onboarding.caption}
-                  </p>
-                </TabsContent>
-                <TabsContent value="system-builder" className="mt-0">
-                  <SystemBuilderPreview />
-                  <p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">
-                    {TAB_META["system-builder"].caption}
-                  </p>
-                </TabsContent>
-                <TabsContent value="checkin" className="mt-0">
-                  <CheckInPreview />
-                  <p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">
-                    {TAB_META.checkin.caption}
-                  </p>
-                </TabsContent>
-                <TabsContent value="analytics" className="mt-0">
-                  <AnalyticsPreview />
-                  <p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">
-                    {TAB_META.analytics.caption}
-                  </p>
-                </TabsContent>
+                <TabsContent value="onboarding"     className="mt-0"><OnboardingPreview /><p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">{TAB_META.onboarding.caption}</p></TabsContent>
+                <TabsContent value="system-builder" className="mt-0"><SystemBuilderPreview /><p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">{TAB_META["system-builder"].caption}</p></TabsContent>
+                <TabsContent value="checkin"        className="mt-0"><CheckInPreview /><p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">{TAB_META.checkin.caption}</p></TabsContent>
+                <TabsContent value="analytics"      className="mt-0"><AnalyticsPreview /><p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">{TAB_META.analytics.caption}</p></TabsContent>
               </div>
             </div>
           </Tabs>
         </div>
       </section>
 
-      {/* ── Templates ── */}
+      {/* ── Templates ────────────────────────────────────────────── */}
       <section id="templates" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
@@ -1126,35 +972,37 @@ export default function Landing() {
               Not sure what system to build? Pick one — already proven to work.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { icon: "💪", name: "Morning Movement", category: "Fitness", desc: "5 pushups after brushing teeth", time: "~5 min/day", difficulty: "Easy" },
-              { icon: "📚", name: "Daily Reading", category: "Learning", desc: "1 page before bed", time: "~10 min/day", difficulty: "Easy" },
-              { icon: "🧘", name: "Mindful Morning", category: "Mindfulness", desc: "3 minutes of breathing after waking up", time: "~3 min/day", difficulty: "Easy" },
-              { icon: "✍️", name: "Daily Writing", category: "Creativity", desc: "100 words at 8am", time: "~15 min/day", difficulty: "Medium" },
-              { icon: "💧", name: "Hydration Habit", category: "Health", desc: "Drink a glass of water with each meal", time: "~0 min/day", difficulty: "Easy" },
-              { icon: "🎯", name: "Focus Block", category: "Productivity", desc: "25-min deep work before email", time: "~25 min/day", difficulty: "Medium" },
+              { icon: "💪", name: "Morning Movement",  category: "Fitness",       desc: "5 pushups after brushing teeth",                   time: "~5 min/day",  difficulty: "Easy"   },
+              { icon: "📚", name: "Daily Reading",     category: "Learning",      desc: "1 page before bed",                                time: "~10 min/day", difficulty: "Easy"   },
+              { icon: "🧘", name: "Mindful Morning",   category: "Mindfulness",   desc: "3 minutes of breathing after waking up",           time: "~3 min/day",  difficulty: "Easy"   },
+              { icon: "✍️", name: "Daily Writing",     category: "Creativity",    desc: "100 words at 8am",                                 time: "~15 min/day", difficulty: "Medium" },
+              { icon: "💧", name: "Hydration Habit",   category: "Health",        desc: "Drink a glass of water with each meal",            time: "~0 min/day",  difficulty: "Easy"   },
+              { icon: "🎯", name: "Focus Block",       category: "Productivity",  desc: "25-min deep work before email",                    time: "~25 min/day", difficulty: "Medium" },
             ].map((t) => (
-              <Card key={t.name} className="hover-elevate border-border/60 cursor-pointer group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-3 mb-3">
-                    <span className="text-2xl">{t.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm mb-1">{t.name}</p>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{t.category}</Badge>
-                        <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", t.difficulty === "Easy" ? "bg-chart-3/10 text-chart-3 border-chart-3/20" : "bg-chart-4/10 text-chart-4 border-chart-4/20")}>
-                          {t.difficulty}
-                        </Badge>
+              <Link key={t.name} href="/signup">
+                <Card className="hover-elevate border-border/60 cursor-pointer group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md h-full">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3 mb-3">
+                      <span className="text-2xl">{t.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm mb-1">{t.name}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{t.category}</Badge>
+                          <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", t.difficulty === "Easy" ? "bg-chart-3/10 text-chart-3 border-chart-3/20" : "bg-chart-4/10 text-chart-4 border-chart-4/20")}>
+                            {t.difficulty}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{t.desc}</p>
-                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {t.time}
-                  </p>
-                </CardContent>
-              </Card>
+                    <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{t.desc}</p>
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {t.time}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
           <div className="text-center mt-8">
@@ -1168,7 +1016,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Honest trust section ── */}
+      {/* ── Built honestly / trust ───────────────────────────────── */}
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8 md:mb-10">
@@ -1195,11 +1043,11 @@ export default function Landing() {
             </Card>
             <div className="space-y-4">
               {[
-                { icon: Shield, title: "No inflated numbers", body: "Every testimonial and stat you see is real. We'd rather earn your trust than manufacture it." },
-                { icon: Brain, title: "Grounded in research", body: "The builder is based on BJ Fogg's Tiny Habits, identity theory, and implementation intentions." },
-                { icon: Heart, title: "Privacy-first", body: "Your habits and journals are private to you. We don't sell data or show ads." },
+                { icon: Shield, title: "No inflated numbers", body: "Every testimonial and stat you see is real. We'd rather earn your trust than manufacture it."            },
+                { icon: Brain,  title: "Grounded in research", body: "The builder is based on BJ Fogg's Tiny Habits, identity theory, and implementation intentions."         },
+                { icon: Heart,  title: "Privacy-first",        body: "Your habits and journals are private to you. We don't sell data or show ads."                          },
               ].map(item => (
-                <div key={item.title} className="flex gap-3 p-4 rounded-xl border bg-background/60">
+                <div key={item.title} className="flex gap-3 p-4 rounded-2xl border bg-background/60">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <item.icon className="w-4 h-4 text-primary" />
                   </div>
@@ -1214,97 +1062,65 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Testimonials ── */}
+      {/* ── Testimonials (horizontal scroll on mobile) ─────────── */}
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
             <Badge variant="secondary" className="mb-3 text-xs">From our community</Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">
-              Real results from real people
-            </h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Real results from real people</h2>
             <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
               Honest stories from people who stopped restarting and started building systems that stick.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
-            {[
-              {
-                quote: "I've tried every habit app. This is the first one that has a plan for when I mess up. The fallback feature alone changed everything for me.",
-                name: "Marcus Rivera",
-                role: "Personal trainer",
-                goal: "Fitness",
-                initials: "MR",
-                avatarColor: "bg-chart-2/20 text-chart-2",
-                verified: true,
-              },
-              {
-                quote: "I liked that it didn't let me set a big ambitious goal and call it done. It forced me to ask — okay, but what will you actually do tomorrow morning?",
-                name: "Priya Sharma",
-                role: "Software engineer",
-                goal: "Daily reading",
-                initials: "PS",
-                avatarColor: "bg-primary/20 text-primary",
-                verified: true,
-              },
-              {
-                quote: "The identity framing is subtle but it genuinely works. I stopped saying 'I'm trying to study more' and started saying 'I'm someone who studies every day.' Different mindset.",
-                name: "Tom Whitfield",
-                role: "Grad student",
-                goal: "Exam prep",
-                initials: "TW",
-                avatarColor: "bg-chart-5/20 text-chart-5",
-                verified: true,
-              },
-              {
-                quote: "The minimum action concept saved me. On rough days I just do the 2-minute version and it keeps the streak alive. No guilt, just consistency.",
-                name: "Aisha Kamara",
-                role: "Nurse",
-                goal: "Meditation",
-                initials: "AK",
-                avatarColor: "bg-chart-3/20 text-chart-3",
-                verified: true,
-              },
-              {
-                quote: "The recovery flow is brilliant. Instead of feeling like a failure after missing a day, it just asks what got in the way and how to make tomorrow easier.",
-                name: "Daniel Moreau",
-                role: "Entrepreneur",
-                goal: "Deep work",
-                initials: "DM",
-                avatarColor: "bg-chart-4/20 text-chart-4",
-                verified: true,
-              },
-              {
-                quote: "The trigger setup step made me realise I'd been trying to build habits at random times. Anchoring to my coffee routine made the habit automatic within two weeks.",
-                name: "Sophie Laurent",
-                role: "Marketing lead",
-                goal: "Morning routine",
-                initials: "SL",
-                avatarColor: "bg-primary/20 text-primary",
-                verified: true,
-              },
-            ].map((t) => (
+          {/* Mobile: horizontal scroll; md+: 3-col grid */}
+          <div className="flex md:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
+            {testimonials.map((t) => (
+              <div key={t.name} className="flex-shrink-0 w-72 snap-start">
+                <Card className="border-border/60 h-full">
+                  <CardContent className="p-5 flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-3">
+                      {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />)}
+                      {t.verified && (
+                        <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5 gap-0.5 flex-shrink-0">
+                          <Check className="w-2.5 h-2.5" /> Verified
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-foreground leading-relaxed flex-1 mb-4">&ldquo;{t.quote}&rdquo;</p>
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`}
+                        alt={`${t.name} profile photo`} loading="lazy" width={36} height={36}
+                        className="w-9 h-9 rounded-full flex-shrink-0 object-cover bg-muted border border-border/40"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold leading-none mb-0.5">{t.name}</p>
+                        <p className="text-xs text-muted-foreground">{t.role} · {t.goal}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+          {/* Desktop: 3-col grid */}
+          <div className="hidden md:grid md:grid-cols-3 gap-5">
+            {testimonials.map((t) => (
               <Card key={t.name} className="border-border/60 flex flex-col">
                 <CardContent className="p-5 flex flex-col flex-1">
                   <div className="flex items-center gap-2 mb-3">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />
-                    ))}
+                    {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />)}
                     {t.verified && (
                       <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5 gap-0.5">
                         <Check className="w-2.5 h-2.5" /> Verified
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-foreground leading-relaxed flex-1 mb-4">
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
+                  <p className="text-sm text-foreground leading-relaxed flex-1 mb-4">&ldquo;{t.quote}&rdquo;</p>
                   <div className="flex items-center gap-2.5">
                     <img
                       src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`}
-                      alt={`${t.name} profile photo`}
-                      loading="lazy"
-                      width={36}
-                      height={36}
+                      alt={`${t.name} profile photo`} loading="lazy" width={36} height={36}
                       className="w-9 h-9 rounded-full flex-shrink-0 object-cover bg-muted border border-border/40"
                     />
                     <div>
@@ -1319,22 +1135,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Pricing ── */}
+      {/* ── Pricing ──────────────────────────────────────────────── */}
       <section id="pricing" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
             <Badge variant="secondary" className="mb-3 text-xs">Simple pricing</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Start free. Upgrade when you're ready.</h2>
             <p className="text-muted-foreground text-base md:text-lg">All plans include a 14-day free trial. No credit card required.</p>
-
+            {/* Billing toggle */}
             <div className="flex items-center justify-center gap-3 mt-6">
               <span className={cn("text-sm", !billingYearly && "font-semibold text-foreground", billingYearly && "text-muted-foreground")}>Monthly</span>
               <button
                 onClick={() => setBillingYearly(!billingYearly)}
-                className={cn(
-                  "relative w-11 h-6 rounded-full transition-colors",
-                  billingYearly ? "bg-primary" : "bg-muted-foreground/30",
-                )}
+                aria-label={`Switch to ${billingYearly ? "monthly" : "yearly"} billing`}
+                className={cn("relative w-11 h-6 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", billingYearly ? "bg-primary" : "bg-muted-foreground/30")}
                 data-testid="toggle-billing-yearly"
               >
                 <div className={cn("absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform", billingYearly ? "translate-x-6" : "translate-x-1")} />
@@ -1357,19 +1171,18 @@ export default function Landing() {
               >
                 {plan.badge && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                    <Badge className="gradient-brand text-white text-xs px-3 py-1 border-0 shadow-sm">
-                      {plan.badge}
-                    </Badge>
+                    <Badge className="gradient-brand text-white text-xs px-3 py-1 border-0 shadow-sm">{plan.badge}</Badge>
                   </div>
                 )}
                 <CardContent className="p-5 flex flex-col flex-1 pt-6">
                   <p className="text-sm font-bold mb-1">{plan.name}</p>
                   <p className="text-xs text-muted-foreground mb-3">{plan.tagline}</p>
                   <div className="flex items-end gap-0.5 mb-5">
-                    <span className="text-3xl font-extrabold">
-                      {billingYearly ? plan.yearlyPrice : plan.price}
-                    </span>
+                    <span className="text-3xl font-extrabold">{billingYearly ? plan.yearlyPrice : plan.price}</span>
                     <span className="text-muted-foreground text-sm mb-1">{plan.period}</span>
+                    {billingYearly && plan.name !== "Free" && (
+                      <span className="text-[10px] text-chart-3 mb-1 ml-1">billed yearly</span>
+                    )}
                   </div>
                   <ul className="space-y-2 flex-1 mb-5">
                     {plan.features.map((f) => (
@@ -1389,34 +1202,69 @@ export default function Landing() {
             ))}
           </div>
           <p className="text-center text-xs text-muted-foreground mt-6">All plans include a 14-day free trial. No credit card required.</p>
+
+          {/* Quick comparison strip */}
+          <div className="mt-10 max-w-2xl mx-auto">
+            <p className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">Quick comparison</p>
+            <div className="overflow-x-auto rounded-2xl border border-border">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40">
+                    <th className="text-left p-3 font-semibold text-muted-foreground">Feature</th>
+                    <th className="p-3 font-semibold text-center">Free</th>
+                    <th className="p-3 font-semibold text-center">Starter</th>
+                    <th className="p-3 font-semibold text-center text-primary">Pro</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ["Active goals",           "2",  "10",  "∞"   ],
+                    ["Systems",                "3",  "∞",   "∞"   ],
+                    ["Templates",              "3",  "All", "All" ],
+                    ["Analytics",              "Basic","Better","Advanced"],
+                    ["CSV / PDF exports",      "—",  "Basic","✓"  ],
+                    ["AI journal prompts",     "—",  "—",   "✓"  ],
+                    ["Mood correlations",      "—",  "—",   "✓"  ],
+                    ["Priority support",       "—",  "—",   "✓"  ],
+                  ].map(([feature, free, starter, pro]) => (
+                    <tr key={feature} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
+                      <td className="p-3 text-muted-foreground">{feature}</td>
+                      <td className="p-3 text-center text-foreground/60">{free}</td>
+                      <td className="p-3 text-center text-foreground/80">{starter}</td>
+                      <td className="p-3 text-center font-semibold text-primary">{pro}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── FAQ ── */}
+      {/* ── FAQ ──────────────────────────────────────────────────── */}
       <section id="faq" className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8 md:mb-12">
             <Badge variant="secondary" className="mb-3 text-xs">Questions answered</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Frequently asked questions</h2>
+            <p className="text-muted-foreground text-base md:text-lg">Still unsure?{" "}
+              <a href="mailto:support@systemforge.app" className="underline underline-offset-2 hover:text-foreground transition-colors">Ask us anything</a>.
+            </p>
           </div>
           <div className="space-y-3">
-            {faqs.map((faq) => (
-              <FAQItem key={faq.q} q={faq.q} a={faq.a} />
-            ))}
+            {faqs.map((faq) => <FAQItem key={faq.q} q={faq.q} a={faq.a} />)}
           </div>
         </div>
       </section>
 
-      {/* ── Email Capture ── */}
-      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border bg-muted/20" id="newsletter">
+      {/* ── Email capture ─────────────────────────────────────────── */}
+      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border" id="newsletter">
         <div className="max-w-2xl mx-auto text-center">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
             <Mail className="w-6 h-6 text-primary" />
           </div>
           <Badge variant="secondary" className="mb-3 text-xs">Free habit tips</Badge>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-            Get weekly insights on building habits that stick
-          </h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3">Get weekly insights on building habits that stick</h2>
           <p className="text-muted-foreground text-sm sm:text-base mb-8 max-w-md mx-auto leading-relaxed">
             One email per week. Real strategies, no fluff — on identity, minimum actions, and recovering from missed days.
           </p>
@@ -1425,7 +1273,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Final CTA ── */}
+      {/* ── Final CTA banner ─────────────────────────────────────── */}
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
         <div className="max-w-3xl mx-auto text-center">
           <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden gradient-brand p-8 sm:p-12 md:p-16 text-white">
@@ -1437,50 +1285,79 @@ export default function Landing() {
             <p className="text-white/80 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed">
               You need a system that still works in a bad one. Build yours in 60 seconds — free, no credit card needed.
             </p>
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="btn-scale bg-white text-primary hover:bg-white/90 gap-2 h-12 px-8 text-base font-semibold shadow-lg rounded-full"
-                data-testid="button-final-cta"
-              >
-                Build My First System
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/signup">
+                <Button
+                  size="lg"
+                  className="btn-scale bg-white text-primary hover:bg-white/90 gap-2 h-12 px-8 text-base font-semibold shadow-lg rounded-full w-full sm:w-auto"
+                  data-testid="button-final-cta"
+                >
+                  Build My First System
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="gap-2 h-12 px-8 text-base font-semibold rounded-full border-white/40 text-white hover:bg-white/10 bg-transparent w-full sm:w-auto"
+                  data-testid="button-final-signin"
+                >
+                  Already have an account?
+                </Button>
+              </Link>
+            </div>
             <p className="text-white/60 text-xs mt-4">No credit card required · Takes 60 seconds</p>
           </div>
         </div>
       </section>
 
-      {/* ── Footer ── */}
+      {/* ── Footer ───────────────────────────────────────────────── */}
       <footer className="py-8 sm:py-12 px-4 border-t border-border bg-muted/20">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-10">
-            <div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-10">
+            {/* Brand */}
+            <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
                   <Sparkles className="w-3 h-3 text-white" />
                 </div>
                 <span className="font-bold text-sm">SystemForge</span>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-3">
                 Built for people who are tired of starting over.
               </p>
+              <p className="text-[11px] text-muted-foreground/70">
+                Not another habit tracker.<br />A system that survives real life.
+              </p>
             </div>
+            {/* Product links */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Product</p>
               <div className="flex flex-col gap-2">
-                <a href="#features" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Features</a>
-                <a href="#how-it-works" className="text-xs text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
-                <a href="#templates" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Templates</a>
-                <a href="#pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+                <a href="#features"    className="text-xs text-muted-foreground hover:text-foreground transition-colors">Features</a>
+                <a href="#how-it-works"className="text-xs text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+                <a href="#templates"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Templates</a>
+                <a href="#pricing"     className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+                <a href="#faq"         className="text-xs text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
               </div>
             </div>
+            {/* Account links */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Account</p>
+              <div className="flex flex-col gap-2">
+                <Link href="/signup"    className="text-xs text-muted-foreground hover:text-foreground transition-colors">Get Started Free</Link>
+                <Link href="/login"     className="text-xs text-muted-foreground hover:text-foreground transition-colors">Sign In</Link>
+                <Link href="/dashboard" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
+                <Link href="/pricing"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Compare Plans</Link>
+              </div>
+            </div>
+            {/* Legal */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Legal</p>
               <div className="flex flex-col gap-2">
                 <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
-                <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+                <Link href="/terms"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
                 <a href="mailto:support@systemforge.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
@@ -1491,6 +1368,9 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* ── Sticky mobile CTA bar ────────────────────────────────── */}
+      <MobileCtaBar ctaVariant={ctaVariant} />
     </div>
   );
 }
