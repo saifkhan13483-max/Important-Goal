@@ -12,7 +12,7 @@ import {
   ArrowRight, Star, Check, ChevronDown,
   Flame, LayoutGrid, Heart, Quote,
   BarChart2, Shield, Brain, Trophy, RefreshCw,
-  Play, Calendar, Clock, Users, Menu, X,
+  Calendar, Clock, Users, Menu, X,
   Repeat, Flag, Cog, CircleCheck, PenLine, Copy,
   UserCircle2, ChevronRight, Mail, Loader2, MessageSquare,
 } from "lucide-react";
@@ -426,54 +426,6 @@ function EmailCaptureForm() {
   );
 }
 
-const DEMO_VIDEO_ID = (import.meta.env.VITE_DEMO_VIDEO_ID as string | undefined) || "";
-
-function VideoDemoSection() {
-  const [playing, setPlaying] = useState(false);
-  return (
-    <section className="py-14 sm:py-20 px-4 border-t border-border bg-muted/20" id="demo" aria-label="Product demo">
-      <div className="max-w-4xl mx-auto text-center">
-        <Badge variant="secondary" className="mb-3 text-xs gap-1.5">
-          <Play className="w-3 h-3" /> Product walkthrough
-        </Badge>
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">See it in 2 minutes</h2>
-        <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto mb-8">
-          Watch how a vague intention becomes a daily habit system — with an identity, a trigger, a minimum action, and a recovery plan.
-        </p>
-        <div className="relative max-w-3xl mx-auto rounded-2xl overflow-hidden border border-border shadow-2xl bg-black" style={{ aspectRatio: "16/9" }}>
-          {playing && DEMO_VIDEO_ID ? (
-            <iframe
-              src={`https://www.youtube.com/embed/${DEMO_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`}
-              title="Strivo product demo"
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full border-0"
-            />
-          ) : (
-            <div className="relative w-full h-full group cursor-pointer" onClick={() => setPlaying(true)} role="button" aria-label="Play product demo" data-testid="button-play-demo">
-              <img src="/og-image.png" alt="Strivo dashboard preview" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 flex flex-col items-center justify-center gap-4 p-6">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 border-2 border-white/40 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-white/20 transition-all duration-200">
-                  <Play className="w-7 h-7 sm:w-9 sm:h-9 text-white fill-white ml-1" />
-                </div>
-                <div className="text-center">
-                  <p className="text-white font-bold text-base sm:text-lg">Watch a 2-minute walkthrough</p>
-                  <p className="text-white/70 text-xs sm:text-sm mt-1">No signup needed · See the full flow</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        {!DEMO_VIDEO_ID && !playing && (
-          <p className="text-xs text-muted-foreground mt-4 opacity-60">
-            Video coming soon — explore the live demo above or{" "}
-            <Link href="/signup" className="underline underline-offset-2 hover:text-foreground">create a free account</Link> to try it yourself.
-          </p>
-        )}
-      </div>
-    </section>
-  );
-}
 
 // ─── Animated stat ──────────────────────────────────────────────────────────
 function AnimatedStat({ value, label, icon: Icon, suffix = "" }: { value: number; label: string; icon: any; suffix?: string }) {
@@ -719,8 +671,6 @@ export default function Landing() {
 
         <ProductPreview />
       </section>
-
-      <VideoDemoSection />
 
       {/* ── Social proof stats strip ───────────────────────────── */}
       <section className="py-8 sm:py-10 px-4 border-t border-border">
