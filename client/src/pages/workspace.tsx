@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearch, useLocation } from "wouter";
 import { Helmet } from "react-helmet-async";
 import { useAppStore } from "@/store/auth.store";
 import { getPlanFeatures } from "@/lib/plan-limits";
@@ -102,7 +103,7 @@ function computeStats(systems: System[], checkins: Checkin[]): MemberStats {
   return { activeSystems: activeSystems.length, bestStreak, currentStreak, completionRate, weeklyRate, last7 };
 }
 
-function useStatSync(userId: string, inWorkspace: boolean) {
+function useStatSync(userId: string, inWorkspace: boolean, workspaceId: string) {
   const { data: systems = [] } = useQuery<System[]>({
     queryKey: ["systems", userId],
     queryFn: () => getSystems(userId),
@@ -117,9 +118,9 @@ function useStatSync(userId: string, inWorkspace: boolean) {
   const stats = useMemo(() => computeStats(systems, checkins), [systems, checkins]);
 
   useEffect(() => {
-    if (!inWorkspace || (!systems.length && !checkins.length)) return;
-    syncMemberStats(stats).catch(() => {});
-  }, [inWorkspace, JSON.stringify(stats)]);
+    if (!inWorkspace || !workspaceId || (!systems.length && !checkins.length)) return;
+    syncMemberStats(workspaceId, stats).catch(() => {});
+  }, [inWorkspace, workspaceId, JSON.stringify(stats)]);
 
   return stats;
 }
@@ -273,7 +274,7 @@ function MemberCard({
             </div>
             <div className="flex gap-1">
               {stats.last7.map((day, i) => (
-                <div key={i} title={day.dateKey} className={cn(
+                <div key={i} title={`${day.dateKey}: ${day.done}/${day.total}`} className={cn(
                   "flex-1 h-5 rounded-sm",
                   day.total === 0 ? "bg-muted/30" : day.done === 0 ? "bg-destructive/20" : day.done >= day.total ? "bg-chart-3" : "bg-amber-400/60",
                 )} />
@@ -533,11 +534,9 @@ function CoachDashboard({
   }));
 
   function handleSort(key: CoachSortKey) {
-    if (sortKey === key) setDir(sortDir === "asc" ? "desc" : "asc");
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortKey(key); setSortDir("desc"); }
   }
-
-  function setDir(dir: "asc" | "desc") { setSortDir(dir); }
 
   const SortIcon = ({ col }: { col: CoachSortKey }) => {
     if (sortKey !== col) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
@@ -627,6 +626,11 @@ function WorkspaceSettings({
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Team name"
             data-testid="input-workspace-rename"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newName.trim() && newName.trim() !== workspace.name) {
+                renameMutation.mutate();
+              }
+            }}
           />
           <Button
             onClick={() => renameMutation.mutate()}
@@ -704,10 +708,20 @@ function CreatePanel({ onCreated }: { onCreated: () => void }) {
         Build a shared space for your team. Invite members with a unique code and track everyone's progress.
       </p>
       <div className="flex gap-2">
-        <Input placeholder="Workspace name (optional)" value={name} onChange={(e) => setName(e.target.value)}
-          data-testid="input-workspace-name" className="flex-1" />
-        <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}
-          className="bg-amber-500 hover:bg-amber-600 text-white border-0" data-testid="button-create-workspace">
+        <Input
+          placeholder="Workspace name (optional)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          data-testid="input-workspace-name"
+          className="flex-1"
+          onKeyDown={(e) => { if (e.key === "Enter") mutation.mutate(); }}
+        />
+        <Button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          className="bg-amber-500 hover:bg-amber-600 text-white border-0"
+          data-testid="button-create-workspace"
+        >
           {mutation.isPending ? "Creating…" : "Create"}
         </Button>
       </div>
@@ -716,9 +730,9 @@ function CreatePanel({ onCreated }: { onCreated: () => void }) {
 }
 
 /* ── Join panel ── */
-function JoinPanel({ onJoined }: { onJoined: () => void }) {
+function JoinPanel({ onJoined, defaultCode = "" }: { onJoined: () => void; defaultCode?: string }) {
   const { user } = useAppStore();
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(defaultCode.toUpperCase());
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -742,12 +756,20 @@ function JoinPanel({ onJoined }: { onJoined: () => void }) {
         Enter the 6-character invite code shared by your team owner.
       </p>
       <div className="flex gap-2">
-        <Input placeholder="Enter invite code (e.g. AB12CD)" value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={6}
+        <Input
+          placeholder="Enter invite code (e.g. AB12CD)"
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          maxLength={6}
           data-testid="input-invite-code"
-          className="flex-1 uppercase tracking-widest font-mono text-center" />
-        <Button onClick={() => mutation.mutate()} disabled={mutation.isPending || code.trim().length < 4}
-          data-testid="button-join-workspace">
+          className="flex-1 uppercase tracking-widest font-mono text-center"
+          onKeyDown={(e) => { if (e.key === "Enter" && code.trim().length >= 4) mutation.mutate(); }}
+        />
+        <Button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || code.trim().length < 4}
+          data-testid="button-join-workspace"
+        >
           {mutation.isPending ? "Joining…" : "Join"}
         </Button>
       </div>
@@ -767,12 +789,15 @@ function WorkspaceView({ workspace, currentUserId, myStats }: {
   const [linkCopied, setLinkCopied] = useState(false);
   const [tab, setTab] = useState("members");
   const [showSettings, setShowSettings] = useState(false);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState<string | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const isOwner = workspace.ownerId === currentUserId;
 
   const copyCode = () => {
     navigator.clipboard.writeText(workspace.inviteCode);
     setCodeCopied(true);
     setTimeout(() => setCodeCopied(false), 2000);
+    toast({ title: "Invite code copied!" });
   };
 
   const copyLink = () => {
@@ -794,13 +819,21 @@ function WorkspaceView({ workspace, currentUserId, myStats }: {
 
   const removeMutation = useMutation({
     mutationFn: (memberId: string) => removeMemberFromWorkspace(workspace.id, memberId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-workspace"] }); toast({ title: "Member removed" }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-workspace"] });
+      toast({ title: "Member removed" });
+      setShowRemoveConfirm(null);
+    },
     onError: () => toast({ title: "Failed to remove member", variant: "destructive" }),
   });
 
   const leaveMutation = useMutation({
     mutationFn: () => leaveWorkspace(workspace.id, currentUserId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["my-workspace"] }); toast({ title: "Left workspace" }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-workspace"] });
+      toast({ title: "Left workspace" });
+      setShowLeaveConfirm(false);
+    },
     onError: () => toast({ title: "Failed to leave workspace", variant: "destructive" }),
   });
 
@@ -812,6 +845,10 @@ function WorkspaceView({ workspace, currentUserId, myStats }: {
       return (bStats?.weeklyRate ?? -1) - (aStats?.weeklyRate ?? -1);
     });
   }, [membersWithStats, currentUserId, myStats]);
+
+  const memberBeingRemoved = showRemoveConfirm
+    ? workspace.members.find((m) => m.userId === showRemoveConfirm)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -839,8 +876,13 @@ function WorkspaceView({ workspace, currentUserId, myStats }: {
                 </Button>
               )}
               {!isOwner && (
-                <Button variant="outline" size="sm" className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5"
-                  onClick={() => leaveMutation.mutate()} disabled={leaveMutation.isPending} data-testid="button-leave-workspace">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5"
+                  onClick={() => setShowLeaveConfirm(true)}
+                  data-testid="button-leave-workspace"
+                >
                   <LogOut className="w-3.5 h-3.5" /> Leave
                 </Button>
               )}
@@ -909,11 +951,13 @@ function WorkspaceView({ workspace, currentUserId, myStats }: {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {membersSortedForCards.map((member, index) => (
               <MemberCard
-                key={member.userId} member={member}
-                isOwner={member.role === "owner"} isMe={member.userId === currentUserId}
+                key={member.userId}
+                member={member}
+                isOwner={member.role === "owner"}
+                isMe={member.userId === currentUserId}
                 myStats={member.userId === currentUserId ? myStats : undefined}
                 rank={index + 1}
-                onRemove={isOwner ? () => removeMutation.mutate(member.userId) : undefined}
+                onRemove={isOwner && member.userId !== currentUserId ? () => setShowRemoveConfirm(member.userId) : undefined}
               />
             ))}
           </div>
@@ -938,6 +982,52 @@ function WorkspaceView({ workspace, currentUserId, myStats }: {
           <WorkspaceSettings workspace={workspace} onClose={() => setShowSettings(false)} />
         </DialogContent>
       </Dialog>
+
+      {/* Remove member confirmation dialog */}
+      <Dialog open={!!showRemoveConfirm} onOpenChange={(open) => { if (!open) setShowRemoveConfirm(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove member</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove <strong>{memberBeingRemoved?.name}</strong> from this workspace? They will lose access to the team.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setShowRemoveConfirm(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={removeMutation.isPending}
+              onClick={() => showRemoveConfirm && removeMutation.mutate(showRemoveConfirm)}
+              data-testid="button-confirm-remove-member"
+            >
+              {removeMutation.isPending ? "Removing…" : "Remove"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Leave workspace confirmation dialog */}
+      <Dialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Leave workspace</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to leave <strong>{workspace.name}</strong>? You'll need a new invite code to rejoin.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setShowLeaveConfirm(false)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={leaveMutation.isPending}
+              onClick={() => leaveMutation.mutate()}
+              data-testid="button-confirm-leave-workspace"
+            >
+              {leaveMutation.isPending ? "Leaving…" : "Leave workspace"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -947,7 +1037,15 @@ export default function WorkspacePage() {
   const { user } = useAppStore();
   const features = getPlanFeatures(user?.plan);
   const userId = user?.id ?? "";
-  const [mode, setMode] = useState<"idle" | "create" | "join">("idle");
+  const search = useSearch();
+  const [, setLocation] = useLocation();
+
+  const params = new URLSearchParams(search);
+  const joinCodeFromUrl = params.get("join") ?? "";
+
+  const [mode, setMode] = useState<"idle" | "create" | "join">(() =>
+    joinCodeFromUrl ? "join" : "idle"
+  );
 
   const { data: workspace, isLoading } = useQuery<Workspace | null>({
     queryKey: ["my-workspace"],
@@ -959,7 +1057,13 @@ export default function WorkspacePage() {
   const hasWorkspace = !!workspace;
   const isOwner = workspace?.ownerId === userId;
 
-  const myStats = useStatSync(userId, hasWorkspace);
+  const myStats = useStatSync(userId, hasWorkspace, workspace?.id ?? "");
+
+  function clearJoinParam() {
+    if (joinCodeFromUrl) {
+      setLocation("/workspace", { replace: true });
+    }
+  }
 
   if (!features.teamWorkspace) {
     return (
@@ -1032,15 +1136,22 @@ export default function WorkspacePage() {
 
       {!isLoading && !hasWorkspace && mode === "create" && (
         <div>
-          <Button variant="ghost" size="sm" onClick={() => setMode("idle")} className="mb-4 text-xs gap-1">← Back</Button>
-          <CreatePanel onCreated={() => setMode("idle")} />
+          <Button variant="ghost" size="sm" onClick={() => { setMode("idle"); clearJoinParam(); }} className="mb-4 text-xs gap-1">
+            ← Back
+          </Button>
+          <CreatePanel onCreated={() => { setMode("idle"); clearJoinParam(); }} />
         </div>
       )}
 
       {!isLoading && !hasWorkspace && mode === "join" && (
         <div>
-          <Button variant="ghost" size="sm" onClick={() => setMode("idle")} className="mb-4 text-xs gap-1">← Back</Button>
-          <JoinPanel onJoined={() => setMode("idle")} />
+          <Button variant="ghost" size="sm" onClick={() => { setMode("idle"); clearJoinParam(); }} className="mb-4 text-xs gap-1">
+            ← Back
+          </Button>
+          <JoinPanel
+            defaultCode={joinCodeFromUrl}
+            onJoined={() => { setMode("idle"); clearJoinParam(); }}
+          />
         </div>
       )}
 

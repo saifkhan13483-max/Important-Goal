@@ -162,9 +162,14 @@ export async function leaveWorkspace(workspaceId: string, userId: string): Promi
       await updateDoc(doc(db, "users", m.userId), { workspaceId: null });
     }
   } else {
+    const updatedMembers = wsData.members.filter((m) => m.userId !== userId);
+    const updatedMemberIds = wsData.memberIds.filter((id) => id !== userId);
+    const updatedStats = { ...wsData.memberStats };
+    delete updatedStats[userId];
     await updateDoc(wsRef, {
-      members: wsData.members.filter((m) => m.userId !== userId),
-      memberIds: wsData.memberIds.filter((id) => id !== userId),
+      members: updatedMembers,
+      memberIds: updatedMemberIds,
+      memberStats: updatedStats,
     });
     await updateDoc(doc(db, "users", userId), { workspaceId: null });
   }
@@ -180,11 +185,17 @@ export async function removeMemberFromWorkspace(
 
   const updatedMembers = wsData.members.filter((m) => m.userId !== memberId);
   const updatedMemberIds = wsData.memberIds.filter((id) => id !== memberId);
+  const updatedStats = { ...wsData.memberStats };
+  delete updatedStats[memberId];
 
-  await updateDoc(wsRef, { members: updatedMembers, memberIds: updatedMemberIds });
+  await updateDoc(wsRef, {
+    members: updatedMembers,
+    memberIds: updatedMemberIds,
+    memberStats: updatedStats,
+  });
   await updateDoc(doc(db, "users", memberId), { workspaceId: null });
 
-  return toWorkspace({ ...wsData, members: updatedMembers, memberIds: updatedMemberIds });
+  return toWorkspace({ ...wsData, members: updatedMembers, memberIds: updatedMemberIds, memberStats: updatedStats });
 }
 
 export async function regenerateInviteCode(workspaceId: string): Promise<string> {
@@ -210,14 +221,11 @@ export async function deleteWorkspace(workspaceId: string): Promise<void> {
   }
 }
 
-export async function syncMemberStats(stats: MemberStats): Promise<void> {
+export async function syncMemberStats(workspaceId: string, stats: MemberStats): Promise<void> {
   const uid = auth.currentUser?.uid;
   if (!uid) return;
 
-  const ws = await getMyWorkspace();
-  if (!ws) return;
-
-  await updateDoc(doc(db, "workspaces", ws.id), {
+  await updateDoc(doc(db, "workspaces", workspaceId), {
     [`memberStats.${uid}`]: { ...stats, syncedAt: new Date().toISOString() },
   });
 }
