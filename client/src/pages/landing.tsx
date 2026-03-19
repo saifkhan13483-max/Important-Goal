@@ -103,6 +103,12 @@ const pricingPlans = [
     features: ["Unlimited goals", "Unlimited systems", "Advanced analytics dashboard", "Mood & habit correlation insights", "Premium templates", "Advanced journaling", "CSV / PDF exports", "Priority support"],
     cta: "Start Free Trial", ctaVariant: "default" as const, href: "/signup",
   },
+  {
+    name: "Elite", price: "$39", yearlyPrice: "$29", period: "/month",
+    tagline: "For power users who want everything", badge: "Best Value",
+    features: ["Everything in Pro", "Unlimited AI Coach sessions", "1-on-1 onboarding call", "Personal habit audit", "White-label PDF exports", "API access", "Custom integrations", "Dedicated account manager"],
+    cta: "Go Elite", ctaVariant: "outline" as const, href: "/signup",
+  },
 ];
 
 const navLinks = [
@@ -1113,7 +1119,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
             {pricingPlans.map((plan) => (
               <Card
                 key={plan.name}
@@ -1157,7 +1163,7 @@ export default function Landing() {
           <p className="text-center text-xs text-muted-foreground mt-6">All plans include a 14-day free trial. No credit card required.</p>
 
           {/* Quick comparison strip */}
-          <div className="mt-10 max-w-2xl mx-auto">
+          <div className="mt-10 max-w-3xl mx-auto">
             <p className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">Quick comparison</p>
             <div className="overflow-x-auto rounded-2xl border border-border">
               <table className="w-full text-xs">
@@ -1167,24 +1173,29 @@ export default function Landing() {
                     <th className="p-3 font-semibold text-center">Free</th>
                     <th className="p-3 font-semibold text-center">Starter</th>
                     <th className="p-3 font-semibold text-center text-primary">Pro</th>
+                    <th className="p-3 font-semibold text-center text-chart-4">Elite</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    ["Active goals",           "2",  "10",  "∞"   ],
-                    ["Systems",                "3",  "∞",   "∞"   ],
-                    ["Templates",              "3",  "All", "All" ],
-                    ["Analytics",              "Basic","Better","Advanced"],
-                    ["CSV / PDF exports",      "—",  "Basic","✓"  ],
-                    ["AI journal prompts",     "—",  "—",   "✓"  ],
-                    ["Mood correlations",      "—",  "—",   "✓"  ],
-                    ["Priority support",       "—",  "—",   "✓"  ],
-                  ].map(([feature, free, starter, pro]) => (
+                    ["Active goals",           "2",  "10",  "∞",      "∞"      ],
+                    ["Systems",                "3",  "∞",   "∞",      "∞"      ],
+                    ["Templates",              "3",  "All", "All",    "All"    ],
+                    ["Analytics",              "Basic","Better","Advanced","Advanced"],
+                    ["CSV / PDF exports",      "—",  "Basic","✓",     "✓"     ],
+                    ["AI Coach sessions",      "—",  "—",   "Limited","∞"     ],
+                    ["Mood correlations",      "—",  "—",   "✓",     "✓"     ],
+                    ["Priority support",       "—",  "—",   "✓",     "✓"     ],
+                    ["1-on-1 onboarding",      "—",  "—",   "—",     "✓"     ],
+                    ["API access",             "—",  "—",   "—",     "✓"     ],
+                    ["Dedicated account mgr",  "—",  "—",   "—",     "✓"     ],
+                  ].map(([feature, free, starter, pro, elite]) => (
                     <tr key={feature} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
                       <td className="p-3 text-muted-foreground">{feature}</td>
                       <td className="p-3 text-center text-foreground/60">{free}</td>
                       <td className="p-3 text-center text-foreground/80">{starter}</td>
                       <td className="p-3 text-center font-semibold text-primary">{pro}</td>
+                      <td className="p-3 text-center font-semibold text-chart-4">{elite}</td>
                     </tr>
                   ))}
                 </tbody>
