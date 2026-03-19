@@ -127,13 +127,11 @@ export function AppSidebar() {
     <Sidebar role="navigation" aria-label="Application navigation">
       <SidebarHeader className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0 shadow-sm">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <p className="font-bold text-sm text-sidebar-foreground leading-tight">Strivo</p>
-            <p className="text-xs text-muted-foreground leading-tight">Goals → Daily Systems</p>
-          </div>
+          <img
+            src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+            alt="Strivo"
+            className="h-8 w-auto object-contain"
+          />
         </div>
       </SidebarHeader>
 

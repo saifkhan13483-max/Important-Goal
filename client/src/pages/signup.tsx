@@ -102,8 +102,12 @@ export default function Signup() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl gradient-brand flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-6 h-6 text-white" />
+          <div className="flex justify-center mb-4">
+            <img
+              src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+              alt="Strivo"
+              className="h-10 w-auto object-contain"
+            />
           </div>
           <h1 className="text-2xl font-bold">Strivo</h1>
           <p className="text-muted-foreground text-sm mt-1">Turn your goals into daily systems.</p>

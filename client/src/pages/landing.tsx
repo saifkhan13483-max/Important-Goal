@@ -593,11 +593,12 @@ export default function Landing() {
         )}
       >
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="font-bold text-sm tracking-tight">Strivo</span>
+          <div className="flex items-center">
+            <img
+              src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+              alt="Strivo"
+              className="h-9 w-auto object-contain"
+            />
           </div>
 
           <div className="hidden md:flex items-center gap-7 text-sm text-muted-foreground font-medium">
@@ -627,11 +628,12 @@ export default function Landing() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-72 p-6">
-                <div className="flex items-center gap-2 mb-8">
-                  <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <span className="font-bold text-sm">Strivo</span>
+                <div className="flex items-center mb-8">
+                  <img
+                    src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+                    alt="Strivo"
+                    className="h-8 w-auto object-contain"
+                  />
                 </div>
                 <div className="flex flex-col gap-1 mb-8">
                   {navLinks.map((link) => (
@@ -1318,11 +1320,12 @@ export default function Landing() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-10">
             {/* Brand */}
             <div className="col-span-2 sm:col-span-1">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
-                  <Sparkles className="w-3 h-3 text-white" />
-                </div>
-                <span className="font-bold text-sm">Strivo</span>
+              <div className="flex items-center mb-3">
+                <img
+                  src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+                  alt="Strivo"
+                  className="h-7 w-auto object-contain"
+                />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">
                 Built for people who are tired of starting over.
