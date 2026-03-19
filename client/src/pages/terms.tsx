@@ -14,11 +14,12 @@ export default function TermsOfService() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="font-bold text-sm tracking-tight">Strivo</span>
+            <div className="flex items-center cursor-pointer">
+              <img
+                src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+                alt="Strivo"
+                className="h-9 w-auto object-contain"
+              />
             </div>
           </Link>
           <div className="flex items-center gap-2">

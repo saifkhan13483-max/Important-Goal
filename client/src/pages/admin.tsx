@@ -155,7 +155,11 @@ function AdminSidebar({
             <ShieldCheck className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight truncate">Strivo</p>
+            <img
+              src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+              alt="Strivo"
+              className="h-5 w-auto object-contain"
+            />
             <p className="text-[10px] text-violet-500 font-medium">Admin Panel</p>
           </div>
         </div>

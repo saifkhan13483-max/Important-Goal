@@ -226,11 +226,12 @@ export default function Pricing() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="font-bold text-sm tracking-tight">Strivo</span>
+            <div className="flex items-center cursor-pointer">
+              <img
+                src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+                alt="Strivo"
+                className="h-9 w-auto object-contain"
+              />
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -471,11 +472,12 @@ export default function Pricing() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
-                  <Sparkles className="w-3 h-3 text-white" />
-                </div>
-                <span className="font-bold text-sm">Strivo</span>
+              <div className="flex items-center mb-3">
+                <img
+                  src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+                  alt="Strivo"
+                  className="h-7 w-auto object-contain"
+                />
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Built for people who are tired of starting over.

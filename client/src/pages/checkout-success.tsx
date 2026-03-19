@@ -54,11 +54,12 @@ export default function CheckoutSuccess() {
               <CheckCircle2 className="w-10 h-10 text-chart-3" />
             </div>
 
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="font-bold text-sm tracking-tight">Strivo</span>
+            <div className="flex items-center justify-center mb-3">
+              <img
+                src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+                alt="Strivo"
+                className="h-9 w-auto object-contain"
+              />
             </div>
 
             <h1 className="text-3xl font-bold mb-3" data-testid="text-checkout-success-heading">
