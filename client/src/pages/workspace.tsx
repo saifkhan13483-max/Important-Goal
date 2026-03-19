@@ -24,7 +24,7 @@ import {
   Pencil, Trophy, TrendingUp, Activity, ArrowUpDown,
   ChevronUp, ChevronDown, Star, AlertTriangle,
   Eye, EyeOff, Handshake, Bell, CheckCircle2,
-  TrendingDown, Minus, Wifi, WifiOff,
+  TrendingDown, Minus, Wifi, WifiOff, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -147,6 +147,22 @@ function useStatSync(userId: string, inWorkspace: boolean, workspaceId: string) 
   return stats;
 }
 
+function getTrendIcon(weekly: number | null | undefined) {
+  if (weekly === null || weekly === undefined) return null;
+  if (weekly >= 75) return <TrendingUp className="w-3 h-3 text-emerald-500" />;
+  if (weekly >= 40) return <Minus className="w-3 h-3 text-amber-500" />;
+  return <TrendingDown className="w-3 h-3 text-destructive" />;
+}
+
+function getPerformanceLabel(weekly: number | null | undefined): { label: string; color: string; bg: string } {
+  if (weekly === null || weekly === undefined) return { label: "No data", color: "text-muted-foreground", bg: "bg-muted/40" };
+  if (weekly >= 80) return { label: "Excellent", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" };
+  if (weekly >= 60) return { label: "Good", color: "text-emerald-500", bg: "bg-emerald-500/10" };
+  if (weekly >= 40) return { label: "Fair", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10" };
+  if (weekly >= 20) return { label: "Struggling", color: "text-orange-500", bg: "bg-orange-500/10" };
+  return { label: "Needs help", color: "text-destructive", bg: "bg-destructive/10" };
+}
+
 /* ── Team summary aggregate stats ── */
 function TeamSummary({
   members,
@@ -179,15 +195,15 @@ function TeamSummary({
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+    <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
       {summaryItems.map(({ icon: Icon, label, value, color, bg }) => (
         <Card key={label} className="border-border/50">
-          <CardContent className="p-4 text-center">
-            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2", bg)}>
-              <Icon className={cn("w-4 h-4", color)} />
+          <CardContent className="p-3 sm:p-4 text-center">
+            <div className={cn("w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center mx-auto mb-1.5 sm:mb-2", bg)}>
+              <Icon className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", color)} />
             </div>
-            <p className="text-xl font-bold">{value}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
+            <p className="text-lg sm:text-xl font-bold leading-none">{value}</p>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 leading-tight">{label}</p>
           </CardContent>
         </Card>
       ))}
@@ -195,7 +211,7 @@ function TeamSummary({
   );
 }
 
-/* ── Member card — shows server-stored stats ── */
+/* ── Member card ── */
 function MemberCard({
   member,
   isOwner,
@@ -218,15 +234,16 @@ function MemberCard({
   const stats: MemberStats | undefined = isMe ? myStats : (member as any).stats;
   const rankMedal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : null;
   const online = isRecent(stats?.syncedAt);
+  const perf = getPerformanceLabel(stats?.weeklyRate);
 
   return (
     <Card className={cn(
-      "border-border/60 hover-elevate transition-all",
+      "border-border/60 transition-all hover:shadow-md hover:-translate-y-0.5",
       isMe && "border-primary/30 ring-1 ring-primary/10",
     )} data-testid={`member-card-${member.userId}`}>
-      <CardContent className="p-5">
+      <CardContent className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="relative flex-shrink-0">
               <Avatar className="w-10 h-10">
                 <AvatarFallback className={cn(
@@ -236,25 +253,24 @@ function MemberCard({
                   {getInitials(member.name)}
                 </AvatarFallback>
               </Avatar>
-              {rankMedal && (
+              {rankMedal ? (
                 <span className="absolute -top-1.5 -right-1.5 text-sm leading-none">{rankMedal}</span>
-              )}
-              {!rankMedal && (
+              ) : (
                 <span className={cn(
                   "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",
                   online ? "bg-emerald-500" : "bg-muted-foreground/30",
                 )} title={online ? "Active recently" : "Inactive"} />
               )}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <p className="font-semibold text-sm truncate">{member.name}</p>
                 {isOwner && (
-                  <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px] px-1.5 py-0 flex items-center gap-0.5">
-                    <Crown className="w-2.5 h-2.5" /> Owner
+                  <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px] px-1.5 py-0 flex-shrink-0">
+                    <Crown className="w-2.5 h-2.5 mr-0.5" /> Owner
                   </Badge>
                 )}
-                {isMe && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">You</Badge>}
+                {isMe && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 flex-shrink-0">You</Badge>}
               </div>
               <p className="text-xs text-muted-foreground truncate">{member.email}</p>
             </div>
@@ -286,28 +302,29 @@ function MemberCard({
           <>
             <div className="grid grid-cols-3 gap-2 mb-4">
               <div className="rounded-lg bg-muted/40 p-2 text-center">
-                <div className="flex items-center justify-center gap-1 mb-0.5">
+                <div className="flex items-center justify-center gap-0.5 mb-0.5">
                   <Zap className="w-3 h-3 text-primary" />
                   <span className="text-base font-bold">{stats.activeSystems}</span>
                 </div>
                 <p className="text-[10px] text-muted-foreground">Systems</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-2 text-center">
-                <div className="flex items-center justify-center gap-1 mb-0.5">
+                <div className="flex items-center justify-center gap-0.5 mb-0.5">
                   <Flame className="w-3 h-3 text-orange-500" />
                   <span className="text-base font-bold">{stats.currentStreak}</span>
                 </div>
                 <p className="text-[10px] text-muted-foreground">Streak</p>
               </div>
               <div className="rounded-lg bg-muted/40 p-2 text-center">
-                <div className="flex items-center justify-center gap-1 mb-0.5">
+                <div className="flex items-center justify-center gap-0.5 mb-0.5">
                   <Star className="w-3 h-3 text-amber-500" />
                   <span className="text-base font-bold">{stats.bestStreak}</span>
                 </div>
                 <p className="text-[10px] text-muted-foreground">Best</p>
               </div>
             </div>
-            <div className="space-y-2.5 mb-3">
+
+            <div className="space-y-2 mb-3">
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-xs text-muted-foreground">Overall</span>
@@ -326,31 +343,41 @@ function MemberCard({
                 <Progress value={stats.weeklyRate} className="h-1.5" />
               </div>
             </div>
-            <div className="flex gap-1">
+
+            <div className="flex gap-1 mb-1">
               {stats.last7.map((day, i) => (
-                <div key={i} title={`${day.dateKey}: ${day.done}/${day.total}`} className={cn(
-                  "flex-1 h-5 rounded-sm",
-                  day.total === 0 ? "bg-muted/30" : day.done === 0 ? "bg-destructive/20" : day.done >= day.total ? "bg-emerald-500/70" : "bg-amber-400/60",
-                )} />
+                <div
+                  key={i}
+                  title={`${day.dateKey}: ${day.done}/${day.total}`}
+                  className={cn(
+                    "flex-1 h-5 rounded-sm",
+                    day.total === 0 ? "bg-muted/30" : day.done === 0 ? "bg-destructive/20" : day.done >= day.total ? "bg-emerald-500/70" : "bg-amber-400/60",
+                  )}
+                />
               ))}
             </div>
-            <div className="flex items-center justify-between mt-1">
+            <div className="flex items-center justify-between">
               <p className="text-[10px] text-muted-foreground">Last 7 days</p>
-              {stats.syncedAt && (
-                <p className={cn(
-                  "text-[10px] flex items-center gap-0.5",
-                  online ? "text-emerald-500" : "text-muted-foreground",
-                )}>
-                  <Clock className="w-2.5 h-2.5" /> {formatRelativeTime(stats.syncedAt)}
-                </p>
-              )}
+              <div className="flex items-center gap-2">
+                <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full", perf.bg, perf.color)}>
+                  {perf.label}
+                </span>
+                {stats.syncedAt && (
+                  <p className={cn(
+                    "text-[10px] flex items-center gap-0.5",
+                    online ? "text-emerald-500" : "text-muted-foreground",
+                  )}>
+                    <Clock className="w-2.5 h-2.5" /> {formatRelativeTime(stats.syncedAt)}
+                  </p>
+                )}
+              </div>
             </div>
           </>
         ) : (
-          <div className="text-center py-4">
+          <div className="text-center py-5 rounded-xl bg-muted/20 border border-dashed border-border/50">
             <Clock className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
             <p className="text-xs text-muted-foreground">
-              Stats will appear once {isMe ? "you visit" : `${member.name.split(" ")[0]} visits`} the workspace.
+              Stats appear once {isMe ? "you visit" : `${member.name.split(" ")[0]} visits`} the workspace.
             </p>
           </div>
         )}
@@ -394,11 +421,12 @@ function Leaderboard({
   ];
 
   const medalEmoji = ["🥇", "🥈", "🥉"];
+  const topValue = ranked[0]?.resolvedStats?.[sortKey] ?? 0;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
-        <p className="text-xs text-muted-foreground mr-1">Rank by:</p>
+        <p className="text-xs text-muted-foreground mr-1 hidden sm:block">Rank by:</p>
         {sortOptions.map(({ key, label, icon: Icon }) => (
           <Button
             key={key}
@@ -408,7 +436,8 @@ function Leaderboard({
             onClick={() => setSortKey(key)}
             data-testid={`button-sort-${key}`}
           >
-            <Icon className="w-3 h-3" /> {label}
+            <Icon className="w-3 h-3" />
+            <span className="hidden xs:inline sm:inline">{label}</span>
           </Button>
         ))}
       </div>
@@ -420,18 +449,19 @@ function Leaderboard({
           const isOwner = member.role === "owner";
           const value = stats?.[sortKey] ?? null;
           const online = isRecent(stats?.syncedAt);
+          const relativeWidth = topValue > 0 && value !== null ? Math.round((value / topValue) * 100) : 0;
 
           return (
             <div
               key={member.userId}
               className={cn(
-                "flex items-center gap-3 p-4 rounded-xl border transition-colors",
+                "flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-colors",
                 isMe ? "border-primary/30 bg-primary/5" : "border-border/50 bg-card hover:bg-muted/20",
                 index === 0 && stats ? "border-amber-400/40 bg-amber-500/5" : "",
               )}
               data-testid={`leaderboard-row-${member.userId}`}
             >
-              <div className="w-8 text-center flex-shrink-0">
+              <div className="w-7 sm:w-8 text-center flex-shrink-0">
                 {index < 3 && stats ? (
                   <span className="text-xl">{medalEmoji[index]}</span>
                 ) : (
@@ -440,7 +470,7 @@ function Leaderboard({
               </div>
 
               <div className="relative flex-shrink-0">
-                <Avatar className="w-9 h-9">
+                <Avatar className="w-8 h-8 sm:w-9 sm:h-9">
                   <AvatarFallback className={cn(
                     "text-xs font-bold",
                     isOwner ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary",
@@ -458,20 +488,32 @@ function Leaderboard({
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-sm font-semibold truncate">{member.name}</p>
                   {isOwner && <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />}
-                  {isMe && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">You</Badge>}
+                  {isMe && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 flex-shrink-0">You</Badge>}
                 </div>
                 {stats ? (
-                  <div className="flex items-center gap-3 mt-1 flex-wrap">
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                      <Flame className="w-2.5 h-2.5 text-orange-400" />{stats.currentStreak}d
-                    </span>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                      <Zap className="w-2.5 h-2.5 text-primary" />{stats.activeSystems} sys
-                    </span>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                      <Star className="w-2.5 h-2.5 text-amber-400" />best {stats.bestStreak}d
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex items-center gap-2 sm:gap-3 mt-0.5 flex-wrap">
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                        <Flame className="w-2.5 h-2.5 text-orange-400" />{stats.currentStreak}d
+                      </span>
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                        <Zap className="w-2.5 h-2.5 text-primary" />{stats.activeSystems} sys
+                      </span>
+                      <span className="text-[10px] text-muted-foreground hidden sm:flex items-center gap-0.5">
+                        <Star className="w-2.5 h-2.5 text-amber-400" />best {stats.bestStreak}d
+                      </span>
+                    </div>
+                    {topValue > 0 && value !== null && (
+                      <div className="mt-1.5 hidden sm:block">
+                        <div className="w-full bg-muted rounded-full h-1">
+                          <div
+                            className={cn("h-1 rounded-full transition-all", index === 0 ? "bg-amber-400" : "bg-primary/40")}
+                            style={{ width: `${relativeWidth}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <p className="text-[10px] text-muted-foreground mt-0.5">No stats yet</p>
                 )}
@@ -481,12 +523,12 @@ function Leaderboard({
                 {value !== null ? (
                   <>
                     <p className={cn(
-                      "text-lg font-bold tabular-nums",
+                      "text-base sm:text-lg font-bold tabular-nums",
                       index === 0 ? "text-amber-500" : index === 1 ? "text-zinc-400" : index === 2 ? "text-amber-700 dark:text-amber-600" : "text-foreground",
                     )}>
                       {sortKey === "currentStreak" || sortKey === "bestStreak" ? `${value}d` : `${value}%`}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[10px] text-muted-foreground hidden sm:block">
                       {sortKey === "weeklyRate" ? "this week" : sortKey === "currentStreak" ? "streak" : sortKey === "bestStreak" ? "best ever" : "overall"}
                     </p>
                   </>
@@ -511,98 +553,6 @@ function Leaderboard({
 
 /* ── Coach dashboard ── */
 type CoachSortKey = "name" | "currentStreak" | "weeklyRate" | "completionRate" | "bestStreak";
-
-function getTrendIcon(weekly: number | null | undefined) {
-  if (weekly === null || weekly === undefined) return null;
-  if (weekly >= 75) return <TrendingUp className="w-3 h-3 text-emerald-500" />;
-  if (weekly >= 40) return <Minus className="w-3 h-3 text-amber-500" />;
-  return <TrendingDown className="w-3 h-3 text-destructive" />;
-}
-
-function getPerformanceLabel(weekly: number | null | undefined): { label: string; color: string } {
-  if (weekly === null || weekly === undefined) return { label: "No data", color: "text-muted-foreground" };
-  if (weekly >= 80) return { label: "Excellent", color: "text-emerald-500" };
-  if (weekly >= 60) return { label: "Good", color: "text-emerald-400" };
-  if (weekly >= 40) return { label: "Fair", color: "text-amber-500" };
-  if (weekly >= 20) return { label: "Struggling", color: "text-orange-500" };
-  return { label: "Needs help", color: "text-destructive" };
-}
-
-function CoachRow({ member, isMe, myStats, highlight }: {
-  member: WorkspaceMember & { stats?: MemberStats };
-  isMe: boolean;
-  myStats?: MemberStats;
-  highlight?: boolean;
-}) {
-  const stats: MemberStats | undefined = isMe ? myStats : (member as any).stats;
-  const weeklyRate = stats?.weeklyRate ?? null;
-  const perf = getPerformanceLabel(weeklyRate);
-  const rateColor = weeklyRate === null ? "text-muted-foreground" : weeklyRate >= 75 ? "text-emerald-600 dark:text-emerald-400" : weeklyRate >= 40 ? "text-amber-500" : "text-destructive";
-  const online = isRecent(stats?.syncedAt);
-
-  return (
-    <div className={cn(
-      "px-4 py-3 grid grid-cols-7 gap-2 items-center border-t border-border/40 hover:bg-muted/20 transition-colors",
-      isMe && "bg-primary/3",
-      highlight && "ring-1 ring-inset ring-amber-400/40 bg-amber-500/5",
-    )} data-testid={`coach-row-${member.userId}`}>
-      <div className="col-span-2 flex items-center gap-2 min-w-0">
-        <div className="relative flex-shrink-0">
-          <Avatar className="w-7 h-7">
-            <AvatarFallback className={cn("text-[10px] font-bold", member.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary")}>
-              {getInitials(member.name)}
-            </AvatarFallback>
-          </Avatar>
-          <span className={cn(
-            "absolute bottom-0 right-0 w-2 h-2 rounded-full border-2 border-background",
-            online ? "bg-emerald-500" : "bg-muted-foreground/30",
-          )} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium truncate leading-tight">
-            {member.name}{isMe && <span className="text-muted-foreground text-[10px] ml-1">(you)</span>}
-          </p>
-          <p className="text-[10px] text-muted-foreground truncate">{member.email}</p>
-        </div>
-      </div>
-      <div className="text-center">
-        <span className="text-sm font-semibold flex items-center justify-center gap-1">
-          <Zap className="w-3 h-3 text-primary" />{stats?.activeSystems ?? "—"}
-        </span>
-      </div>
-      <div className="text-center">
-        <span className={cn("text-sm font-semibold flex items-center justify-center gap-1", stats?.currentStreak ? "text-orange-500" : "text-muted-foreground")}>
-          <Flame className="w-3 h-3" />{stats?.currentStreak != null ? `${stats.currentStreak}d` : "—"}
-        </span>
-      </div>
-      <div className="text-center">
-        <span className={cn("text-sm font-semibold flex items-center justify-center gap-1", stats?.bestStreak ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
-          <Star className="w-3 h-3" />{stats?.bestStreak != null ? `${stats.bestStreak}d` : "—"}
-        </span>
-      </div>
-      <div className="text-center">
-        {weeklyRate !== null ? (
-          <>
-            <div className="flex items-center justify-center gap-1">
-              {getTrendIcon(weeklyRate)}
-              <span className={cn("text-sm font-semibold tabular-nums", rateColor)}>{weeklyRate}%</span>
-            </div>
-            <div className="w-full bg-muted rounded-full h-1 mt-1">
-              <div className={cn("h-1 rounded-full transition-all", weeklyRate >= 75 ? "bg-emerald-500" : weeklyRate >= 40 ? "bg-amber-400" : "bg-destructive")}
-                style={{ width: `${weeklyRate}%` }} />
-            </div>
-          </>
-        ) : <span className="text-sm text-muted-foreground">—</span>}
-      </div>
-      <div className="text-center">
-        <span className={cn("text-[10px] font-semibold", perf.color)}>{perf.label}</span>
-        {stats?.syncedAt && (
-          <p className="text-[9px] text-muted-foreground mt-0.5">{formatRelativeTime(stats.syncedAt)}</p>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function CoachDashboard({
   members,
@@ -686,7 +636,8 @@ function CoachDashboard({
         </Card>
       )}
 
-      <div className="rounded-2xl border border-border overflow-hidden">
+      {/* Desktop table */}
+      <div className="hidden md:block rounded-2xl border border-border overflow-hidden">
         <div className="bg-muted/30 px-4 py-2.5 grid grid-cols-7 gap-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
           <button className="col-span-2 flex items-center gap-1 hover:text-foreground transition-colors" onClick={() => handleSort("name")}>
             Member <SortIcon col="name" />
@@ -706,17 +657,181 @@ function CoachDashboard({
         {sorted.map((member) => {
           const mStats = member.userId === currentUserId ? myStats : member.stats;
           const isTopPerformer = (mStats?.weeklyRate ?? 0) === topWeekly && topWeekly > 0;
+          const isMe = member.userId === currentUserId;
+          const stats: MemberStats | undefined = isMe ? myStats : (member as any).stats;
+          const weeklyRate = stats?.weeklyRate ?? null;
+          const perf = getPerformanceLabel(weeklyRate);
+          const rateColor = weeklyRate === null ? "text-muted-foreground" : weeklyRate >= 75 ? "text-emerald-600 dark:text-emerald-400" : weeklyRate >= 40 ? "text-amber-500" : "text-destructive";
+          const online = isRecent(stats?.syncedAt);
+
           return (
-            <CoachRow key={member.userId} member={member}
-              isMe={member.userId === currentUserId}
-              myStats={member.userId === currentUserId ? myStats : undefined}
-              highlight={isTopPerformer}
-            />
+            <div
+              key={member.userId}
+              className={cn(
+                "px-4 py-3 grid grid-cols-7 gap-2 items-center border-t border-border/40 hover:bg-muted/20 transition-colors",
+                isMe && "bg-primary/[0.03]",
+                isTopPerformer && "bg-emerald-500/[0.03]",
+              )}
+              data-testid={`coach-row-${member.userId}`}
+            >
+              <div className="col-span-2 flex items-center gap-2.5">
+                <div className="relative flex-shrink-0">
+                  <Avatar className="w-7 h-7">
+                    <AvatarFallback className={cn("text-[10px] font-bold", member.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary")}>
+                      {getInitials(member.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className={cn(
+                    "absolute bottom-0 right-0 w-2 h-2 rounded-full border-2 border-background",
+                    online ? "bg-emerald-500" : "bg-muted-foreground/30",
+                  )} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate leading-tight">
+                    {member.name}{isMe && <span className="text-muted-foreground text-[10px] ml-1">(you)</span>}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate">{member.email}</p>
+                </div>
+              </div>
+              <div className="text-center">
+                <span className="text-sm font-semibold flex items-center justify-center gap-1">
+                  <Zap className="w-3 h-3 text-primary" />{stats?.activeSystems ?? "—"}
+                </span>
+              </div>
+              <div className="text-center">
+                <span className={cn("text-sm font-semibold flex items-center justify-center gap-1", stats?.currentStreak ? "text-orange-500" : "text-muted-foreground")}>
+                  <Flame className="w-3 h-3" />{stats?.currentStreak != null ? `${stats.currentStreak}d` : "—"}
+                </span>
+              </div>
+              <div className="text-center">
+                <span className={cn("text-sm font-semibold flex items-center justify-center gap-1", stats?.bestStreak ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+                  <Star className="w-3 h-3" />{stats?.bestStreak != null ? `${stats.bestStreak}d` : "—"}
+                </span>
+              </div>
+              <div className="text-center">
+                {weeklyRate !== null ? (
+                  <>
+                    <div className="flex items-center justify-center gap-1">
+                      {getTrendIcon(weeklyRate)}
+                      <span className={cn("text-sm font-semibold tabular-nums", rateColor)}>{weeklyRate}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1 mt-1">
+                      <div className={cn("h-1 rounded-full transition-all", weeklyRate >= 75 ? "bg-emerald-500" : weeklyRate >= 40 ? "bg-amber-400" : "bg-destructive")}
+                        style={{ width: `${weeklyRate}%` }} />
+                    </div>
+                  </>
+                ) : <span className="text-sm text-muted-foreground">—</span>}
+              </div>
+              <div className="text-center">
+                <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", perf.bg, perf.color)}>{perf.label}</span>
+                {stats?.syncedAt && (
+                  <p className="text-[9px] text-muted-foreground mt-0.5">{formatRelativeTime(stats.syncedAt)}</p>
+                )}
+              </div>
+            </div>
           );
         })}
       </div>
+
+      {/* Mobile card layout */}
+      <div className="md:hidden space-y-2">
+        {sorted.map((member) => {
+          const isMe = member.userId === currentUserId;
+          const stats: MemberStats | undefined = isMe ? myStats : (member as any).stats;
+          const weeklyRate = stats?.weeklyRate ?? null;
+          const perf = getPerformanceLabel(weeklyRate);
+          const online = isRecent(stats?.syncedAt);
+          const isTopPerformer = (stats?.weeklyRate ?? 0) === topWeekly && topWeekly > 0;
+
+          return (
+            <Card
+              key={member.userId}
+              className={cn(
+                "border-border/50 transition-colors",
+                isMe && "border-primary/20 bg-primary/[0.02]",
+                isTopPerformer && "border-emerald-400/30 bg-emerald-500/[0.02]",
+              )}
+              data-testid={`coach-card-mobile-${member.userId}`}
+            >
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="relative flex-shrink-0">
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback className={cn("text-xs font-bold", member.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary")}>
+                          {getInitials(member.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className={cn(
+                        "absolute bottom-0 right-0 w-2 h-2 rounded-full border-2 border-background",
+                        online ? "bg-emerald-500" : "bg-muted-foreground/30",
+                      )} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <p className="text-sm font-semibold truncate">{member.name}</p>
+                        {isMe && <Badge variant="secondary" className="text-[10px] px-1 py-0">You</Badge>}
+                        {member.role === "owner" && <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate">{member.email}</p>
+                    </div>
+                  </div>
+                  <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0", perf.bg, perf.color)}>
+                    {perf.label}
+                  </span>
+                </div>
+
+                {stats ? (
+                  <>
+                    <div className="grid grid-cols-4 gap-2 mb-2">
+                      <div className="text-center">
+                        <p className="text-xs font-bold flex items-center justify-center gap-0.5"><Zap className="w-3 h-3 text-primary" />{stats.activeSystems}</p>
+                        <p className="text-[10px] text-muted-foreground">Systems</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs font-bold text-orange-500 flex items-center justify-center gap-0.5"><Flame className="w-3 h-3" />{stats.currentStreak}d</p>
+                        <p className="text-[10px] text-muted-foreground">Streak</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs font-bold text-amber-500 flex items-center justify-center gap-0.5"><Star className="w-3 h-3" />{stats.bestStreak}d</p>
+                        <p className="text-[10px] text-muted-foreground">Best</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-0.5">
+                          {getTrendIcon(weeklyRate)}
+                          <p className={cn("text-xs font-bold", weeklyRate !== null && weeklyRate >= 75 ? "text-emerald-500" : weeklyRate !== null && weeklyRate >= 40 ? "text-amber-500" : "text-destructive")}>
+                            {weeklyRate !== null ? `${weeklyRate}%` : "—"}
+                          </p>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">This week</p>
+                      </div>
+                    </div>
+                    {weeklyRate !== null && (
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div
+                          className={cn("h-1.5 rounded-full transition-all", weeklyRate >= 75 ? "bg-emerald-500" : weeklyRate >= 40 ? "bg-amber-400" : "bg-destructive")}
+                          style={{ width: `${weeklyRate}%` }}
+                        />
+                      </div>
+                    )}
+                    {stats.syncedAt && (
+                      <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-0.5">
+                        <Clock className="w-2.5 h-2.5" /> Last synced {formatRelativeTime(stats.syncedAt)}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-2">No stats yet — waiting for first sync</p>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       <p className="text-xs text-muted-foreground text-center">
-        Stats update when each member visits this page. Click column headers to sort.
+        Stats update when each member visits this page. {` `}
+        <span className="hidden md:inline">Click column headers to sort.</span>
       </p>
     </div>
   );
@@ -764,78 +879,86 @@ function ActivityFeed({
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-          <Activity className="w-4 h-4 text-primary" />
-          Recent sync activity
-        </h3>
-        <div className="space-y-2">
-          {membersWithTime.map((member) => {
-            const stats = member.resolvedStats!;
-            const isMe = member.userId === currentUserId;
-            const online = isRecent(stats.syncedAt);
-            const perf = getPerformanceLabel(stats.weeklyRate);
+    <div className="space-y-5">
+      {membersWithTime.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-primary" />
+            Recent sync activity
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{membersWithTime.length}</Badge>
+          </h3>
+          <div className="space-y-2">
+            {membersWithTime.map((member) => {
+              const stats = member.resolvedStats!;
+              const isMe = member.userId === currentUserId;
+              const online = isRecent(stats.syncedAt);
+              const perf = getPerformanceLabel(stats.weeklyRate);
 
-            return (
-              <div
-                key={member.userId}
-                className={cn(
-                  "flex items-center gap-3 p-3.5 rounded-xl border border-border/50 bg-card hover:bg-muted/20 transition-colors",
-                  isMe && "border-primary/20 bg-primary/3",
-                )}
-                data-testid={`activity-row-${member.userId}`}
-              >
-                <div className="relative flex-shrink-0">
-                  <Avatar className="w-9 h-9">
-                    <AvatarFallback className={cn(
-                      "text-xs font-bold",
-                      member.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary",
-                    )}>
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className={cn(
-                    "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",
-                    online ? "bg-emerald-500" : "bg-muted-foreground/30",
-                  )} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-medium">{member.name}</p>
-                    {isMe && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">You</Badge>}
-                    {member.role === "owner" && <Crown className="w-3 h-3 text-amber-500" />}
+              return (
+                <div
+                  key={member.userId}
+                  className={cn(
+                    "flex items-center gap-3 p-3 sm:p-3.5 rounded-xl border border-border/50 bg-card hover:bg-muted/20 transition-colors",
+                    isMe && "border-primary/20 bg-primary/[0.02]",
+                  )}
+                  data-testid={`activity-row-${member.userId}`}
+                >
+                  <div className="relative flex-shrink-0">
+                    <Avatar className="w-9 h-9">
+                      <AvatarFallback className={cn(
+                        "text-xs font-bold",
+                        member.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary",
+                      )}>
+                        {getInitials(member.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className={cn(
+                      "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",
+                      online ? "bg-emerald-500" : "bg-muted-foreground/30",
+                    )} />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {stats.activeSystems} systems · {stats.currentStreak}d streak · {stats.weeklyRate}% this week
-                  </p>
-                </div>
 
-                <div className="flex-shrink-0 text-right">
-                  <p className={cn("text-[10px] font-semibold", perf.color)}>{perf.label}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-0.5 justify-end">
-                    <Clock className="w-2.5 h-2.5" />
-                    {formatRelativeTime(stats.syncedAt)}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-sm font-medium">{member.name}</p>
+                      {isMe && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">You</Badge>}
+                      {member.role === "owner" && <Crown className="w-3 h-3 text-amber-500" />}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      <span className="hidden sm:inline">{stats.activeSystems} systems · </span>
+                      <span className="text-orange-500 font-medium">{stats.currentStreak}d streak</span>
+                      <span className="hidden sm:inline"> · {stats.weeklyRate}% this week</span>
+                    </p>
+                  </div>
+
+                  <div className="flex-shrink-0 text-right">
+                    <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", perf.bg, perf.color)}>
+                      {perf.label}
+                    </span>
+                    <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5 justify-end">
+                      <Clock className="w-2.5 h-2.5" />
+                      {formatRelativeTime(stats.syncedAt)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {neverSynced.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-muted-foreground">
             <Clock className="w-4 h-4" />
-            Not yet synced ({neverSynced.length})
+            Not yet synced
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0">{neverSynced.length}</Badge>
           </h3>
           <div className="space-y-2">
             {neverSynced.map((member) => (
               <div
                 key={member.userId}
-                className="flex items-center gap-3 p-3.5 rounded-xl border border-dashed border-border/50 opacity-60"
+                className="flex items-center gap-3 p-3 sm:p-3.5 rounded-xl border border-dashed border-border/50 opacity-60"
               >
                 <Avatar className="w-9 h-9">
                   <AvatarFallback className="text-xs font-bold bg-muted text-muted-foreground">
@@ -844,9 +967,9 @@ function ActivityFeed({
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{member.name}</p>
-                  <p className="text-xs text-muted-foreground">{member.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                 </div>
-                <p className="text-[10px] text-muted-foreground">Waiting for first sync</p>
+                <p className="text-[10px] text-muted-foreground flex-shrink-0">Waiting for first sync</p>
               </div>
             ))}
           </div>
@@ -907,7 +1030,7 @@ function WorkspaceSettings({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
         <label className="text-sm font-medium mb-2 block">Workspace name</label>
         <div className="flex gap-2">
@@ -936,8 +1059,10 @@ function WorkspaceSettings({
         <>
           <Separator />
           <div>
-            <label className="text-sm font-medium mb-1 block flex items-center gap-1.5">
-              <Handshake className="w-4 h-4 text-amber-500" /> Transfer ownership
+            <label className="text-sm font-medium mb-1 block">
+              <span className="flex items-center gap-1.5">
+                <Handshake className="w-4 h-4 text-amber-500" /> Transfer ownership
+              </span>
             </label>
             <p className="text-xs text-muted-foreground mb-3">
               Hand ownership to another member. You'll become a regular member.
@@ -1042,7 +1167,7 @@ function CreatePanel({ onCreated }: { onCreated: () => void }) {
   });
 
   return (
-    <div className="max-w-md mx-auto text-center py-8">
+    <div className="max-w-md mx-auto text-center py-6 sm:py-8 px-4">
       <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
         <Users className="w-8 h-8 text-amber-500" />
       </div>
@@ -1052,7 +1177,7 @@ function CreatePanel({ onCreated }: { onCreated: () => void }) {
       </p>
       <div className="flex gap-2">
         <Input
-          placeholder="Workspace name (optional)"
+          placeholder={`${user?.name ?? "My"}'s Team`}
           value={name}
           onChange={(e) => setName(e.target.value)}
           data-testid="input-workspace-name"
@@ -1062,12 +1187,13 @@ function CreatePanel({ onCreated }: { onCreated: () => void }) {
         <Button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
-          className="bg-amber-500 hover:bg-amber-600 text-white border-0"
+          className="bg-amber-500 hover:bg-amber-600 text-white border-0 flex-shrink-0"
           data-testid="button-create-workspace"
         >
           {mutation.isPending ? "Creating…" : "Create"}
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground mt-2">Leave blank to use your name</p>
     </div>
   );
 }
@@ -1090,7 +1216,7 @@ function JoinPanel({ onJoined, defaultCode = "" }: { onJoined: () => void; defau
   });
 
   return (
-    <div className="max-w-md mx-auto text-center py-8">
+    <div className="max-w-md mx-auto text-center py-6 sm:py-8 px-4">
       <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
         <Hash className="w-8 h-8 text-primary" />
       </div>
@@ -1100,22 +1226,24 @@ function JoinPanel({ onJoined, defaultCode = "" }: { onJoined: () => void; defau
       </p>
       <div className="flex gap-2">
         <Input
-          placeholder="Enter invite code (e.g. AB12CD)"
+          placeholder="AB12CD"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           maxLength={6}
           data-testid="input-invite-code"
-          className="flex-1 uppercase tracking-widest font-mono text-center"
+          className="flex-1 uppercase tracking-[0.4em] font-mono text-center text-lg"
           onKeyDown={(e) => { if (e.key === "Enter" && code.trim().length >= 4) mutation.mutate(); }}
         />
         <Button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending || code.trim().length < 4}
           data-testid="button-join-workspace"
+          className="flex-shrink-0"
         >
           {mutation.isPending ? "Joining…" : "Join"}
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground mt-2">Enter the 6-character code from your team owner</p>
     </div>
   );
 }
@@ -1222,18 +1350,18 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
   }).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Workspace header card */}
-      <Card className="border-amber-400/30 bg-gradient-to-br from-amber-500/5 to-background">
-        <CardContent className="p-5">
+      <Card className="border-amber-400/30 bg-gradient-to-br from-amber-500/5 via-background to-background overflow-hidden">
+        <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                <Crown className="w-6 h-6 text-amber-500" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
               </div>
-              <div>
-                <h2 className="font-bold text-lg">{workspace.name}</h2>
-                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+              <div className="min-w-0">
+                <h2 className="font-bold text-base sm:text-lg truncate">{workspace.name}</h2>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <p className="text-xs text-muted-foreground">
                     {workspace.members.length} member{workspace.members.length !== 1 ? "s" : ""} ·{" "}
                     {isOwner ? "You own this" : `Owned by ${workspace.members.find(m => m.role === "owner")?.name ?? "Unknown"}`}
@@ -1258,29 +1386,31 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
             <div className="flex items-center gap-2 flex-wrap self-start">
               <Button
                 variant="outline" size="sm"
-                className="gap-1.5 text-xs"
+                className="gap-1.5 text-xs h-8"
                 onClick={onRefresh}
                 disabled={isRefreshing}
                 data-testid="button-refresh-workspace"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", isRefreshing && "animate-spin")} />
-                Refresh
+                <span className="hidden xs:inline">Refresh</span>
               </Button>
               {isOwner && (
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs"
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8"
                   onClick={() => setShowSettings(true)} data-testid="button-workspace-settings">
-                  <Pencil className="w-3.5 h-3.5" /> Settings
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline">Settings</span>
                 </Button>
               )}
               {!isOwner && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5"
+                  className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5 h-8 text-xs"
                   onClick={() => setShowLeaveConfirm(true)}
                   data-testid="button-leave-workspace"
                 >
-                  <LogOut className="w-3.5 h-3.5" /> Leave
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline">Leave</span>
                 </Button>
               )}
             </div>
@@ -1288,15 +1418,16 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
 
           <Separator className="my-4" />
 
+          {/* Invite code section */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1.5">
               <Shield className="w-3 h-3" /> {isOwner ? "Invite code" : "Share workspace"}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-3 bg-background border border-border rounded-lg px-4 py-2.5">
+              <div className="flex items-center gap-3 bg-background border border-border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5">
                 <span
                   className={cn(
-                    "font-mono font-bold text-xl tracking-[0.3em] transition-all",
+                    "font-mono font-bold text-lg sm:text-xl tracking-[0.3em] transition-all",
                     !codeVisible && !isOwner ? "blur-sm select-none" : "text-foreground",
                   )}
                   data-testid="text-invite-code"
@@ -1307,6 +1438,7 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
               {!isOwner && (
                 <Button
                   variant="outline" size="icon"
+                  className="w-9 h-9"
                   onClick={() => setCodeVisible((v) => !v)}
                   title={codeVisible ? "Hide code" : "Reveal code"}
                   data-testid="button-toggle-code-visibility"
@@ -1314,15 +1446,15 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
                   {codeVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </Button>
               )}
-              <Button variant="outline" size="icon" onClick={copyCode} data-testid="button-copy-invite-code" title="Copy code">
+              <Button variant="outline" size="icon" className="w-9 h-9" onClick={copyCode} data-testid="button-copy-invite-code" title="Copy code">
                 {codeCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={copyLink} data-testid="button-copy-invite-link" title="Copy shareable link">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9" onClick={copyLink} data-testid="button-copy-invite-link" title="Copy shareable link">
                 {linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Link2 className="w-3.5 h-3.5" />}
                 {linkCopied ? "Copied!" : "Copy link"}
               </Button>
               {isOwner && (
-                <Button variant="outline" size="icon" onClick={() => regenMutation.mutate()} disabled={regenMutation.isPending} data-testid="button-regen-invite-code" title="Generate new code">
+                <Button variant="outline" size="icon" className="w-9 h-9" onClick={() => regenMutation.mutate()} disabled={regenMutation.isPending} data-testid="button-regen-invite-code" title="Generate new code">
                   <RefreshCw className={cn("w-4 h-4", regenMutation.isPending && "animate-spin")} />
                 </Button>
               )}
@@ -1340,25 +1472,32 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
       {/* Team summary stats */}
       <TeamSummary members={membersWithStats} currentUserId={currentUserId} myStats={myStats} />
 
+      {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="members" className="gap-1.5" data-testid="tab-members">
-            <Users className="w-3.5 h-3.5" /> Members
-          </TabsTrigger>
-          <TabsTrigger value="leaderboard" className="gap-1.5" data-testid="tab-leaderboard">
-            <Trophy className="w-3.5 h-3.5" /> Leaderboard
-          </TabsTrigger>
-          <TabsTrigger value="coach" className="gap-1.5" data-testid="tab-coach">
-            <BarChart2 className="w-3.5 h-3.5" /> Coach View
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="gap-1.5" data-testid="tab-activity">
-            <Activity className="w-3.5 h-3.5" /> Activity
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-1 -mx-0.5 px-0.5">
+          <TabsList className="mb-4 w-full sm:w-auto inline-flex min-w-max">
+            <TabsTrigger value="members" className="gap-1.5 flex-1 sm:flex-none" data-testid="tab-members">
+              <Users className="w-3.5 h-3.5" />
+              <span>Members</span>
+            </TabsTrigger>
+            <TabsTrigger value="leaderboard" className="gap-1.5 flex-1 sm:flex-none" data-testid="tab-leaderboard">
+              <Trophy className="w-3.5 h-3.5" />
+              <span>Leaderboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="coach" className="gap-1.5 flex-1 sm:flex-none" data-testid="tab-coach">
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span>Coach</span>
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="gap-1.5 flex-1 sm:flex-none" data-testid="tab-activity">
+              <Activity className="w-3.5 h-3.5" />
+              <span>Activity</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="members" className="mt-0">
           {workspace.members.length === 1 && isOwner && (
-            <div className="text-center py-10 px-4 rounded-2xl border border-dashed border-border/60 mb-4">
+            <div className="text-center py-8 sm:py-10 px-4 rounded-2xl border border-dashed border-border/60 mb-4">
               <UserPlus className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
               <p className="text-sm font-medium mb-1">No team members yet</p>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto">
@@ -1366,7 +1505,7 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
               </p>
             </div>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {membersSortedForCards.map((member, index) => (
               <MemberCard
                 key={member.userId}
@@ -1398,7 +1537,7 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
 
       {/* Settings dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent data-testid="dialog-workspace-settings">
+        <DialogContent data-testid="dialog-workspace-settings" className="max-w-md w-[calc(100%-2rem)] sm:w-full">
           <DialogHeader>
             <DialogTitle>Workspace settings</DialogTitle>
             <DialogDescription>Manage your workspace name, ownership, and advanced options.</DialogDescription>
@@ -1414,17 +1553,18 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
 
       {/* Remove member confirmation dialog */}
       <Dialog open={!!showRemoveConfirm} onOpenChange={(open) => { if (!open) setShowRemoveConfirm(null); }}>
-        <DialogContent>
+        <DialogContent className="max-w-sm w-[calc(100%-2rem)] sm:w-full">
           <DialogHeader>
             <DialogTitle>Remove member</DialogTitle>
             <DialogDescription>
               Are you sure you want to remove <strong>{memberBeingRemoved?.name}</strong> from this workspace? They will lose access to the team.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setShowRemoveConfirm(null)}>Cancel</Button>
+          <DialogFooter className="gap-2 flex-row sm:flex-row">
+            <Button variant="ghost" className="flex-1 sm:flex-none" onClick={() => setShowRemoveConfirm(null)}>Cancel</Button>
             <Button
               variant="destructive"
+              className="flex-1 sm:flex-none"
               disabled={removeMutation.isPending}
               onClick={() => showRemoveConfirm && removeMutation.mutate(showRemoveConfirm)}
               data-testid="button-confirm-remove-member"
@@ -1437,17 +1577,17 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
 
       {/* Transfer ownership confirmation dialog */}
       <Dialog open={!!transferTarget} onOpenChange={(open) => { if (!open) setTransferTarget(null); }}>
-        <DialogContent>
+        <DialogContent className="max-w-sm w-[calc(100%-2rem)] sm:w-full">
           <DialogHeader>
             <DialogTitle>Transfer ownership</DialogTitle>
             <DialogDescription>
               Are you sure you want to transfer ownership to <strong>{transferTargetMember?.name}</strong>? You will become a regular member and lose admin controls.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setTransferTarget(null)}>Cancel</Button>
+          <DialogFooter className="gap-2 flex-row sm:flex-row">
+            <Button variant="ghost" className="flex-1 sm:flex-none" onClick={() => setTransferTarget(null)}>Cancel</Button>
             <Button
-              className="bg-amber-500 hover:bg-amber-600 text-white border-0"
+              className="bg-amber-500 hover:bg-amber-600 text-white border-0 flex-1 sm:flex-none"
               disabled={transferMutation.isPending}
               onClick={() => transferTarget && transferMutation.mutate(transferTarget)}
               data-testid="button-confirm-transfer-owner"
@@ -1460,17 +1600,18 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
 
       {/* Leave workspace confirmation dialog */}
       <Dialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
-        <DialogContent>
+        <DialogContent className="max-w-sm w-[calc(100%-2rem)] sm:w-full">
           <DialogHeader>
             <DialogTitle>Leave workspace</DialogTitle>
             <DialogDescription>
               Are you sure you want to leave <strong>{workspace.name}</strong>? You'll need a new invite code to rejoin.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setShowLeaveConfirm(false)}>Cancel</Button>
+          <DialogFooter className="gap-2 flex-row sm:flex-row">
+            <Button variant="ghost" className="flex-1 sm:flex-none" onClick={() => setShowLeaveConfirm(false)}>Cancel</Button>
             <Button
               variant="destructive"
+              className="flex-1 sm:flex-none"
               disabled={leaveMutation.isPending}
               onClick={() => leaveMutation.mutate()}
               data-testid="button-confirm-leave-workspace"
@@ -1540,10 +1681,11 @@ export default function WorkspacePage() {
     <div className="p-4 sm:p-6 max-w-5xl mx-auto">
       <Helmet><title>Team Workspace | SystemForge</title></Helmet>
 
-      <div className="flex items-center justify-between gap-4 mb-6">
+      {/* Page header */}
+      <div className="flex items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold">Team Workspace</h1>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold">Team Workspace</h1>
             <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px] flex items-center gap-0.5">
               <Crown className="w-2.5 h-2.5" /> Elite
             </Badge>
@@ -1553,59 +1695,93 @@ export default function WorkspacePage() {
           </p>
         </div>
         {hasWorkspace && isOwner && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-1.5">
-            <Shield className="w-3 h-3 text-amber-500" /> You own this workspace
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 rounded-lg px-2.5 sm:px-3 py-1.5 flex-shrink-0">
+            <Shield className="w-3 h-3 text-amber-500" />
+            <span className="hidden sm:inline">You own this workspace</span>
+            <span className="sm:hidden">Owner</span>
           </div>
         )}
       </div>
 
+      {/* Loading state */}
       {isLoading && (
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin w-6 h-6 rounded-full border-2 border-primary border-t-transparent" />
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="animate-spin w-7 h-7 rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading workspace…</p>
         </div>
       )}
 
+      {/* Idle state — choose create or join */}
       {!isLoading && !hasWorkspace && mode === "idle" && (
-        <div className="grid sm:grid-cols-2 gap-4 max-w-xl mx-auto py-4">
-          <Card className="border-amber-400/30 hover-elevate cursor-pointer" onClick={() => setMode("create")} data-testid="card-create-workspace">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
-                <Plus className="w-6 h-6 text-amber-500" />
-              </div>
-              <h3 className="font-semibold mb-1">Create workspace</h3>
-              <p className="text-xs text-muted-foreground">Set up a new team space and invite members with a code.</p>
-              <Button className="mt-4 w-full bg-amber-500 hover:bg-amber-600 text-white border-0 gap-1.5" size="sm">
-                Get started <ChevronRight className="w-3.5 h-3.5" />
-              </Button>
-            </CardContent>
-          </Card>
-          <Card className="border-border/60 hover-elevate cursor-pointer" onClick={() => setMode("join")} data-testid="card-join-workspace">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                <UserPlus className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="font-semibold mb-1">Join workspace</h3>
-              <p className="text-xs text-muted-foreground">Have an invite code? Join your teammate's workspace.</p>
-              <Button variant="outline" className="mt-4 w-full gap-1.5" size="sm">
-                Enter code <ChevronRight className="w-3.5 h-3.5" />
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="max-w-xl mx-auto py-4">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="w-8 h-8 text-amber-500" />
+            </div>
+            <h2 className="text-lg font-bold mb-1">Get started with Team Workspace</h2>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Create your own team space or join one with an invite code.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+            <Card
+              className="border-amber-400/30 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+              onClick={() => setMode("create")}
+              data-testid="card-create-workspace"
+            >
+              <CardContent className="p-5 sm:p-6 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
+                  <Plus className="w-6 h-6 text-amber-500" />
+                </div>
+                <h3 className="font-semibold mb-1">Create workspace</h3>
+                <p className="text-xs text-muted-foreground mb-4">Set up a new team space and invite members with a code.</p>
+                <Button className="w-full bg-amber-500 hover:bg-amber-600 text-white border-0 gap-1.5" size="sm">
+                  Get started <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </CardContent>
+            </Card>
+            <Card
+              className="border-border/60 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+              onClick={() => setMode("join")}
+              data-testid="card-join-workspace"
+            >
+              <CardContent className="p-5 sm:p-6 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <UserPlus className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-1">Join workspace</h3>
+                <p className="text-xs text-muted-foreground mb-4">Have an invite code? Join your teammate's workspace.</p>
+                <Button variant="outline" className="w-full gap-1.5" size="sm">
+                  Enter code <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
+      {/* Create panel */}
       {!isLoading && !hasWorkspace && mode === "create" && (
         <div>
-          <Button variant="ghost" size="sm" onClick={() => { setMode("idle"); clearJoinParam(); }} className="mb-4 text-xs gap-1">
+          <Button
+            variant="ghost" size="sm"
+            onClick={() => { setMode("idle"); clearJoinParam(); }}
+            className="mb-4 text-xs gap-1 -ml-1"
+          >
             ← Back
           </Button>
           <CreatePanel onCreated={() => { setMode("idle"); clearJoinParam(); }} />
         </div>
       )}
 
+      {/* Join panel */}
       {!isLoading && !hasWorkspace && mode === "join" && (
         <div>
-          <Button variant="ghost" size="sm" onClick={() => { setMode("idle"); clearJoinParam(); }} className="mb-4 text-xs gap-1">
+          <Button
+            variant="ghost" size="sm"
+            onClick={() => { setMode("idle"); clearJoinParam(); }}
+            className="mb-4 text-xs gap-1 -ml-1"
+          >
             ← Back
           </Button>
           <JoinPanel
@@ -1615,6 +1791,7 @@ export default function WorkspacePage() {
         </div>
       )}
 
+      {/* Active workspace view */}
       {!isLoading && hasWorkspace && workspace && (
         <WorkspaceView
           workspace={workspace as any}
