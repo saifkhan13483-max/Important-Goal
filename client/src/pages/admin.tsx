@@ -343,7 +343,6 @@ export default function AdminPage() {
 
   /* ── Env vars ── */
   const env = {
-    groqKey:          import.meta.env.VITE_GROQ_API_KEY,
     firebaseApiKey:   import.meta.env.VITE_FIREBASE_API_KEY,
     firebaseProjectId:import.meta.env.VITE_FIREBASE_PROJECT_ID,
     stripeKey:        import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
@@ -704,7 +703,7 @@ export default function AdminPage() {
           ]} />
 
           <ConfigGroup title="AI / GROQ" icon={Sparkles} items={[
-            { label: "GROQ API Key", envKey: "GROQ_API_KEY", value: env.groqKey, hint: "Powers AI Coach, system generator, analytics insights" },
+            { label: "GROQ API Key", envKey: "GROQ_API_KEY", value: "••••••••", hint: "Server-only secret — set via Replit Secrets as GROQ_API_KEY (no VITE_ prefix)" },
           ]} />
 
           <ConfigGroup title="Stripe — Payments" icon={CreditCard} items={[
