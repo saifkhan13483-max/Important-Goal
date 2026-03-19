@@ -106,7 +106,7 @@ const pricingPlans = [
   {
     name: "Elite", price: "$39", yearlyPrice: "$29", period: "/month",
     tagline: "For power users who want everything", badge: "Best Value",
-    features: ["Everything in Pro", "Unlimited AI Coach sessions", "1-on-1 onboarding call", "Personal habit audit", "White-label PDF exports", "API access", "Custom integrations", "Dedicated account manager"],
+    features: ["Unlimited goals & systems", "AI Coach (unlimited msgs/day)", "Advanced analytics & AI insights", "Full template library", "AI journal prompts", "CSV / PDF exports", "Future self audio", "Priority support", "Team workspace", "Coach dashboard"],
     cta: "Go Elite", ctaVariant: "outline" as const, href: "/signup",
   },
 ];
@@ -1177,25 +1177,27 @@ export default function Landing() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    ["Active goals",           "2",  "10",  "∞",      "∞"      ],
-                    ["Systems",                "3",  "∞",   "∞",      "∞"      ],
-                    ["Templates",              "3",  "All", "All",    "All"    ],
-                    ["Analytics",              "Basic","Better","Advanced","Advanced"],
-                    ["CSV / PDF exports",      "—",  "Basic","✓",     "✓"     ],
-                    ["AI Coach sessions",      "—",  "—",   "Limited","∞"     ],
-                    ["Mood correlations",      "—",  "—",   "✓",     "✓"     ],
-                    ["Priority support",       "—",  "—",   "✓",     "✓"     ],
-                    ["1-on-1 onboarding",      "—",  "—",   "—",     "✓"     ],
-                    ["API access",             "—",  "—",   "—",     "✓"     ],
-                    ["Dedicated account mgr",  "—",  "—",   "—",     "✓"     ],
-                  ].map(([feature, free, starter, pro, elite]) => (
+                  {([
+                    ["Goal limit",            "2",   "10",  "∞",    "∞"   ],
+                    ["System limit",          "3",   "∞",   "∞",    "∞"   ],
+                    ["AI Coach",              "✗",   "✗",   "✓",    "✓"   ],
+                    ["AI msgs/day",           "✗",   "✗",   "10",   "∞"   ],
+                    ["Advanced analytics",    "✗",   "✗",   "✓",    "✓"   ],
+                    ["AI analytics insights", "✗",   "✗",   "✓",    "✓"   ],
+                    ["Full templates",        "✗",   "✓",   "✓",    "✓"   ],
+                    ["AI journal prompt",     "✗",   "✗",   "✓",    "✓"   ],
+                    ["CSV/PDF export",        "✗",   "✗",   "✓",    "✓"   ],
+                    ["Future self audio",     "✗",   "✓",   "✓",    "✓"   ],
+                    ["Priority support",      "✗",   "✗",   "✓",    "✓"   ],
+                    ["Team workspace",        "✗",   "✗",   "✗",    "✓"   ],
+                    ["Coach dashboard",       "✗",   "✗",   "✗",    "✓"   ],
+                  ] as const).map(([feature, free, starter, pro, elite]) => (
                     <tr key={feature} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
                       <td className="p-3 text-muted-foreground">{feature}</td>
-                      <td className="p-3 text-center text-foreground/60">{free}</td>
-                      <td className="p-3 text-center text-foreground/80">{starter}</td>
-                      <td className="p-3 text-center font-semibold text-primary">{pro}</td>
-                      <td className="p-3 text-center font-semibold text-chart-4">{elite}</td>
+                      <td className={`p-3 text-center ${free === "✗" ? "text-muted-foreground/40" : "text-foreground/60 font-semibold"}`}>{free}</td>
+                      <td className={`p-3 text-center ${starter === "✗" ? "text-muted-foreground/40" : "text-foreground/80 font-semibold"}`}>{starter}</td>
+                      <td className={`p-3 text-center ${pro === "✗" ? "text-muted-foreground/40" : "font-semibold text-primary"}`}>{pro}</td>
+                      <td className={`p-3 text-center ${elite === "✗" ? "text-muted-foreground/40" : "font-semibold text-chart-4"}`}>{elite}</td>
                     </tr>
                   ))}
                 </tbody>
