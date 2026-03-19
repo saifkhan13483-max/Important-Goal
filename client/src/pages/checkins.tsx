@@ -12,16 +12,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
   CheckSquare, Check, Minus, X, Flame, MessageSquare,
   ChevronDown, ChevronUp, History, CalendarDays, Grid3x3, Trophy,
-  ArrowRight, ClipboardList, Sparkles, RefreshCw,
+  ArrowRight, ClipboardList, Sparkles, RefreshCw, Zap, Target,
 } from "lucide-react";
 import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 
+/* ─── Helpers ───────────────────────────────────────────────────── */
 function getTodayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -31,7 +34,7 @@ function toLocalDateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-/* ─── Confetti for celebration ─────────────────────────────────── */
+/* ─── Confetti / Celebration overlay ───────────────────────────── */
 const CONFETTI_COLORS = [
   "#a78bfa", "#818cf8", "#34d399", "#fbbf24", "#f472b6",
   "#60a5fa", "#fb923c", "#e879f9",
@@ -91,7 +94,7 @@ function CelebrationOverlay({ show, onDismiss }: { show: boolean; onDismiss: () 
         `}</style>
       </div>
       <div
-        className="relative z-10 bg-background rounded-2xl p-8 text-center shadow-2xl mx-4 max-w-sm w-full"
+        className="relative z-10 bg-background rounded-2xl p-8 text-center shadow-2xl mx-4 max-w-sm w-full border border-border"
         onClick={e => e.stopPropagation()}
       >
         <div className="text-5xl mb-4">🔥</div>
@@ -109,14 +112,15 @@ function CelebrationOverlay({ show, onDismiss }: { show: boolean; onDismiss: () 
   );
 }
 
+/* ─── Identity messages ─────────────────────────────────────────── */
 const IDENTITY_MESSAGES = [
   (identity: string | null | undefined, _name: string, _streak: number) =>
     identity
       ? `${identity.charAt(0).toUpperCase() + identity.slice(1)}. You just proved it.`
       : `You showed up. You just proved it.`,
-  (_identity: string | null | undefined, _name: string, _streak: number) =>
+  (_identity: string | null | undefined) =>
     `Every consistent person did exactly what you just did.`,
-  (identity: string | null | undefined, _name: string, _streak: number) =>
+  (identity: string | null | undefined) =>
     identity
       ? `I AM a person who ${identity}. Today is evidence.`
       : `I AM consistent. Today is evidence.`,
@@ -124,15 +128,14 @@ const IDENTITY_MESSAGES = [
     streak > 1
       ? `You kept the ${name} system alive for ${streak} days. That's not luck — that's a system working.`
       : `Day one done. Every streak starts exactly here.`,
-  (_identity: string | null | undefined, _name: string, _streak: number) =>
-    `Even the minimum version counts. You chose to show up instead of opt out.`,
-  (identity: string | null | undefined, _name: string, _streak: number) =>
+  () => `Even the minimum version counts. You chose to show up instead of opt out.`,
+  (identity: string | null | undefined) =>
     identity
       ? `This is what it looks like to become someone who ${identity}.`
       : `This is what consistent people do. One day at a time.`,
 ];
 
-/* --- Celebration Ritual Modal (Prompt 5) --- */
+/* ─── Celebration Ritual Modal ──────────────────────────────────── */
 function CelebrationRitualModal({
   show, systemName, streakDays, identityStatement, onDismiss,
 }: {
@@ -152,22 +155,20 @@ function CelebrationRitualModal({
       data-testid="celebration-ritual-overlay"
     >
       <div
-        className="relative bg-background rounded-2xl p-8 text-center shadow-2xl max-w-sm w-full border border-primary/20"
+        className="relative bg-background rounded-2xl p-6 sm:p-8 text-center shadow-2xl max-w-sm w-full border border-primary/20"
         onClick={e => e.stopPropagation()}
       >
-        <div className="text-6xl mb-4" style={{ animation: "bounce 1s infinite" }}>✅</div>
-        <div className="space-y-2 mb-6">
-          <p className="text-2xl font-extrabold text-foreground">YOU DID IT!</p>
-          <p className="text-primary font-semibold text-lg leading-snug">{systemName}</p>
+        <div className="text-5xl sm:text-6xl mb-4" style={{ animation: "bounce 1s infinite" }}>✅</div>
+        <div className="space-y-1.5 mb-5">
+          <p className="text-xl sm:text-2xl font-extrabold text-foreground">YOU DID IT!</p>
+          <p className="text-primary font-semibold text-base sm:text-lg leading-snug">{systemName}</p>
           <p className="text-muted-foreground text-sm">
             Day <span className="font-bold text-foreground text-xl">{streakDays}</span> Complete
           </p>
         </div>
-        <div className="bg-primary/8 border border-primary/20 rounded-xl p-4 mb-6">
-          <p className="text-sm text-muted-foreground mb-3">Take 3 seconds to feel this:</p>
-          <p className="text-base font-bold text-primary leading-snug">
-            "{message}"
-          </p>
+        <div className="bg-primary/8 border border-primary/20 rounded-xl p-4 mb-5">
+          <p className="text-xs text-muted-foreground mb-2">Take 3 seconds to feel this:</p>
+          <p className="text-sm font-bold text-primary leading-snug">"{message}"</p>
         </div>
         <Button
           className="w-full gradient-brand text-white border-0 font-semibold"
@@ -188,7 +189,7 @@ function CelebrationRitualModal({
   );
 }
 
-/* --- Recovery Flow Modal --- */
+/* ─── Recovery Flow Modal ───────────────────────────────────────── */
 const MISS_REASONS = [
   { value: "low-energy",   label: "Low energy or overwhelmed",  emoji: "😔", suggestion: "shrink" },
   { value: "forgot",       label: "I forgot",                   emoji: "💭", suggestion: "trigger" },
@@ -210,9 +211,9 @@ function RecoveryFlowModal({
   onDismiss: (intention?: string) => void;
 }) {
   const { user } = useAppStore();
-  const [step, setStep]           = useState(0);
+  const [step, setStep]             = useState(0);
   const [missReason, setMissReason] = useState<MissReason | null>(null);
-  const [intention, setIntention]  = useState<string>("");
+  const [intention, setIntention]   = useState<string>("");
   const [customNote, setCustomNote] = useState("");
 
   useEffect(() => {
@@ -235,9 +236,9 @@ function RecoveryFlowModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" data-testid="recovery-flow-overlay">
-      <div className="relative bg-background rounded-2xl shadow-2xl max-w-sm w-full border" onClick={e => e.stopPropagation()}>
+      <div className="relative bg-background rounded-2xl shadow-2xl max-w-sm w-full border max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         {checkinStatus === "skipped" && hasFutureSelfAudio(user?.id ?? "", user?.futureAudioUrl) && (
-          <div className="px-6 pt-5 pb-0">
+          <div className="px-5 pt-5 pb-0">
             <FutureSelfAudioPlayer
               context="missedDay"
               firestoreUrl={user?.futureAudioUrl}
@@ -249,8 +250,9 @@ function RecoveryFlowModal({
             />
           </div>
         )}
-        <div className="p-6">
-          <div className="flex gap-1.5 mb-6">
+        <div className="p-5">
+          {/* Progress dots */}
+          <div className="flex gap-1.5 mb-5">
             {Array.from({ length: totalSteps }, (_, i) => (
               <div key={i} className={cn("h-1 flex-1 rounded-full transition-all", i <= step ? "bg-primary" : "bg-muted")} />
             ))}
@@ -290,7 +292,7 @@ function RecoveryFlowModal({
             </div>
           )}
 
-          {/* ── PARTIAL: step 1 (done) ── */}
+          {/* ── PARTIAL: step 1 ── */}
           {checkinStatus === "partial" && step === 1 && (
             <div className="space-y-4 text-center">
               <div className="text-5xl">🔁</div>
@@ -313,7 +315,7 @@ function RecoveryFlowModal({
 
           {/* ── MISSED: step 0 — acknowledge ── */}
           {checkinStatus === "skipped" && step === 0 && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <p className="text-lg font-bold">It's paused, not broken.</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 What made today hard? Your answer helps the system adapt.
@@ -333,8 +335,6 @@ function RecoveryFlowModal({
               </div>
             </div>
           )}
-
-          {/* ── MISSED: step 1 — intermediate (not used directly, skip to step 2) ── */}
 
           {/* ── MISSED: step 2 — branched suggestion ── */}
           {checkinStatus === "skipped" && step === 2 && missReason && (
@@ -357,12 +357,11 @@ function RecoveryFlowModal({
                   </Button>
                 </>
               )}
-
               {missReason.suggestion === "maintenance" && (
                 <>
                   <p className="text-lg font-bold">Maintenance mode makes sense.</p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Your identity stays intact. Streak loss is paused. For 3 days, only the minimum action counts — then you decide whether to return to normal or extend.
+                    Your identity stays intact. Streak loss is paused. For 3 days, only the minimum action counts.
                   </p>
                   {system.minimumAction && (
                     <div className="bg-chart-3/8 border border-chart-3/20 rounded-xl p-3">
@@ -375,7 +374,6 @@ function RecoveryFlowModal({
                   </Button>
                 </>
               )}
-
               {missReason.suggestion === "trigger" && (
                 <>
                   <p className="text-lg font-bold">Let's improve the trigger.</p>
@@ -400,7 +398,6 @@ function RecoveryFlowModal({
                   </Button>
                 </>
               )}
-
               {missReason.suggestion === "reduce" && (
                 <>
                   <p className="text-lg font-bold">Make tomorrow easier to start.</p>
@@ -431,7 +428,6 @@ function RecoveryFlowModal({
                   </Button>
                 </>
               )}
-
               {missReason.suggestion === "fallback" && (
                 <>
                   <p className="text-lg font-bold">No worries — let's reset.</p>
@@ -483,10 +479,7 @@ function RecoveryFlowModal({
               />
               <Button
                 className="w-full"
-                onClick={() => {
-                  if (customNote.trim()) setIntention(customNote.trim());
-                  handleFinish();
-                }}
+                onClick={() => { if (customNote.trim()) setIntention(customNote.trim()); handleFinish(); }}
                 data-testid="button-recovery-finish"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -509,11 +502,11 @@ function RecoveryFlowModal({
 
 /* ─── Mood emoji picker ─────────────────────────────────────────── */
 const MOOD_EMOJIS = [
-  { value: 1, emoji: "😞", label: "Rough"  },
-  { value: 2, emoji: "😔", label: "Low"    },
-  { value: 3, emoji: "😐", label: "Okay"   },
-  { value: 4, emoji: "😊", label: "Good"   },
-  { value: 5, emoji: "😄", label: "Great"  },
+  { value: 1, emoji: "😞", label: "Rough" },
+  { value: 2, emoji: "😔", label: "Low"   },
+  { value: 3, emoji: "😐", label: "Okay"  },
+  { value: 4, emoji: "😊", label: "Good"  },
+  { value: 5, emoji: "😄", label: "Great" },
 ];
 
 function MoodEmojiPicker({
@@ -527,7 +520,7 @@ function MoodEmojiPicker({
   return (
     <div className="space-y-1.5">
       <p className="text-xs text-muted-foreground font-medium">{label}</p>
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         {MOOD_EMOJIS.map(m => (
           <button
             key={m.value}
@@ -551,7 +544,7 @@ function MoodEmojiPicker({
   );
 }
 
-/* ─── Number rating row (kept for Difficulty) ────────────────────── */
+/* ─── Difficulty rating row ─────────────────────────────────────── */
 function RatingRow({
   label, value, onChange,
 }: { label: string; value: number | null | undefined; onChange: (v: number) => void }) {
@@ -585,9 +578,9 @@ const STREAK_MILESTONES = new Set([7, 14, 21, 30, 50, 66, 100]);
 
 /* ─── Status config ─────────────────────────────────────────────── */
 const STATUS_CONFIG = {
-  done:    { label: "Done",    icon: Check, color: "text-chart-3",     bg: "bg-chart-3/10 border-chart-3/20" },
-  partial: { label: "Partial", icon: Minus, color: "text-chart-4",     bg: "bg-chart-4/10 border-chart-4/20" },
-  missed:  { label: "Missed",  icon: X,     color: "text-destructive",  bg: "bg-destructive/10 border-destructive/20" },
+  done:    { label: "Done",    icon: Check, color: "text-chart-3",    bg: "bg-chart-3/10 border-chart-3/20",      activeBg: "bg-chart-3 text-white border-chart-3" },
+  partial: { label: "Partial", icon: Minus, color: "text-chart-4",    bg: "bg-chart-4/10 border-chart-4/20",      activeBg: "bg-chart-4 text-white border-chart-4" },
+  missed:  { label: "Missed",  icon: X,     color: "text-destructive", bg: "bg-destructive/10 border-destructive/20", activeBg: "bg-destructive text-white border-destructive" },
 };
 
 /* ─── Individual check-in card ──────────────────────────────────── */
@@ -617,7 +610,7 @@ function SystemCheckinCard({
   const [showRitual, setShowRitual]     = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
   const [recoveryStatus, setRecoveryStatus] = useState<"skipped" | "partial">("skipped");
-  const pulseDoneTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pulseDoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const current = existingCheckin?.status as keyof typeof STATUS_CONFIG | undefined;
 
@@ -633,7 +626,8 @@ function SystemCheckinCard({
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ["checkins", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
-      if (status === "done") { track("checkin_completed", { status: "done" }); } else if (status === "missed") { track("checkin_missed"); }
+      if (status === "done") { track("checkin_completed", { status: "done" }); }
+      else if (status === "missed") { track("checkin_missed"); }
       if (status === "done") {
         localStorage.removeItem("sf_missed_yesterday");
         if (pulseDoneTimer.current) clearTimeout(pulseDoneTimer.current);
@@ -685,22 +679,23 @@ function SystemCheckinCard({
   return (
     <Card
       className={cn(
-        "transition-all",
-        current === "done" ? "ring-1 ring-chart-3/30" : "",
+        "transition-all border",
+        current === "done" ? "ring-1 ring-chart-3/30 bg-chart-3/3" : "",
+        current === "missed" ? "border-destructive/20" : "",
         justDone ? "animate-pulse-success" : "",
       )}
       data-testid={`checkin-card-${system.id}`}
     >
-      <CardContent className="p-4">
-        {/* Title row */}
+      <CardContent className="p-4 sm:p-5">
+        {/* Header row */}
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-medium text-sm">{system.title}</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+              <p className="font-semibold text-sm">{system.title}</p>
               {streakDays > 0 && (
                 <span
                   className={cn(
-                    "flex items-center gap-0.5 text-chart-4 text-xs font-semibold rounded px-1",
+                    "flex items-center gap-0.5 text-chart-4 text-xs font-bold bg-chart-4/10 rounded-full px-2 py-0.5",
                     STREAK_MILESTONES.has(streakDays) ? "animate-glow-pulse" : "",
                   )}
                   data-testid={`streak-badge-${system.id}`}
@@ -712,19 +707,17 @@ function SystemCheckinCard({
                   )}
                 </span>
               )}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
               {weeklyVotes !== undefined && (
-                <span
-                  className="text-xs text-muted-foreground font-medium"
-                  title="Days done this week"
-                  data-testid={`weekly-votes-${system.id}`}
-                >
-                  {weeklyVotes}/7 this week
+                <span className="text-[10px] text-muted-foreground" title="Days done this week" data-testid={`weekly-votes-${system.id}`}>
+                  {weeklyVotes}/7 this wk
                 </span>
               )}
               {consistencyScore !== undefined && consistencyScore > 0 && (
                 <span
                   className={cn(
-                    "text-xs font-medium px-1.5 py-0.5 rounded-full",
+                    "text-[10px] font-medium px-1.5 py-0.5 rounded-full",
                     consistencyScore >= 70 ? "bg-chart-3/15 text-chart-3" :
                     consistencyScore >= 40 ? "bg-chart-4/15 text-chart-4" :
                     "bg-muted text-muted-foreground",
@@ -737,62 +730,75 @@ function SystemCheckinCard({
               )}
             </div>
             {system.triggerStatement && (
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{system.triggerStatement}</p>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{system.triggerStatement}</p>
             )}
           </div>
           {current && (
-            <Badge variant="outline" className={`text-xs flex-shrink-0 ${STATUS_CONFIG[current]?.bg}`}>
+            <Badge variant="outline" className={cn("text-xs flex-shrink-0 gap-1", STATUS_CONFIG[current]?.bg)}>
+              {(() => { const Icon = STATUS_CONFIG[current]?.icon; return Icon ? <Icon className="w-3 h-3" /> : null; })()}
               {STATUS_CONFIG[current]?.label}
             </Badge>
           )}
         </div>
 
-        {/* Today's minimum action */}
+        {/* Minimum action */}
         {system.minimumAction && (
-          <div className="bg-muted/40 rounded-md px-3 py-2 mb-3">
-            <p className="text-xs text-muted-foreground font-medium">Today's action</p>
-            <p className="text-xs mt-0.5">{system.minimumAction}</p>
+          <div className="bg-muted/50 border border-border/60 rounded-lg px-3 py-2 mb-3 flex items-start gap-2">
+            <Target className="w-3 h-3 text-primary flex-shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-0.5">Today's action</p>
+              <p className="text-xs leading-relaxed">{system.minimumAction}</p>
+            </div>
           </div>
         )}
 
-        {/* Status buttons */}
-        <div className="flex gap-2 flex-wrap">
-          {(Object.keys(STATUS_CONFIG) as (keyof typeof STATUS_CONFIG)[]).map(status => {
-            const cfg = STATUS_CONFIG[status];
-            const Icon = cfg.icon;
-            const isSelected = current === status;
-            return (
-              <Button
-                key={status}
-                variant={isSelected ? "default" : "outline"}
-                size="sm"
-                onClick={() => checkInMutation.mutate(status)}
-                disabled={checkInMutation.isPending}
-                className="gap-1.5"
-                data-testid={`button-checkin-${status}-${system.id}`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {cfg.label}
-              </Button>
-            );
-          })}
-          <Button
-            variant="ghost"
-            size="sm"
+        {/* Status buttons — 3 equal buttons + note toggle */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="grid grid-cols-3 gap-2 flex-1">
+            {(Object.keys(STATUS_CONFIG) as (keyof typeof STATUS_CONFIG)[]).map(status => {
+              const cfg = STATUS_CONFIG[status];
+              const Icon = cfg.icon;
+              const isSelected = current === status;
+              return (
+                <button
+                  key={status}
+                  onClick={() => checkInMutation.mutate(status)}
+                  disabled={checkInMutation.isPending}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border text-xs font-semibold transition-all",
+                    isSelected
+                      ? cfg.activeBg
+                      : "bg-background border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+                    checkInMutation.isPending && "opacity-50 cursor-not-allowed",
+                  )}
+                  data-testid={`button-checkin-${status}-${system.id}`}
+                >
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="hidden sm:inline">{cfg.label}</span>
+                  <span className="sm:hidden">{cfg.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <button
             onClick={() => setShowNote(n => !n)}
-            className="gap-1.5 ml-auto"
+            className={cn(
+              "flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border text-xs font-medium transition-all sm:w-auto",
+              showNote
+                ? "bg-muted border-primary/30 text-foreground"
+                : "bg-background border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+            )}
             data-testid={`button-checkin-note-${system.id}`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            Note & mood
+            <span>Note</span>
             {showNote ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </Button>
+          </button>
         </div>
 
         {/* Note + mood panel */}
         {showNote && (
-          <div className="mt-3 space-y-4 border-t border-border/50 pt-3">
-            {/* Helper hint when no status chosen */}
+          <div className="mt-4 space-y-4 border-t border-border/50 pt-4">
             {!current && (
               <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/8 border border-amber-500/20">
                 <MessageSquare className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
@@ -801,8 +807,6 @@ function SystemCheckinCard({
                 </p>
               </div>
             )}
-
-            {/* Mood emoji pickers */}
             <div className="space-y-3">
               <MoodEmojiPicker
                 label="How were you feeling before?"
@@ -817,11 +821,7 @@ function SystemCheckinCard({
                 testPrefix={`mood-after-${system.id}`}
               />
             </div>
-
-            {/* Difficulty rating */}
             <RatingRow label="Difficulty" value={difficulty} onChange={setDifficulty} />
-
-            {/* Note textarea */}
             <Textarea
               placeholder="How did it go? What did you notice?"
               value={note}
@@ -830,7 +830,6 @@ function SystemCheckinCard({
               className="text-sm"
               data-testid={`input-checkin-note-${system.id}`}
             />
-
             {current ? (
               <Button
                 size="sm"
@@ -849,11 +848,11 @@ function SystemCheckinCard({
           </div>
         )}
 
-        {/* Fallback advice when missed */}
+        {/* Fallback plan when missed */}
         {current === "missed" && system.fallbackPlan && (
-          <div className="mt-3 p-3 rounded-md bg-chart-4/10 border border-chart-4/20">
-            <p className="text-xs font-medium text-chart-4 mb-0.5">Your fallback plan</p>
-            <p className="text-xs text-foreground">{system.fallbackPlan}</p>
+          <div className="mt-3 p-3 rounded-lg bg-chart-4/8 border border-chart-4/20">
+            <p className="text-xs font-semibold text-chart-4 mb-1">Your fallback plan</p>
+            <p className="text-xs text-foreground leading-relaxed">{system.fallbackPlan}</p>
           </div>
         )}
       </CardContent>
@@ -865,7 +864,6 @@ function SystemCheckinCard({
         identityStatement={identityStatement}
         onDismiss={() => { setShowRitual(false); onPerfectDay?.(); }}
       />
-
       <RecoveryFlowModal
         show={showRecovery}
         system={system}
@@ -898,19 +896,26 @@ function HistoryDayCard({
     : format(parseISO(dateKey), "EEEE, MMMM d");
 
   return (
-    <Card data-testid={`history-day-${dateKey}`}>
-      <CardHeader className="pb-2">
+    <Card data-testid={`history-day-${dateKey}`} className="overflow-hidden">
+      <CardHeader className="pb-2 pt-3 px-4">
         <div className="flex items-center justify-between gap-2">
-          <CardTitle className="text-sm font-semibold">{label}</CardTitle>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{done}/{total} done</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className={cn(
+              "w-2 h-2 rounded-full flex-shrink-0",
+              pct === 100 ? "bg-chart-3" : pct >= 50 ? "bg-chart-4" : "bg-destructive/60"
+            )} />
+            <CardTitle className="text-sm font-semibold truncate">{label}</CardTitle>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs text-muted-foreground">{done}/{total}</span>
             <Badge
               variant="outline"
-              className={
+              className={cn(
+                "text-[10px] px-1.5",
                 pct === 100 ? "text-chart-3 border-chart-3/30 bg-chart-3/10" :
                 pct >= 50   ? "text-chart-4 border-chart-4/30 bg-chart-4/10" :
                 "text-destructive border-destructive/30 bg-destructive/10"
-              }
+              )}
             >
               {pct}%
             </Badge>
@@ -921,17 +926,13 @@ function HistoryDayCard({
               onClick={() => setExpanded(e => !e)}
               data-testid={`button-history-view-${dateKey}`}
             >
-              {expanded ? (
-                <><ChevronUp className="w-3 h-3" /> Hide</>
-              ) : (
-                <><ChevronDown className="w-3 h-3" /> View</>
-              )}
+              {expanded ? <><ChevronUp className="w-3 h-3" />Hide</> : <><ChevronDown className="w-3 h-3" />View</>}
             </Button>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="pb-3">
+      <CardContent className="pb-3 px-4">
         <div className="space-y-1.5">
           {dayCheckins.map(c => {
             const sys = systems.find(s => s.id === c.systemId);
@@ -943,17 +944,14 @@ function HistoryDayCard({
               <div
                 key={c.id}
                 className={cn(
-                  "flex items-start justify-between gap-3 py-1.5 border-b border-border/40 last:border-0",
-                  expanded && "pb-3",
+                  "flex items-start justify-between gap-3 py-2 border-b border-border/40 last:border-0",
                 )}
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium">{sys?.title ?? "Unknown system"}</p>
-
                   {!expanded && c.note && (
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 italic">"{c.note}"</p>
                   )}
-
                   {expanded && (
                     <div className="mt-2 space-y-2">
                       {c.note && (
@@ -963,21 +961,21 @@ function HistoryDayCard({
                         </div>
                       )}
                       {(c.moodBefore || c.moodAfter || c.difficulty) && (
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="flex gap-2">
                           {c.moodBefore != null && (
-                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
+                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center flex-1">
                               <p className="text-base">{moodEmojiBefore?.emoji ?? "—"}</p>
                               <p className="text-[10px] text-muted-foreground">Before</p>
                             </div>
                           )}
                           {c.moodAfter != null && (
-                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
+                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center flex-1">
                               <p className="text-base">{moodEmojiAfter?.emoji ?? "—"}</p>
                               <p className="text-[10px] text-muted-foreground">After</p>
                             </div>
                           )}
                           {c.difficulty != null && (
-                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center">
+                            <div className="bg-muted/30 rounded-md px-2 py-1.5 text-center flex-1">
                               <p className="text-base font-bold">{c.difficulty}/5</p>
                               <p className="text-[10px] text-muted-foreground">Difficulty</p>
                             </div>
@@ -990,8 +988,8 @@ function HistoryDayCard({
                     </div>
                   )}
                 </div>
-                <Badge variant="outline" className={`text-xs flex-shrink-0 ${cfg?.bg ?? ""}`}>
-                  <Icon className="w-3 h-3 mr-1" />
+                <Badge variant="outline" className={cn("text-[10px] flex-shrink-0 gap-1", cfg?.bg ?? "")}>
+                  <Icon className="w-3 h-3" />
                   {cfg?.label ?? c.status}
                 </Badge>
               </div>
@@ -1003,7 +1001,7 @@ function HistoryDayCard({
   );
 }
 
-/* ─── Checkin Consistency Banner (Hype Drop) ────────────────────── */
+/* ─── Checkin Consistency Banner ─────────────────────────────────── */
 function CheckinConsistencyBanner({
   bestStreak, activeSystems, yesterdayCheckins,
 }: {
@@ -1031,10 +1029,10 @@ function CheckinConsistencyBanner({
 
   if (hadStreakBreak) {
     return (
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-2/8 border border-chart-2/20" data-testid="checkin-hype-drop-streak-break">
-        <span className="text-lg flex-shrink-0">💪</span>
+      <div className="flex items-start gap-3 p-3.5 rounded-xl bg-chart-2/8 border border-chart-2/20" data-testid="checkin-hype-drop-streak-break">
+        <span className="text-base flex-shrink-0">💪</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold mb-1">Streaks break. Systems don't.</p>
+          <p className="text-sm font-semibold mb-0.5">Streaks break. Systems don't.</p>
           <p className="text-xs text-muted-foreground mb-2">What's your minimum action today? One rep counts. One page counts. One minute counts.</p>
           {topSystem?.minimumAction && (
             <p className="text-xs font-medium text-foreground bg-background/50 rounded px-2 py-1 inline-block">
@@ -1042,51 +1040,59 @@ function CheckinConsistencyBanner({
             </p>
           )}
         </div>
-        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0" aria-label="Dismiss">×</button>
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0 text-lg leading-none" aria-label="Dismiss">×</button>
       </div>
     );
   }
 
   if (bestStreak >= 1 && bestStreak <= 7) {
     return (
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/20" data-testid="checkin-hype-drop-early">
-        <span className="text-lg flex-shrink-0">🚀</span>
+      <div className="flex items-start gap-3 p-3.5 rounded-xl bg-chart-3/8 border border-chart-3/20" data-testid="checkin-hype-drop-early">
+        <span className="text-base flex-shrink-0">🚀</span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold mb-0.5">Building momentum! Day {bestStreak}.</p>
           <p className="text-xs text-muted-foreground">The first week is the hardest. Your system is doing the heavy lifting — not your motivation. Keep going!</p>
         </div>
-        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0" aria-label="Dismiss">×</button>
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0 text-lg leading-none" aria-label="Dismiss">×</button>
       </div>
     );
   }
 
   if (bestStreak >= 8 && bestStreak <= 21) {
     return (
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-4/8 border border-chart-4/25" data-testid="checkin-hype-drop-warning">
-        <span className="text-lg flex-shrink-0">⚠️</span>
+      <div className="flex items-start gap-3 p-3.5 rounded-xl bg-chart-4/8 border border-chart-4/25" data-testid="checkin-hype-drop-warning">
+        <span className="text-base flex-shrink-0">⚠️</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-chart-4 mb-1">Week 2–3 Alert: Hype Drop Zone</p>
-          <p className="text-xs text-muted-foreground mb-2">Motivation naturally drops here. This is normal — your SYSTEM carries you, not your mood. Keep your minimum action going!</p>
-          {topSystem?.minimumAction && (
-            <p className="text-xs font-medium text-foreground bg-background/50 rounded px-2 py-1 inline-block">
-              Minimum action: {topSystem.minimumAction}
-            </p>
-          )}
+          <p className="text-sm font-semibold text-chart-4 mb-0.5">Week 2–3 Alert: Hype Drop Zone</p>
+          <p className="text-xs text-muted-foreground">Motivation naturally drops here. This is normal — your SYSTEM carries you, not your mood. Keep your minimum action going!</p>
         </div>
-        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0" aria-label="Dismiss">×</button>
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0 text-lg leading-none" aria-label="Dismiss">×</button>
       </div>
     );
   }
 
   if (bestStreak >= 22 && bestStreak <= 65) {
     return (
-      <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/8 border border-primary/20" data-testid="checkin-hype-drop-zone">
-        <span className="text-lg flex-shrink-0">🧠</span>
+      <div className="flex items-start gap-3 p-3.5 rounded-xl bg-primary/8 border border-primary/20" data-testid="checkin-hype-drop-deep">
+        <span className="text-base flex-shrink-0">🔥</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold mb-0.5">You're in the habit-building zone.</p>
-          <p className="text-xs text-muted-foreground">Science says 66 days builds automaticity — you're on day {bestStreak}. Your brain is rewiring itself. Stay consistent.</p>
+          <p className="text-sm font-semibold text-primary mb-0.5">Deep habit territory — {bestStreak} days!</p>
+          <p className="text-xs text-muted-foreground">This is where the identity shift happens. You're not building the habit anymore — the habit is building you. Don't break the chain.</p>
         </div>
-        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0" aria-label="Dismiss">×</button>
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground p-1 flex-shrink-0 text-lg leading-none" aria-label="Dismiss">×</button>
+      </div>
+    );
+  }
+
+  if (bestStreak >= 66) {
+    return (
+      <div className="flex items-start gap-3 p-3.5 rounded-xl gradient-brand text-white" data-testid="checkin-hype-drop-elite">
+        <span className="text-base flex-shrink-0">🏆</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold mb-0.5">Elite territory. {bestStreak} days of showing up.</p>
+          <p className="text-xs text-white/80">Scientists say 66 days makes a habit. You've crossed the line. This is who you are now.</p>
+        </div>
+        <button onClick={dismiss} className="text-white/70 hover:text-white p-1 flex-shrink-0 text-lg leading-none" aria-label="Dismiss">×</button>
       </div>
     );
   }
@@ -1094,11 +1100,10 @@ function CheckinConsistencyBanner({
   return null;
 }
 
-/* ─── Calendar view ─────────────────────────────────────────────── */
+/* ─── Calendar View ─────────────────────────────────────────────── */
 function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
-  const [viewDate, setViewDate] = useState(() => new Date());
   const activeSystems = systems.filter(s => s.active);
-
+  const [viewDate, setViewDate] = useState(new Date());
   const monthStart  = startOfMonth(viewDate);
   const daysInMonth = getDaysInMonth(viewDate);
   const startDow    = getDay(monthStart);
@@ -1116,14 +1121,9 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
       const dayC = allCheckins.filter(c => c.dateKey === dateKey);
       const hasDone = dayC.some(c => c.status === "done" || c.status === "partial");
       if (!finishedCurrentChain) {
-        if (hasDone) {
-          globalChain++;
-          chainDateSet.add(dateKey);
-        } else if (dateKey === todayStr) {
-          continue;
-        } else {
-          finishedCurrentChain = true;
-        }
+        if (hasDone) { globalChain++; chainDateSet.add(dateKey); }
+        else if (dateKey === todayStr) { continue; }
+        else { finishedCurrentChain = true; }
       } else {
         if (hasDone) lastGlobalChain++;
         else break;
@@ -1166,7 +1166,7 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
     switch (status) {
       case "perfect": return "bg-chart-3/80 text-white";
       case "partial": return "bg-chart-4/60 text-white";
-      case "missed":  return "bg-destructive/30 text-destructive-foreground";
+      case "missed":  return "bg-destructive/30 text-foreground";
       default:        return "bg-muted/30 text-muted-foreground";
     }
   };
@@ -1174,97 +1174,100 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
   const blanks = Array.from({ length: startDow });
   const days   = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+  const monthCheckins = allCheckins.filter(c => c.dateKey.startsWith(format(viewDate, "yyyy-MM")));
+  const perfectDays   = Object.values(dayMap).filter(d => d.status === "perfect").length;
+  const partialDays   = Object.values(dayMap).filter(d => d.status === "partial").length;
+  const missedDays    = Object.values(dayMap).filter(d => d.status === "missed").length;
+
   return (
     <div className="space-y-3">
+      {/* Chain banners */}
       {globalChain > 0 ? (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary/10 border border-primary/25" data-testid="chain-calendar-active-banner">
-          <span className="text-xl">🔗</span>
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-primary/10 border border-primary/25" data-testid="chain-calendar-active-banner">
+          <span className="text-lg">🔗</span>
           <div>
             <p className="text-sm font-bold text-primary">Your chain: {globalChain} day{globalChain !== 1 ? "s" : ""}. Don't break it!</p>
             <p className="text-xs text-muted-foreground">Every day you show up strengthens the chain.</p>
           </div>
         </div>
       ) : lastGlobalChain > 0 ? (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-chart-4/10 border border-chart-4/25" data-testid="chain-calendar-broken-banner">
-          <span className="text-xl">⛓️</span>
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-chart-4/10 border border-chart-4/25" data-testid="chain-calendar-broken-banner">
+          <span className="text-lg">⛓️</span>
           <div>
             <p className="text-sm font-bold text-chart-4">Chain broken at {lastGlobalChain} day{lastGlobalChain !== 1 ? "s" : ""} — Start a new one today!</p>
             <p className="text-xs text-muted-foreground">Streaks break. Systems don't. Log today to begin again.</p>
           </div>
         </div>
       ) : null}
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1.5 rounded-md hover:bg-muted transition-colors text-sm">
-            ←
-          </button>
-          <h3 className="text-sm font-semibold">{format(viewDate, "MMMM yyyy")}</h3>
-          <button
-            onClick={nextMonth}
-            disabled={!canGoNext}
-            className="p-1.5 rounded-md hover:bg-muted transition-colors text-sm disabled:opacity-30"
-          >
-            →
-          </button>
-        </div>
 
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => (
-            <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">{d}</div>
-          ))}
-        </div>
+      <Card>
+        <CardContent className="p-4">
+          {/* Month nav */}
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={prevMonth} className="p-1.5 rounded-md hover:bg-muted transition-colors text-sm font-bold" aria-label="Previous month">←</button>
+            <h3 className="text-sm font-semibold">{format(viewDate, "MMMM yyyy")}</h3>
+            <button
+              onClick={nextMonth}
+              disabled={!canGoNext}
+              className="p-1.5 rounded-md hover:bg-muted transition-colors text-sm font-bold disabled:opacity-30"
+              aria-label="Next month"
+            >→</button>
+          </div>
 
-        <div className="grid grid-cols-7 gap-1" data-testid="calendar-grid">
-          {blanks.map((_, i) => <div key={`blank-${i}`} />)}
-          {days.map(d => {
-            const dateKey  = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-            const isFuture = dateKey > today;
-            const isToday  = dateKey === today;
-            const info     = dayMap[dateKey];
-            return (
-              <div
-                key={dateKey}
-                title={info && info.status !== "empty" ? `${info.done}/${info.total} done` : undefined}
-                className={cn(
-                  "aspect-square flex items-center justify-center rounded-md text-xs font-medium transition-all",
-                  isFuture
-                    ? "opacity-20 text-muted-foreground"
-                    : info
-                    ? cellColor(info.status)
-                    : "bg-muted/20 text-muted-foreground",
-                  isToday && "ring-2 ring-primary ring-offset-1",
-                  !isToday && chainDateSet.has(dateKey) && "ring-1 ring-primary/60",
-                )}
-                data-testid={`calendar-day-${dateKey}`}
-              >
-                {d}
+          {/* Day headers */}
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => (
+              <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">{d}</div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 gap-1" data-testid="calendar-grid">
+            {blanks.map((_, i) => <div key={`blank-${i}`} />)}
+            {days.map(d => {
+              const dateKey  = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+              const isFuture = dateKey > today;
+              const isToday  = dateKey === today;
+              const info     = dayMap[dateKey];
+              return (
+                <div
+                  key={dateKey}
+                  title={info && info.status !== "empty" ? `${info.done}/${info.total} done` : undefined}
+                  className={cn(
+                    "aspect-square flex items-center justify-center rounded-md text-xs font-medium transition-all select-none",
+                    isFuture
+                      ? "opacity-20 text-muted-foreground"
+                      : info
+                      ? cellColor(info.status)
+                      : "bg-muted/20 text-muted-foreground",
+                    isToday && "ring-2 ring-primary ring-offset-1",
+                    !isToday && chainDateSet.has(dateKey) && "ring-1 ring-primary/60",
+                  )}
+                  data-testid={`calendar-day-${dateKey}`}
+                >
+                  {d}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center gap-3 mt-4 pt-3 border-t border-border/50 flex-wrap">
+            {[
+              { label: "Perfect", color: "bg-chart-3/80" },
+              { label: "Partial", color: "bg-chart-4/60" },
+              { label: "Missed",  color: "bg-destructive/30" },
+              { label: "No data", color: "bg-muted/30" },
+            ].map(item => (
+              <div key={item.label} className="flex items-center gap-1.5">
+                <div className={cn("w-3 h-3 rounded-sm", item.color)} />
+                <span className="text-[10px] text-muted-foreground">{item.label}</span>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
 
-        <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/50 flex-wrap">
-          {[
-            { label: "Perfect", color: "bg-chart-3/80" },
-            { label: "Partial", color: "bg-chart-4/60" },
-            { label: "Missed",  color: "bg-destructive/30" },
-            { label: "No data", color: "bg-muted/30" },
-          ].map(item => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <div className={cn("w-3 h-3 rounded-sm", item.color)} />
-              <span className="text-[10px] text-muted-foreground">{item.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {(() => {
-          const monthCheckins = allCheckins.filter(c => c.dateKey.startsWith(format(viewDate, "yyyy-MM")));
-          const perfectDays   = Object.values(dayMap).filter(d => d.status === "perfect").length;
-          const partialDays   = Object.values(dayMap).filter(d => d.status === "partial").length;
-          const missedDays    = Object.values(dayMap).filter(d => d.status === "missed").length;
-          if (monthCheckins.length === 0) return null;
-          return (
+          {/* Month stats */}
+          {monthCheckins.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-3 gap-2 text-center">
               <div>
                 <p className="text-base font-bold text-chart-3">{perfectDays}</p>
@@ -1279,10 +1282,9 @@ function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; system
                 <p className="text-[10px] text-muted-foreground">Missed days</p>
               </div>
             </div>
-          );
-        })()}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1302,19 +1304,19 @@ function HistoryView({ allCheckins, systems }: { allCheckins: Checkin[]; systems
 
   if (grouped.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-12 text-center">
-          <History className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-semibold mb-1">No check-in history yet</h3>
-          <p className="text-muted-foreground text-sm">Check in for today to start building your history.</p>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+        <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+          <History className="w-7 h-7 text-primary" />
+        </div>
+        <h3 className="font-semibold mb-1">No check-in history yet</h3>
+        <p className="text-muted-foreground text-sm">Check in for today to start building your history.</p>
+      </div>
     );
   }
 
   const today = getTodayKey();
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {grouped.map(([dateKey, dayCheckins]) => (
         <HistoryDayCard
           key={dateKey}
@@ -1358,6 +1360,7 @@ export default function Checkins() {
   const analytics     = useMemo(() => computeAnalytics(allCheckins, systems, []), [allCheckins, systems]);
   const activeSystems = systems.filter(s => s.active);
   const doneCount     = todayCheckins.filter(c => c.status === "done").length;
+  const partialCount  = todayCheckins.filter(c => c.status === "partial").length;
   const totalCount    = activeSystems.length;
   const completionPct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
   const getCheckin    = (systemId: string) => todayCheckins.find(c => c.systemId === systemId);
@@ -1369,162 +1372,194 @@ export default function Checkins() {
   const yesterdayCheckins = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    const yk = d.toISOString().split("T")[0];
+    const yk = toLocalDateKey(d);
     return allCheckins.filter(c => c.dateKey === yk);
   }, [allCheckins]);
 
-  /* Show celebration the moment we hit 100% */
   useEffect(() => {
     const isPerfect = completionPct === 100 && totalCount > 0;
-    if (isPerfect && !prevPerfect.current) {
-      setShowCelebration(true);
-    }
+    if (isPerfect && !prevPerfect.current) setShowCelebration(true);
     prevPerfect.current = isPerfect;
   }, [completionPct, totalCount]);
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <CelebrationOverlay
-        show={showCelebration}
-        onDismiss={() => setShowCelebration(false)}
-      />
+    <div className="min-h-screen">
+      <CelebrationOverlay show={showCelebration} onDismiss={() => setShowCelebration(false)} />
 
-      <div>
-        <h1 className="text-2xl font-bold">Daily Check-ins</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
-      </div>
-
-      <Tabs defaultValue="today">
-        <TabsList className="w-full">
-          <TabsTrigger value="today" className="flex-1 gap-1.5" data-testid="tab-today">
-            <CalendarDays className="w-3.5 h-3.5" />
-            Today
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex-1 gap-1.5" data-testid="tab-calendar">
-            <Grid3x3 className="w-3.5 h-3.5" />
-            Calendar
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex-1 gap-1.5" data-testid="tab-history">
-            <History className="w-3.5 h-3.5" />
-            History
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ─── TODAY TAB ─── */}
-        <TabsContent value="today" className="mt-6 space-y-6">
-          {/* Summary cards */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-chart-3" data-testid="metric-done-today">{doneCount}</p>
-                <p className="text-xs text-muted-foreground">Done</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold">{totalCount}</p>
-                <p className="text-xs text-muted-foreground">Total</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-primary" data-testid="metric-completion-pct">{completionPct}%</p>
-                <p className="text-xs text-muted-foreground">Complete</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Identity Statement banner */}
-          {user?.identityStatement && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/8 border border-primary/20" data-testid="identity-banner">
-              <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
-              <p className="text-sm font-semibold text-foreground">
-                Remember: You are a person who {user.identityStatement}.
+      {/* ── Hero Header ── */}
+      <div className="relative overflow-hidden gradient-brand text-white">
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-0 right-0 w-72 h-72 opacity-10 bg-white rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="relative px-4 sm:px-6 py-6 sm:py-8 max-w-2xl mx-auto">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <CheckSquare className="w-5 h-5 text-white/80" />
+                <p className="text-white/70 text-xs sm:text-sm font-medium">Daily Check-ins</p>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
+                {format(new Date(), "EEEE")}
+              </h1>
+              <p className="text-white/70 text-xs sm:text-sm mt-0.5">
+                {format(new Date(), "MMMM d, yyyy")}
               </p>
             </div>
-          )}
+            {totalCount > 0 && !systemsLoading && !todayLoading && (
+              <div className="flex flex-col items-center bg-white/15 rounded-xl px-4 py-2.5 backdrop-blur-sm border border-white/20 text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-white leading-none" data-testid="metric-completion-pct">{completionPct}%</p>
+                <p className="text-white/70 text-[10px] sm:text-xs font-medium mt-0.5">Complete</p>
+              </div>
+            )}
+          </div>
 
-          {/* Hype Drop Consistency Banner */}
-          <CheckinConsistencyBanner
-            bestStreak={bestStreak}
-            activeSystems={activeSystems}
-            yesterdayCheckins={yesterdayCheckins}
-          />
-
-          {/* Perfect day banner (inline, shown even after celebrating) */}
-          {completionPct === 100 && totalCount > 0 && (
-            <div className="p-4 rounded-xl gradient-brand text-white text-center" data-testid="banner-perfect-day">
-              <Flame className="w-8 h-8 mx-auto mb-2" />
-              <p className="font-bold text-lg">Perfect day!</p>
-              <p className="text-white/80 text-sm">All systems done. Your streak is growing! 🔥</p>
-            </div>
-          )}
-
-          {/* System cards */}
-          {systemsLoading || todayLoading ? (
-            <div
-              className="space-y-4"
-              aria-busy="true"
-              aria-label="Loading today's habits"
-            >
-              <span className="sr-only" role="status">Loading today's habits, please wait…</span>
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
-            </div>
-          ) : activeSystems.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <CheckSquare className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="font-semibold mb-2">No active systems</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  A <strong>system</strong> is a simple, repeatable action tied to your goal.
-                  Build your first one to start tracking your progress.
-                </p>
-                <Button asChild>
-                  <a href="/systems/new" data-testid="button-go-build-system">Build a System</a>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {activeSystems.map(system => (
-                <SystemCheckinCard
-                  key={system.id}
-                  system={system}
-                  existingCheckin={getCheckin(system.id)}
-                  userId={userId}
-                  streakDays={analytics.streaks[system.id] ?? 0}
-                  onPerfectDay={() => setShowCelebration(true)}
-                  identityStatement={user?.identityStatement}
-                  consistencyScore={analytics.consistencyScores[system.id]}
-                  weeklyVotes={analytics.weeklyVotes[system.id]}
+          {/* Progress bar */}
+          {totalCount > 0 && !systemsLoading && !todayLoading && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-white/70 text-xs">{doneCount} of {totalCount} systems done</p>
+                {partialCount > 0 && (
+                  <p className="text-white/60 text-xs">{partialCount} partial</p>
+                )}
+              </div>
+              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-500"
+                  style={{ width: `${completionPct}%` }}
                 />
+              </div>
+            </div>
+          )}
+
+          {/* Stats row */}
+          {!systemsLoading && (
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Done Today",   value: doneCount,     icon: Check  },
+                { label: "Systems",      value: totalCount,    icon: Zap    },
+                { label: "Best Streak",  value: `${bestStreak}d`, icon: Flame },
+              ].map(stat => (
+                <div key={stat.label} className="bg-white/10 rounded-xl p-2.5 backdrop-blur-sm border border-white/20">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <stat.icon className="w-3 h-3 text-white/70" />
+                    <p className="text-white/70 text-[10px] sm:text-xs font-medium">{stat.label}</p>
+                  </div>
+                  <p className="text-lg sm:text-2xl font-bold text-white" data-testid={`metric-${stat.label.toLowerCase().replace(/ /g, "-")}`}>{stat.value}</p>
+                </div>
               ))}
             </div>
           )}
-        </TabsContent>
+        </div>
+      </div>
 
-        {/* ─── CALENDAR TAB ─── */}
-        <TabsContent value="calendar" className="mt-6">
-          {allLoading ? (
-            <Skeleton className="h-96 rounded-xl" />
-          ) : (
-            <CalendarView allCheckins={allCheckins} systems={systems} />
-          )}
-        </TabsContent>
+      {/* ── Tabs ── */}
+      <div className="px-4 sm:px-6 py-5 max-w-2xl mx-auto">
+        <Tabs defaultValue="today">
+          <TabsList className="w-full mb-5">
+            <TabsTrigger value="today" className="flex-1 gap-1.5" data-testid="tab-today">
+              <CalendarDays className="w-3.5 h-3.5" />
+              Today
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex-1 gap-1.5" data-testid="tab-calendar">
+              <Grid3x3 className="w-3.5 h-3.5" />
+              Calendar
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex-1 gap-1.5" data-testid="tab-history">
+              <History className="w-3.5 h-3.5" />
+              History
+            </TabsTrigger>
+          </TabsList>
 
-        {/* ─── HISTORY TAB ─── */}
-        <TabsContent value="history" className="mt-6">
-          {allLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}
-            </div>
-          ) : (
-            <HistoryView allCheckins={allCheckins} systems={systems} />
-          )}
-        </TabsContent>
-      </Tabs>
+          {/* ─── TODAY TAB ─── */}
+          <TabsContent value="today" className="space-y-4">
+            {/* Identity statement */}
+            {user?.identityStatement && (
+              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-primary/8 border border-primary/20" data-testid="identity-banner">
+                <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-sm font-semibold text-foreground">
+                  Remember: You are a person who {user.identityStatement}.
+                </p>
+              </div>
+            )}
+
+            {/* Hype Drop Consistency Banner */}
+            <CheckinConsistencyBanner
+              bestStreak={bestStreak}
+              activeSystems={activeSystems}
+              yesterdayCheckins={yesterdayCheckins}
+            />
+
+            {/* Perfect day banner */}
+            {completionPct === 100 && totalCount > 0 && (
+              <div className="p-4 rounded-xl gradient-brand text-white text-center" data-testid="banner-perfect-day">
+                <div className="text-3xl mb-1.5">🔥</div>
+                <p className="font-bold text-base">Perfect day!</p>
+                <p className="text-white/80 text-sm">All systems done. Your streak is growing!</p>
+              </div>
+            )}
+
+            {/* System cards */}
+            {systemsLoading || todayLoading ? (
+              <div className="space-y-3" aria-busy="true" aria-label="Loading today's habits">
+                <span className="sr-only" role="status">Loading today's habits, please wait…</span>
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
+              </div>
+            ) : activeSystems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 px-4 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                  <CheckSquare className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">No active systems</h3>
+                <p className="text-muted-foreground text-sm mb-5 max-w-xs">
+                  A <strong>system</strong> is a simple, repeatable action tied to your goal.
+                  Build your first one to start tracking your progress.
+                </p>
+                <Link href="/systems/new">
+                  <Button data-testid="button-go-build-system">
+                    <Zap className="w-4 h-4 mr-2" />
+                    Build a System
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activeSystems.map(system => (
+                  <SystemCheckinCard
+                    key={system.id}
+                    system={system}
+                    existingCheckin={getCheckin(system.id)}
+                    userId={userId}
+                    streakDays={analytics.streaks[system.id] ?? 0}
+                    onPerfectDay={() => setShowCelebration(true)}
+                    identityStatement={user?.identityStatement}
+                    consistencyScore={analytics.consistencyScores[system.id]}
+                    weeklyVotes={analytics.weeklyVotes[system.id]}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ─── CALENDAR TAB ─── */}
+          <TabsContent value="calendar">
+            {allLoading ? (
+              <Skeleton className="h-96 rounded-xl" />
+            ) : (
+              <CalendarView allCheckins={allCheckins} systems={systems} />
+            )}
+          </TabsContent>
+
+          {/* ─── HISTORY TAB ─── */}
+          <TabsContent value="history">
+            {allLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 rounded-xl" />)}
+              </div>
+            ) : (
+              <HistoryView allCheckins={allCheckins} systems={systems} />
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
