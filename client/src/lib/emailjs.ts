@@ -43,7 +43,7 @@ export async function sendNewsletterWelcome(email: string): Promise<void> {
     await emailjs.send(SERVICE_ID!, WELCOME_TPL, {
       email,
       app_name: "Strivo",
-      app_url: "https://strivo.app",
+      app_url: "https://strivo.life",
     });
   } catch (err) {
     console.warn("[EmailJS] Newsletter welcome send failed:", err);
@@ -63,8 +63,8 @@ export async function sendSignupWelcome(name: string, email: string): Promise<vo
       email,
       name: name || "there",
       app_name: "Strivo",
-      dashboard_url: "https://strivo.app/dashboard",
-      first_step_url: "https://strivo.app/systems/new",
+      dashboard_url: "https://strivo.life/dashboard",
+      first_step_url: "https://strivo.life/systems/new",
     });
   } catch (err) {
     console.warn("[EmailJS] Signup welcome send failed:", err);

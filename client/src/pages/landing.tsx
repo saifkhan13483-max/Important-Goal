@@ -281,7 +281,7 @@ function ProductPreview() {
           </div>
           <div className="flex-1 mx-2 sm:mx-4 h-5 rounded-md bg-background/80 border border-border flex items-center px-2 sm:px-3 gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-chart-3/50" />
-            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">strivo.app/dashboard</div>
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">strivo.life/dashboard</div>
           </div>
         </div>
         <div className="flex h-56 sm:h-72 md:h-80">
@@ -575,7 +575,7 @@ export default function Landing() {
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
         <title>Strivo — Build Habits That Survive Hard Days</title>
-        <link rel="canonical" href="https://strivo.app/" />
+        <link rel="canonical" href="https://strivo.life/" />
         <meta name="description" content="Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't. Free to start." />
         <meta property="og:title" content="Strivo — Build Habits That Survive Hard Days" />
         <meta property="og:description" content="Turn any goal into a daily system with a minimum action and a recovery plan. Free to start." />
@@ -1251,7 +1251,7 @@ export default function Landing() {
             <Badge variant="secondary" className="mb-3 text-xs">Questions answered</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Frequently asked questions</h2>
             <p className="text-muted-foreground text-base md:text-lg">Still unsure?{" "}
-              <a href="mailto:support@strivo.app" className="underline underline-offset-2 hover:text-foreground transition-colors">Ask us anything</a>.
+              <a href="mailto:support@strivo.life" className="underline underline-offset-2 hover:text-foreground transition-colors">Ask us anything</a>.
             </p>
           </div>
           <div className="space-y-3">
@@ -1362,7 +1362,7 @@ export default function Landing() {
               <div className="flex flex-col gap-2">
                 <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link href="/terms"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-                <a href="mailto:support@strivo.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
+                <a href="mailto:support@strivo.life" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
           </div>

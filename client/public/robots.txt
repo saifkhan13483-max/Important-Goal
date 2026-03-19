@@ -20,4 +20,4 @@ Disallow: /onboarding
 Disallow: /checkout/
 Disallow: /admin
 
-Sitemap: https://strivo.app/sitemap.xml
+Sitemap: https://strivo.life/sitemap.xml

@@ -8,7 +8,7 @@ export default function TermsOfService() {
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
         <title>Terms of Service | Strivo</title>
-        <link rel="canonical" href="https://strivo.app/terms" />
+        <link rel="canonical" href="https://strivo.life/terms" />
         <meta name="description" content="Read Strivo's terms of service governing your use of the platform." />
       </Helmet>
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
@@ -158,7 +158,7 @@ export default function TermsOfService() {
             <h2 className="text-xl font-semibold mb-3">14. Contact</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
               If you have questions about these Terms, contact us at:<br />
-              <a href="mailto:legal@strivo.app" className="text-primary hover:underline">legal@strivo.app</a>
+              <a href="mailto:legal@strivo.life" className="text-primary hover:underline">legal@strivo.life</a>
             </p>
           </section>
 

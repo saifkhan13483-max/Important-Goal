@@ -144,7 +144,7 @@ function BillingCard({ plan }: { plan: PlanTier }) {
             <div className="p-3 rounded-md bg-muted/20 border border-border/40">
               <p className="text-xs text-muted-foreground">
                 To manage your subscription, visit your Stripe billing portal.{" "}
-                <a href="mailto:support@strivo.app" className="underline hover:text-foreground transition-colors">Contact support</a> if you need help.
+                <a href="mailto:support@strivo.life" className="underline hover:text-foreground transition-colors">Contact support</a> if you need help.
               </p>
             </div>
           )

@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
         <title>Privacy Policy | Strivo</title>
-        <link rel="canonical" href="https://strivo.app/privacy" />
+        <link rel="canonical" href="https://strivo.life/privacy" />
         <meta name="description" content="Read Strivo's privacy policy to understand how we collect, use, and protect your personal data." />
       </Helmet>
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
@@ -117,7 +117,7 @@ export default function PrivacyPolicy() {
               <li className="flex gap-2"><span className="text-primary mt-0.5">•</span>Data portability (export your data in a machine-readable format)</li>
             </ul>
             <p className="text-muted-foreground leading-relaxed text-sm mt-3">
-              To exercise any of these rights, contact us at <a href="mailto:privacy@strivo.app" className="text-primary hover:underline">privacy@strivo.app</a>.
+              To exercise any of these rights, contact us at <a href="mailto:privacy@strivo.life" className="text-primary hover:underline">privacy@strivo.life</a>.
             </p>
           </section>
 
@@ -146,7 +146,7 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-semibold mb-3">11. Contact Us</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
               If you have questions about this Privacy Policy, please contact us at:<br />
-              <a href="mailto:privacy@strivo.app" className="text-primary hover:underline">privacy@strivo.app</a>
+              <a href="mailto:privacy@strivo.life" className="text-primary hover:underline">privacy@strivo.life</a>
             </p>
           </section>
         </div>

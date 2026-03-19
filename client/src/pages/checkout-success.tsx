@@ -98,7 +98,7 @@ export default function CheckoutSuccess() {
             <p className="text-xs text-muted-foreground mt-6">
               A receipt has been sent to your email by Stripe.{" "}
               <a
-                href="mailto:support@strivo.app"
+                href="mailto:support@strivo.life"
                 className="underline hover:text-foreground transition-colors"
               >
                 Need help?

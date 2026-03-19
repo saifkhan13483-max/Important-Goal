@@ -219,7 +219,7 @@ export default function Pricing() {
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
         <title>Pricing | Strivo</title>
-        <link rel="canonical" href="https://strivo.app/pricing" />
+        <link rel="canonical" href="https://strivo.life/pricing" />
         <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter, Pro, and Elite plans." />
       </Helmet>
       {/* Nav */}
@@ -497,7 +497,7 @@ export default function Pricing() {
               <div className="flex flex-col gap-2">
                 <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-                <a href="mailto:support@strivo.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
+                <a href="mailto:support@strivo.life" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
           </div>

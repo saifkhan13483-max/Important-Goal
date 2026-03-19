@@ -772,7 +772,7 @@ function ShareStreakCard({ streak, systemTitle, userName }: { streak: number; sy
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   if (streak < 3) return null;
-  const shareText = `🔥 ${streak}-day streak on "${systemTitle}"!\n\nBuilding habits that survive real life with Strivo — free at strivo.app`;
+  const shareText = `🔥 ${streak}-day streak on "${systemTitle}"!\n\nBuilding habits that survive real life with Strivo — free at strivo.life`;
   const copyToClipboard = async () => {
     try { await navigator.clipboard.writeText(shareText); setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: "Copied!" }); }
     catch { toast({ title: "Couldn't copy", variant: "destructive" }); }
