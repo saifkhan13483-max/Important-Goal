@@ -25,6 +25,7 @@ import {
   ChevronUp, ChevronDown, Star, AlertTriangle,
   Eye, EyeOff, Handshake, Bell, CheckCircle2,
   TrendingDown, Minus, Wifi, WifiOff, Sparkles,
+  Medal, ArrowLeft, Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -186,27 +187,53 @@ function TeamSummary({
   const totalBestStreak = Math.max(...allStats.map((s) => s.bestStreak));
 
   const summaryItems = [
-    { icon: Zap, label: "Active systems", value: totalSystems, color: "text-primary", bg: "bg-primary/10" },
-    { icon: TrendingUp, label: "Avg completion", value: `${avgCompletion}%`, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { icon: Flame, label: "Top streak now", value: `${topStreak}d`, color: "text-orange-500", bg: "bg-orange-500/10" },
-    { icon: Activity, label: "Avg this week", value: `${avgWeekly}%`, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { icon: Star, label: "All-time best", value: `${totalBestStreak}d`, color: "text-amber-500", bg: "bg-amber-500/10" },
-    { icon: Users, label: "Members synced", value: `${allStats.length}/${members.length}`, color: "text-violet-500", bg: "bg-violet-500/10" },
+    { icon: Zap, label: "Active systems", value: totalSystems, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
+    { icon: TrendingUp, label: "Avg completion", value: `${avgCompletion}%`, color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { icon: Flame, label: "Top streak", value: `${topStreak}d`, color: "text-orange-500", bg: "bg-orange-500/10", border: "border-orange-500/20" },
+    { icon: Activity, label: "Team this week", value: `${avgWeekly}%`, color: "text-blue-500", bg: "bg-blue-500/10", border: "border-blue-500/20" },
+    { icon: Star, label: "All-time best", value: `${totalBestStreak}d`, color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
+    { icon: Users, label: "Members synced", value: `${allStats.length}/${members.length}`, color: "text-violet-500", bg: "bg-violet-500/10", border: "border-violet-500/20" },
   ];
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
-      {summaryItems.map(({ icon: Icon, label, value, color, bg }) => (
-        <Card key={label} className="border-border/50">
+    <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mb-6">
+      {summaryItems.map(({ icon: Icon, label, value, color, bg, border }) => (
+        <Card key={label} className={cn("border transition-all hover:shadow-sm", border)}>
           <CardContent className="p-3 sm:p-4 text-center">
-            <div className={cn("w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center mx-auto mb-1.5 sm:mb-2", bg)}>
-              <Icon className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", color)} />
+            <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-2", bg)}>
+              <Icon className={cn("w-4 h-4", color)} />
             </div>
-            <p className="text-lg sm:text-xl font-bold leading-none">{value}</p>
-            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5 leading-tight">{label}</p>
+            <p className="text-lg sm:text-xl font-bold leading-none tabular-nums">{value}</p>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 leading-tight">{label}</p>
           </CardContent>
         </Card>
       ))}
+    </div>
+  );
+}
+
+/* ── 7-day heatmap ── */
+function WeekHeatmap({ last7 }: { last7: MemberStats["last7"] }) {
+  const days = ["M", "T", "W", "T", "F", "S", "S"];
+  return (
+    <div className="flex gap-1">
+      {last7.map((day, i) => {
+        const filled = day.total > 0 && day.done >= day.total;
+        const partial = day.total > 0 && day.done > 0 && day.done < day.total;
+        const missed = day.total > 0 && day.done === 0;
+        return (
+          <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${day.dateKey}: ${day.done}/${day.total}`}>
+            <div className={cn(
+              "w-full h-5 rounded",
+              day.total === 0 ? "bg-muted/30" :
+              filled ? "bg-emerald-500/80" :
+              partial ? "bg-amber-400/70" :
+              "bg-destructive/25",
+            )} />
+            <span className="text-[8px] text-muted-foreground/50">{days[i]}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -238,14 +265,19 @@ function MemberCard({
 
   return (
     <Card className={cn(
-      "border-border/60 transition-all hover:shadow-md hover:-translate-y-0.5",
-      isMe && "border-primary/30 ring-1 ring-primary/10",
+      "border transition-all hover:shadow-md hover:-translate-y-0.5 overflow-hidden",
+      isMe ? "border-primary/40 ring-1 ring-primary/10" : "border-border/60",
+      rank === 1 && "border-amber-400/40",
     )} data-testid={`member-card-${member.userId}`}>
+      {rank === 1 && (
+        <div className="h-0.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400" />
+      )}
       <CardContent className="p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-3 mb-4">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-2 mb-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative flex-shrink-0">
-              <Avatar className="w-10 h-10">
+              <Avatar className="w-10 h-10 ring-2 ring-border/50">
                 <AvatarFallback className={cn(
                   "text-sm font-bold",
                   isOwner ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary",
@@ -254,7 +286,7 @@ function MemberCard({
                 </AvatarFallback>
               </Avatar>
               {rankMedal ? (
-                <span className="absolute -top-1.5 -right-1.5 text-sm leading-none">{rankMedal}</span>
+                <span className="absolute -top-2 -right-2 text-sm leading-none">{rankMedal}</span>
               ) : (
                 <span className={cn(
                   "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",
@@ -264,15 +296,15 @@ function MemberCard({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <p className="font-semibold text-sm truncate">{member.name}</p>
+                <p className="font-semibold text-sm truncate max-w-[120px]">{member.name}</p>
                 {isOwner && (
-                  <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px] px-1.5 py-0 flex-shrink-0">
+                  <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[9px] px-1.5 py-0 flex-shrink-0">
                     <Crown className="w-2.5 h-2.5 mr-0.5" /> Owner
                   </Badge>
                 )}
-                {isMe && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 flex-shrink-0">You</Badge>}
+                {isMe && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 flex-shrink-0">You</Badge>}
               </div>
-              <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{member.email}</p>
             </div>
           </div>
           {canManage && !isOwner && !isMe && (
@@ -300,89 +332,155 @@ function MemberCard({
 
         {stats ? (
           <>
+            {/* Stats row */}
             <div className="grid grid-cols-3 gap-2 mb-4">
-              <div className="rounded-lg bg-muted/40 p-2 text-center">
+              <div className="rounded-xl bg-muted/40 p-2.5 text-center border border-border/30">
                 <div className="flex items-center justify-center gap-0.5 mb-0.5">
                   <Zap className="w-3 h-3 text-primary" />
-                  <span className="text-base font-bold">{stats.activeSystems}</span>
+                  <span className="text-base font-bold tabular-nums">{stats.activeSystems}</span>
                 </div>
                 <p className="text-[10px] text-muted-foreground">Systems</p>
               </div>
-              <div className="rounded-lg bg-muted/40 p-2 text-center">
+              <div className="rounded-xl bg-muted/40 p-2.5 text-center border border-border/30">
                 <div className="flex items-center justify-center gap-0.5 mb-0.5">
                   <Flame className="w-3 h-3 text-orange-500" />
-                  <span className="text-base font-bold">{stats.currentStreak}</span>
+                  <span className="text-base font-bold tabular-nums text-orange-600 dark:text-orange-400">{stats.currentStreak}</span>
                 </div>
                 <p className="text-[10px] text-muted-foreground">Streak</p>
               </div>
-              <div className="rounded-lg bg-muted/40 p-2 text-center">
+              <div className="rounded-xl bg-muted/40 p-2.5 text-center border border-border/30">
                 <div className="flex items-center justify-center gap-0.5 mb-0.5">
                   <Star className="w-3 h-3 text-amber-500" />
-                  <span className="text-base font-bold">{stats.bestStreak}</span>
+                  <span className="text-base font-bold tabular-nums text-amber-600 dark:text-amber-400">{stats.bestStreak}</span>
                 </div>
                 <p className="text-[10px] text-muted-foreground">Best</p>
               </div>
             </div>
 
+            {/* Progress bars */}
             <div className="space-y-2 mb-3">
               <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs text-muted-foreground">Overall</span>
-                  <span className="text-xs font-semibold">{stats.completionRate}%</span>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-muted-foreground font-medium">Overall</span>
+                  <span className="text-[10px] font-bold">{stats.completionRate}%</span>
                 </div>
                 <Progress value={stats.completionRate} className="h-1.5" />
               </div>
               <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs text-muted-foreground">This week</span>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-muted-foreground font-medium">This week</span>
                   <span className={cn(
-                    "text-xs font-semibold",
-                    stats.weeklyRate >= 75 ? "text-emerald-600 dark:text-emerald-400" : stats.weeklyRate >= 40 ? "text-amber-600 dark:text-amber-400" : "text-destructive",
+                    "text-[10px] font-bold",
+                    stats.weeklyRate >= 75 ? "text-emerald-600 dark:text-emerald-400" :
+                    stats.weeklyRate >= 40 ? "text-amber-600 dark:text-amber-400" : "text-destructive",
                   )}>{stats.weeklyRate}%</span>
                 </div>
                 <Progress value={stats.weeklyRate} className="h-1.5" />
               </div>
             </div>
 
-            <div className="flex gap-1 mb-1">
-              {stats.last7.map((day, i) => (
-                <div
-                  key={i}
-                  title={`${day.dateKey}: ${day.done}/${day.total}`}
-                  className={cn(
-                    "flex-1 h-5 rounded-sm",
-                    day.total === 0 ? "bg-muted/30" : day.done === 0 ? "bg-destructive/20" : day.done >= day.total ? "bg-emerald-500/70" : "bg-amber-400/60",
-                  )}
-                />
-              ))}
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] text-muted-foreground">Last 7 days</p>
-              <div className="flex items-center gap-2">
-                <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full", perf.bg, perf.color)}>
-                  {perf.label}
-                </span>
-                {stats.syncedAt && (
-                  <p className={cn(
-                    "text-[10px] flex items-center gap-0.5",
-                    online ? "text-emerald-500" : "text-muted-foreground",
-                  )}>
-                    <Clock className="w-2.5 h-2.5" /> {formatRelativeTime(stats.syncedAt)}
-                  </p>
-                )}
-              </div>
+            {/* 7-day heatmap */}
+            <WeekHeatmap last7={stats.last7} />
+
+            {/* Footer */}
+            <div className="flex items-center justify-between mt-2">
+              <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", perf.bg, perf.color)}>
+                {perf.label}
+              </span>
+              {stats.syncedAt && (
+                <p className={cn(
+                  "text-[10px] flex items-center gap-0.5",
+                  online ? "text-emerald-500" : "text-muted-foreground",
+                )}>
+                  <Clock className="w-2.5 h-2.5" /> {formatRelativeTime(stats.syncedAt)}
+                </p>
+              )}
             </div>
           </>
         ) : (
-          <div className="text-center py-5 rounded-xl bg-muted/20 border border-dashed border-border/50">
+          <div className="text-center py-6 rounded-xl bg-muted/20 border border-dashed border-border/50">
             <Clock className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground">
-              Stats appear once {isMe ? "you visit" : `${member.name.split(" ")[0]} visits`} the workspace.
+            <p className="text-xs text-muted-foreground leading-snug">
+              Waiting for {isMe ? "you" : member.name.split(" ")[0]} to sync stats
             </p>
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/* ── Leaderboard podium (top 3) ── */
+function LeaderboardPodium({
+  top3,
+  currentUserId,
+  myStats,
+  sortKey,
+}: {
+  top3: (WorkspaceMember & { stats?: MemberStats; resolvedStats?: MemberStats })[];
+  currentUserId: string;
+  myStats: MemberStats;
+  sortKey: string;
+}) {
+  const order = [1, 0, 2]; // 2nd, 1st, 3rd visual arrangement
+  const heights = ["h-16", "h-24", "h-12"];
+  const medals = ["🥈", "🥇", "🥉"];
+  const colors = [
+    "from-zinc-400/20 to-zinc-400/5 border-zinc-400/30",
+    "from-amber-400/20 to-amber-400/5 border-amber-400/40",
+    "from-amber-700/20 to-amber-700/5 border-amber-700/30",
+  ];
+
+  return (
+    <div className="flex items-end justify-center gap-2 sm:gap-4 mb-6 px-4">
+      {order.map((rank, visualIdx) => {
+        const member = top3[rank];
+        if (!member) return <div key={visualIdx} className="flex-1" />;
+        const stats = member.resolvedStats;
+        const isMe = member.userId === currentUserId;
+        const value = stats?.[sortKey as keyof MemberStats] ?? null;
+
+        return (
+          <div key={member.userId} className="flex-1 flex flex-col items-center gap-2 max-w-[140px]">
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-2xl">{medals[visualIdx]}</span>
+              <div className="relative">
+                <Avatar className={cn("ring-2", visualIdx === 1 ? "w-12 h-12 ring-amber-400/60" : "w-10 h-10 ring-border/40")}>
+                  <AvatarFallback className={cn(
+                    "font-bold",
+                    visualIdx === 1 ? "text-sm bg-amber-500/20 text-amber-700 dark:text-amber-300" :
+                    "text-xs bg-primary/10 text-primary",
+                  )}>
+                    {getInitials(member.name)}
+                  </AvatarFallback>
+                </Avatar>
+                {isMe && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[8px] px-1 rounded-full font-bold">
+                    you
+                  </span>
+                )}
+              </div>
+              <p className="text-xs font-semibold text-center leading-tight truncate max-w-[80px] sm:max-w-[100px] mt-1">
+                {member.name.split(" ")[0]}
+              </p>
+              {value !== null && (
+                <p className={cn(
+                  "text-sm font-bold tabular-nums",
+                  visualIdx === 1 ? "text-amber-500" : visualIdx === 0 ? "text-zinc-400" : "text-amber-700 dark:text-amber-600",
+                )}>
+                  {sortKey === "currentStreak" || sortKey === "bestStreak" ? `${value}d` : `${value}%`}
+                </p>
+              )}
+            </div>
+            <div className={cn(
+              "w-full rounded-t-xl border bg-gradient-to-b",
+              heights[visualIdx],
+              colors[visualIdx],
+            )} />
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -420,13 +518,15 @@ function Leaderboard({
     { key: "bestStreak", label: "Best streak", icon: Star },
   ];
 
-  const medalEmoji = ["🥇", "🥈", "🥉"];
   const topValue = ranked[0]?.resolvedStats?.[sortKey] ?? 0;
+  const top3 = ranked.slice(0, 3);
+  const hasStats = ranked.some((m) => m.resolvedStats);
 
   return (
     <div className="space-y-4">
+      {/* Sort buttons */}
       <div className="flex items-center gap-2 flex-wrap">
-        <p className="text-xs text-muted-foreground mr-1 hidden sm:block">Rank by:</p>
+        <p className="text-xs text-muted-foreground hidden sm:block font-medium">Rank by:</p>
         {sortOptions.map(({ key, label, icon: Icon }) => (
           <Button
             key={key}
@@ -437,11 +537,24 @@ function Leaderboard({
             data-testid={`button-sort-${key}`}
           >
             <Icon className="w-3 h-3" />
-            <span className="hidden xs:inline sm:inline">{label}</span>
+            <span>{label}</span>
           </Button>
         ))}
       </div>
 
+      {/* Podium for top 3 */}
+      {hasStats && top3.length >= 2 && (
+        <Card className="border-border/50 bg-gradient-to-b from-muted/20 to-background overflow-hidden">
+          <CardContent className="pt-5 pb-0 px-4">
+            <p className="text-[10px] text-muted-foreground text-center uppercase tracking-widest font-semibold mb-4">
+              Top Performers
+            </p>
+            <LeaderboardPodium top3={top3} currentUserId={currentUserId} myStats={myStats} sortKey={sortKey} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Full ranked list */}
       <div className="space-y-2">
         {ranked.map((member, index) => {
           const stats = member.resolvedStats;
@@ -450,6 +563,7 @@ function Leaderboard({
           const value = stats?.[sortKey] ?? null;
           const online = isRecent(stats?.syncedAt);
           const relativeWidth = topValue > 0 && value !== null ? Math.round((value / topValue) * 100) : 0;
+          const medalEmoji = ["🥇", "🥈", "🥉"];
 
           return (
             <div
@@ -504,10 +618,10 @@ function Leaderboard({
                       </span>
                     </div>
                     {topValue > 0 && value !== null && (
-                      <div className="mt-1.5 hidden sm:block">
+                      <div className="mt-1.5">
                         <div className="w-full bg-muted rounded-full h-1">
                           <div
-                            className={cn("h-1 rounded-full transition-all", index === 0 ? "bg-amber-400" : "bg-primary/40")}
+                            className={cn("h-1 rounded-full transition-all duration-500", index === 0 ? "bg-amber-400" : "bg-primary/40")}
                             style={{ width: `${relativeWidth}%` }}
                           />
                         </div>
@@ -541,10 +655,13 @@ function Leaderboard({
         })}
       </div>
 
-      {ranked.every((m) => !m.resolvedStats) && (
-        <div className="text-center py-10 text-muted-foreground">
-          <Trophy className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          <p className="text-sm">The leaderboard will fill up as members sync their stats.</p>
+      {!hasStats && (
+        <div className="text-center py-12 rounded-2xl border border-dashed border-border/50">
+          <Trophy className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
+          <p className="text-sm font-medium">No data yet</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+            The leaderboard fills up as members visit and sync their stats.
+          </p>
         </div>
       )}
     </div>
@@ -601,36 +718,40 @@ function CoachDashboard({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2">
         <Target className="w-4 h-4 text-amber-500" />
-        <h3 className="font-semibold">Team Overview</h3>
-        <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px]">Elite</Badge>
+        <h3 className="font-semibold text-sm">Team Overview</h3>
+        <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px]">
+          <Sparkles className="w-2.5 h-2.5 mr-0.5" />Elite
+        </Badge>
       </div>
 
       {needsAttention.length > 0 && (
-        <Card className="border-amber-400/30 bg-amber-500/5">
+        <Card className="border-amber-400/40 bg-amber-500/5">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Bell className="w-4 h-4 text-amber-500" />
-              <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-                {needsAttention.length} member{needsAttention.length !== 1 ? "s" : ""} may need support
-              </p>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {needsAttention.map((m) => {
-                const s = m.userId === currentUserId ? myStats : m.stats;
-                return (
-                  <div key={m.userId} className="flex items-center gap-1.5 bg-background border border-amber-400/30 rounded-lg px-2.5 py-1.5">
-                    <Avatar className="w-5 h-5">
-                      <AvatarFallback className="text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300">
-                        {getInitials(m.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs font-medium">{m.name.split(" ")[0]}</span>
-                    <span className="text-[10px] text-amber-600 font-semibold">{s?.weeklyRate ?? 0}% this week</span>
-                  </div>
-                );
-              })}
+            <div className="flex items-start gap-2">
+              <Bell className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-2">
+                  {needsAttention.length} member{needsAttention.length !== 1 ? "s" : ""} may need support
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {needsAttention.map((m) => {
+                    const s = m.userId === currentUserId ? myStats : m.stats;
+                    return (
+                      <div key={m.userId} className="flex items-center gap-1.5 bg-background border border-amber-400/30 rounded-lg px-2.5 py-1.5">
+                        <Avatar className="w-5 h-5">
+                          <AvatarFallback className="text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                            {getInitials(m.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs font-medium">{m.name.split(" ")[0]}</span>
+                        <span className="text-[10px] text-amber-600 font-semibold">{s?.weeklyRate ?? 0}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -638,8 +759,8 @@ function CoachDashboard({
 
       {/* Desktop table */}
       <div className="hidden md:block rounded-2xl border border-border overflow-hidden">
-        <div className="bg-muted/30 px-4 py-2.5 grid grid-cols-7 gap-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          <button className="col-span-2 flex items-center gap-1 hover:text-foreground transition-colors" onClick={() => handleSort("name")}>
+        <div className="bg-muted/40 px-4 py-3 grid grid-cols-7 gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/60">
+          <button className="col-span-2 flex items-center gap-1 hover:text-foreground transition-colors text-left" onClick={() => handleSort("name")}>
             Member <SortIcon col="name" />
           </button>
           <div className="text-center">Systems</div>
@@ -654,27 +775,29 @@ function CoachDashboard({
           </button>
           <div className="text-center">Status</div>
         </div>
-        {sorted.map((member) => {
+        {sorted.map((member, idx) => {
           const mStats = member.userId === currentUserId ? myStats : member.stats;
           const isTopPerformer = (mStats?.weeklyRate ?? 0) === topWeekly && topWeekly > 0;
           const isMe = member.userId === currentUserId;
           const stats: MemberStats | undefined = isMe ? myStats : (member as any).stats;
           const weeklyRate = stats?.weeklyRate ?? null;
           const perf = getPerformanceLabel(weeklyRate);
-          const rateColor = weeklyRate === null ? "text-muted-foreground" : weeklyRate >= 75 ? "text-emerald-600 dark:text-emerald-400" : weeklyRate >= 40 ? "text-amber-500" : "text-destructive";
+          const rateColor = weeklyRate === null ? "text-muted-foreground" :
+            weeklyRate >= 75 ? "text-emerald-600 dark:text-emerald-400" :
+            weeklyRate >= 40 ? "text-amber-500" : "text-destructive";
           const online = isRecent(stats?.syncedAt);
 
           return (
             <div
               key={member.userId}
               className={cn(
-                "px-4 py-3 grid grid-cols-7 gap-2 items-center border-t border-border/40 hover:bg-muted/20 transition-colors",
+                "px-4 py-3 grid grid-cols-7 gap-2 items-center border-t border-border/30 hover:bg-muted/20 transition-colors",
                 isMe && "bg-primary/[0.03]",
                 isTopPerformer && "bg-emerald-500/[0.03]",
               )}
               data-testid={`coach-row-${member.userId}`}
             >
-              <div className="col-span-2 flex items-center gap-2.5">
+              <div className="col-span-2 flex items-center gap-2.5 min-w-0">
                 <div className="relative flex-shrink-0">
                   <Avatar className="w-7 h-7">
                     <AvatarFallback className={cn("text-[10px] font-bold", member.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary")}>
@@ -753,22 +876,22 @@ function CoachDashboard({
               )}
               data-testid={`coach-card-mobile-${member.userId}`}
             >
-              <CardContent className="p-3">
+              <CardContent className="p-3.5">
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <div className="relative flex-shrink-0">
-                      <Avatar className="w-8 h-8">
+                      <Avatar className="w-9 h-9">
                         <AvatarFallback className={cn("text-xs font-bold", member.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary")}>
                           {getInitials(member.name)}
                         </AvatarFallback>
                       </Avatar>
                       <span className={cn(
-                        "absolute bottom-0 right-0 w-2 h-2 rounded-full border-2 border-background",
+                        "absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-background",
                         online ? "bg-emerald-500" : "bg-muted-foreground/30",
                       )} />
                     </div>
                     <div className="min-w-0">
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-sm font-semibold truncate">{member.name}</p>
                         {isMe && <Badge variant="secondary" className="text-[10px] px-1 py-0">You</Badge>}
                         {member.role === "owner" && <Crown className="w-3 h-3 text-amber-500 flex-shrink-0" />}
@@ -783,45 +906,57 @@ function CoachDashboard({
 
                 {stats ? (
                   <>
-                    <div className="grid grid-cols-4 gap-2 mb-2">
-                      <div className="text-center">
-                        <p className="text-xs font-bold flex items-center justify-center gap-0.5"><Zap className="w-3 h-3 text-primary" />{stats.activeSystems}</p>
+                    <div className="grid grid-cols-4 gap-2 mb-2.5">
+                      <div className="text-center bg-muted/30 rounded-lg p-1.5">
+                        <p className="text-xs font-bold flex items-center justify-center gap-0.5">
+                          <Zap className="w-3 h-3 text-primary" />{stats.activeSystems}
+                        </p>
                         <p className="text-[10px] text-muted-foreground">Systems</p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-xs font-bold text-orange-500 flex items-center justify-center gap-0.5"><Flame className="w-3 h-3" />{stats.currentStreak}d</p>
+                      <div className="text-center bg-muted/30 rounded-lg p-1.5">
+                        <p className="text-xs font-bold text-orange-500 flex items-center justify-center gap-0.5">
+                          <Flame className="w-3 h-3" />{stats.currentStreak}d
+                        </p>
                         <p className="text-[10px] text-muted-foreground">Streak</p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-xs font-bold text-amber-500 flex items-center justify-center gap-0.5"><Star className="w-3 h-3" />{stats.bestStreak}d</p>
+                      <div className="text-center bg-muted/30 rounded-lg p-1.5">
+                        <p className="text-xs font-bold text-amber-500 flex items-center justify-center gap-0.5">
+                          <Star className="w-3 h-3" />{stats.bestStreak}d
+                        </p>
                         <p className="text-[10px] text-muted-foreground">Best</p>
                       </div>
-                      <div className="text-center">
+                      <div className="text-center bg-muted/30 rounded-lg p-1.5">
                         <div className="flex items-center justify-center gap-0.5">
                           {getTrendIcon(weeklyRate)}
-                          <p className={cn("text-xs font-bold", weeklyRate !== null && weeklyRate >= 75 ? "text-emerald-500" : weeklyRate !== null && weeklyRate >= 40 ? "text-amber-500" : "text-destructive")}>
+                          <p className={cn("text-xs font-bold",
+                            weeklyRate !== null && weeklyRate >= 75 ? "text-emerald-500" :
+                            weeklyRate !== null && weeklyRate >= 40 ? "text-amber-500" : "text-destructive",
+                          )}>
                             {weeklyRate !== null ? `${weeklyRate}%` : "—"}
                           </p>
                         </div>
-                        <p className="text-[10px] text-muted-foreground">This week</p>
+                        <p className="text-[10px] text-muted-foreground">Week</p>
                       </div>
                     </div>
                     {weeklyRate !== null && (
                       <div className="w-full bg-muted rounded-full h-1.5">
                         <div
-                          className={cn("h-1.5 rounded-full transition-all", weeklyRate >= 75 ? "bg-emerald-500" : weeklyRate >= 40 ? "bg-amber-400" : "bg-destructive")}
+                          className={cn("h-1.5 rounded-full transition-all duration-500",
+                            weeklyRate >= 75 ? "bg-emerald-500" :
+                            weeklyRate >= 40 ? "bg-amber-400" : "bg-destructive",
+                          )}
                           style={{ width: `${weeklyRate}%` }}
                         />
                       </div>
                     )}
                     {stats.syncedAt && (
                       <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-0.5">
-                        <Clock className="w-2.5 h-2.5" /> Last synced {formatRelativeTime(stats.syncedAt)}
+                        <Clock className="w-2.5 h-2.5" /> Synced {formatRelativeTime(stats.syncedAt)}
                       </p>
                     )}
                   </>
                 ) : (
-                  <p className="text-xs text-muted-foreground text-center py-2">No stats yet — waiting for first sync</p>
+                  <p className="text-xs text-muted-foreground text-center py-3">No stats yet — waiting for first sync</p>
                 )}
               </CardContent>
             </Card>
@@ -830,7 +965,7 @@ function CoachDashboard({
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        Stats update when each member visits this page. {` `}
+        Stats update when each member visits this page.{" "}
         <span className="hidden md:inline">Click column headers to sort.</span>
       </p>
     </div>
@@ -868,11 +1003,11 @@ function ActivityFeed({
 
   if (membersWithTime.length === 0 && neverSynced.length === members.length) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-16 rounded-2xl border border-dashed border-border/50">
         <Activity className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
         <p className="text-sm font-medium">No activity yet</p>
         <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-          Activity will appear here once team members visit the workspace and sync their stats.
+          Activity appears here once team members visit the workspace and sync their stats.
         </p>
       </div>
     );
@@ -882,13 +1017,13 @@ function ActivityFeed({
     <div className="space-y-5">
       {membersWithTime.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-3">
             <Activity className="w-4 h-4 text-primary" />
-            Recent sync activity
+            <h3 className="text-sm font-semibold">Recent activity</h3>
             <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{membersWithTime.length}</Badge>
-          </h3>
+          </div>
           <div className="space-y-2">
-            {membersWithTime.map((member) => {
+            {membersWithTime.map((member, idx) => {
               const stats = member.resolvedStats!;
               const isMe = member.userId === currentUserId;
               const online = isRecent(stats.syncedAt);
@@ -898,13 +1033,13 @@ function ActivityFeed({
                 <div
                   key={member.userId}
                   className={cn(
-                    "flex items-center gap-3 p-3 sm:p-3.5 rounded-xl border border-border/50 bg-card hover:bg-muted/20 transition-colors",
-                    isMe && "border-primary/20 bg-primary/[0.02]",
+                    "flex items-center gap-3 p-3 sm:p-4 rounded-xl border transition-colors",
+                    isMe ? "border-primary/20 bg-primary/[0.02]" : "border-border/50 bg-card hover:bg-muted/20",
                   )}
                   data-testid={`activity-row-${member.userId}`}
                 >
                   <div className="relative flex-shrink-0">
-                    <Avatar className="w-9 h-9">
+                    <Avatar className="w-9 h-9 sm:w-10 sm:h-10">
                       <AvatarFallback className={cn(
                         "text-xs font-bold",
                         member.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary",
@@ -920,22 +1055,28 @@ function ActivityFeed({
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-sm font-medium">{member.name}</p>
+                      <p className="text-sm font-semibold">{member.name}</p>
                       {isMe && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">You</Badge>}
                       {member.role === "owner" && <Crown className="w-3 h-3 text-amber-500" />}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      <span className="hidden sm:inline">{stats.activeSystems} systems · </span>
-                      <span className="text-orange-500 font-medium">{stats.currentStreak}d streak</span>
-                      <span className="hidden sm:inline"> · {stats.weeklyRate}% this week</span>
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                        {stats.activeSystems} systems ·{" "}
+                      </span>
+                      <span className="text-[10px] text-orange-500 font-medium flex items-center gap-0.5">
+                        <Flame className="w-2.5 h-2.5" />{stats.currentStreak}d streak
+                      </span>
+                      <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                        · {stats.weeklyRate}% this week
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex-shrink-0 text-right">
+                  <div className="flex-shrink-0 text-right space-y-1">
                     <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", perf.bg, perf.color)}>
                       {perf.label}
                     </span>
-                    <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5 justify-end">
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 justify-end">
                       <Clock className="w-2.5 h-2.5" />
                       {formatRelativeTime(stats.syncedAt)}
                     </p>
@@ -949,16 +1090,16 @@ function ActivityFeed({
 
       {neverSynced.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            Not yet synced
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-muted-foreground">Waiting to sync</h3>
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">{neverSynced.length}</Badge>
-          </h3>
+          </div>
           <div className="space-y-2">
             {neverSynced.map((member) => (
               <div
                 key={member.userId}
-                className="flex items-center gap-3 p-3 sm:p-3.5 rounded-xl border border-dashed border-border/50 opacity-60"
+                className="flex items-center gap-3 p-3 sm:p-4 rounded-xl border border-dashed border-border/40 opacity-60"
               >
                 <Avatar className="w-9 h-9">
                   <AvatarFallback className="text-xs font-bold bg-muted text-muted-foreground">
@@ -969,7 +1110,7 @@ function ActivityFeed({
                   <p className="text-sm font-medium">{member.name}</p>
                   <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                 </div>
-                <p className="text-[10px] text-muted-foreground flex-shrink-0">Waiting for first sync</p>
+                <p className="text-[10px] text-muted-foreground flex-shrink-0">Awaiting first sync</p>
               </div>
             ))}
           </div>
@@ -997,7 +1138,6 @@ function WorkspaceSettings({
   const [showTransferConfirm, setShowTransferConfirm] = useState(false);
   const { toast } = useToast();
   const qc = useQueryClient();
-
   const nonOwnerMembers = members.filter((m) => m.userId !== currentUserId);
 
   const renameMutation = useMutation({
@@ -1131,7 +1271,7 @@ function WorkspaceSettings({
           </Button>
         ) : (
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-xs text-destructive font-medium">Are you sure?</p>
+            <p className="text-xs text-destructive font-medium">Are you sure? This cannot be undone.</p>
             <Button
               size="sm"
               variant="destructive"
@@ -1150,7 +1290,7 @@ function WorkspaceSettings({
 }
 
 /* ── Create panel ── */
-function CreatePanel({ onCreated }: { onCreated: () => void }) {
+function CreatePanel({ onCreated, onBack }: { onCreated: () => void; onBack: () => void }) {
   const { user } = useAppStore();
   const [name, setName] = useState("");
   const { toast } = useToast();
@@ -1167,39 +1307,48 @@ function CreatePanel({ onCreated }: { onCreated: () => void }) {
   });
 
   return (
-    <div className="max-w-md mx-auto text-center py-6 sm:py-8 px-4">
-      <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
-        <Users className="w-8 h-8 text-amber-500" />
+    <div className="max-w-md mx-auto">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        data-testid="button-back-to-onboarding"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+          <Users className="w-8 h-8 text-amber-500" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">Create your workspace</h2>
+        <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+          Build a shared space for your team. Invite members with a unique code and track everyone's progress together.
+        </p>
       </div>
-      <h2 className="text-xl font-bold mb-1">Create your workspace</h2>
-      <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
-        Build a shared space for your team. Invite members with a unique code and track everyone's progress together.
-      </p>
-      <div className="flex gap-2">
+      <div className="space-y-3">
         <Input
           placeholder={`${user?.name ?? "My"}'s Team`}
           value={name}
           onChange={(e) => setName(e.target.value)}
           data-testid="input-workspace-name"
-          className="flex-1"
+          className="text-center text-base h-11"
           onKeyDown={(e) => { if (e.key === "Enter") mutation.mutate(); }}
         />
         <Button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
-          className="bg-amber-500 hover:bg-amber-600 text-white border-0 flex-shrink-0"
+          className="w-full bg-amber-500 hover:bg-amber-600 text-white border-0 h-11 text-base"
           data-testid="button-create-workspace"
         >
-          {mutation.isPending ? "Creating…" : "Create"}
+          {mutation.isPending ? "Creating…" : "Create workspace"}
         </Button>
+        <p className="text-xs text-muted-foreground text-center">Leave blank to use your name as the team name</p>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">Leave blank to use your name</p>
     </div>
   );
 }
 
 /* ── Join panel ── */
-function JoinPanel({ onJoined, defaultCode = "" }: { onJoined: () => void; defaultCode?: string }) {
+function JoinPanel({ onJoined, defaultCode = "", onBack }: { onJoined: () => void; defaultCode?: string; onBack: () => void }) {
   const { user } = useAppStore();
   const [code, setCode] = useState(defaultCode.toUpperCase());
   const { toast } = useToast();
@@ -1216,34 +1365,43 @@ function JoinPanel({ onJoined, defaultCode = "" }: { onJoined: () => void; defau
   });
 
   return (
-    <div className="max-w-md mx-auto text-center py-6 sm:py-8 px-4">
-      <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
-        <Hash className="w-8 h-8 text-primary" />
+    <div className="max-w-md mx-auto">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        data-testid="button-back-to-onboarding-join"
+      >
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+          <Hash className="w-8 h-8 text-primary" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">Join a workspace</h2>
+        <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+          Enter the 6-character invite code shared by your team owner to join their workspace.
+        </p>
       </div>
-      <h2 className="text-xl font-bold mb-1">Join a workspace</h2>
-      <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
-        Enter the 6-character invite code shared by your team owner.
-      </p>
-      <div className="flex gap-2">
+      <div className="space-y-3">
         <Input
           placeholder="AB12CD"
           value={code}
           onChange={(e) => setCode(e.target.value.toUpperCase())}
           maxLength={6}
           data-testid="input-invite-code"
-          className="flex-1 uppercase tracking-[0.4em] font-mono text-center text-lg"
+          className="uppercase tracking-[0.4em] font-mono text-center text-xl h-12"
           onKeyDown={(e) => { if (e.key === "Enter" && code.trim().length >= 4) mutation.mutate(); }}
         />
         <Button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending || code.trim().length < 4}
           data-testid="button-join-workspace"
-          className="flex-shrink-0"
+          className="w-full h-11 text-base"
         >
-          {mutation.isPending ? "Joining…" : "Join"}
+          {mutation.isPending ? "Joining…" : "Join workspace"}
         </Button>
+        <p className="text-xs text-muted-foreground text-center">Enter the 6-character code from your team owner</p>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">Enter the 6-character code from your team owner</p>
     </div>
   );
 }
@@ -1349,24 +1507,28 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
     return isRecent(s?.syncedAt);
   }).length;
 
+  const ownerName = workspace.members.find(m => m.role === "owner")?.name ?? "Unknown";
+
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* Workspace header card */}
       <Card className="border-amber-400/30 bg-gradient-to-br from-amber-500/5 via-background to-background overflow-hidden">
-        <CardContent className="p-4 sm:p-5">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="h-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500" />
+        <CardContent className="p-4 sm:p-5 lg:p-6">
+          {/* Top row */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-500/20 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
                 <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
               </div>
               <div className="min-w-0">
-                <h2 className="font-bold text-base sm:text-lg truncate">{workspace.name}</h2>
+                <h2 className="font-bold text-lg sm:text-xl truncate">{workspace.name}</h2>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <p className="text-xs text-muted-foreground">
                     {workspace.members.length} member{workspace.members.length !== 1 ? "s" : ""} ·{" "}
-                    {isOwner ? "You own this" : `Owned by ${workspace.members.find(m => m.role === "owner")?.name ?? "Unknown"}`}
+                    {isOwner ? "You're the owner" : `Owned by ${ownerName}`}
                   </p>
-                  <div className="flex items-center gap-1 text-xs">
+                  <div className="flex items-center gap-1.5 text-xs">
                     <span className={cn(
                       "inline-flex items-center gap-1",
                       onlineCount > 0 ? "text-emerald-500" : "text-muted-foreground",
@@ -1377,7 +1539,7 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
                       )} />
                       {onlineCount > 0 ? `${onlineCount} active` : "No one active"}
                     </span>
-                    <span className="text-muted-foreground/50">·</span>
+                    <span className="text-muted-foreground/40">·</span>
                     <span className="text-muted-foreground">{syncedCount}/{workspace.members.length} synced</span>
                   </div>
                 </div>
@@ -1392,13 +1554,13 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
                 data-testid="button-refresh-workspace"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", isRefreshing && "animate-spin")} />
-                <span className="hidden xs:inline">Refresh</span>
+                <span className="hidden xs:inline sm:inline">Refresh</span>
               </Button>
               {isOwner && (
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8"
                   onClick={() => setShowSettings(true)} data-testid="button-workspace-settings">
-                  <Pencil className="w-3.5 h-3.5" />
-                  <span className="hidden xs:inline">Settings</span>
+                  <Settings2 className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline sm:inline">Settings</span>
                 </Button>
               )}
               {!isOwner && (
@@ -1410,25 +1572,26 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
                   data-testid="button-leave-workspace"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  <span className="hidden xs:inline">Leave</span>
+                  <span className="hidden xs:inline sm:inline">Leave</span>
                 </Button>
               )}
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator className="mb-4" />
 
           {/* Invite code section */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1.5">
-              <Shield className="w-3 h-3" /> {isOwner ? "Invite code" : "Share workspace"}
+            <p className="text-[10px] font-bold text-muted-foreground mb-2.5 uppercase tracking-widest flex items-center gap-1.5">
+              <Shield className="w-3 h-3 text-amber-500" />
+              {isOwner ? "Invite teammates" : "Share workspace"}
             </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-3 bg-background border border-border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 bg-muted/30 border border-border/60 rounded-xl px-4 py-2.5">
                 <span
                   className={cn(
-                    "font-mono font-bold text-lg sm:text-xl tracking-[0.3em] transition-all",
-                    !codeVisible && !isOwner ? "blur-sm select-none" : "text-foreground",
+                    "font-mono font-bold text-xl tracking-[0.35em] transition-all select-none",
+                    !codeVisible && !isOwner ? "blur-sm" : "text-foreground",
                   )}
                   data-testid="text-invite-code"
                 >
@@ -1438,7 +1601,7 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
               {!isOwner && (
                 <Button
                   variant="outline" size="icon"
-                  className="w-9 h-9"
+                  className="w-9 h-9 flex-shrink-0"
                   onClick={() => setCodeVisible((v) => !v)}
                   title={codeVisible ? "Hide code" : "Reveal code"}
                   data-testid="button-toggle-code-visibility"
@@ -1446,15 +1609,22 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
                   {codeVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </Button>
               )}
-              <Button variant="outline" size="icon" className="w-9 h-9" onClick={copyCode} data-testid="button-copy-invite-code" title="Copy code">
+              <Button variant="outline" size="icon" className="w-9 h-9 flex-shrink-0" onClick={copyCode} data-testid="button-copy-invite-code" title="Copy code">
                 {codeCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9" onClick={copyLink} data-testid="button-copy-invite-link" title="Copy shareable link">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs h-9 flex-shrink-0" onClick={copyLink} data-testid="button-copy-invite-link" title="Copy shareable link">
                 {linkCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Link2 className="w-3.5 h-3.5" />}
-                {linkCopied ? "Copied!" : "Copy link"}
+                <span>{linkCopied ? "Copied!" : "Copy link"}</span>
               </Button>
               {isOwner && (
-                <Button variant="outline" size="icon" className="w-9 h-9" onClick={() => regenMutation.mutate()} disabled={regenMutation.isPending} data-testid="button-regen-invite-code" title="Generate new code">
+                <Button
+                  variant="outline" size="icon"
+                  className="w-9 h-9 flex-shrink-0"
+                  onClick={() => regenMutation.mutate()}
+                  disabled={regenMutation.isPending}
+                  data-testid="button-regen-invite-code"
+                  title="Generate new code (revokes old)"
+                >
                   <RefreshCw className={cn("w-4 h-4", regenMutation.isPending && "animate-spin")} />
                 </Button>
               )}
@@ -1474,21 +1644,21 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
-        <div className="overflow-x-auto pb-1 -mx-0.5 px-0.5">
-          <TabsList className="mb-4 w-full sm:w-auto inline-flex min-w-max">
-            <TabsTrigger value="members" className="gap-1.5 flex-1 sm:flex-none" data-testid="tab-members">
+        <div className="overflow-x-auto -mx-0.5 px-0.5 pb-1">
+          <TabsList className="mb-4 min-w-full sm:min-w-0 sm:w-auto inline-flex">
+            <TabsTrigger value="members" className="gap-1.5 flex-1 sm:flex-none text-xs sm:text-sm" data-testid="tab-members">
               <Users className="w-3.5 h-3.5" />
               <span>Members</span>
             </TabsTrigger>
-            <TabsTrigger value="leaderboard" className="gap-1.5 flex-1 sm:flex-none" data-testid="tab-leaderboard">
+            <TabsTrigger value="leaderboard" className="gap-1.5 flex-1 sm:flex-none text-xs sm:text-sm" data-testid="tab-leaderboard">
               <Trophy className="w-3.5 h-3.5" />
-              <span>Leaderboard</span>
+              <span>Board</span>
             </TabsTrigger>
-            <TabsTrigger value="coach" className="gap-1.5 flex-1 sm:flex-none" data-testid="tab-coach">
+            <TabsTrigger value="coach" className="gap-1.5 flex-1 sm:flex-none text-xs sm:text-sm" data-testid="tab-coach">
               <BarChart2 className="w-3.5 h-3.5" />
               <span>Coach</span>
             </TabsTrigger>
-            <TabsTrigger value="activity" className="gap-1.5 flex-1 sm:flex-none" data-testid="tab-activity">
+            <TabsTrigger value="activity" className="gap-1.5 flex-1 sm:flex-none text-xs sm:text-sm" data-testid="tab-activity">
               <Activity className="w-3.5 h-3.5" />
               <span>Activity</span>
             </TabsTrigger>
@@ -1497,11 +1667,11 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
 
         <TabsContent value="members" className="mt-0">
           {workspace.members.length === 1 && isOwner && (
-            <div className="text-center py-8 sm:py-10 px-4 rounded-2xl border border-dashed border-border/60 mb-4">
+            <div className="text-center py-8 sm:py-10 px-4 rounded-2xl border border-dashed border-border/60 mb-4 bg-muted/10">
               <UserPlus className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-sm font-medium mb-1">No team members yet</p>
+              <p className="text-sm font-medium mb-1">Invite your first teammate</p>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                Share the invite code or link above with your teammates. Once they join, their progress will appear here.
+                Share the invite code or link above. Once they join, their progress will appear here.
               </p>
             </div>
           )}
@@ -1682,113 +1852,138 @@ export default function WorkspacePage() {
       <Helmet><title>Team Workspace | Strivo</title></Helmet>
 
       {/* Page header */}
-      <div className="flex items-start sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold">Team Workspace</h1>
-            <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px] flex items-center gap-0.5">
-              <Crown className="w-2.5 h-2.5" /> Elite
-            </Badge>
+      {!hasWorkspace && mode === "idle" && (
+        <div className="flex items-start sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold">Team Workspace</h1>
+              <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px] flex items-center gap-0.5">
+                <Crown className="w-2.5 h-2.5" /> Elite
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Create or join a workspace to get started.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {hasWorkspace ? "Collaborate with your team and track collective progress." : "Create or join a workspace to get started."}
-          </p>
         </div>
-        {hasWorkspace && isOwner && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 rounded-lg px-2.5 sm:px-3 py-1.5 flex-shrink-0">
-            <Shield className="w-3 h-3 text-amber-500" />
-            <span className="hidden sm:inline">You own this workspace</span>
-            <span className="sm:hidden">Owner</span>
+      )}
+
+      {hasWorkspace && (
+        <div className="flex items-start sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold">Team Workspace</h1>
+              <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0 text-[10px] flex items-center gap-0.5">
+                <Crown className="w-2.5 h-2.5" /> Elite
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Collaborate with your team and track collective progress.
+            </p>
           </div>
-        )}
-      </div>
+          {isOwner && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-amber-500/5 border border-amber-500/20 rounded-lg px-2.5 sm:px-3 py-1.5 flex-shrink-0">
+              <Shield className="w-3 h-3 text-amber-500" />
+              <span className="hidden sm:inline">You own this workspace</span>
+              <span className="sm:hidden">Owner</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Loading state */}
       {isLoading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="animate-spin w-7 h-7 rounded-full border-2 border-primary border-t-transparent" />
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <div className="animate-spin w-8 h-8 rounded-full border-2 border-primary border-t-transparent" />
           <p className="text-sm text-muted-foreground">Loading workspace…</p>
         </div>
       )}
 
       {/* Idle state — choose create or join */}
       {!isLoading && !hasWorkspace && mode === "idle" && (
-        <div className="max-w-xl mx-auto py-4">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-amber-500" />
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-5">
+              <Sparkles className="w-10 h-10 text-amber-500" />
             </div>
-            <h2 className="text-lg font-bold mb-1">Get started with Team Workspace</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">Get started with Team Workspace</h2>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Create your own team space or join one with an invite code.
+              Build habits together. Create your own team space or join one with an invite code.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+
+          <div className="grid sm:grid-cols-2 gap-4 sm:gap-5 mb-8">
             <Card
-              className="border-amber-400/30 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="border-amber-400/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group"
               onClick={() => setMode("create")}
               data-testid="card-create-workspace"
             >
-              <CardContent className="p-5 sm:p-6 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
+              <CardContent className="p-6 sm:p-7">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 group-hover:bg-amber-500/20 transition-colors">
                   <Plus className="w-6 h-6 text-amber-500" />
                 </div>
-                <h3 className="font-semibold mb-1">Create workspace</h3>
-                <p className="text-xs text-muted-foreground mb-4">Set up a new team space and invite members with a code.</p>
-                <Button className="w-full bg-amber-500 hover:bg-amber-600 text-white border-0 gap-1.5" size="sm">
-                  Get started <ChevronRight className="w-3.5 h-3.5" />
+                <h3 className="font-bold text-base mb-1.5">Create workspace</h3>
+                <p className="text-sm text-muted-foreground mb-5">
+                  Set up a new team space and invite your teammates with a shareable code.
+                </p>
+                <Button className="w-full bg-amber-500 hover:bg-amber-600 text-white border-0 gap-1.5">
+                  Get started <ChevronRight className="w-4 h-4" />
                 </Button>
               </CardContent>
             </Card>
+
             <Card
-              className="border-border/60 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="border-border/60 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer group"
               onClick={() => setMode("join")}
               data-testid="card-join-workspace"
             >
-              <CardContent className="p-5 sm:p-6 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <CardContent className="p-6 sm:p-7">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   <UserPlus className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-semibold mb-1">Join workspace</h3>
-                <p className="text-xs text-muted-foreground mb-4">Have an invite code? Join your teammate's workspace.</p>
-                <Button variant="outline" className="w-full gap-1.5" size="sm">
-                  Enter code <ChevronRight className="w-3.5 h-3.5" />
+                <h3 className="font-bold text-base mb-1.5">Join workspace</h3>
+                <p className="text-sm text-muted-foreground mb-5">
+                  Have an invite code? Join your teammate's workspace and start tracking together.
+                </p>
+                <Button variant="outline" className="w-full gap-1.5">
+                  Enter code <ChevronRight className="w-4 h-4" />
                 </Button>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Feature highlights */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+            {[
+              { icon: Trophy, label: "Leaderboard", desc: "Compete & cheer on your team" },
+              { icon: BarChart2, label: "Coach view", desc: "Track who needs support" },
+              { icon: Activity, label: "Live activity", desc: "See real-time progress" },
+            ].map(({ icon: Icon, label, desc }) => (
+              <div key={label} className="rounded-xl border border-border/40 bg-muted/10 p-3 sm:p-4">
+                <Icon className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
+                <p className="text-xs font-semibold">{label}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug hidden sm:block">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Create panel */}
       {!isLoading && !hasWorkspace && mode === "create" && (
-        <div>
-          <Button
-            variant="ghost" size="sm"
-            onClick={() => { setMode("idle"); clearJoinParam(); }}
-            className="mb-4 text-xs gap-1 -ml-1"
-          >
-            ← Back
-          </Button>
-          <CreatePanel onCreated={() => { setMode("idle"); clearJoinParam(); }} />
-        </div>
+        <CreatePanel
+          onCreated={() => { setMode("idle"); clearJoinParam(); }}
+          onBack={() => { setMode("idle"); clearJoinParam(); }}
+        />
       )}
 
       {/* Join panel */}
       {!isLoading && !hasWorkspace && mode === "join" && (
-        <div>
-          <Button
-            variant="ghost" size="sm"
-            onClick={() => { setMode("idle"); clearJoinParam(); }}
-            className="mb-4 text-xs gap-1 -ml-1"
-          >
-            ← Back
-          </Button>
-          <JoinPanel
-            defaultCode={joinCodeFromUrl}
-            onJoined={() => { setMode("idle"); clearJoinParam(); }}
-          />
-        </div>
+        <JoinPanel
+          defaultCode={joinCodeFromUrl}
+          onJoined={() => { setMode("idle"); clearJoinParam(); }}
+          onBack={() => { setMode("idle"); clearJoinParam(); }}
+        />
       )}
 
       {/* Active workspace view */}
