@@ -93,14 +93,14 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="w-5 h-5 rounded gradient-brand flex items-center justify-center">
                 <Sparkles className="w-2.5 h-2.5 text-white" />
               </div>
-              <span className="font-bold text-sm">SystemForge</span>
+              <span className="font-bold text-sm">Strivo</span>
             </div>
             <h1 className="text-2xl font-bold mb-3 mt-4">
               {isChunk ? "Update available" : "Something went wrong"}
             </h1>
             <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
               {isChunk
-                ? "A new version of SystemForge was deployed. Please reload the page to get the latest version."
+                ? "A new version of Strivo was deployed. Please reload the page to get the latest version."
                 : "An unexpected error occurred. Your data is safe — this is a display problem, not a data problem."}
             </p>
             {!isChunk && this.state.error && (

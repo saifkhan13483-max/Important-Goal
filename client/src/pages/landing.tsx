@@ -76,12 +76,12 @@ const steps = [
 ];
 
 const faqs = [
-  { q: "What is a 'system' in SystemForge?",                  a: "A system is a simple, repeatable daily action tied to your goal — like walking 20 minutes every morning to get fit. Instead of just saying 'get fit,' a system tells you exactly what to do each day, so you never have to think about it." },
+  { q: "What is a 'system' in Strivo?",                  a: "A system is a simple, repeatable daily action tied to your goal — like walking 20 minutes every morning to get fit. Instead of just saying 'get fit,' a system tells you exactly what to do each day, so you never have to think about it." },
   { q: "Is this good for complete beginners?",                 a: "Yes — it's designed for people who have never used a habit app before. Every step is explained in plain English with real examples. You don't need to know anything about habit science going in." },
-  { q: "Can I use it for fitness, study, or productivity goals?", a: "Absolutely. Users track fitness routines, study schedules, creative work, mindfulness, business habits, and much more. If you want to do it consistently, SystemForge can help you build a system for it." },
-  { q: "Does it work on mobile?",                              a: "Yes. SystemForge works great on phones and tablets. The daily check-in is designed to take under 30 seconds — perfect for a quick tap on your phone each morning." },
+  { q: "Can I use it for fitness, study, or productivity goals?", a: "Absolutely. Users track fitness routines, study schedules, creative work, mindfulness, business habits, and much more. If you want to do it consistently, Strivo can help you build a system for it." },
+  { q: "Does it work on mobile?",                              a: "Yes. Strivo works great on phones and tablets. The daily check-in is designed to take under 30 seconds — perfect for a quick tap on your phone each morning." },
   { q: "What's included in the free plan?",                    a: "The free plan includes up to 2 active goals, 3 active systems, daily check-ins, streak tracking, starter templates, and basic analytics. It's plenty to get started and see real results." },
-  { q: "How is this different from other habit trackers?",     a: "Most habit apps just let you check boxes. SystemForge builds real systems — with an identity statement, a trigger, a minimum action, and a fallback plan. It also warns you before motivation slumps hit, visualises your unbroken chain on a Calendar, and guides you through a Recovery Flow when you miss a day. It's designed to survive real life, not just work when you're motivated." },
+  { q: "How is this different from other habit trackers?",     a: "Most habit apps just let you check boxes. Strivo builds real systems — with an identity statement, a trigger, a minimum action, and a fallback plan. It also warns you before motivation slumps hit, visualises your unbroken chain on a Calendar, and guides you through a Recovery Flow when you miss a day. It's designed to survive real life, not just work when you're motivated." },
 ];
 
 const pricingPlans = [
@@ -281,7 +281,7 @@ function ProductPreview() {
           </div>
           <div className="flex-1 mx-2 sm:mx-4 h-5 rounded-md bg-background/80 border border-border flex items-center px-2 sm:px-3 gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-chart-3/50" />
-            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">systemforge.app/dashboard</div>
+            <div className="text-[9px] sm:text-[10px] text-muted-foreground truncate">strivo.app/dashboard</div>
           </div>
         </div>
         <div className="flex h-56 sm:h-72 md:h-80">
@@ -291,7 +291,7 @@ function ProductPreview() {
               <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-white" />
               </div>
-              <span className="text-xs font-bold text-sidebar-foreground">SystemForge</span>
+              <span className="text-xs font-bold text-sidebar-foreground">Strivo</span>
             </div>
             {[
               { icon: BarChart2, label: "Dashboard", active: true  },
@@ -443,14 +443,14 @@ function VideoDemoSection() {
           {playing && DEMO_VIDEO_ID ? (
             <iframe
               src={`https://www.youtube.com/embed/${DEMO_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1`}
-              title="SystemForge product demo"
+              title="Strivo product demo"
               allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
               className="absolute inset-0 w-full h-full border-0"
             />
           ) : (
             <div className="relative w-full h-full group cursor-pointer" onClick={() => setPlaying(true)} role="button" aria-label="Play product demo" data-testid="button-play-demo">
-              <img src="/og-image.png" alt="SystemForge dashboard preview" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70" />
+              <img src="/og-image.png" alt="Strivo dashboard preview" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-70" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10 flex flex-col items-center justify-center gap-4 p-6">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 border-2 border-white/40 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-white/20 transition-all duration-200">
                   <Play className="w-7 h-7 sm:w-9 sm:h-9 text-white fill-white ml-1" />
@@ -573,10 +573,10 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
-        <title>SystemForge — Build Habits That Survive Hard Days</title>
-        <link rel="canonical" href="https://systemforge.app/" />
+        <title>Strivo — Build Habits That Survive Hard Days</title>
+        <link rel="canonical" href="https://strivo.app/" />
         <meta name="description" content="Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't. Free to start." />
-        <meta property="og:title" content="SystemForge — Build Habits That Survive Hard Days" />
+        <meta property="og:title" content="Strivo — Build Habits That Survive Hard Days" />
         <meta property="og:description" content="Turn any goal into a daily system with a minimum action and a recovery plan. Free to start." />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -597,7 +597,7 @@ export default function Landing() {
             <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
               <Sparkles className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-bold text-sm tracking-tight">SystemForge</span>
+            <span className="font-bold text-sm tracking-tight">Strivo</span>
           </div>
 
           <div className="hidden md:flex items-center gap-7 text-sm text-muted-foreground font-medium">
@@ -631,7 +631,7 @@ export default function Landing() {
                   <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
                     <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
-                  <span className="font-bold text-sm">SystemForge</span>
+                  <span className="font-bold text-sm">Strivo</span>
                 </div>
                 <div className="flex flex-col gap-1 mb-8">
                   {navLinks.map((link) => (
@@ -852,7 +852,7 @@ export default function Landing() {
             <div className="inline-flex items-center gap-2 bg-primary/8 border border-primary/20 rounded-2xl px-6 py-3">
               <Sparkles className="w-4 h-4 text-primary" />
               <p className="text-sm text-foreground font-medium">
-                SystemForge turns your vague goals into specific daily systems — in under 5 minutes.
+                Strivo turns your vague goals into specific daily systems — in under 5 minutes.
               </p>
             </div>
           </div>
@@ -864,7 +864,7 @@ export default function Landing() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 md:mb-16">
             <Badge variant="secondary" className="mb-3 text-xs">Simple as 1-2-3</Badge>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">How SystemForge works</h2>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">How Strivo works</h2>
             <p className="text-muted-foreground text-base md:text-lg">Set up in 60 seconds. Designed to keep working when motivation disappears.</p>
           </div>
           <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
@@ -1035,7 +1035,7 @@ export default function Landing() {
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">The SystemForge Team</p>
+                    <p className="text-sm font-semibold">The Strivo Team</p>
                     <p className="text-xs text-muted-foreground">Independent product · Built for consistency</p>
                   </div>
                 </div>
@@ -1248,7 +1248,7 @@ export default function Landing() {
             <Badge variant="secondary" className="mb-3 text-xs">Questions answered</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Frequently asked questions</h2>
             <p className="text-muted-foreground text-base md:text-lg">Still unsure?{" "}
-              <a href="mailto:support@systemforge.app" className="underline underline-offset-2 hover:text-foreground transition-colors">Ask us anything</a>.
+              <a href="mailto:support@strivo.app" className="underline underline-offset-2 hover:text-foreground transition-colors">Ask us anything</a>.
             </p>
           </div>
           <div className="space-y-3">
@@ -1322,7 +1322,7 @@ export default function Landing() {
                 <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
                   <Sparkles className="w-3 h-3 text-white" />
                 </div>
-                <span className="font-bold text-sm">SystemForge</span>
+                <span className="font-bold text-sm">Strivo</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">
                 Built for people who are tired of starting over.
@@ -1358,12 +1358,12 @@ export default function Landing() {
               <div className="flex flex-col gap-2">
                 <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link href="/terms"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-                <a href="mailto:support@systemforge.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
+                <a href="mailto:support@strivo.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
           </div>
           <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} SystemForge. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Strivo. All rights reserved.</p>
             <p className="text-xs text-muted-foreground">Not another habit tracker. A system that survives real life.</p>
           </div>
         </div>

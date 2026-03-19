@@ -118,7 +118,7 @@ function ReminderChecker() {
           ? "Missed yesterday? Restart tiny. Your system only needs the minimum version today."
           : "Time to check in with your habits. Even the minimum version counts.";
         try {
-          new Notification("SystemForge — Daily Check-in", {
+          new Notification("Strivo — Daily Check-in", {
             body,
             icon: "/favicon.ico",
             tag: "sf-daily-reminder",

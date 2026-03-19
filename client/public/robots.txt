@@ -20,4 +20,4 @@ Disallow: /onboarding
 Disallow: /checkout/
 Disallow: /admin
 
-Sitemap: https://systemforge.app/sitemap.xml
+Sitemap: https://strivo.app/sitemap.xml

@@ -7,9 +7,9 @@ export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
-        <title>Terms of Service | SystemForge</title>
-        <link rel="canonical" href="https://systemforge.app/terms" />
-        <meta name="description" content="Read SystemForge's terms of service governing your use of the platform." />
+        <title>Terms of Service | Strivo</title>
+        <link rel="canonical" href="https://strivo.app/terms" />
+        <meta name="description" content="Read Strivo's terms of service governing your use of the platform." />
       </Helmet>
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -18,7 +18,7 @@ export default function TermsOfService() {
               <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
                 <Sparkles className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="font-bold text-sm tracking-tight">SystemForge</span>
+              <span className="font-bold text-sm tracking-tight">Strivo</span>
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -48,21 +48,21 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold mb-3">1. Acceptance of Terms</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              By accessing or using SystemForge ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these Terms, you may not use the Service. These Terms apply to all users, including visitors, registered users, and anyone who accesses the Service.
+              By accessing or using Strivo ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of these Terms, you may not use the Service. These Terms apply to all users, including visitors, registered users, and anyone who accesses the Service.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold mb-3">2. Description of Service</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              SystemForge is a habit-building application that helps users turn goals into daily systems. The Service includes goal tracking, system building, daily check-ins, analytics, journaling, and AI-powered coaching features. We reserve the right to modify, suspend, or discontinue any part of the Service at any time.
+              Strivo is a habit-building application that helps users turn goals into daily systems. The Service includes goal tracking, system building, daily check-ins, analytics, journaling, and AI-powered coaching features. We reserve the right to modify, suspend, or discontinue any part of the Service at any time.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold mb-3">3. Account Registration</h2>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex gap-2"><span className="text-primary mt-0.5">•</span>You must be at least 13 years old to use SystemForge. If you are under 18, you must have parental consent.</li>
+              <li className="flex gap-2"><span className="text-primary mt-0.5">•</span>You must be at least 13 years old to use Strivo. If you are under 18, you must have parental consent.</li>
               <li className="flex gap-2"><span className="text-primary mt-0.5">•</span>You are responsible for maintaining the confidentiality of your account credentials.</li>
               <li className="flex gap-2"><span className="text-primary mt-0.5">•</span>You must provide accurate and complete information during registration.</li>
               <li className="flex gap-2"><span className="text-primary mt-0.5">•</span>You are responsible for all activity that occurs under your account.</li>
@@ -86,7 +86,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold mb-3">5. Subscription and Payments</h2>
             <div className="space-y-3 text-sm text-muted-foreground">
-              <p className="leading-relaxed">SystemForge offers a free plan and paid subscription plans. Paid plans are billed on a monthly or annual basis as selected at checkout.</p>
+              <p className="leading-relaxed">Strivo offers a free plan and paid subscription plans. Paid plans are billed on a monthly or annual basis as selected at checkout.</p>
               <p className="leading-relaxed"><strong className="text-foreground">Free plan:</strong> Available at no cost with limitations on active goals, systems, and features as described on our Pricing page.</p>
               <p className="leading-relaxed"><strong className="text-foreground">Paid plans:</strong> Subscription fees are charged in advance. Prices are subject to change with 30 days' notice. All fees are non-refundable except as stated in our refund policy.</p>
               <p className="leading-relaxed"><strong className="text-foreground">14-day money-back guarantee:</strong> If you are unsatisfied with a paid plan within 14 days of your first payment, contact us for a full refund. This applies to first-time purchases only.</p>
@@ -97,7 +97,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold mb-3">6. Your Content</h2>
             <p className="text-muted-foreground leading-relaxed text-sm mb-3">
-              You retain ownership of all content you create within SystemForge (goals, journal entries, habit data, etc.). By using the Service, you grant SystemForge a limited, non-exclusive licence to store, process, and display your content solely as necessary to provide the Service.
+              You retain ownership of all content you create within Strivo (goals, journal entries, habit data, etc.). By using the Service, you grant Strivo a limited, non-exclusive licence to store, process, and display your content solely as necessary to provide the Service.
             </p>
             <p className="text-muted-foreground leading-relaxed text-sm">
               You are responsible for ensuring that any content you submit does not violate any third-party rights or applicable laws.
@@ -107,14 +107,14 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold mb-3">7. AI-Generated Content</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              SystemForge uses AI to provide suggestions, coaching responses, and insights. AI-generated content is provided for informational purposes only and does not constitute professional medical, psychological, or therapeutic advice. Always consult a qualified professional for health-related decisions.
+              Strivo uses AI to provide suggestions, coaching responses, and insights. AI-generated content is provided for informational purposes only and does not constitute professional medical, psychological, or therapeutic advice. Always consult a qualified professional for health-related decisions.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-semibold mb-3">8. Intellectual Property</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              The SystemForge application, including its design, branding, features, and underlying code, is owned by SystemForge and protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works without our express written permission.
+              The Strivo application, including its design, branding, features, and underlying code, is owned by Strivo and protected by intellectual property laws. You may not copy, modify, distribute, or create derivative works without our express written permission.
             </p>
           </section>
 
@@ -128,7 +128,7 @@ export default function TermsOfService() {
           <section>
             <h2 className="text-xl font-semibold mb-3">10. Limitation of Liability</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
-              To the fullest extent permitted by law, SystemForge shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of data, loss of profits, or loss of goodwill, arising out of or relating to your use of the Service.
+              To the fullest extent permitted by law, Strivo shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of data, loss of profits, or loss of goodwill, arising out of or relating to your use of the Service.
             </p>
           </section>
 
@@ -157,7 +157,7 @@ export default function TermsOfService() {
             <h2 className="text-xl font-semibold mb-3">14. Contact</h2>
             <p className="text-muted-foreground leading-relaxed text-sm">
               If you have questions about these Terms, contact us at:<br />
-              <a href="mailto:legal@systemforge.app" className="text-primary hover:underline">legal@systemforge.app</a>
+              <a href="mailto:legal@strivo.app" className="text-primary hover:underline">legal@strivo.app</a>
             </p>
           </section>
 

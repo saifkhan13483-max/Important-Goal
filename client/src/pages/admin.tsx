@@ -155,7 +155,7 @@ function AdminSidebar({
             <ShieldCheck className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight truncate">SystemForge</p>
+            <p className="text-sm font-semibold leading-tight truncate">Strivo</p>
             <p className="text-[10px] text-violet-500 font-medium">Admin Panel</p>
           </div>
         </div>

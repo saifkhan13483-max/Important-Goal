@@ -131,7 +131,7 @@ export function AppSidebar() {
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-sm text-sidebar-foreground leading-tight">SystemForge</p>
+            <p className="font-bold text-sm text-sidebar-foreground leading-tight">Strivo</p>
             <p className="text-xs text-muted-foreground leading-tight">Goals → Daily Systems</p>
           </div>
         </div>

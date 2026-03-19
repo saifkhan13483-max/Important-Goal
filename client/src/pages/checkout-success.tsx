@@ -58,7 +58,7 @@ export default function CheckoutSuccess() {
               <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
                 <Sparkles className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="font-bold text-sm tracking-tight">SystemForge</span>
+              <span className="font-bold text-sm tracking-tight">Strivo</span>
             </div>
 
             <h1 className="text-3xl font-bold mb-3" data-testid="text-checkout-success-heading">
@@ -97,7 +97,7 @@ export default function CheckoutSuccess() {
             <p className="text-xs text-muted-foreground mt-6">
               A receipt has been sent to your email by Stripe.{" "}
               <a
-                href="mailto:support@systemforge.app"
+                href="mailto:support@strivo.app"
                 className="underline hover:text-foreground transition-colors"
               >
                 Need help?

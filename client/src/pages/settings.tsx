@@ -144,7 +144,7 @@ function BillingCard({ plan }: { plan: PlanTier }) {
             <div className="p-3 rounded-md bg-muted/20 border border-border/40">
               <p className="text-xs text-muted-foreground">
                 To manage your subscription, visit your Stripe billing portal.{" "}
-                <a href="mailto:support@systemforge.app" className="underline hover:text-foreground transition-colors">Contact support</a> if you need help.
+                <a href="mailto:support@strivo.app" className="underline hover:text-foreground transition-colors">Contact support</a> if you need help.
               </p>
             </div>
           )
@@ -352,7 +352,7 @@ export default function Settings() {
       <SectionCard
         icon={Palette}
         title="Appearance"
-        description="Customize how SystemForge looks"
+        description="Customize how Strivo looks"
       >
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -452,7 +452,7 @@ export default function Settings() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium mb-0.5">Enable browser reminders</p>
                 <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                  Allow notifications so SystemForge can send you a daily check-in reminder at your chosen time. No sign-up required.
+                  Allow notifications so Strivo can send you a daily check-in reminder at your chosen time. No sign-up required.
                 </p>
                 <Button size="sm" onClick={requestNotifPermission} data-testid="button-enable-notifications">
                   <BellRing className="w-3.5 h-3.5 mr-1.5" />
@@ -605,7 +605,7 @@ export default function Settings() {
       <SectionCard
         icon={HelpCircle}
         title="Help & Resources"
-        description="Learn to get the most out of SystemForge"
+        description="Learn to get the most out of Strivo"
       >
         <div className="space-y-2">
           {[
@@ -665,7 +665,7 @@ export default function Settings() {
           <AlertDialogHeader>
             <AlertDialogTitle>Sign Out</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to sign out of SystemForge? You can always come back and your data will be waiting.
+              Are you sure you want to sign out of Strivo? You can always come back and your data will be waiting.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

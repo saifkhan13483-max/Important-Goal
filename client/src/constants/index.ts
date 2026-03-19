@@ -1,4 +1,4 @@
-export const APP_NAME = "SystemForge";
+export const APP_NAME = "Strivo";
 export const APP_TAGLINE = "Turn goals into systems.";
 
 export const FOCUS_AREAS = [

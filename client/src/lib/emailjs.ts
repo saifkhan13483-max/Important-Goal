@@ -42,8 +42,8 @@ export async function sendNewsletterWelcome(email: string): Promise<void> {
   try {
     await emailjs.send(SERVICE_ID!, WELCOME_TPL, {
       email,
-      app_name: "SystemForge",
-      app_url: "https://systemforge.app",
+      app_name: "Strivo",
+      app_url: "https://strivo.app",
     });
   } catch (err) {
     console.warn("[EmailJS] Newsletter welcome send failed:", err);
@@ -62,9 +62,9 @@ export async function sendSignupWelcome(name: string, email: string): Promise<vo
     await emailjs.send(SERVICE_ID!, SIGNUP_TPL, {
       email,
       name: name || "there",
-      app_name: "SystemForge",
-      dashboard_url: "https://systemforge.app/dashboard",
-      first_step_url: "https://systemforge.app/systems/new",
+      app_name: "Strivo",
+      dashboard_url: "https://strivo.app/dashboard",
+      first_step_url: "https://strivo.app/systems/new",
     });
   } catch (err) {
     console.warn("[EmailJS] Signup welcome send failed:", err);

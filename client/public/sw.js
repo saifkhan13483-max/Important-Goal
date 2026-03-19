@@ -1,4 +1,4 @@
-const CACHE_NAME = "systemforge-v1";
+const CACHE_NAME = "strivo-v1";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",

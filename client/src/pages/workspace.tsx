@@ -1679,7 +1679,7 @@ export default function WorkspacePage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto">
-      <Helmet><title>Team Workspace | SystemForge</title></Helmet>
+      <Helmet><title>Team Workspace | Strivo</title></Helmet>
 
       {/* Page header */}
       <div className="flex items-start sm:items-center justify-between gap-4 mb-6">

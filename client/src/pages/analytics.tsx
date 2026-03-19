@@ -153,7 +153,7 @@ export default function Analytics() {
       note:        c.note ?? "",
     }));
     if (rows.length === 0) { alert("No data to export yet — complete some check-ins first!"); return; }
-    exportToCsv(rows, `systemforge-checkins-${new Date().toISOString().slice(0, 10)}.csv`);
+    exportToCsv(rows, `strivo-checkins-${new Date().toISOString().slice(0, 10)}.csv`);
   }, [checkins, systems, goals]);
 
   const analytics = useMemo(() => computeAnalytics(checkins, systems, goals), [checkins, systems, goals]);

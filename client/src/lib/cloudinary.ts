@@ -39,6 +39,6 @@ export async function uploadToCloudinary(
 /**
  * Convenience wrapper for image uploads.
  */
-export async function uploadImage(file: File, folder = "systemforge/images"): Promise<string> {
+export async function uploadImage(file: File, folder = "strivo/images"): Promise<string> {
   return uploadToCloudinary(file, folder);
 }

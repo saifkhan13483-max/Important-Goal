@@ -218,9 +218,9 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
-        <title>Pricing | SystemForge</title>
-        <link rel="canonical" href="https://systemforge.app/pricing" />
-        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. SystemForge Starter, Pro, and Elite plans." />
+        <title>Pricing | Strivo</title>
+        <link rel="canonical" href="https://strivo.app/pricing" />
+        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter, Pro, and Elite plans." />
       </Helmet>
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
@@ -230,7 +230,7 @@ export default function Pricing() {
               <div className="w-7 h-7 rounded-md gradient-brand flex items-center justify-center">
                 <Sparkles className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="font-bold text-sm tracking-tight">SystemForge</span>
+              <span className="font-bold text-sm tracking-tight">Strivo</span>
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -475,7 +475,7 @@ export default function Pricing() {
                 <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
                   <Sparkles className="w-3 h-3 text-white" />
                 </div>
-                <span className="font-bold text-sm">SystemForge</span>
+                <span className="font-bold text-sm">Strivo</span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Built for people who are tired of starting over.
@@ -495,12 +495,12 @@ export default function Pricing() {
               <div className="flex flex-col gap-2">
                 <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link href="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-                <a href="mailto:support@systemforge.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
+                <a href="mailto:support@strivo.app" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
               </div>
             </div>
           </div>
           <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} SystemForge. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Strivo. All rights reserved.</p>
             <p className="text-xs text-muted-foreground">Not another habit tracker. A system that survives real life.</p>
           </div>
         </div>

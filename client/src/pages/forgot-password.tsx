@@ -49,7 +49,7 @@ export default function ForgotPassword() {
           <div className="w-12 h-12 rounded-xl gradient-brand flex items-center justify-center mx-auto mb-4">
             <Sparkles className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold">SystemForge</h1>
+          <h1 className="text-2xl font-bold">Strivo</h1>
           <p className="text-muted-foreground text-sm mt-1">Reset your password</p>
         </div>
 
