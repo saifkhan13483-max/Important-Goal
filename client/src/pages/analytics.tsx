@@ -11,67 +11,65 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  LineChart, Line, CartesianGrid, Cell,
+  LineChart, Line, CartesianGrid, Area, AreaChart,
 } from "recharts";
 import {
   Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
   Trophy, AlertCircle, Star, CheckSquare, Lightbulb,
   TrendingDown, Heart, Award, Smile, Dumbbell, Bot, Loader2, Sparkles, Download,
+  ChevronRight,
 } from "lucide-react";
 import { generateAnalyticsInsights, type AnalyticsInsight } from "@/services/ai.service";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
 import { PlanGate } from "@/components/plan-gate";
+import { Link } from "wouter";
 
+/* ─── CSV export ─────────────────────────────────────────────────── */
 function exportToCsv(rows: Record<string, unknown>[], filename: string) {
   if (rows.length === 0) return;
   const headers = Object.keys(rows[0]);
   const lines = [
     headers.join(","),
-    ...rows.map((r) =>
-      headers
-        .map((h) => {
-          const val = r[h] == null ? "" : String(r[h]);
-          return val.includes(",") || val.includes('"') || val.includes("\n")
-            ? `"${val.replace(/"/g, '""')}"`
-            : val;
-        })
-        .join(","),
+    ...rows.map(r =>
+      headers.map(h => {
+        const val = r[h] == null ? "" : String(r[h]);
+        return val.includes(",") || val.includes('"') || val.includes("\n")
+          ? `"${val.replace(/"/g, '""')}"` : val;
+      }).join(",")
     ),
   ];
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
+  a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
 
-function MetricCard({ label, value, sub, icon: Icon, color }: any) {
+/* ─── Metric card ────────────────────────────────────────────────── */
+function MetricCard({ label, value, sub, icon: Icon, color, accentBg }: any) {
   const rawNum = typeof value === "number" ? value : parseFloat(String(value).replace(/[^0-9.]/g, ""));
   const suffix = typeof value === "string" ? String(value).replace(/[0-9.]/g, "") : "";
   const isNumeric = !isNaN(rawNum);
   const animated = useCountUp(isNumeric ? rawNum : 0, 800);
 
   return (
-    <Card>
-      <CardContent className="p-5">
+    <Card className="overflow-hidden">
+      <div className={cn("h-1 w-full", accentBg ?? "bg-primary/40")} />
+      <CardContent className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-sm text-muted-foreground mb-1">{label}</p>
-            <p
-              className="text-2xl font-bold animate-count-up"
-              data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}
-            >
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground font-medium mb-1 leading-none">{label}</p>
+            <p className="text-2xl sm:text-3xl font-extrabold leading-none" data-testid={`metric-${label.toLowerCase().replace(/ /g, "-")}`}>
               {isNumeric ? `${animated}${suffix}` : value}
             </p>
-            {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
+            {sub && <p className="text-[11px] text-muted-foreground mt-1.5">{sub}</p>}
           </div>
-          <div className={`w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 ${color}`}>
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0", color)}>
             <Icon className="w-5 h-5" />
           </div>
         </div>
@@ -80,14 +78,15 @@ function MetricCard({ label, value, sub, icon: Icon, color }: any) {
   );
 }
 
+/* ─── Custom chart tooltip ───────────────────────────────────────── */
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-popover border border-border rounded-md p-3 text-sm shadow-lg">
-        <p className="font-medium mb-1">{label}</p>
+      <div className="bg-popover border border-border rounded-xl p-3 text-sm shadow-xl">
+        <p className="font-semibold mb-1.5 text-foreground">{label}</p>
         {payload.map((p: any) => (
-          <p key={p.name} style={{ color: p.color }}>
-            {p.name}: {p.value}{p.name === "Completion %" || p.name === "Done %" ? "%" : ""}
+          <p key={p.name} className="text-xs" style={{ color: p.color }}>
+            {p.name}: <strong>{p.value}{p.name === "Completion %" || p.name === "Done %" ? "%" : ""}</strong>
           </p>
         ))}
       </div>
@@ -96,8 +95,24 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+/* ─── Section header helper ──────────────────────────────────────── */
+function SectionTitle({ icon: Icon, color, title, subtitle }: { icon: any; color: string; title: string; subtitle?: string }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-0.5">
+      <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0", color)}>
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold leading-tight">{title}</p>
+        {subtitle && <p className="text-[11px] text-muted-foreground leading-tight">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
 type Period = "daily" | "weekly" | "monthly";
 
+/* ─── Main page ─────────────────────────────────────────────────── */
 export default function Analytics() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
@@ -125,32 +140,23 @@ export default function Analytics() {
   const isLoading = systemsLoading || goalsLoading || checkinsLoading;
 
   const handleExportCsv = useCallback(() => {
-    const systemsById = Object.fromEntries(systems.map((s) => [s.id, s.title]));
-    const goalsById = Object.fromEntries(goals.map((g) => [g.id, g.title]));
-
-    const systemGoalMap = Object.fromEntries(systems.map((s) => [s.id, s.goalId ?? ""]));
-    const checkinsRows = checkins.map((c) => ({
-      date: c.dateKey,
+    const systemsById = Object.fromEntries(systems.map(s => [s.id, s.title]));
+    const goalsById   = Object.fromEntries(goals.map(g => [g.id, g.title]));
+    const systemGoalMap = Object.fromEntries(systems.map(s => [s.id, s.goalId ?? ""]));
+    const rows = checkins.map(c => ({
+      date:        c.dateKey,
       systemTitle: systemsById[c.systemId] ?? c.systemId,
-      goalTitle: systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? systemGoalMap[c.systemId]) : "",
-      done: c.status === "done" ? "yes" : "no",
-      mood: c.moodBefore ?? "",
-      difficulty: c.difficulty ?? "",
-      note: c.note ?? "",
+      goalTitle:   systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? systemGoalMap[c.systemId]) : "",
+      done:        c.status === "done" ? "yes" : "no",
+      mood:        c.moodBefore ?? "",
+      difficulty:  c.difficulty ?? "",
+      note:        c.note ?? "",
     }));
-
-    if (checkinsRows.length === 0) {
-      alert("No data to export yet — complete some check-ins first!");
-      return;
-    }
-
-    exportToCsv(checkinsRows, `systemforge-checkins-${new Date().toISOString().slice(0, 10)}.csv`);
+    if (rows.length === 0) { alert("No data to export yet — complete some check-ins first!"); return; }
+    exportToCsv(rows, `systemforge-checkins-${new Date().toISOString().slice(0, 10)}.csv`);
   }, [checkins, systems, goals]);
 
-  const analytics = useMemo(
-    () => computeAnalytics(checkins, systems, goals),
-    [checkins, systems, goals],
-  );
+  const analytics = useMemo(() => computeAnalytics(checkins, systems, goals), [checkins, systems, goals]);
 
   const {
     streaks, bestStreaks, topBestStreak,
@@ -167,129 +173,50 @@ export default function Analytics() {
     return Math.round(daysWithData.reduce((sum: number, d: any) => sum + (d.done / d.total) * 100, 0) / daysWithData.length);
   }, [last30Days]);
 
-  // Build text-based insight cards from data
   const insightCards = useMemo(() => {
     if (checkins.length < 3) return [];
     const cards: { icon: any; text: string; type: "positive" | "neutral" | "tip" }[] = [];
 
-    // Best streak insight
     const topStreakEntry = Object.entries(analytics.bestStreaks)
       .filter(([, v]) => (v as number) > 0)
       .sort((a, b) => (b[1] as number) - (a[1] as number))[0];
     if (topStreakEntry) {
       const sys = systems.find(s => s.id === topStreakEntry[0]);
       const streak = topStreakEntry[1] as number;
-      if (streak >= 7) {
-        cards.push({
-          icon: Flame,
-          text: `Your longest streak is ${streak} days on "${sys?.title}". That's real consistency.`,
-          type: "positive",
-        });
-      }
+      if (streak >= 7) cards.push({ icon: Flame, text: `Your longest streak is ${streak} days on "${sys?.title}". That's real consistency.`, type: "positive" });
     }
 
-    // Consistency insight
-    if (avgCompletion >= 80) {
-      cards.push({
-        icon: Trophy,
-        text: `You complete habits ${avgCompletion}% of the time on average. That puts you ahead of most people.`,
-        type: "positive",
-      });
-    } else if (avgCompletion >= 50) {
-      cards.push({
-        icon: TrendingUp,
-        text: `You're completing about ${avgCompletion}% of habits on average. Getting above 70% is the next milestone.`,
-        type: "neutral",
-      });
-    } else if (avgCompletion > 0) {
-      cards.push({
-        icon: Heart,
-        text: `Consistency takes time to build. At ${avgCompletion}% avg, consider simplifying your habits — the minimum should feel almost too easy.`,
-        type: "tip",
-      });
-    }
+    if (avgCompletion >= 80) cards.push({ icon: Trophy, text: `You complete habits ${avgCompletion}% of the time on average. That puts you ahead of most people.`, type: "positive" });
+    else if (avgCompletion >= 50) cards.push({ icon: TrendingUp, text: `You're completing about ${avgCompletion}% of habits on average. Getting above 70% is the next milestone.`, type: "neutral" });
+    else if (avgCompletion > 0) cards.push({ icon: Heart, text: `Consistency takes time. At ${avgCompletion}% avg, consider simplifying — the minimum should feel almost too easy.`, type: "tip" });
 
-    // Most consistent system
-    const topConsistent = [...systemStats]
-      .filter(s => s.totalCheckins >= 5)
-      .sort((a, b) => b.pct - a.pct)[0];
-    if (topConsistent && topConsistent.pct >= 70) {
-      cards.push({
-        icon: Award,
-        text: `"${topConsistent.title}" is your most reliable habit at ${topConsistent.pct}% completion. It's becoming automatic.`,
-        type: "positive",
-      });
-    }
+    const topConsistent = [...systemStats].filter(s => s.totalCheckins >= 5).sort((a, b) => b.pct - a.pct)[0];
+    if (topConsistent && topConsistent.pct >= 70)
+      cards.push({ icon: Award, text: `"${topConsistent.title}" is your most reliable habit at ${topConsistent.pct}% completion. It's becoming automatic.`, type: "positive" });
 
-    // Most missed system
-    const topMissed = [...systemStats]
-      .filter(s => s.totalCheckins >= 5 && s.missedCount > 0)
-      .sort((a, b) => b.missedCount - a.missedCount)[0];
-    if (topMissed && topMissed.pct < 50) {
-      cards.push({
-        icon: Lightbulb,
-        text: `"${topMissed.title}" is being missed frequently. Try shrinking it to a 2-minute version — doing less is better than skipping.`,
-        type: "tip",
-      });
-    }
+    const topMissed = [...systemStats].filter(s => s.totalCheckins >= 5 && s.missedCount > 0).sort((a, b) => b.missedCount - a.missedCount)[0];
+    if (topMissed && topMissed.pct < 50)
+      cards.push({ icon: Lightbulb, text: `"${topMissed.title}" is being missed often. Try a 2-minute version — doing less is better than skipping.`, type: "tip" });
 
-    // Mood insight
     if (hasMoodData) {
       const highMood = moodBuckets.filter(b => b.mood >= 4 && b.count > 0);
       const lowMood  = moodBuckets.filter(b => b.mood <= 2 && b.count > 0);
       if (highMood.length && lowMood.length) {
         const avgHigh = Math.round(highMood.reduce((s, b) => s + b.completionPct, 0) / highMood.length);
         const avgLow  = Math.round(lowMood.reduce((s, b) => s + b.completionPct, 0) / lowMood.length);
-        if (avgHigh > avgLow + 15) {
-          cards.push({
-            icon: Smile,
-            text: `On high-mood days you complete ${avgHigh}% of habits vs. ${avgLow}% on low-mood days. Your fallback plan matters most on hard days.`,
-            type: "tip",
-          });
-        }
+        if (avgHigh > avgLow + 15)
+          cards.push({ icon: Smile, text: `On high-mood days you complete ${avgHigh}% vs. ${avgLow}% on low-mood days. Your fallback plan matters most on hard days.`, type: "tip" });
       }
     }
 
-    // Difficulty insight
-    if (hasDifficultyData) {
-      const easyBuckets = difficultyBuckets.filter(b => b.difficulty <= 2 && b.count > 0);
-      const hardBuckets = difficultyBuckets.filter(b => b.difficulty >= 4 && b.count > 0);
-      if (easyBuckets.length && hardBuckets.length) {
-        const avgEasy = Math.round(easyBuckets.reduce((s, b) => s + b.completionPct, 0) / easyBuckets.length);
-        const avgHard = Math.round(hardBuckets.reduce((s, b) => s + b.completionPct, 0) / hardBuckets.length);
-        if (avgEasy > avgHard + 20) {
-          cards.push({
-            icon: Dumbbell,
-            text: `Habits rated easy are completed ${avgEasy}% of the time vs. ${avgHard}% for hard ones. Consider making your minimum action smaller.`,
-            type: "tip",
-          });
-        }
-      }
-    }
-
-    // Total check-ins milestone
     const total = analytics.totalCheckins;
-    if (total >= 100) {
-      cards.push({
-        icon: Star,
-        text: `You've logged ${total} check-ins all time. That's ${total} decisions to show up for yourself. Remarkable.`,
-        type: "positive",
-      });
-    } else if (total >= 30) {
-      cards.push({
-        icon: TrendingUp,
-        text: `${total} total check-ins so far. The research says 66 days to form a habit — you're building real momentum.`,
-        type: "neutral",
-      });
-    }
+    if (total >= 100) cards.push({ icon: Star, text: `You've logged ${total} check-ins all time. That's ${total} decisions to show up for yourself. Remarkable.`, type: "positive" });
+    else if (total >= 30) cards.push({ icon: TrendingUp, text: `${total} total check-ins so far. Research says 66 days to form a habit — you're building real momentum.`, type: "neutral" });
 
     return cards.slice(0, 4);
   }, [checkins, systems, systemStats, analytics, avgCompletion, hasMoodData, hasDifficultyData, moodBuckets, difficultyBuckets]);
 
-  // All hooks above — now safe to conditionally return
-  const chartData = period === "daily" ? dailyChart
-    : period === "weekly" ? weeklyChart
-    : monthlyChart;
+  const chartData = period === "daily" ? dailyChart : period === "weekly" ? weeklyChart : monthlyChart;
 
   const topStreaks = Object.entries(streaks)
     .filter(([, v]) => (v as number) > 0)
@@ -306,18 +233,11 @@ export default function Analytics() {
     Goals: count as number,
   }));
 
-  const mostConsistent = [...systemStats]
-    .filter(s => s.totalCheckins >= 3)
-    .sort((a, b) => b.pct - a.pct)
-    .slice(0, 5);
+  const mostConsistent = [...systemStats].filter(s => s.totalCheckins >= 3).sort((a, b) => b.pct - a.pct).slice(0, 5);
+  const mostMissed     = [...systemStats].filter(s => s.totalCheckins >= 3 && s.missedCount > 0).sort((a, b) => b.missedCount - a.missedCount).slice(0, 5);
 
-  const mostMissed = [...systemStats]
-    .filter(s => s.totalCheckins >= 3 && s.missedCount > 0)
-    .sort((a, b) => b.missedCount - a.missedCount)
-    .slice(0, 5);
-
-  const hasData = checkins.length > 0;
-  const hasDowData = dayOfWeekStats.some(d => d.totalCount > 0);
+  const hasData     = checkins.length > 0;
+  const hasDowData  = dayOfWeekStats.some(d => d.totalCount > 0);
 
   const topSystemForAi = useMemo(() => {
     const top = [...systemStats].filter(s => s.totalCheckins >= 3).sort((a, b) => b.pct - a.pct)[0];
@@ -329,13 +249,7 @@ export default function Analytics() {
     return weak?.pct < 50 ? weak?.title : undefined;
   }, [systemStats]);
 
-  const aiInsightsKey = [
-    "ai-analytics-insights",
-    userId,
-    avgCompletion,
-    topBestStreak,
-    analytics.totalCheckins,
-  ];
+  const aiInsightsKey = ["ai-analytics-insights", userId, avgCompletion, topBestStreak, analytics.totalCheckins];
 
   const {
     data: aiInsights = [],
@@ -343,782 +257,707 @@ export default function Analytics() {
     refetch: refetchAiInsights,
   } = useQuery<AnalyticsInsight[]>({
     queryKey: aiInsightsKey,
-    queryFn: () =>
-      generateAnalyticsInsights({
-        systemNames: systems.filter(s => s.active).map(s => s.title),
-        avgCompletion,
-        bestStreak: topBestStreak,
-        totalCheckins: analytics.totalCheckins,
-        topSystem: topSystemForAi,
-        weakestSystem: weakestSystemForAi,
-        userName: user?.name,
-      }),
+    queryFn: () => generateAnalyticsInsights({
+      systemNames: systems.filter(s => s.active).map(s => s.title),
+      avgCompletion, bestStreak: topBestStreak,
+      totalCheckins: analytics.totalCheckins,
+      topSystem: topSystemForAi, weakestSystem: weakestSystemForAi,
+      userName: user?.name,
+    }),
     enabled: !!userId && features.aiAnalyticsInsights && analytics.totalCheckins >= 3 && !isLoading,
     staleTime: 1000 * 60 * 30,
     retry: false,
   });
 
   const periodLabel: Record<Period, string> = {
-    daily:   "last 14 days",
-    weekly:  "last 8 weeks",
-    monthly: "last 6 months",
+    daily: "Last 14 days", weekly: "Last 8 weeks", monthly: "Last 6 months",
   };
 
+  /* ── Loading skeleton ── */
   if (isLoading) {
     return (
-      <div
-        className="p-6 max-w-5xl mx-auto space-y-6"
-        aria-busy="true"
-        aria-label="Loading progress insights"
-      >
+      <div className="min-h-screen" aria-busy="true" aria-label="Loading progress insights">
         <span className="sr-only" role="status">Loading your progress data, please wait…</span>
-        <h1 className="text-2xl font-bold">Progress Insights</h1>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
-        </div>
-        <Skeleton className="h-64 rounded-xl" />
-        <div className="grid md:grid-cols-2 gap-4">
-          <Skeleton className="h-48 rounded-xl" />
-          <Skeleton className="h-48 rounded-xl" />
+        {/* Hero skeleton */}
+        <div className="gradient-brand h-44 sm:h-48" />
+        <div className="px-4 sm:px-6 py-5 max-w-5xl mx-auto space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+          </div>
+          <Skeleton className="h-64 rounded-2xl" />
+          <div className="grid md:grid-cols-2 gap-4">
+            <Skeleton className="h-48 rounded-2xl" />
+            <Skeleton className="h-48 rounded-2xl" />
+          </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold">Progress Insights</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            Track your consistency and growth over time
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleExportCsv}
-          disabled={isLoading || checkins.length === 0}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-          data-testid="button-export-csv"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Export CSV
-        </button>
-      </div>
+  /* ── Completion rate color helper ── */
+  const completionColor = avgCompletion >= 70 ? "text-chart-3" : avgCompletion >= 40 ? "text-chart-4" : "text-destructive";
 
-      {/* AI-powered insights — Pro/Elite only */}
-      {features.aiAnalyticsInsights && analytics.totalCheckins >= 3 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Bot className="w-3.5 h-3.5 text-primary" />
+  return (
+    <div className="min-h-screen bg-background">
+
+      {/* ── Hero Header ── */}
+      <div className="relative overflow-hidden gradient-brand text-white">
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-0 right-0 w-64 h-64 opacity-10 bg-white rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 opacity-8 bg-white rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+
+        <div className="relative px-4 sm:px-6 py-6 sm:py-8 max-w-5xl mx-auto">
+          <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart2 className="w-4 h-4 text-white/70" />
+                <p className="text-white/70 text-xs font-medium tracking-wide uppercase">Progress Insights</p>
               </div>
-              <div>
-                <p className="text-sm font-semibold leading-tight">AI Insights</p>
-                <p className="text-xs text-muted-foreground leading-tight">Personalized analysis of your habits</p>
-              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">Your Progress</h1>
+              <p className="text-white/60 text-xs sm:text-sm mt-0.5">Track consistency and growth over time</p>
             </div>
             <button
-              type="button"
-              onClick={() => refetchAiInsights()}
-              disabled={aiInsightsLoading}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border hover:bg-muted/40"
-              data-testid="button-refresh-ai-insights"
+              type="button" onClick={handleExportCsv}
+              disabled={isLoading || checkins.length === 0}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 text-sm font-medium hover:bg-white/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed backdrop-blur-sm flex-shrink-0"
+              data-testid="button-export-csv"
             >
-              {aiInsightsLoading ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Analyzing…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3 h-3" />
-                  Refresh
-                </>
-              )}
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
             </button>
           </div>
 
-          {aiInsightsLoading ? (
-            <div className="grid sm:grid-cols-3 gap-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-20 rounded-xl border border-border/50 bg-muted/20 animate-pulse" />
-              ))}
-            </div>
-          ) : aiInsights.length > 0 ? (
-            <div className="grid sm:grid-cols-3 gap-3">
-              {aiInsights.map((insight, i) => {
-                const colorMap = {
-                  positive: "bg-chart-3/8 border-chart-3/20",
-                  neutral:  "bg-primary/8 border-primary/20",
-                  tip:      "bg-chart-4/8 border-chart-4/20",
-                };
-                const iconColorMap = {
-                  positive: "text-chart-3",
-                  neutral:  "text-primary",
-                  tip:      "text-chart-4",
-                };
-                return (
-                  <div
-                    key={i}
-                    className={cn("flex items-start gap-3 p-4 rounded-xl border", colorMap[insight.type])}
-                    data-testid={`ai-insight-card-${i}`}
-                  >
-                    <Bot className={cn("w-3.5 h-3.5 flex-shrink-0 mt-0.5", iconColorMap[insight.type])} />
-                    <p className="text-xs text-foreground leading-relaxed">{insight.text}</p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      {/* Text-based insight cards */}
-      {insightCards.length > 0 && (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {insightCards.map((card, i) => {
-            const colorMap = {
-              positive: "bg-chart-3/8 border-chart-3/20 text-chart-3",
-              neutral:  "bg-primary/8 border-primary/20 text-primary",
-              tip:      "bg-chart-4/8 border-chart-4/20 text-chart-4",
-            };
-            const iconColor = colorMap[card.type];
-            return (
-              <div
-                key={i}
-                className={cn("flex items-start gap-3 p-4 rounded-xl border", colorMap[card.type].split(" ").slice(0, 2).join(" "))}
-                data-testid={`insight-card-${i}`}
-              >
-                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", iconColor.split(" ").slice(0, 2).join(" "))}>
-                  <card.icon className={cn("w-4 h-4", iconColor.split(" ").slice(2).join(" "))} />
+          {/* Hero stats grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            {[
+              { label: "Avg Completion", value: `${avgCompletion}%`, sub: "last 30 days", icon: TrendingUp },
+              { label: "Total Check-ins", value: analytics.totalCheckins, sub: "all time", icon: CheckSquare },
+              { label: "Best Streak",     value: `${topBestStreak}d`,  sub: "personal record", icon: Flame },
+              { label: "Active Systems",  value: analytics.activeSystems, sub: `of ${analytics.totalSystems} total`, icon: Zap },
+            ].map(s => (
+              <div key={s.label} className="bg-white/12 rounded-2xl p-3 sm:p-4 backdrop-blur-sm border border-white/15">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <s.icon className="w-3 h-3 text-white/60" />
+                  <p className="text-white/60 text-[10px] sm:text-xs font-medium leading-none">{s.label}</p>
                 </div>
-                <p className="text-sm text-foreground leading-relaxed">{card.text}</p>
+                <p className="text-xl sm:text-2xl font-extrabold text-white leading-none">{s.value}</p>
+                <p className="text-white/50 text-[10px] mt-1">{s.sub}</p>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      )}
-
-      {/* Full empty state when user has no check-ins at all */}
-      {!hasData && (
-        <Card className="border-primary/20">
-          <CardContent className="p-12 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-              <BarChart2 className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Your progress story starts here</h3>
-            <p className="text-muted-foreground text-sm mb-3 max-w-sm mx-auto leading-relaxed">
-              Once you start checking in on your systems each day, you'll see charts showing your streaks, consistency, and growth over time.
-            </p>
-            <p className="text-xs text-muted-foreground mb-6">
-              Even one check-in is enough to start.
-            </p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <a href="/checkins">
-                <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity" data-testid="button-analytics-go-checkin">
-                  <CheckSquare className="w-4 h-4" />
-                  Check in today
-                </button>
-              </a>
-              {systems.length === 0 && (
-                <a href="/systems/new">
-                  <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/40 transition-colors" data-testid="button-analytics-build-system">
-                    Build a system first
-                  </button>
-                </a>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Summary metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard
-          icon={Target}
-          label="Total Goals"
-          value={analytics.totalGoals}
-          sub={`${analytics.activeGoals} active`}
-          color="bg-primary/10 text-primary"
-        />
-        <MetricCard
-          icon={Zap}
-          label="Total Systems"
-          value={analytics.totalSystems}
-          sub={`${analytics.activeSystems} active`}
-          color="bg-chart-2/10 text-chart-2"
-        />
-        <MetricCard
-          icon={Calendar}
-          label="Total Check-ins"
-          value={analytics.totalCheckins}
-          sub="all time"
-          color="bg-chart-3/10 text-chart-3"
-        />
-        <MetricCard
-          icon={TrendingUp}
-          label="Avg Completion"
-          value={`${avgCompletion}%`}
-          sub="last 30 days"
-          color="bg-chart-4/10 text-chart-4"
-        />
       </div>
 
-      {/* Upgrade prompt for free users — shown below summary metrics */}
-      {!features.betterAnalytics && (
-        <PlanGate
-          requiredPlan="starter"
-          featureLabel="Charts & Detailed Insights"
-          description="Upgrade to Starter to unlock habit charts, streak tracking, consistency metrics, and per-system breakdowns."
-          compact
-        />
-      )}
+      {/* ── Main content ── */}
+      <div className="px-4 sm:px-6 py-5 max-w-5xl mx-auto space-y-5">
 
-      {/* Per-system consistency metrics — Starter+ */}
-      {features.betterAnalytics && hasData && systems.filter(s => s.active).length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-chart-2" />
-              Consistency Metrics
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">Beyond raw streaks — how consistently you show up over time</p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {systems.filter(s => s.active).map(sys => {
-                const consistency = consistencyScores[sys.id] ?? 0;
-                const votes = weeklyVotes[sys.id] ?? 0;
-                const comeback = comebackStreaks[sys.id] ?? 0;
-                const resilience = resilienceScores[sys.id] ?? 0;
-                const consistencyColor = consistency >= 70 ? "bg-chart-3" : consistency >= 40 ? "bg-chart-4" : "bg-destructive/60";
-
-                const last7Days = Array.from({ length: 7 }, (_, i) => {
-                  const d = new Date();
-                  d.setDate(d.getDate() - (6 - i));
-                  const dateKey = d.toISOString().split("T")[0];
-                  const checkin = checkins.find(c => c.systemId === sys.id && c.dateKey === dateKey);
-                  return {
-                    dateKey,
-                    label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1),
-                    status: checkin?.status ?? null,
-                  };
-                });
-
-                const fiveOfSeven = votes >= 5;
-                const perfectWeek = votes === 7;
-                const graceDayUsed = votes === 6;
-
-                return (
-                  <div key={sys.id} className="p-3 rounded-xl border border-border/50 bg-muted/20 space-y-3" data-testid={`consistency-row-${sys.id}`}>
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <p className="text-sm font-medium truncate">{sys.title}</p>
-                      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-                        {perfectWeek && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-chart-3/15 text-chart-3" data-testid={`badge-perfect-week-${sys.id}`}>
-                            Perfect week
-                          </span>
-                        )}
-                        {graceDayUsed && !perfectWeek && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-chart-2/15 text-chart-2" data-testid={`badge-grace-day-${sys.id}`}>
-                            Grace day used
-                          </span>
-                        )}
-                        {fiveOfSeven && !graceDayUsed && !perfectWeek && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-chart-4/15 text-chart-4" data-testid={`badge-five-of-seven-${sys.id}`}>
-                            5 of 7 ✓
-                          </span>
-                        )}
-                        <span className={cn(
-                          "text-xs font-semibold px-2 py-0.5 rounded-full",
-                          resilience >= 70 ? "bg-chart-3/15 text-chart-3" :
-                          resilience >= 40 ? "bg-chart-4/15 text-chart-4" :
-                          "bg-muted text-muted-foreground",
-                        )}>
-                          Resilience: {resilience}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 7-dot weekly visualization */}
-                    <div className="flex items-center gap-1.5" data-testid={`weekly-dots-${sys.id}`}>
-                      {last7Days.map((day) => (
-                        <div key={day.dateKey} className="flex flex-col items-center gap-1 flex-1">
-                          <div
-                            className={cn(
-                              "w-full h-5 rounded-md transition-all",
-                              day.status === "done"    ? "bg-chart-3"          :
-                              day.status === "partial" ? "bg-chart-4/70"       :
-                              day.status === "missed"  ? "bg-destructive/30"   :
-                              "bg-muted/50 border border-border/40",
-                            )}
-                            title={`${day.dateKey}: ${day.status ?? "no check-in"}`}
-                          />
-                          <span className="text-[9px] text-muted-foreground leading-none">{day.label}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={cn("h-full rounded-full transition-all", consistencyColor)}
-                          style={{ width: `${consistency}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium w-20 text-right flex-shrink-0">{consistency}% · {votes}/7 wk</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Last 30 days · Comeback run: {comeback} day{comeback !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="mt-4 p-3 rounded-lg bg-muted/30 border border-border/40 space-y-2">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Resilience score</strong> rewards you for showing up consistently over time and for coming back after a miss — not just for unbroken streaks.
-                A score of 70+ means you're reliably building this habit.
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Grace day</strong> — missing one day per week (6 of 7) still counts as a strong week. Life happens. Bouncing back is what matters.
-                Hitting <strong className="text-foreground">5 of 7 days</strong> consistently is a genuine win.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Daily / Weekly / Monthly completion bar chart — Starter+ */}
-      {features.betterAnalytics && <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <CardTitle className="text-base flex items-center gap-2">
-              <BarChart2 className="w-4 h-4 text-primary" />
-              Completion Rate — {periodLabel[period]}
-            </CardTitle>
-            <Tabs value={period} onValueChange={v => setPeriod(v as Period)}>
-              <TabsList className="h-8">
-                <TabsTrigger value="daily"   className="text-xs px-3" data-testid="tab-period-daily">Daily</TabsTrigger>
-                <TabsTrigger value="weekly"  className="text-xs px-3" data-testid="tab-period-weekly">Weekly</TabsTrigger>
-                <TabsTrigger value="monthly" className="text-xs px-3" data-testid="tab-period-monthly">Monthly</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!hasData || chartData.every((d: any) => d.Total === 0) ? (
-            <div className="h-48 flex items-center justify-center">
-              <p className="text-muted-foreground text-sm">
-                No data yet — start checking in daily!
-              </p>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData} barGap={2}>
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="Done"  fill="hsl(var(--chart-3))" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
-                <Bar dataKey="Total" fill="hsl(var(--muted))"   radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationBegin={60} animationEasing="ease-out" />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>}
-
-      {/* Completion % trend line — Starter+ */}
-      {features.betterAnalytics && <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">
-            Completion % Trend — {periodLabel[period]}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!hasData ? (
-            <div className="h-48 flex items-center justify-center">
-              <p className="text-muted-foreground text-sm">No data yet.</p>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} axisLine={false} tickLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Line
-                  type="monotone"
-                  dataKey="Completion %"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))", r: 3 }}
-                  isAnimationActive
-                  animationDuration={600}
-                  animationEasing="ease-out"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>}
-
-      {/* Day-of-week Patterns — Starter+ */}
-      {features.betterAnalytics && <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-chart-2" />
-            Day-of-week Patterns
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">Which days you complete habits most consistently</p>
-        </CardHeader>
-        <CardContent>
-          {!hasDowData ? (
-            <div className="h-32 flex items-center justify-center">
-              <p className="text-muted-foreground text-sm">Check in for at least a week to see patterns.</p>
-            </div>
-          ) : (
-            <div className="space-y-2" data-testid="dow-patterns">
-              {dayOfWeekStats.map(d => {
-                const pct = d.doneRate;
-                const barColor = pct >= 70 ? "bg-chart-3" : pct >= 40 ? "bg-chart-4" : "bg-destructive/60";
-                return (
-                  <div key={d.day} className="flex items-center gap-3">
-                    <span className="text-xs font-medium w-8 flex-shrink-0 text-muted-foreground">{d.shortDay}</span>
-                    <div className="flex-1 h-5 bg-muted rounded-sm overflow-hidden">
-                      <div
-                        className={cn("h-full rounded-sm transition-all", barColor)}
-                        style={{ width: d.totalCount > 0 ? `${pct}%` : "0%" }}
-                      />
-                    </div>
-                    <span className="text-xs font-medium w-8 text-right flex-shrink-0">
-                      {d.totalCount > 0 ? `${pct}%` : "—"}
-                    </span>
-                    <span className="text-xs text-muted-foreground w-16 flex-shrink-0">
-                      {d.totalCount > 0 ? `${d.doneCount}/${d.totalCount}` : "no data"}
-                    </span>
-                  </div>
-                );
-              })}
-              {(() => {
-                const withData = dayOfWeekStats.filter(d => d.totalCount > 0);
-                if (withData.length < 2) return null;
-                const best  = [...withData].sort((a, b) => b.doneRate - a.doneRate)[0];
-                const worst = [...withData].sort((a, b) => a.doneRate - b.doneRate)[0];
-                if (best.day === worst.day) return null;
-                return (
-                  <p className="text-xs text-muted-foreground pt-2 border-t border-border/50">
-                    Your strongest day is <span className="font-semibold text-foreground">{best.day}</span> ({best.doneRate}%).
-                    {worst.doneRate < best.doneRate - 20 && (
-                      <> Consider a fallback plan for <span className="font-semibold text-foreground">{worst.day}</span>s ({worst.doneRate}%).</>
-                    )}
-                  </p>
-                );
-              })()}
-            </div>
-          )}
-        </CardContent>
-      </Card>}
-
-      {/* Mood vs Completion + Difficulty vs Completion — Pro/Elite only */}
-      {features.moodCorrelation && (hasMoodData || hasDifficultyData) && (
-        <div className="grid md:grid-cols-2 gap-4">
-          {hasMoodData && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Smile className="w-4 h-4 text-chart-5" />
-                  Mood vs. Completion
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">How your pre-habit mood affects success</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2" data-testid="mood-correlation">
-                  {moodBuckets.filter(b => b.count > 0).map(b => (
-                    <div key={b.mood} className="flex items-center gap-3">
-                      <span className="text-xs w-16 flex-shrink-0 text-muted-foreground">{b.label}</span>
-                      <div className="flex-1 h-4 bg-muted rounded-sm overflow-hidden">
-                        <div
-                          className="h-full bg-chart-5/70 rounded-sm transition-all"
-                          style={{ width: `${b.completionPct}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium w-8 text-right flex-shrink-0">{b.completionPct}%</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {hasDifficultyData && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Dumbbell className="w-4 h-4 text-chart-4" />
-                  Difficulty vs. Completion
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">How perceived difficulty affects follow-through</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2" data-testid="difficulty-correlation">
-                  {difficultyBuckets.filter(b => b.count > 0).map(b => (
-                    <div key={b.difficulty} className="flex items-center gap-3">
-                      <span className="text-xs w-20 flex-shrink-0 text-muted-foreground">{b.label}</span>
-                      <div className="flex-1 h-4 bg-muted rounded-sm overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-sm transition-all",
-                            b.completionPct >= 70 ? "bg-chart-3/70" : b.completionPct >= 40 ? "bg-chart-4/70" : "bg-destructive/50",
-                          )}
-                          style={{ width: `${b.completionPct}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium w-8 text-right flex-shrink-0">{b.completionPct}%</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Current streaks + Best-ever streaks — Starter+ */}
-      {features.betterAnalytics && <div className="grid md:grid-cols-2 gap-4">
-        {/* Current streaks */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Flame className="w-4 h-4 text-chart-4" />
-              Current Streaks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topStreaks.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No active streaks yet. Keep checking in!
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {topStreaks.map(([systemId, streak]) => {
-                  const sys = systems.find(s => s.id === systemId);
-                  return (
-                    <div
-                      key={systemId}
-                      className="flex items-center justify-between gap-3"
-                      data-testid={`streak-current-${systemId}`}
-                    >
-                      <span className="text-sm truncate">{sys?.title ?? "Unknown"}</span>
-                      <div className="flex items-center gap-1 text-chart-4 font-bold flex-shrink-0">
-                        <Flame className="w-3.5 h-3.5" />
-                        {streak as number}d
-                      </div>
-                    </div>
-                  );
-                })}
+        {/* AI-powered insights — Pro/Elite only */}
+        {features.aiAnalyticsInsights && analytics.totalCheckins >= 3 && (
+          <Card className="overflow-hidden">
+            <div className="h-1 w-full gradient-brand" />
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <SectionTitle icon={Bot} color="bg-primary/10 text-primary" title="AI Insights" subtitle="Personalized analysis of your habits" />
+                <button type="button" onClick={() => refetchAiInsights()} disabled={aiInsightsLoading}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border hover:bg-muted/40"
+                  data-testid="button-refresh-ai-insights">
+                  {aiInsightsLoading ? <><Loader2 className="w-3 h-3 animate-spin" />Analyzing…</> : <><Sparkles className="w-3 h-3" />Refresh</>}
+                </button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {aiInsightsLoading ? (
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {[1, 2, 3].map(i => <div key={i} className="h-20 rounded-xl border border-border/50 bg-muted/20 animate-pulse" />)}
+                </div>
+              ) : aiInsights.length > 0 ? (
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {aiInsights.map((insight, i) => {
+                    const styles = {
+                      positive: { card: "bg-chart-3/8 border-chart-3/20", icon: "text-chart-3" },
+                      neutral:  { card: "bg-primary/8 border-primary/20", icon: "text-primary" },
+                      tip:      { card: "bg-chart-4/8 border-chart-4/20", icon: "text-chart-4" },
+                    };
+                    const s = styles[insight.type];
+                    return (
+                      <div key={i} className={cn("flex items-start gap-3 p-4 rounded-xl border", s.card)} data-testid={`ai-insight-card-${i}`}>
+                        <Bot className={cn("w-3.5 h-3.5 flex-shrink-0 mt-0.5", s.icon)} />
+                        <p className="text-xs text-foreground leading-relaxed">{insight.text}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Best-ever streaks (streak history) */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Star className="w-4 h-4 text-chart-2" />
-              Best Streaks (All-time)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topBestStreakEntries.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Complete at least one check-in to see best streaks.
+        {/* Text-based insight cards */}
+        {insightCards.length > 0 && (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {insightCards.map((card, i) => {
+              const styles = {
+                positive: { card: "bg-chart-3/8 border-chart-3/20", icon: "bg-chart-3/15 text-chart-3" },
+                neutral:  { card: "bg-primary/8 border-primary/20",  icon: "bg-primary/15 text-primary" },
+                tip:      { card: "bg-chart-4/8 border-chart-4/20",  icon: "bg-chart-4/15 text-chart-4" },
+              };
+              const s = styles[card.type];
+              return (
+                <div key={i} className={cn("flex items-start gap-3 p-4 rounded-2xl border", s.card)} data-testid={`insight-card-${i}`}>
+                  <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0", s.icon)}>
+                    <card.icon className="w-4 h-4" />
+                  </div>
+                  <p className="text-sm text-foreground leading-relaxed">{card.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!hasData && (
+          <Card className="border-primary/20 overflow-hidden">
+            <div className="h-1 gradient-brand" />
+            <CardContent className="p-10 sm:p-14 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+                <BarChart2 className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="font-bold text-lg mb-2">Your progress story starts here</h3>
+              <p className="text-muted-foreground text-sm mb-3 max-w-sm mx-auto leading-relaxed">
+                Once you start checking in on your systems each day, you'll see charts, streaks, consistency scores, and growth over time.
               </p>
-            ) : (
-              <div className="space-y-3">
-                {topBestStreakEntries.map(([systemId, best], idx) => {
-                  const sys = systems.find(s => s.id === systemId);
-                  const current = streaks[systemId] ?? 0;
-                  return (
-                    <div
-                      key={systemId}
-                      className="flex items-center justify-between gap-3"
-                      data-testid={`streak-best-${systemId}`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-bold text-muted-foreground w-4">#{idx + 1}</span>
-                        <span className="text-sm truncate">{sys?.title ?? "Unknown"}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {current === best && current > 0 && (
-                          <Badge variant="outline" className="text-chart-3 border-chart-3/30 text-xs">active</Badge>
-                        )}
-                        <div className="flex items-center gap-1 text-chart-2 font-bold">
-                          <Star className="w-3 h-3" />
-                          {best as number}d
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                {topBestStreak > 0 && (
-                  <p className="text-xs text-muted-foreground pt-1 border-t border-border">
-                    Your personal record: <span className="font-semibold text-foreground">{topBestStreak} days</span>
-                  </p>
+              <p className="text-xs text-muted-foreground mb-6">Even one check-in is enough to start.</p>
+              <div className="flex gap-3 justify-center flex-wrap">
+                <Link href="/checkins">
+                  <Button className="gap-2 rounded-xl h-10" data-testid="button-analytics-go-checkin">
+                    <CheckSquare className="w-4 h-4" />
+                    Check in today
+                  </Button>
+                </Link>
+                {systems.length === 0 && (
+                  <Link href="/systems/new">
+                    <Button variant="outline" className="gap-2 rounded-xl h-10" data-testid="button-analytics-build-system">
+                      Build a system first
+                    </Button>
+                  </Link>
                 )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Goals by category — Starter+ */}
-      {features.betterAnalytics && <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Goals by Category</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {categoryData.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Create goals to see categories.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={Math.max(120, categoryData.length * 36)}>
-              <BarChart data={categoryData} layout="vertical" barSize={12}>
-                <XAxis type="number" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis
-                  type="category"
-                  dataKey="category"
-                  tick={{ fontSize: 11 }}
-                  width={90}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="Goals" fill="hsl(var(--primary))" radius={[0, 3, 3, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>}
+        {/* Summary metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <MetricCard icon={Target}    label="Total Goals"    value={analytics.totalGoals}    sub={`${analytics.activeGoals} active`}    color="bg-primary/10 text-primary"   accentBg="bg-primary/40" />
+          <MetricCard icon={Zap}       label="Total Systems"  value={analytics.totalSystems}  sub={`${analytics.activeSystems} active`}  color="bg-chart-2/10 text-chart-2"   accentBg="bg-chart-2/50" />
+          <MetricCard icon={Calendar}  label="Total Check-ins" value={analytics.totalCheckins} sub="all time"                            color="bg-chart-3/10 text-chart-3"   accentBg="bg-chart-3/50" />
+          <MetricCard icon={TrendingUp} label="Avg Completion" value={`${avgCompletion}%`}     sub="last 30 days"                        color="bg-chart-4/10 text-chart-4"   accentBg="bg-chart-4/50" />
+        </div>
 
-      {/* Most consistent + most missed systems — Starter+ */}
-      {features.betterAnalytics && <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-chart-3" />
-              Most Consistent Systems
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {mostConsistent.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                Check in at least 3 times to see rankings.
-              </p>
-            ) : (
+        {/* Upgrade prompt for free users */}
+        {!features.betterAnalytics && (
+          <PlanGate
+            requiredPlan="starter"
+            featureLabel="Charts & Detailed Insights"
+            description="Upgrade to Starter to unlock habit charts, streak tracking, consistency metrics, and per-system breakdowns."
+            compact
+          />
+        )}
+
+        {/* Per-system consistency metrics — Starter+ */}
+        {features.betterAnalytics && hasData && systems.filter(s => s.active).length > 0 && (
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <SectionTitle icon={TrendingUp} color="bg-chart-2/10 text-chart-2" title="Consistency Metrics" subtitle="Beyond raw streaks — how reliably you show up over time" />
+            </CardHeader>
+            <CardContent className="pt-0">
               <div className="space-y-3">
-                {mostConsistent.map((s, i) => (
-                  <div key={s.systemId} data-testid={`consistent-system-${s.systemId}`}>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
-                        <span className="text-sm truncate">{s.title}</span>
-                      </div>
-                      <Badge variant="outline" className="text-chart-3 border-chart-3/30 flex-shrink-0">
-                        {s.pct}%
-                      </Badge>
-                    </div>
-                    <Progress value={s.pct} className="h-1.5" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {s.doneCount} done / {s.totalCheckins} check-ins
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                {systems.filter(s => s.active).map(sys => {
+                  const consistency = consistencyScores[sys.id] ?? 0;
+                  const votes      = weeklyVotes[sys.id] ?? 0;
+                  const comeback   = comebackStreaks[sys.id] ?? 0;
+                  const resilience = resilienceScores[sys.id] ?? 0;
+                  const barColor   = consistency >= 70 ? "bg-chart-3" : consistency >= 40 ? "bg-chart-4" : "bg-destructive/60";
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-destructive" />
-              Most Missed Systems
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {mostMissed.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No missed check-ins yet — keep it up!
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {mostMissed.map((s, i) => (
-                  <div key={s.systemId} data-testid={`missed-system-${s.systemId}`}>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-bold text-muted-foreground w-4">#{i + 1}</span>
-                        <span className="text-sm truncate">{s.title}</span>
-                      </div>
-                      <Badge variant="outline" className="text-destructive border-destructive/30 flex-shrink-0">
-                        {s.missedCount} missed
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {Math.round((s.missedCount / s.totalCheckins) * 100)}% miss rate across{" "}
-                      {s.totalCheckins} check-ins
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>}
+                  const last7Days = Array.from({ length: 7 }, (_, i) => {
+                    const d = new Date(); d.setDate(d.getDate() - (6 - i));
+                    const dateKey = d.toISOString().split("T")[0];
+                    const checkin = checkins.find(c => c.systemId === sys.id && c.dateKey === dateKey);
+                    return {
+                      dateKey,
+                      label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1),
+                      status: checkin?.status ?? null,
+                    };
+                  });
 
-      {/* Completion by goal — Starter+ */}
-      {features.betterAnalytics && goalCompletion.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target className="w-4 h-4 text-primary" />
-              Completion by Goal
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[...goalCompletion]
-                .sort((a, b) => b.avgPct - a.avgPct)
-                .map(gc => (
-                  <div key={gc.goalId} data-testid={`goal-completion-${gc.goalId}`}>
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-sm font-medium truncate">{gc.title}</span>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-muted-foreground">
-                          {gc.systemCount} system{gc.systemCount !== 1 ? "s" : ""}
+                  const perfectWeek = votes === 7;
+                  const graceDayUsed = votes === 6;
+                  const fiveOfSeven  = votes >= 5;
+
+                  return (
+                    <div key={sys.id} className="p-4 rounded-2xl border border-border/50 bg-muted/20 space-y-3" data-testid={`consistency-row-${sys.id}`}>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <p className="text-sm font-semibold truncate">{sys.title}</p>
+                        <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap">
+                          {perfectWeek && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-chart-3/15 text-chart-3" data-testid={`badge-perfect-week-${sys.id}`}>Perfect week 🏆</span>
+                          )}
+                          {graceDayUsed && !perfectWeek && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-chart-2/15 text-chart-2" data-testid={`badge-grace-day-${sys.id}`}>Grace day used</span>
+                          )}
+                          {fiveOfSeven && !graceDayUsed && !perfectWeek && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-chart-4/15 text-chart-4" data-testid={`badge-five-of-seven-${sys.id}`}>5/7 ✓</span>
+                          )}
+                          <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                            resilience >= 70 ? "bg-chart-3/15 text-chart-3" :
+                            resilience >= 40 ? "bg-chart-4/15 text-chart-4" :
+                            "bg-muted text-muted-foreground")}>
+                            Resilience {resilience}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 7-dot weekly visualization */}
+                      <div className="flex items-center gap-1" data-testid={`weekly-dots-${sys.id}`}>
+                        {last7Days.map(day => (
+                          <div key={day.dateKey} className="flex flex-col items-center gap-1 flex-1">
+                            <div className={cn(
+                              "w-full h-6 rounded-lg transition-all",
+                              day.status === "done"    ? "bg-chart-3" :
+                              day.status === "partial" ? "bg-chart-4/70" :
+                              day.status === "missed"  ? "bg-destructive/30" :
+                              "bg-muted/50 border border-border/40",
+                            )} title={`${day.dateKey}: ${day.status ?? "no check-in"}`} />
+                            <span className="text-[9px] text-muted-foreground leading-none font-medium">{day.label}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className={cn("h-full rounded-full transition-all duration-700", barColor)} style={{ width: `${consistency}%` }} />
+                        </div>
+                        <span className="text-xs font-semibold w-24 text-right flex-shrink-0 text-foreground">{consistency}% · {votes}/7 wk</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Last 30 days · Comeback run: <strong className="text-foreground">{comeback} day{comeback !== 1 ? "s" : ""}</strong>
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Legend */}
+              <div className="mt-4 p-4 rounded-2xl bg-muted/30 border border-border/40 space-y-2">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">Resilience score</strong> rewards showing up consistently and for coming back after a miss — not just unbroken streaks. A score of 70+ means you're reliably building this habit.
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <strong className="text-foreground">Grace day</strong> — missing one day per week (6 of 7) still counts as a strong week. Bouncing back is what matters.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Completion Rate Chart — Starter+ */}
+        {features.betterAnalytics && (
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <SectionTitle icon={BarChart2} color="bg-primary/10 text-primary" title={`Completion Rate — ${periodLabel[period]}`} />
+                <Tabs value={period} onValueChange={v => setPeriod(v as Period)}>
+                  <TabsList className="h-8 rounded-xl">
+                    <TabsTrigger value="daily"   className="text-xs px-3 rounded-lg" data-testid="tab-period-daily">Daily</TabsTrigger>
+                    <TabsTrigger value="weekly"  className="text-xs px-3 rounded-lg" data-testid="tab-period-weekly">Weekly</TabsTrigger>
+                    <TabsTrigger value="monthly" className="text-xs px-3 rounded-lg" data-testid="tab-period-monthly">Monthly</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {!hasData || chartData.every((d: any) => d.Total === 0) ? (
+                <div className="h-48 flex flex-col items-center justify-center text-center gap-2">
+                  <BarChart2 className="w-8 h-8 text-muted-foreground/30" />
+                  <p className="text-muted-foreground text-sm">No data yet — start checking in daily!</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={230}>
+                  <BarChart data={chartData} barGap={2} barCategoryGap="30%">
+                    <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: "hsl(var(--muted))", radius: 4 }} />
+                    <Bar dataKey="Done"  fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
+                    <Bar dataKey="Total" fill="hsl(var(--muted))"   radius={[4, 4, 0, 0]} isAnimationActive animationDuration={600} animationBegin={60} animationEasing="ease-out" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Completion % Trend — Starter+ */}
+        {features.betterAnalytics && (
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <SectionTitle icon={TrendingUp} color="bg-primary/10 text-primary" title={`Completion % Trend — ${periodLabel[period]}`} subtitle="Your completion rate over time" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              {!hasData ? (
+                <div className="h-48 flex flex-col items-center justify-center gap-2">
+                  <TrendingUp className="w-8 h-8 text-muted-foreground/30" />
+                  <p className="text-muted-foreground text-sm">No data yet.</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={210}>
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="completionGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="hsl(var(--primary))" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                    <XAxis dataKey="label" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11 }} domain={[0, 100]} axisLine={false} tickLine={false} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Area
+                      type="monotone" dataKey="Completion %"
+                      stroke="hsl(var(--primary))" strokeWidth={2.5}
+                      fill="url(#completionGrad)"
+                      dot={{ fill: "hsl(var(--primary))", r: 3, strokeWidth: 0 }}
+                      isAnimationActive animationDuration={700} animationEasing="ease-out"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Day-of-week Patterns — Starter+ */}
+        {features.betterAnalytics && (
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <SectionTitle icon={Calendar} color="bg-chart-2/10 text-chart-2" title="Day-of-week Patterns" subtitle="Which days you complete habits most consistently" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              {!hasDowData ? (
+                <div className="h-32 flex flex-col items-center justify-center gap-2">
+                  <Calendar className="w-8 h-8 text-muted-foreground/30" />
+                  <p className="text-muted-foreground text-sm">Check in for at least a week to see patterns.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5" data-testid="dow-patterns">
+                  {dayOfWeekStats.map(d => {
+                    const pct      = d.doneRate;
+                    const barColor = pct >= 70 ? "bg-chart-3" : pct >= 40 ? "bg-chart-4" : "bg-destructive/60";
+                    return (
+                      <div key={d.day} className="flex items-center gap-3">
+                        <span className="text-xs font-semibold w-8 flex-shrink-0 text-muted-foreground">{d.shortDay}</span>
+                        <div className="flex-1 h-5 bg-muted/50 rounded-lg overflow-hidden">
+                          <div className={cn("h-full rounded-lg transition-all duration-700", barColor)}
+                            style={{ width: d.totalCount > 0 ? `${pct}%` : "0%" }} />
+                        </div>
+                        <span className="text-xs font-bold w-9 text-right flex-shrink-0">
+                          {d.totalCount > 0 ? `${pct}%` : "—"}
                         </span>
-                        <Badge
-                          variant="outline"
-                          className={
-                            gc.avgPct >= 80
-                              ? "text-chart-3 border-chart-3/30"
-                              : gc.avgPct >= 50
-                              ? "text-chart-4 border-chart-4/30"
-                              : "text-destructive border-destructive/30"
-                          }
-                        >
-                          {gc.avgPct}%
-                        </Badge>
+                        <span className="text-xs text-muted-foreground w-14 flex-shrink-0 hidden sm:block">
+                          {d.totalCount > 0 ? `${d.doneCount}/${d.totalCount}` : ""}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {(() => {
+                    const withData = dayOfWeekStats.filter(d => d.totalCount > 0);
+                    if (withData.length < 2) return null;
+                    const best  = [...withData].sort((a, b) => b.doneRate - a.doneRate)[0];
+                    const worst = [...withData].sort((a, b) => a.doneRate - b.doneRate)[0];
+                    if (best.day === worst.day) return null;
+                    return (
+                      <div className="flex items-start gap-2 pt-3 border-t border-border/50 mt-1">
+                        <Lightbulb className="w-3.5 h-3.5 text-chart-4 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Your strongest day is <span className="font-semibold text-foreground">{best.day}</span> ({best.doneRate}%).
+                          {worst.doneRate < best.doneRate - 20 && (
+                            <> Consider a fallback plan for <span className="font-semibold text-foreground">{worst.day}</span>s ({worst.doneRate}%).</>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Mood vs Completion + Difficulty vs Completion — Pro/Elite only */}
+        {features.moodCorrelation && (hasMoodData || hasDifficultyData) && (
+          <div className="grid md:grid-cols-2 gap-4">
+            {hasMoodData && (
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <SectionTitle icon={Smile} color="bg-chart-5/10 text-chart-5" title="Mood vs. Completion" subtitle="How your pre-habit mood affects success" />
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2.5" data-testid="mood-correlation">
+                    {moodBuckets.filter(b => b.count > 0).map(b => (
+                      <div key={b.mood} className="flex items-center gap-3">
+                        <span className="text-xs w-16 flex-shrink-0 text-muted-foreground font-medium">{b.label}</span>
+                        <div className="flex-1 h-5 bg-muted/50 rounded-lg overflow-hidden">
+                          <div className="h-full bg-chart-5/60 rounded-lg transition-all duration-700" style={{ width: `${b.completionPct}%` }} />
+                        </div>
+                        <span className="text-xs font-bold w-9 text-right flex-shrink-0">{b.completionPct}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {hasDifficultyData && (
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <SectionTitle icon={Dumbbell} color="bg-chart-4/10 text-chart-4" title="Difficulty vs. Completion" subtitle="How perceived difficulty affects follow-through" />
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-2.5" data-testid="difficulty-correlation">
+                    {difficultyBuckets.filter(b => b.count > 0).map(b => (
+                      <div key={b.difficulty} className="flex items-center gap-3">
+                        <span className="text-xs w-20 flex-shrink-0 text-muted-foreground font-medium">{b.label}</span>
+                        <div className="flex-1 h-5 bg-muted/50 rounded-lg overflow-hidden">
+                          <div className={cn("h-full rounded-lg transition-all duration-700",
+                            b.completionPct >= 70 ? "bg-chart-3/70" : b.completionPct >= 40 ? "bg-chart-4/70" : "bg-destructive/50")}
+                            style={{ width: `${b.completionPct}%` }} />
+                        </div>
+                        <span className="text-xs font-bold w-9 text-right flex-shrink-0">{b.completionPct}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Current + Best-ever streaks — Starter+ */}
+        {features.betterAnalytics && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <SectionTitle icon={Flame} color="bg-chart-4/10 text-chart-4" title="Current Streaks" subtitle="Active streaks right now" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                {topStreaks.length === 0 ? (
+                  <div className="flex flex-col items-center py-8 gap-2 text-center">
+                    <Flame className="w-8 h-8 text-muted-foreground/30" />
+                    <p className="text-muted-foreground text-sm">No active streaks yet. Keep checking in!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {topStreaks.map(([systemId, streak], idx) => {
+                      const sys = systems.find(s => s.id === systemId);
+                      const pct = Math.min(100, ((streak as number) / Math.max(...topStreaks.map(([, v]) => v as number), 1)) * 100);
+                      return (
+                        <div key={systemId} className="space-y-1" data-testid={`streak-current-${systemId}`}>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-[10px] font-bold text-muted-foreground w-4 flex-shrink-0">#{idx + 1}</span>
+                              <span className="text-sm truncate">{sys?.title ?? "Unknown"}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-chart-4 font-extrabold flex-shrink-0">
+                              <Flame className="w-3.5 h-3.5" />
+                              {streak as number}d
+                            </div>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-chart-4/60 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <SectionTitle icon={Star} color="bg-chart-2/10 text-chart-2" title="Best Streaks (All-time)" subtitle="Your personal records per system" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                {topBestStreakEntries.length === 0 ? (
+                  <div className="flex flex-col items-center py-8 gap-2 text-center">
+                    <Star className="w-8 h-8 text-muted-foreground/30" />
+                    <p className="text-muted-foreground text-sm">Complete at least one check-in to see best streaks.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {topBestStreakEntries.map(([systemId, best], idx) => {
+                      const sys = systems.find(s => s.id === systemId);
+                      const current = streaks[systemId] ?? 0;
+                      const isActive = current === best && current > 0;
+                      return (
+                        <div key={systemId} className="flex items-center justify-between gap-3" data-testid={`streak-best-${systemId}`}>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-[10px] font-bold text-muted-foreground w-4 flex-shrink-0">#{idx + 1}</span>
+                            <span className="text-sm truncate">{sys?.title ?? "Unknown"}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {isActive && (
+                              <Badge variant="outline" className="text-chart-3 border-chart-3/30 text-[10px] rounded-full">active 🔥</Badge>
+                            )}
+                            <div className="flex items-center gap-1 text-chart-2 font-extrabold">
+                              <Star className="w-3 h-3" />
+                              {best as number}d
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {topBestStreak > 0 && (
+                      <div className="pt-2 border-t border-border/50">
+                        <p className="text-xs text-muted-foreground">
+                          Personal record: <span className="font-bold text-foreground">{topBestStreak} days</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Most consistent + most missed systems — Starter+ */}
+        {features.betterAnalytics && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <SectionTitle icon={Trophy} color="bg-chart-3/10 text-chart-3" title="Most Consistent Systems" subtitle="Ranked by completion rate" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                {mostConsistent.length === 0 ? (
+                  <p className="text-muted-foreground text-sm py-4 text-center">Check in at least 3 times to see rankings.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {mostConsistent.map((s, i) => (
+                      <div key={s.systemId} data-testid={`consistent-system-${s.systemId}`}>
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-[10px] font-bold text-muted-foreground w-4">#{i + 1}</span>
+                            <span className="text-sm truncate">{s.title}</span>
+                          </div>
+                          <Badge variant="outline" className="text-chart-3 border-chart-3/30 rounded-full text-xs flex-shrink-0">{s.pct}%</Badge>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-chart-3/70 rounded-full transition-all duration-700" style={{ width: `${s.pct}%` }} />
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1">{s.doneCount} done / {s.totalCheckins} check-ins</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <SectionTitle icon={AlertCircle} color="bg-destructive/10 text-destructive" title="Most Missed Systems" subtitle="Where to simplify or use fallback plans" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                {mostMissed.length === 0 ? (
+                  <div className="flex flex-col items-center py-8 gap-2 text-center">
+                    <Trophy className="w-8 h-8 text-chart-3/40" />
+                    <p className="text-muted-foreground text-sm">No missed check-ins yet — keep it up!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {mostMissed.map((s, i) => {
+                      const missRate = Math.round((s.missedCount / s.totalCheckins) * 100);
+                      return (
+                        <div key={s.systemId} data-testid={`missed-system-${s.systemId}`}>
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-[10px] font-bold text-muted-foreground w-4">#{i + 1}</span>
+                              <span className="text-sm truncate">{s.title}</span>
+                            </div>
+                            <Badge variant="outline" className="text-destructive border-destructive/30 rounded-full text-xs flex-shrink-0">{s.missedCount} missed</Badge>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-destructive/50 rounded-full" style={{ width: `${missRate}%` }} />
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-1">{missRate}% miss rate · {s.totalCheckins} check-ins</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Completion by goal — Starter+ */}
+        {features.betterAnalytics && goalCompletion.length > 0 && (
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <SectionTitle icon={Target} color="bg-primary/10 text-primary" title="Completion by Goal" subtitle="Average completion rate across all systems per goal" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-4">
+                {[...goalCompletion].sort((a, b) => b.avgPct - a.avgPct).map(gc => {
+                  const barColor = gc.avgPct >= 80 ? "bg-chart-3/70" : gc.avgPct >= 50 ? "bg-chart-4/70" : "bg-destructive/50";
+                  const badgeClass = gc.avgPct >= 80 ? "text-chart-3 border-chart-3/30" : gc.avgPct >= 50 ? "text-chart-4 border-chart-4/30" : "text-destructive border-destructive/30";
+                  return (
+                    <div key={gc.goalId} data-testid={`goal-completion-${gc.goalId}`}>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-sm font-medium truncate">{gc.title}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs text-muted-foreground">{gc.systemCount} system{gc.systemCount !== 1 ? "s" : ""}</span>
+                          <Badge variant="outline" className={cn("rounded-full text-xs", badgeClass)}>{gc.avgPct}%</Badge>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className={cn("h-full rounded-full transition-all duration-700", barColor)} style={{ width: `${gc.avgPct}%` }} />
                       </div>
                     </div>
-                    <Progress value={gc.avgPct} className="h-2" />
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Goals by Category Chart — Starter+ */}
+        {features.betterAnalytics && (
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <SectionTitle icon={Target} color="bg-primary/10 text-primary" title="Goals by Category" subtitle="How your goals are distributed across areas of life" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              {categoryData.length === 0 ? (
+                <div className="flex flex-col items-center py-10 gap-2 text-center">
+                  <Target className="w-8 h-8 text-muted-foreground/30" />
+                  <p className="text-muted-foreground text-sm">Create goals to see categories.</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={Math.max(120, categoryData.length * 38)}>
+                  <BarChart data={categoryData} layout="vertical" barSize={14}>
+                    <XAxis type="number" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="category" tick={{ fontSize: 11 }} width={90} axisLine={false} tickLine={false} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: "hsl(var(--muted))" }} />
+                    <Bar dataKey="Goals" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} isAnimationActive animationDuration={700} animationEasing="ease-out" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Bottom spacer */}
+        <div className="h-4" />
+      </div>
     </div>
   );
 }
