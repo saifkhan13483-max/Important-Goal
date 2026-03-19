@@ -287,11 +287,12 @@ function ProductPreview() {
         <div className="flex h-56 sm:h-72 md:h-80">
           {/* Sidebar — hidden on mobile */}
           <div className="w-36 sm:w-44 border-r border-border bg-sidebar hidden sm:flex flex-col p-3 gap-1">
-            <div className="flex items-center gap-2 p-2 mb-2">
-              <div className="w-6 h-6 rounded-md gradient-brand flex items-center justify-center">
-                <Sparkles className="w-3 h-3 text-white" />
-              </div>
-              <span className="text-xs font-bold text-sidebar-foreground">Strivo</span>
+            <div className="flex items-center p-2 mb-2">
+              <img
+                src="https://res.cloudinary.com/de2wrwg6e/image/upload/v1773912025/header_logo-removebg-preview_1_dym01r.png"
+                alt="Strivo"
+                className="h-5 w-auto object-contain"
+              />
             </div>
             {[
               { icon: BarChart2, label: "Dashboard", active: true  },
