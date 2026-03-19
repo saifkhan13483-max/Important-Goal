@@ -1322,7 +1322,7 @@ function WorkspaceView({ workspace, currentUserId, myStats, onRefresh, isRefresh
     onError: () => toast({ title: "Failed to leave workspace", variant: "destructive" }),
   });
 
-  const membersWithStats = workspace.members;
+  const membersWithStats = workspace.members as (WorkspaceMember & { stats?: MemberStats })[];
   const membersSortedForCards = useMemo(() => {
     return [...membersWithStats].sort((a, b) => {
       const aStats = a.userId === currentUserId ? myStats : a.stats;

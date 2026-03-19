@@ -128,12 +128,13 @@ export default function Analytics() {
     const systemsById = Object.fromEntries(systems.map((s) => [s.id, s.title]));
     const goalsById = Object.fromEntries(goals.map((g) => [g.id, g.title]));
 
+    const systemGoalMap = Object.fromEntries(systems.map((s) => [s.id, s.goalId ?? ""]));
     const checkinsRows = checkins.map((c) => ({
-      date: c.date,
+      date: c.dateKey,
       systemTitle: systemsById[c.systemId] ?? c.systemId,
-      goalTitle: c.goalId ? (goalsById[c.goalId] ?? c.goalId) : "",
-      done: c.done ? "yes" : "no",
-      mood: c.mood ?? "",
+      goalTitle: systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? systemGoalMap[c.systemId]) : "",
+      done: c.status === "done" ? "yes" : "no",
+      mood: c.moodBefore ?? "",
       difficulty: c.difficulty ?? "",
       note: c.note ?? "",
     }));

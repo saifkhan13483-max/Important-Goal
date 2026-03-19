@@ -122,10 +122,11 @@ Firebase credentials are stored in the `.replit` userenv section and are prefixe
 
 ## AI Integration (Groq)
 
-AI features use the **Groq API** (`llama-3.3-70b-versatile`) called directly from the client via `fetch` — no backend server.
+AI features use the **Groq API** (`llama-3.3-70b-versatile`) via a server-side proxy (`/api/groq-proxy`) embedded in `vite.config.ts`. The proxy is served on port 35001 internally and proxied through the Vite dev server.
 
 ### Environment variable
-- `VITE_GROQ_API_KEY` — Groq API key (stored in `.replit` userenv)
+- `GROQ_API_KEY` — Groq API key (server-only, **no VITE_ prefix**). Read by `vite.config.ts` apiPlugin and `server/index.ts`.
+- **Note**: Replit currently has `VITE_GROQ_API_KEY` stored. Set `GROQ_API_KEY` (without prefix) for the AI proxy to work in dev.
 
 ### Files
 - `client/src/services/ai.service.ts` — Core service: `callGroq`, `suggestSystemField`, `generateFullSystem`, `chatWithCoach`, `generateJournalPrompt`, `generateAnalyticsInsights`

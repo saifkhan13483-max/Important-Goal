@@ -30,7 +30,8 @@ type EventName =
   | "streak_shared"
   | "upgrade_clicked"
   | "newsletter_subscribed"
-  | "journal_entry_created";
+  | "journal_entry_created"
+  | "hero_cta_click";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
