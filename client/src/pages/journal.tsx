@@ -146,7 +146,7 @@ function InlineJournalForm({
         ? updateJournal(entry.id, data)
         : createJournal(userId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["journals", userId] });
+      qc.invalidateQueries({ queryKey: ["journal", userId] });
       toast({ title: entry ? "Entry updated!" : "Entry saved! ✨" });
       onClose();
       onSaved?.();
@@ -457,7 +457,7 @@ export default function Journal() {
   const features = getPlanFeatures(user?.plan);
 
   const { data: entries = [], isLoading } = useQuery<JournalEntry[]>({
-    queryKey: ["journals", userId],
+    queryKey: ["journal", userId],
     queryFn: () => getJournals(userId),
     enabled: !!userId,
   });
@@ -478,7 +478,7 @@ export default function Journal() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteJournal(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["journals", userId] });
+      qc.invalidateQueries({ queryKey: ["journal", userId] });
       toast({ title: "Entry deleted" });
       setDeleteEntry(undefined);
     },

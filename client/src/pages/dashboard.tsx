@@ -629,7 +629,7 @@ function QuickCheckinRow({
     mutationFn: (status: string) =>
       upsertCheckin(userId, system.id, today, { status }),
     onSuccess: (_, status) => {
-      qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
+      qc.invalidateQueries({ queryKey: ["checkins", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
       const identityLine = system.identityStatement
         ? `${system.identityStatement.charAt(0).toUpperCase() + system.identityStatement.slice(1)}. You just proved it.`
@@ -862,7 +862,7 @@ export default function Dashboard() {
   });
 
   const { data: todayCheckins = [] } = useQuery<Checkin[]>({
-    queryKey: ["checkins-today", userId, today],
+    queryKey: ["checkins", userId, today],
     queryFn: () => getCheckinsByDate(userId, today),
     enabled: !!userId,
   });
@@ -874,7 +874,7 @@ export default function Dashboard() {
   });
 
   const { data: journals = [] } = useQuery<JournalEntry[]>({
-    queryKey: ["journals", userId],
+    queryKey: ["journal", userId],
     queryFn: () => getJournals(userId),
     enabled: !!userId,
   });

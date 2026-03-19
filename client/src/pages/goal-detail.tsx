@@ -261,7 +261,7 @@ function SystemCard({ system, goalId }: { system: System; goalId: string }) {
   const toggleActive = useMutation({
     mutationFn: () => updateSystem(system.id, { active: !system.active }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["goal-systems", goalId] });
+      qc.invalidateQueries({ queryKey: ["systems", "byGoal", goalId] });
       toast({ title: system.active ? "System paused" : "System activated" });
     },
   });
@@ -269,7 +269,7 @@ function SystemCard({ system, goalId }: { system: System; goalId: string }) {
   const deleteMut = useMutation({
     mutationFn: () => deleteSystem(system.id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["goal-systems", goalId] });
+      qc.invalidateQueries({ queryKey: ["systems", "byGoal", goalId] });
       toast({ title: "System deleted" });
       setConfirmDelete(false);
     },
@@ -382,7 +382,7 @@ export default function GoalDetail() {
   });
 
   const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
-    queryKey: ["goal-systems", goalId],
+    queryKey: ["systems", "byGoal", goalId],
     queryFn: () => getSystemsByGoal(userId, goalId),
     enabled: !!goalId && !!userId,
   });

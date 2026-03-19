@@ -103,7 +103,7 @@ export function AppSidebar() {
   });
 
   const { data: todayCheckins = [] } = useQuery<Checkin[]>({
-    queryKey: ["checkins-today", userId, today],
+    queryKey: ["checkins", userId, today],
     queryFn: () => getCheckinsByDate(userId, today),
     enabled: !!userId,
   });

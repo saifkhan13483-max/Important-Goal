@@ -631,7 +631,7 @@ function SystemCheckinCard({
         difficulty: difficulty ?? undefined,
       }),
     onSuccess: (_, status) => {
-      qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
+      qc.invalidateQueries({ queryKey: ["checkins", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
       if (status === "done") { track("checkin_completed", { status: "done" }); } else if (status === "missed") { track("checkin_missed"); }
       if (status === "done") {
@@ -665,7 +665,7 @@ function SystemCheckinCard({
       });
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["checkins-today", userId, today] });
+      qc.invalidateQueries({ queryKey: ["checkins", userId, today] });
       qc.invalidateQueries({ queryKey: ["checkins", userId] });
       toast({ title: "Note & ratings saved." });
     },
@@ -1344,7 +1344,7 @@ export default function Checkins() {
   });
 
   const { data: todayCheckins = [], isLoading: todayLoading } = useQuery<Checkin[]>({
-    queryKey: ["checkins-today", userId, today],
+    queryKey: ["checkins", userId, today],
     queryFn: () => getCheckinsByDate(userId, today),
     enabled: !!userId,
   });

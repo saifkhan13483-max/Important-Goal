@@ -95,7 +95,7 @@ export default function TemplatesPage() {
   const features = getPlanFeatures(user?.plan);
 
   const { data: templates = [], isLoading } = useQuery<Template[]>({
-    queryKey: ["public-templates"],
+    queryKey: ["templates"],
     queryFn: () => getPublicTemplates(),
   });
 

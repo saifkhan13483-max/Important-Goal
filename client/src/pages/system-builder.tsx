@@ -266,7 +266,7 @@ export default function SystemBuilderPage() {
   });
 
   const { data: templates = [] } = useQuery<Template[]>({
-    queryKey: ["public-templates"],
+    queryKey: ["templates"],
     queryFn: () => getPublicTemplates(),
     staleTime: 1000 * 60 * 10,
   });
