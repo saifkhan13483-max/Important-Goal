@@ -1,0 +1,78 @@
+════════════════════════════════════════════════════════════════ SECTION 9 — SERVER (GROQ PROXY + STATIC SERVING) ════════════════════════════════════════════════════════════════
+
+Open server/index.ts. This file must contain ONLY:
+
+An Express server
+A POST /api/groq-proxy route that:
+Reads GROQ_API_KEY from process.env (never from VITE_ variables)
+Forwards the request body to https://api.groq.com/openai/v1/chat/completions
+Returns the Groq response to the client
+Has error handling that returns { error: string } with appropriate HTTP status
+In production (NODE_ENV === 'production'):
+Serves static files from dist/public
+SPA fallback: any unmatched GET returns dist/public/index.html
+Listens on process.env.PORT || 5000
+The Groq proxy route should look like this:
+
+Copyapp.post('/api/groq-proxy', async (req, res) => {
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify(req.body),
+    });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Groq proxy error' });
+  }
+});
+════════════════════════════════════════════════════════════════ SECTION 10 — VITE CONFIG (DEV GROQ PROXY) ════════════════════════════════════════════════════════════════
+
+Open vite.config.ts. DO NOT rewrite the whole file. Only verify:
+
+The plugins array includes @vitejs/plugin-react
+The resolve.alias section includes: '@' → path.resolve(__dirname, 'client/src') '@shared' → path.resolve(__dirname, 'client/src/types') '@assets' → path.resolve(__dirname, 'attached_assets')
+The server config sets port: 5000
+A dev-only embedded HTTP server on port 35001 handles POST /api/groq-proxy and forwards to Groq using GROQ_API_KEY from process.env
+The proxy config forwards /api/groq-proxy → http://localhost:35001
+If the embedded HTTP server is missing, add it using Node's built-in http module as a plugin that starts before Vite's dev server. It should only run when process.env.NODE_ENV !== 'production'.
+
+════════════════════════════════════════════════════════════════ SECTION 11 — FIRESTORE SECURITY RULES ════════════════════════════════════════════════════════════════
+
+Open firestore.rules. Ensure it contains rules for these collections with the following access patterns:
+
+users:
+
+read/write: only if request.auth.uid == userId (document ID)
+goals:
+
+read/write: only if request.auth.uid == resource.data.userId
+systems:
+
+read/write: only if request.auth.uid == resource.data.userId
+workspace members can read: if request.auth.uid in get(/databases/(database)/documents/workspaces/(workspaceId)).data.memberIds
+checkins:
+
+read/write: only if request.auth.uid == resource.data.userId
+journalEntries:
+
+read/write: only if request.auth.uid == resource.data.userId
+workspaces:
+
+read: if request.auth.uid in resource.data.memberIds
+write (create): if request.auth != null
+write (update/delete): if request.auth.uid == resource.data.ownerId
+member updates (syncMemberStats): if request.auth.uid in resource.data.memberIds
+templates:
+
+read (public): if resource.data.isPublic == true
+read (premium): if request.auth != null (plan check done client-side)
+write: if request.auth.uid is an admin (store admin UIDs in a top-level 'config/admins' document and check against it)
+emailLeads:
+
+create: allow always (unauthenticated landing page signups)
+read/write: admin only

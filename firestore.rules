@@ -10,6 +10,12 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    // Admin check: UIDs stored in config/admins document under a 'uids' array
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/config/admins).data.uids;
+    }
+
     // Returns the workspaceId stored on the requesting user's profile
     function myWorkspaceId() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.workspaceId;
@@ -59,10 +65,17 @@ service cloud.firestore {
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
     }
 
-    // Workspaces: any signed-in user may read (needed for invite code lookup) and create;
-    // updates allowed for owner, existing members (stats sync), or a new user adding themselves (joining).
+    // Workspaces:
+    //   read: members can read their workspace; any signed-in user may also read
+    //         (required so non-members can look up a workspace by invite code before joining —
+    //         the invite code itself is the security token for this flow)
+    //   create: authenticated user who sets themselves as ownerId
+    //   update: owner (rename, transfer, regenerate code) OR existing member (stats sync)
+    //           OR a user being added via invite code join
+    //   delete: owner only
     match /workspaces/{workspaceId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && request.auth.uid in resource.data.memberIds
+                  || isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
       allow update: if isSignedIn() && (
         resource.data.ownerId == request.auth.uid ||
@@ -72,9 +85,26 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
     }
 
-    // Email leads: write-only (captured from landing page)
+    // Templates:
+    //   public read: any visitor (isPublic == true)
+    //   authenticated read: any signed-in user (premium plan check is done client-side)
+    //   write: admin only
+    match /templates/{templateId} {
+      allow read: if resource.data.isPublic == true || isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Email leads: create-only from landing page (unauthenticated visitors allowed)
+    //              read/update/delete: admin only
     match /emailLeads/{leadId} {
       allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Analytics events: any signed-in user may write; admin-only reads
+    match /analyticsEvents/{eventId} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin();
     }
   }
 }

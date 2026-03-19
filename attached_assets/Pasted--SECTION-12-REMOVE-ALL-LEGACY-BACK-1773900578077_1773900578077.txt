@@ -1,0 +1,56 @@
+════════════════════════════════════════════════════════════════ SECTION 12 — REMOVE ALL LEGACY BACKEND CODE ════════════════════════════════════════════════════════════════
+
+Search the entire codebase for the following patterns and remove/replace them:
+
+Any import of 'drizzle-orm' or 'drizzle-zod' in client/ code → remove the import, replace with Zod schemas in client/src/types/schema.ts
+
+Any import of '@neondatabase/serverless' or 'pg' → remove entirely from client/ code
+
+Any fetch() or axios call to /api/ endpoints OTHER than /api/groq-proxy → replace with the appropriate Firestore service call
+
+Any import of getStorage from 'firebase/storage' → remove and replace with uploadToCloudinary from @/lib/cloudinary
+
+Any reference to process.env in client/ code → replace with import.meta.env.VITE_*
+
+Any hardcoded API URLs pointing to localhost Express endpoints for data → remove
+
+Search for 'storage' in all files under client/src/ — if it refers to Firebase Storage, remove it. If it refers to localStorage, leave it.
+
+After removal, do a global search for these strings to confirm they are gone from client/:
+
+'firebase/storage'
+'getStorage'
+'ref(' (Firebase Storage ref — note: this may also appear in Zustand, be careful)
+'uploadBytes'
+'getDownloadURL'
+'drizzle'
+'@neondatabase'
+════════════════════════════════════════════════════════════════ SECTION 13 — TYPESCRIPT TYPES ════════════════════════════════════════════════════════════════
+
+Open client/src/types/schema.ts. Ensure it contains TypeScript interfaces for:
+
+UserProfile { uid: string; email: string; displayName: string; photoURL?: string; plan: 'free' | 'starter' | 'pro' | 'elite'; onboardingCompleted: boolean; workspaceId?: string; identityStatement?: string; futureAudioUrl?: string; createdAt: string; updatedAt: string; }
+
+Goal { id: string; userId: string; title: string; category: string; priority: 'low' | 'medium' | 'high'; status: 'active' | 'completed' | 'archived'; deadline?: string; milestones: Milestone[]; createdAt: string; updatedAt: string; }
+
+Milestone { id: string; title: string; completed: boolean; }
+
+System { id: string; userId: string; goalId: string; minimumAction: string; triggerStatement: string; rewardStatement: string; fallbackPlan: string; identityAnchor?: string; active: boolean; createdAt: string; updatedAt: string; }
+
+CheckIn { id: string; userId: string; systemId: string; dateKey: string; // YYYY-MM-DD status: 'completed' | 'skipped' | 'missed'; moodBefore?: number; // 1-10 moodAfter?: number; // 1-10 notes?: string; createdAt: string; }
+
+JournalEntry { id: string; userId: string; goalId?: string; systemId?: string; dateKey: string; content: string; createdAt: string; updatedAt: string; }
+
+Workspace { id: string; ownerId: string; name: string; inviteCode: string; memberIds: string[]; members: WorkspaceMember[]; memberStats: Record<string, MemberStats>; createdAt: string; updatedAt: string; }
+
+WorkspaceMember { uid: string; displayName: string; photoURL?: string; role: 'owner' | 'member'; joinedAt: string; }
+
+MemberStats { totalSystems: number; completedToday: number; currentStreak: number; weeklyRate: number; lastUpdated: string; }
+
+Template { id: string; title: string; description: string; category: string; isPublic: boolean; isPremium: boolean; minimumAction: string; triggerStatement: string; rewardStatement: string; fallbackPlan: string; identityAnchor?: string; usageCount: number; createdAt: string; }
+
+════════════════════════════════════════════════════════════════ SECTION 14 — ROUTING VERIFICATION ════════════════════════════════════════════════════════════════
+
+Open client/src/App.tsx. Verify all routes are defined using wouter's component with React.lazy + Suspense for code splitting.
+
+Required routes: / → LandingPage (NOT lazy — first paint) /login → LoginPage (PublicOnlyRoute) /signup → SignupPage (PublicOnlyRoute) /forgot-password → ForgotPasswordPage (PublicOnlyRoute) /onboarding → OnboardingPage (ProtectedRoute, onboarding exempt) /dashboard → DashboardPage (ProtectedRoute) /goals → GoalsPage (ProtectedRoute) /goals/:id → GoalDetailPage (ProtectedRoute) /systems → SystemsPage (ProtectedRoute) /systems/new → SystemBuilderPage (ProtectedRoute) /systems/:id → SystemDetailPage (ProtectedRoute) /systems/:id/edit → SystemBuilderPage (ProtectedRoute, edit mode) /templates → TemplatesPage (ProtectedRoute) /checkins → CheckInsPage (ProtectedRoute) /analytics → AnalyticsPage (ProtectedRoute) /journal → JournalPage (ProtectedRoute) /ai-coach → AiCoachPage (ProtectedRoute) /workspace → WorkspacePage (ProtectedRoute) /settings → SettingsPage (ProtectedRoute) /pricing → PricingPage (public) /checkout/success → CheckoutSuccessPage (ProtectedRoute) /admin → AdminPage (ProtectedRoute + admin check)
