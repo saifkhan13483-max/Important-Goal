@@ -6,18 +6,18 @@
  * goals.service.ts, etc.) import from this file — never re-initialize Firebase.
  *
  * Configuration is loaded entirely from environment variables (VITE_ prefix)
- * so no secrets are hardcoded. The .env.example file documents every variable.
+ * so no secrets are hardcoded.
  *
  * Services initialized here:
- *   - auth:    Firebase Authentication (email/password + Google OAuth)
- *   - db:      Firestore database (primary data store for all user data)
- *   - storage: Firebase Storage (audio file uploads for Future Self Audio)
+ *   - auth: Firebase Authentication (email/password + Google OAuth)
+ *   - db:   Firestore database (primary data store for all user data)
+ *
+ * File/media uploads are handled by Cloudinary — see lib/cloudinary.ts.
  */
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -32,4 +32,3 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app);

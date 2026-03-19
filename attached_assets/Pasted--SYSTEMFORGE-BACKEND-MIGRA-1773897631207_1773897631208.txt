@@ -1,0 +1,521 @@
+=======================================================================
+SYSTEMFORGE — BACKEND MIGRATION PROMPT FOR REPLIT AI AGENT
+Goal: Replace the vite.config.ts-embedded mini HTTP server and the
+server/workspaces_data.json flat-file store with Firebase Firestore +
+Cloudinary. Do NOT touch any existing Firebase Auth, Firestore, or
+TanStack Query logic unless explicitly told to below.
+=======================================================================
+
+────────────────────────────────────────────────────────────────────────
+SECTION 0 — CONTEXT: WHAT THIS APP IS
+────────────────────────────────────────────────────────────────────────
+
+SystemForge is a React 18 + TypeScript SPA bundled by Vite 7. It uses:
+- Firebase Auth (email/password + Google OAuth) — KEEP AS-IS
+- Firestore for all user/goal/system/checkin/journal data — KEEP AS-IS
+- Firebase Storage for audio files — this will be REPLACED by Cloudinary
+- A mini Node.js HTTP server embedded inside vite.config.ts on port
+  35001 that handles two concerns:
+    1. Workspace CRUD (persisted to server/workspaces_data.json)
+    2. A Groq AI proxy at /api/groq-proxy
+- Vite proxies /api/workspace and /api/groq-proxy from port 5000 → 35001
+- TanStack Query v5 for server state, Zustand for auth state
+- Wouter for routing, shadcn/ui + Tailwind CSS for UI
+
+────────────────────────────────────────────────────────────────────────
+SECTION 1 — WHAT MUST BE MIGRATED (the two targets)
+────────────────────────────────────────────────────────────────────────
+
+TARGET A — WORKSPACE BACKEND
+  Currently: A standalone Node.js HTTP server inside vite.config.ts
+  persists workspace records to server/workspaces_data.json. Every
+  request requires a Firebase ID token in the Authorization header,
+  which the server verifies via Google's Identity Toolkit REST API.
+  Endpoints: create, join (by invite code), leave, remove member,
+  regenerate invite code, sync member stats.
+
+  After migration: All workspace data lives in Firestore inside a
+  "workspaces" collection. All the above operations become direct
+  Firestore SDK calls from the browser (same pattern as goals/systems).
+  The server/workspaces_data.json file and all JSON-file logic are
+  deleted. The /api/workspace proxy and server handler are removed from
+  vite.config.ts. Firestore security rules enforce authorization in
+  place of the manual token-verification step.
+
+TARGET B — FILE / MEDIA STORAGE
+  Currently: Audio files (the "future-self" recording feature) are
+  uploaded to Firebase Storage, and only the resulting URL is saved to
+  the user's Firestore document.
+
+  After migration: Audio (and any other binary files — profile images,
+  etc.) are uploaded directly from the browser to Cloudinary using an
+  unsigned upload preset. The resulting Cloudinary secure_url is saved
+  to the user's Firestore document exactly as before. Firebase Storage
+  is no longer used.
+
+TARGET C — GROQ AI PROXY (minor cleanup only)
+  The /api/groq-proxy endpoint in vite.config.ts MUST STAY. Do not
+  remove it. The only change needed is that once the workspace server
+  code is gone, the vite.config.ts server no longer needs the
+  token-verification logic (since Firestore rules handle workspace auth
+  now). If and only if no other code still calls the token-verifier,
+  remove that function. Otherwise leave vite.config.ts alone beyond
+  deleting the workspace route handlers.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 2 — ENVIRONMENT VARIABLES TO ADD
+────────────────────────────────────────────────────────────────────────
+
+Add the following to the Replit Secrets panel (I will provide the
+values — do NOT hardcode them in source files):
+
+  VITE_CLOUDINARY_CLOUD_NAME      (your Cloudinary cloud name)
+  VITE_CLOUDINARY_UPLOAD_PRESET   (an unsigned upload preset name you
+                                   create in Cloudinary dashboard under
+                                   Settings → Upload → Upload Presets →
+                                   Add upload preset → Mode: Unsigned)
+
+These are VITE_-prefixed because they are used only in the browser.
+No Cloudinary API secret or API key should ever appear in the frontend
+code or in any VITE_-prefixed variable.
+
+All existing VITE_FIREBASE_* variables remain unchanged.
+GROQ_API_KEY remains a server-only secret (no VITE_ prefix) — unchanged.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 3 — FIRESTORE DATA MODEL FOR WORKSPACES
+────────────────────────────────────────────────────────────────────────
+
+Create (or confirm) the following Firestore collection structure.
+Map it exactly from the existing workspaces_data.json schema so no
+frontend data-shape changes are needed.
+
+Collection: workspaces
+Document ID: auto-generated (Firestore .doc() with no argument) on
+             creation, or the existing workspaceId if already set.
+
+Fields per document:
+  id            : string   (same as the document ID, stored redundantly)
+  name          : string
+  ownerId       : string   (Firebase UID of creator)
+  inviteCode    : string   (random 8-char alphanumeric, regenerable)
+  createdAt     : Timestamp
+  members       : array of objects, each shaped as:
+    {
+      userId    : string,
+      displayName: string,
+      email     : string,
+      role      : "owner" | "member",
+      joinedAt  : Timestamp,
+      stats: {
+        totalSystems   : number,
+        completedToday : number,
+        currentStreak  : number,
+        completionRate : number
+      }
+    }
+
+This shape already exists in types/schema.ts as the Workspace
+interface — do not change that interface.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 4 — FIRESTORE SECURITY RULES TO ADD
+────────────────────────────────────────────────────────────────────────
+
+Add these rules to firestore.rules (create the file if it doesn't
+exist). Do NOT overwrite existing rules for other collections — append
+or merge:
+
+  match /workspaces/{workspaceId} {
+
+    // Any authenticated user can read a workspace document.
+    // The invite-code join flow needs to query by inviteCode field,
+    // so reads are open to auth'd users.
+    allow read: if request.auth != null;
+
+    // Only the workspace owner can create a new workspace document.
+    allow create: if request.auth != null
+      && request.resource.data.ownerId == request.auth.uid;
+
+    // Members can update (used for stat sync and leave operations).
+    // Owners can update anything. Non-members cannot update.
+    allow update: if request.auth != null
+      && (resource.data.ownerId == request.auth.uid
+          || request.auth.uid in resource.data.members.map(m, m.userId));
+
+    // Only the owner can delete a workspace.
+    allow delete: if request.auth != null
+      && resource.data.ownerId == request.auth.uid;
+  }
+
+────────────────────────────────────────────────────────────────────────
+SECTION 5 — NEW SERVICE FILE: workspace.service.ts
+────────────────────────────────────────────────────────────────────────
+
+Create client/src/services/workspace.service.ts.
+This file replaces ALL HTTP calls that previously went to /api/workspace.
+Use the existing Firestore db instance imported from lib/firebase.ts
+(or wherever the app currently initialises Firebase — check that file
+first and import from the same place).
+
+Implement and export the following async functions. Each must return
+typed data matching the Workspace interface in types/schema.ts.
+Use proper TypeScript — no `any`.
+
+----- 5.1  createWorkspace -----
+export async function createWorkspace(
+  userId: string,
+  name: string,
+  ownerProfile: { displayName: string; email: string }
+): Promise<Workspace>
+
+Logic:
+  1. Generate a random 8-character alphanumeric invite code.
+  2. Build the workspace object with ownerId = userId, role = "owner",
+     members array containing just the owner, createdAt = serverTimestamp().
+  3. Call addDoc(collection(db, "workspaces"), workspaceData).
+  4. Also update the user's document in the "users" collection:
+     set workspaceId = the new document ID.
+  5. Return the full workspace object with id set to the new doc ID.
+
+----- 5.2  getWorkspaceById -----
+export async function getWorkspaceById(
+  workspaceId: string
+): Promise<Workspace | null>
+
+Logic: getDoc from workspaces/{workspaceId}. Return null if not found.
+
+----- 5.3  getWorkspaceByInviteCode -----
+export async function getWorkspaceByInviteCode(
+  inviteCode: string
+): Promise<Workspace | null>
+
+Logic:
+  query(collection(db, "workspaces"), where("inviteCode", "==", inviteCode))
+  Return the first result or null.
+
+----- 5.4  joinWorkspace -----
+export async function joinWorkspace(
+  inviteCode: string,
+  userId: string,
+  userProfile: { displayName: string; email: string }
+): Promise<Workspace>
+
+Logic:
+  1. Call getWorkspaceByInviteCode(inviteCode). Throw if not found.
+  2. Check user is not already a member. Throw if already member.
+  3. arrayUnion a new member object (role: "member", stats zeroed).
+  4. updateDoc the workspace.
+  5. updateDoc the user's document: set workspaceId = workspace.id.
+  6. Return the updated workspace (re-fetch with getWorkspaceById).
+
+----- 5.5  leaveWorkspace -----
+export async function leaveWorkspace(
+  workspaceId: string,
+  userId: string
+): Promise<void>
+
+Logic:
+  1. getDoc the workspace. Throw if not found.
+  2. If userId === ownerId, throw Error("Owner cannot leave — transfer
+     ownership or delete the workspace first.").
+  3. Filter the members array to remove the user. updateDoc.
+  4. updateDoc user's Firestore document: set workspaceId = null.
+
+----- 5.6  removeMember -----
+export async function removeMember(
+  workspaceId: string,
+  requestingUserId: string,
+  targetUserId: string
+): Promise<void>
+
+Logic:
+  1. getDoc the workspace. Throw if not found.
+  2. Verify requestingUserId === ownerId. Throw if not.
+  3. Filter members array to remove targetUserId. updateDoc.
+  4. updateDoc target user's Firestore document: workspaceId = null.
+
+----- 5.7  regenerateInviteCode -----
+export async function regenerateInviteCode(
+  workspaceId: string,
+  requestingUserId: string
+): Promise<string>
+
+Logic:
+  1. getDoc. Verify requestingUserId === ownerId.
+  2. Generate new 8-char code. updateDoc { inviteCode: newCode }.
+  3. Return newCode.
+
+----- 5.8  syncMemberStats -----
+export async function syncMemberStats(
+  workspaceId: string,
+  userId: string,
+  stats: MemberStats
+): Promise<void>
+
+Logic:
+  1. getDoc the workspace.
+  2. Map over members array, updating the matching userId's stats object.
+  3. updateDoc with the new members array.
+
+(MemberStats is already defined in types/schema.ts — use it.)
+
+----- 5.9  subscribeToWorkspace (real-time listener) -----
+export function subscribeToWorkspace(
+  workspaceId: string,
+  callback: (workspace: Workspace | null) => void
+): () => void   // returns unsubscribe function
+
+Logic: onSnapshot(doc(db, "workspaces", workspaceId), snap => callback(...))
+Return the unsubscribe function directly.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 6 — UPDATE EXISTING WORKSPACE UI / HOOKS
+────────────────────────────────────────────────────────────────────────
+
+Search the codebase for every file that currently imports from or calls:
+  - fetch("/api/workspace") or any variant
+  - useWorkspace hook that calls /api/workspace
+  - Any axios/fetch call to port 35001
+
+Replace each such call with the corresponding function from
+workspace.service.ts imported above.
+
+Specifically, in the workspace-related hooks (likely in
+hooks/useWorkspace.ts or similar):
+  - Replace all fetch calls with the new service functions.
+  - useMutation wrappers should call the service functions and
+    invalidate the ["workspace", workspaceId] query key on success,
+    exactly like the pattern used in goals and systems.
+  - useQuery for workspace data should call getWorkspaceById.
+  - Replace any polling mechanism with subscribeToWorkspace using
+    a useEffect that calls the unsubscribe on cleanup.
+
+Do NOT change the props or return signatures of the hooks — only the
+internal implementation changes. The workspace UI pages should require
+zero changes.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 7 — CLOUDINARY MIGRATION (replace Firebase Storage)
+────────────────────────────────────────────────────────────────────────
+
+Step 7.1 — Create client/src/lib/cloudinary.ts
+
+  export const CLOUDINARY_CLOUD_NAME =
+    import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string;
+
+  export const CLOUDINARY_UPLOAD_PRESET =
+    import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string;
+
+  export const CLOUDINARY_UPLOAD_URL =
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`;
+
+  /**
+   * Uploads a File or Blob to Cloudinary using an unsigned upload preset.
+   * Returns the secure_url of the uploaded asset.
+   */
+  export async function uploadToCloudinary(
+    file: File | Blob,
+    folder?: string
+  ): Promise<string> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    if (folder) formData.append("folder", folder);
+
+    const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(
+        error.error?.message ?? "Cloudinary upload failed"
+      );
+    }
+
+    const data = await response.json();
+    return data.secure_url as string;
+  }
+
+Step 7.2 — Find the future-self audio upload code
+
+Search for all references to:
+  - firebase/storage
+  - getStorage
+  - uploadBytes
+  - getDownloadURL
+  - ref(storage, ...)
+
+These will likely be in services/user.service.ts or a dedicated
+audio.service.ts or inside a component under pages/ or components/.
+
+Step 7.3 — Replace Firebase Storage calls with Cloudinary
+
+For every upload that previously called uploadBytes + getDownloadURL:
+
+  BEFORE:
+    const storageRef = ref(storage, `audio/${userId}/future-self.webm`);
+    await uploadBytes(storageRef, audioBlob);
+    const url = await getDownloadURL(storageRef);
+
+  AFTER:
+    import { uploadToCloudinary } from "@/lib/cloudinary";
+    const url = await uploadToCloudinary(audioBlob, `systemforge/audio/${userId}`);
+
+The rest of the flow (saving `url` to Firestore) remains identical.
+
+Step 7.4 — Remove Firebase Storage imports and initialization
+
+After all references are replaced, remove:
+  - import { getStorage, ... } from "firebase/storage";
+  - const storage = getStorage(app);
+  - The storage export from lib/firebase.ts
+  - firebase/storage from package.json if it has zero remaining imports
+    (run a global search to verify before removing the package).
+
+────────────────────────────────────────────────────────────────────────
+SECTION 8 — CLEAN UP vite.config.ts
+────────────────────────────────────────────────────────────────────────
+
+IMPORTANT: Be surgical. The Groq proxy MUST be kept. Only remove the
+workspace-related code.
+
+Inside vite.config.ts, remove:
+  1. The workspace data store object/array and its initialisation.
+  2. The helper that reads/writes server/workspaces_data.json.
+  3. The token-verification function (verifyFirebaseToken or similar)
+     IF AND ONLY IF it is not also used by the Groq proxy handler.
+     If the Groq proxy uses it for rate-limiting auth checks, keep it.
+  4. All request handler blocks whose URL path starts with /api/workspace
+     (create, join, leave, remove-member, regenerate-invite-code,
+     sync-stats — all of them).
+  5. The Vite proxy entry for /api/workspace in the server.proxy block.
+
+Keep:
+  - Everything related to /api/groq-proxy (handler + proxy config).
+  - All Vite plugin configuration (React plugin, path aliases, etc.).
+  - The HTTP server startup code itself (it still serves the Groq proxy).
+  - All existing environment variable reads.
+
+After deletion, re-read the file and confirm:
+  - No import or require still references workspaces_data.json.
+  - No route handler references /api/workspace.
+  - The file still compiles (check for dangling commas or broken blocks).
+
+────────────────────────────────────────────────────────────────────────
+SECTION 9 — DELETE DEAD FILES AND DEPENDENCIES
+────────────────────────────────────────────────────────────────────────
+
+After all replacements are verified:
+
+  1. Delete server/workspaces_data.json
+  2. Delete server/ directory entirely IF it now contains only empty
+     folders or only workspaces_data.json — otherwise leave it.
+  3. In package.json, remove firebase/storage only if zero imports
+     remain (confirmed by global search in step 7.4).
+  4. Do NOT remove any other Firebase package, any Vite dependency,
+     or any package not explicitly listed above.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 10 — INSTALL NEW DEPENDENCY (if needed)
+────────────────────────────────────────────────────────────────────────
+
+Cloudinary uploads in this migration use the native fetch API and
+FormData, so NO new npm package is required. Do not install
+cloudinary, cloudinary-react, or @cloudinary/react unless you need
+the CldImage/CldVideo display components. For now, only the upload
+helper in lib/cloudinary.ts is needed.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 11 — STEP-BY-STEP EXECUTION ORDER (follow this exactly)
+────────────────────────────────────────────────────────────────────────
+
+Execute in this order. After each numbered step, pause and confirm
+the step is complete before moving to the next.
+
+  1. Read and fully understand these files before touching anything:
+       - vite.config.ts (full file)
+       - server/workspaces_data.json
+       - client/src/types/schema.ts (Workspace + MemberStats interfaces)
+       - client/src/lib/firebase.ts (how db is initialized)
+       - Any file matching *workspace* in client/src/services/
+       - Any file matching *workspace* in client/src/hooks/
+       - client/src/pages/workspace.tsx (or similar)
+       - Any file that imports from firebase/storage
+
+  2. Add VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET
+     to the Replit Secrets panel with the values I provide.
+
+  3. Create client/src/lib/cloudinary.ts (Section 7.1 above).
+
+  4. Create client/src/services/workspace.service.ts (Section 5 above).
+
+  5. Update workspace hooks (Section 6 above). Test that the hook
+     signatures haven't changed.
+
+  6. Replace Firebase Storage upload calls with uploadToCloudinary
+     (Section 7.2–7.3 above).
+
+  7. Remove Firebase Storage initialisation from lib/firebase.ts
+     (Section 7.4 above).
+
+  8. Clean up vite.config.ts — remove workspace routes only
+     (Section 8 above).
+
+  9. Delete dead files (Section 9 above).
+
+ 10. Run the dev server and verify:
+       - No TypeScript errors.
+       - The app loads without console errors.
+       - Login/signup still works.
+       - The /workspace page loads without errors.
+       - Creating/joining a workspace writes to Firestore (check
+         Firebase console → Firestore → workspaces collection).
+       - The audio upload on the future-self feature produces a
+         Cloudinary URL (starts with https://res.cloudinary.com/).
+       - The Groq proxy still responds at /api/groq-proxy.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 12 — THINGS YOU MUST NOT DO
+────────────────────────────────────────────────────────────────────────
+
+  ✗ Do NOT create a new Express server or a new server/ directory.
+  ✗ Do NOT modify authentication logic (Firebase Auth, onAuthStateChanged,
+    AuthInitializer, ProtectedRoute, PublicOnlyRoute).
+  ✗ Do NOT change the Workspace or MemberStats TypeScript interfaces.
+  ✗ Do NOT change TanStack Query staleTime or refetch settings globally.
+  ✗ Do NOT remove or modify the Groq proxy in vite.config.ts.
+  ✗ Do NOT add any Cloudinary API secret or private key to any
+    VITE_-prefixed variable or any frontend file.
+  ✗ Do NOT use npx to run vite — the dev script must use the local
+    binary (e.g. ./node_modules/.bin/vite or the existing npm script).
+  ✗ Do NOT import React manually in any file — the Vite JSX transform
+    handles it.
+  ✗ Do NOT change path aliases (@/, @shared/, @assets/).
+  ✗ Do NOT touch Drizzle, db:push scripts, or anything Drizzle-related.
+  ✗ Do NOT modify Stripe payment link flow.
+  ✗ Do NOT modify EmailJS setup.
+  ✗ Do NOT make speculative improvements. Only do what is described
+    in this prompt.
+
+────────────────────────────────────────────────────────────────────────
+SECTION 13 — ENVIRONMENT VARIABLE VALUES (fill these in yourself)
+────────────────────────────────────────────────────────────────────────
+
+When Replit Agent asks for secret values, provide:
+
+  VITE_CLOUDINARY_CLOUD_NAME    → [your cloud name from Cloudinary dashboard]
+  VITE_CLOUDINARY_UPLOAD_PRESET → [your unsigned preset name]
+
+Pre-migration checklist before you run the agent:
+  ✅ Log into Cloudinary dashboard.
+  ✅ Go to Settings → Upload → Upload Presets → Add upload preset.
+  ✅ Set Mode to "Unsigned". Save. Copy the preset name.
+  ✅ Copy your Cloud Name from the Cloudinary dashboard homepage.
+  ✅ Paste both into Replit Secrets before running this prompt.
+
+=======================================================================
+END OF PROMPT
+=======================================================================
