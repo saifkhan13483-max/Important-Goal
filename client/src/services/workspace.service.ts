@@ -229,3 +229,28 @@ export async function syncMemberStats(workspaceId: string, stats: MemberStats): 
     [`memberStats.${uid}`]: { ...stats, syncedAt: new Date().toISOString() },
   });
 }
+
+export async function transferOwnership(
+  workspaceId: string,
+  currentOwnerId: string,
+  newOwnerId: string,
+): Promise<void> {
+  const wsRef = doc(db, "workspaces", workspaceId);
+  const snap = await getDoc(wsRef);
+  if (!snap.exists()) throw new Error("Workspace not found");
+
+  const wsData = { id: snap.id, ...snap.data() } as WorkspaceDoc;
+
+  if (wsData.ownerId !== currentOwnerId) throw new Error("Only the owner can transfer ownership");
+  if (!wsData.memberIds.includes(newOwnerId)) throw new Error("New owner must be a member of the workspace");
+
+  const updatedMembers = wsData.members.map((m) => ({
+    ...m,
+    role: m.userId === newOwnerId ? "owner" as const : m.userId === currentOwnerId ? "member" as const : m.role,
+  }));
+
+  await updateDoc(wsRef, {
+    ownerId: newOwnerId,
+    members: updatedMembers,
+  });
+}
