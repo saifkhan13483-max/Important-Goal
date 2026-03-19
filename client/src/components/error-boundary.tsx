@@ -30,7 +30,7 @@ interface State {
   error: Error | null;
 }
 
-const CHUNK_RELOAD_KEY = "sf_chunk_reload_attempted";
+const CHUNK_RELOAD_KEY = "strivo_chunk_reload_attempted";
 
 function isChunkLoadError(error: Error): boolean {
   const msg = error.message ?? "";

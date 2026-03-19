@@ -14,7 +14,7 @@ interface RouteProps {
 
 function EmailVerificationBanner() {
   const [dismissed, setDismissed] = useState(
-    () => sessionStorage.getItem("sf_ev_dismissed") === "1",
+    () => sessionStorage.getItem("strivo_ev_dismissed") === "1",
   );
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
@@ -35,7 +35,7 @@ function EmailVerificationBanner() {
   };
 
   const handleDismiss = () => {
-    sessionStorage.setItem("sf_ev_dismissed", "1");
+    sessionStorage.setItem("strivo_ev_dismissed", "1");
     setDismissed(true);
   };
 

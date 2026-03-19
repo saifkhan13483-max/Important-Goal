@@ -36,10 +36,10 @@ import {
 } from "@/services/audio.service";
 
 /* ─── localStorage keys (kept for cache / legacy compat) ─────────── */
-const LS_AUDIO_URL  = "sf_future_self_audio_url";
-const LS_AUDIO_B64  = "sf_future_self_audio";
-const LS_AUDIO_TYPE = "sf_future_self_audio_type";
-export const LS_LAST_PLAYED = "sf_future_self_last_played";
+const LS_AUDIO_URL  = "strivo_future_self_audio_url";
+const LS_AUDIO_B64  = "strivo_future_self_audio";
+const LS_AUDIO_TYPE = "strivo_future_self_audio_type";
+export const LS_LAST_PLAYED = "strivo_future_self_last_played";
 
 /** @deprecated use hasStoredAudio() from audio.service instead */
 export function hasFutureSelfAudio(userId: string, firestoreUrl?: string | null): boolean {

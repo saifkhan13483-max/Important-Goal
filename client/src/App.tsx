@@ -100,11 +100,11 @@ function ReminderChecker() {
   useEffect(() => {
     function checkAndNotify() {
       if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
-      const enabled = localStorage.getItem("sf_reminder_enabled") === "true";
+      const enabled = localStorage.getItem("strivo_reminder_enabled") === "true";
       if (!enabled) return;
-      const reminderTime = localStorage.getItem("sf_reminder_time") || "08:00";
+      const reminderTime = localStorage.getItem("strivo_reminder_time") || "08:00";
       const today = new Date().toISOString().split("T")[0];
-      const lastNotified = localStorage.getItem("sf_reminder_last_notified");
+      const lastNotified = localStorage.getItem("strivo_reminder_last_notified");
       if (lastNotified === today) return;
 
       const [hours, minutes] = reminderTime.split(":").map(Number);
@@ -113,7 +113,7 @@ function ReminderChecker() {
       scheduledTime.setHours(hours, minutes, 0, 0);
 
       if (now >= scheduledTime) {
-        const missedYesterday = localStorage.getItem("sf_missed_yesterday") === "true";
+        const missedYesterday = localStorage.getItem("strivo_missed_yesterday") === "true";
         const body = missedYesterday
           ? "Missed yesterday? Restart tiny. Your system only needs the minimum version today."
           : "Time to check in with your habits. Even the minimum version counts.";
@@ -121,9 +121,9 @@ function ReminderChecker() {
           new Notification("Strivo — Daily Check-in", {
             body,
             icon: "/favicon.ico",
-            tag: "sf-daily-reminder",
+            tag: "strivo-daily-reminder",
           });
-          localStorage.setItem("sf_reminder_last_notified", today);
+          localStorage.setItem("strivo_reminder_last_notified", today);
         } catch {
           // Ignore notification errors silently
         }

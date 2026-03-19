@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { Cookie } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const STORAGE_KEY = "sf_cookie_consent";
+const STORAGE_KEY = "strivo_cookie_consent";
 
 type ConsentState = "accepted" | "declined" | null;
 

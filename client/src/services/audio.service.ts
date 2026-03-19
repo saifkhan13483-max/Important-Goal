@@ -15,9 +15,9 @@ import { doc, updateDoc } from "firebase/firestore";
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
 const DELETE_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/delete_by_token`;
 
-const LS_AUDIO_B64         = "sf_future_self_audio";
-const LS_AUDIO_TYPE        = "sf_future_self_audio_type";
-const LS_AUDIO_DELETE_TOKEN = "sf_future_self_audio_delete_token";
+const LS_AUDIO_B64         = "strivo_future_self_audio";
+const LS_AUDIO_TYPE        = "strivo_future_self_audio_type";
+const LS_AUDIO_DELETE_TOKEN = "strivo_future_self_audio_delete_token";
 
 function lsAudioUrlKey(userId: string) {
   return `futureAudioUrl_${userId}`;

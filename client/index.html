@@ -255,7 +255,7 @@
     <script>
       (function () {
         try {
-          var stored = localStorage.getItem('sf-app-store');
+          var stored = localStorage.getItem('strivo-app-store');
           var state = stored ? JSON.parse(stored).state : null;
           var theme = state ? state.theme : 'system';
           var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

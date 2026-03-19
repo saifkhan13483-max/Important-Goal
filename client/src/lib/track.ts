@@ -44,8 +44,8 @@ declare global {
 
 let sessionId: string;
 try {
-  sessionId = sessionStorage.getItem("sf_session_id") ?? crypto.randomUUID();
-  sessionStorage.setItem("sf_session_id", sessionId);
+  sessionId = sessionStorage.getItem("strivo_session_id") ?? crypto.randomUUID();
+  sessionStorage.setItem("strivo_session_id", sessionId);
 } catch {
   sessionId = "unknown";
 }

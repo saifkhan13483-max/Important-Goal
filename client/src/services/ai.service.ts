@@ -11,7 +11,7 @@ const DAILY_AI_LIMITS: Record<string, number> = {
   elite: Infinity,
 };
 
-const RATE_LIMIT_KEY = "sf_ai_usage";
+const RATE_LIMIT_KEY = "strivo_ai_usage";
 
 interface AiUsage {
   date: string;

@@ -620,7 +620,7 @@ function RetentionBanner({ allCheckins, activeSystems, systemsWithMinAction }: {
   allCheckins: Checkin[]; activeSystems: System[]; systemsWithMinAction: System[];
 }) {
   const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem("sf_retention_dismissed_" + getTodayKey()) === "true"; } catch { return false; }
+    try { return localStorage.getItem("strivo_retention_dismissed_" + getTodayKey()) === "true"; } catch { return false; }
   });
   if (dismissed || activeSystems.length === 0) return null;
   const sortedDates = Array.from(new Set(allCheckins.map(c => c.dateKey))).sort();
@@ -628,7 +628,7 @@ function RetentionBanner({ allCheckins, activeSystems, systemsWithMinAction }: {
   const firstDate = new Date(sortedDates[0] + "T00:00:00");
   const today = new Date(getTodayKey() + "T00:00:00");
   const daysSince = Math.round((today.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
-  const dismiss = () => { try { localStorage.setItem("sf_retention_dismissed_" + getTodayKey(), "true"); } catch {} setDismissed(true); };
+  const dismiss = () => { try { localStorage.setItem("strivo_retention_dismissed_" + getTodayKey(), "true"); } catch {} setDismissed(true); };
   const firstMinAction = systemsWithMinAction[0]?.minimumAction;
 
   if (daysSince === 1) return (
@@ -722,7 +722,7 @@ function OnboardingChecklist({ hasGoals, hasSystems, hasCheckins }: {
   hasGoals: boolean; hasSystems: boolean; hasCheckins: boolean;
 }) {
   const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem("sf_onboarding_checklist_dismissed") === "true"; } catch { return false; }
+    try { return localStorage.getItem("strivo_onboarding_checklist_dismissed") === "true"; } catch { return false; }
   });
   if (dismissed || (hasGoals && hasSystems && hasCheckins)) return null;
 
@@ -746,7 +746,7 @@ function OnboardingChecklist({ hasGoals, hasSystems, hasCheckins }: {
               <p className="text-xs text-muted-foreground">{doneCount} of {steps.length} complete</p>
             </div>
           </div>
-          <button onClick={() => { localStorage.setItem("sf_onboarding_checklist_dismissed", "true"); setDismissed(true); }} className="text-muted-foreground hover:text-foreground text-sm" aria-label="Dismiss" data-testid="button-dismiss-checklist">✕</button>
+          <button onClick={() => { localStorage.setItem("strivo_onboarding_checklist_dismissed", "true"); setDismissed(true); }} className="text-muted-foreground hover:text-foreground text-sm" aria-label="Dismiss" data-testid="button-dismiss-checklist">✕</button>
         </div>
         <Progress value={(doneCount / steps.length) * 100} className="h-1.5 mb-3" />
         <div className="space-y-1.5">
@@ -962,7 +962,7 @@ export default function Dashboard() {
           hadStreakBreak={hadStreakBreak}
           fallbackPlan={topSystemForHype?.fallbackPlan}
           minimumAction={topSystemForHype?.minimumAction}
-          dismissedKey={`sf_hype_drop_dismissed_${getTodayKey()}`}
+          dismissedKey={`strivo_hype_drop_dismissed_${getTodayKey()}`}
         />
         {topStreaks.length > 0 && (() => {
           const [topSystemId, topStreak] = topStreaks[0];

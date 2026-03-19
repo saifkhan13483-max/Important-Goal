@@ -1,8 +1,8 @@
-# SystemForge
+# Strivo
 
 > Most people set goals. Few build systems.
 
-SystemForge helps you convert vague goals into powerful, repeatable daily systems. Define identity statements, triggers, minimum actions, reward loops, and fallback plans — then track your progress with check-ins, streaks, and analytics.
+Strivo helps you convert vague goals into powerful, repeatable daily systems. Define identity statements, triggers, minimum actions, reward loops, and fallback plans — then track your progress with check-ins, streaks, and analytics.
 
 ---
 
@@ -26,7 +26,7 @@ SystemForge helps you convert vague goals into powerful, repeatable daily system
 
 ```bash
 git clone <your-repo-url>
-cd systemforge
+cd strivo
 ```
 
 ### 2. Install dependencies
@@ -119,7 +119,7 @@ In the Vercel project dashboard → **Settings → Environment Variables**, add 
 
 In Firebase Console → **Authentication → Settings → Authorized Domains**:
 
-- Add your Vercel production URL (e.g. `systemforge.vercel.app`)
+- Add your Vercel production URL (e.g. `strivo.vercel.app`)
 - Add any preview URLs you want to allow
 
 ### Step 5 — Deploy

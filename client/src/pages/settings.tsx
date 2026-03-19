@@ -227,11 +227,11 @@ export default function Settings() {
     try {
       await updateProfile({ reminderEnabled, reminderTime } as any);
       if (reminderEnabled) {
-        localStorage.setItem("sf_reminder_enabled", "true");
-        localStorage.setItem("sf_reminder_time", reminderTime);
+        localStorage.setItem("strivo_reminder_enabled", "true");
+        localStorage.setItem("strivo_reminder_time", reminderTime);
       } else {
-        localStorage.removeItem("sf_reminder_enabled");
-        localStorage.removeItem("sf_reminder_time");
+        localStorage.removeItem("strivo_reminder_enabled");
+        localStorage.removeItem("strivo_reminder_time");
       }
       toast({ title: "Reminder saved!", description: reminderEnabled ? `You'll be reminded daily at ${reminderTime}.` : "Daily reminder turned off." });
     } catch (err: any) {

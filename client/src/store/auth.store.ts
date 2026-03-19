@@ -65,7 +65,7 @@ export const useAppStore = create<AppState>()(
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
     }),
     {
-      name: "sf-app-store",
+      name: "strivo-app-store",
       // Only persist UI preferences — auth session is managed by Firebase SDK
       partialize: (state) => ({
         theme: state.theme,

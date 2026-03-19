@@ -236,7 +236,7 @@ function MessageBubble({
 const PRO_DAILY_LIMIT = 10;
 
 function getDailyUsageKey() {
-  return `sf_ai_coach_usage_${new Date().toISOString().split("T")[0]}`;
+  return `strivo_ai_coach_usage_${new Date().toISOString().split("T")[0]}`;
 }
 
 function getDailyUsage(): number {

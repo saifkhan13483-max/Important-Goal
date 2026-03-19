@@ -25,10 +25,10 @@ import { Helmet } from "react-helmet-async";
 function useCtaVariant(): "A" | "B" {
   return useMemo(() => {
     try {
-      const stored = localStorage.getItem("sf_cta_variant");
+      const stored = localStorage.getItem("strivo_cta_variant");
       if (stored === "A" || stored === "B") return stored;
       const v = Math.random() < 0.5 ? "A" : "B";
-      localStorage.setItem("sf_cta_variant", v);
+      localStorage.setItem("strivo_cta_variant", v);
       return v;
     } catch {
       return "A";

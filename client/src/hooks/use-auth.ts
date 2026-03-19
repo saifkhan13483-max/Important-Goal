@@ -57,7 +57,7 @@ export function useAuth() {
       // navigating between pages never resets the theme.
       if (user.preferredTheme) {
         try {
-          const stored = localStorage.getItem("sf-app-store");
+          const stored = localStorage.getItem("strivo-app-store");
           const hasLocalTheme = stored && JSON.parse(stored)?.state?.theme;
           if (!hasLocalTheme) {
             setTheme(user.preferredTheme as Theme);

@@ -523,13 +523,13 @@ function SystemCheckinCard({
       if (status === "done") { track("checkin_completed", { status: "done" }); }
       else if (status === "missed") { track("checkin_missed"); }
       if (status === "done") {
-        localStorage.removeItem("sf_missed_yesterday");
+        localStorage.removeItem("strivo_missed_yesterday");
         if (pulseDoneTimer.current) clearTimeout(pulseDoneTimer.current);
         setJustDone(true);
         pulseDoneTimer.current = setTimeout(() => setJustDone(false), 600);
         setShowRitual(true);
       } else if (status === "skipped" || status === "partial") {
-        localStorage.setItem("sf_missed_yesterday", "true");
+        localStorage.setItem("strivo_missed_yesterday", "true");
         setRecoveryStatus(status as "skipped" | "partial");
         setShowRecovery(true);
       } else {
