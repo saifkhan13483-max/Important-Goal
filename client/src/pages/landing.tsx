@@ -1312,7 +1312,7 @@ export default function Landing() {
               <div className="flex flex-col gap-2">
                 <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
                 <Link href="/terms"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-                <a href="mailto:support@strivo.life" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</a>
+                <Link href="/support" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</Link>
               </div>
             </div>
           </div>

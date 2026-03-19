@@ -44,6 +44,7 @@ import NotFound from "@/pages/not-found";
 const Pricing         = lazy(() => import("@/pages/pricing"));
 const PrivacyPolicy   = lazy(() => import("@/pages/privacy"));
 const TermsOfService  = lazy(() => import("@/pages/terms"));
+const SupportPage     = lazy(() => import("@/pages/support"));
 const Onboarding      = lazy(() => import("@/pages/onboarding"));
 const Dashboard       = lazy(() => import("@/pages/dashboard"));
 const Goals           = lazy(() => import("@/pages/goals"));
@@ -161,6 +162,7 @@ function Router() {
           <Route path="/" component={() => <PublicOnlyRoute component={Landing} />} />
           <Route path="/pricing" component={Pricing} />
           <Route path="/privacy" component={PrivacyPolicy} />
+          <Route path="/support" component={SupportPage} />
           <Route path="/terms" component={TermsOfService} />
           <Route path="/login" component={() => <PublicOnlyRoute component={Login} />} />
           <Route path="/signup" component={() => <PublicOnlyRoute component={Signup} />} />
