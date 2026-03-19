@@ -139,7 +139,7 @@ function GoalEditForm({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   });
 
   const mutation = useMutation({
-    mutationFn: (data: z.infer<typeof editSchema>) => updateGoal(goal.id, data),
+    mutationFn: (data: z.infer<typeof editSchema>) => updateGoal(goal.id, data as Partial<Goal>),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goal", goal.id] });
       qc.invalidateQueries({ queryKey: ["goals"] });
@@ -398,7 +398,7 @@ export default function GoalDetail() {
   });
 
   const quickStatus = useMutation({
-    mutationFn: (status: string) => updateGoal(goalId, { status }),
+    mutationFn: (status: Goal['status']) => updateGoal(goalId, { status }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goal", goalId] });
       qc.invalidateQueries({ queryKey: ["goals"] });

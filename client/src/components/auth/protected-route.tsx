@@ -90,6 +90,24 @@ export function ProtectedRoute({ component: Component }: RouteProps) {
   );
 }
 
+/**
+ * OnboardingRoute — requires the user to be authenticated but does NOT
+ * redirect users who haven't completed onboarding (to avoid an infinite
+ * redirect loop on the /onboarding route itself).
+ */
+export function OnboardingRoute({ component: Component }: RouteProps) {
+  const { user, isAuthLoading } = useAppStore();
+
+  if (isAuthLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+  if (!user) return <Redirect to="/login" />;
+
+  return <Component />;
+}
+
 export function PublicOnlyRoute({ component: Component }: RouteProps) {
   const { user, isAuthLoading } = useAppStore();
 

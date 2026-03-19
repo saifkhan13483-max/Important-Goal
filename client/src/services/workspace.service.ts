@@ -10,17 +10,9 @@ import {
   where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import type { Workspace, WorkspaceMember } from "@/types/schema";
+import type { Workspace, WorkspaceMember, MemberStats } from "@/types/schema";
 
-export interface MemberStats {
-  activeSystems: number;
-  bestStreak: number;
-  currentStreak: number;
-  completionRate: number;
-  weeklyRate: number;
-  last7: Array<{ dateKey: string; done: number; total: number }>;
-  syncedAt?: string;
-}
+export type { MemberStats };
 
 interface WorkspaceDoc {
   id: string;
@@ -44,6 +36,8 @@ function toWorkspace(raw: WorkspaceDoc): Workspace & { members: (WorkspaceMember
     ownerId: raw.ownerId,
     name: raw.name,
     inviteCode: raw.inviteCode,
+    memberIds: raw.memberIds || [],
+    memberStats: stats,
     members: (raw.members || []).map((m) => ({
       ...m,
       stats: stats[m.userId] ?? undefined,

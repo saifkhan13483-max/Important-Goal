@@ -27,7 +27,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ProtectedRoute, PublicOnlyRoute } from "@/components/auth/protected-route";
+import { ProtectedRoute, PublicOnlyRoute, OnboardingRoute } from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { CookieConsent } from "@/components/cookie-consent";
@@ -166,8 +166,8 @@ function Router() {
           <Route path="/signup" component={() => <PublicOnlyRoute component={Signup} />} />
           <Route path="/forgot-password" component={() => <PublicOnlyRoute component={ForgotPassword} />} />
 
-          {/* Onboarding — accessible to authed users who haven't completed it */}
-          <Route path="/onboarding" component={Onboarding} />
+          {/* Onboarding — requires auth, but exempt from onboarding-completion redirect */}
+          <Route path="/onboarding" component={() => <OnboardingRoute component={Onboarding} />} />
 
           {/* Protected app routes */}
           <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />

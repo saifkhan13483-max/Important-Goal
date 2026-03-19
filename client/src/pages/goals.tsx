@@ -108,10 +108,10 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
 
   const [title, setTitle]                     = useState(goal?.title || "");
   const [category, setCategory]               = useState(goal?.category || "other");
-  const [priority, setPriority]               = useState(goal?.priority || "medium");
+  const [priority, setPriority]               = useState<Goal['priority']>(goal?.priority || "medium");
   const [measurableOutcome, setMeasurableOutcome] = useState(goal?.measurableOutcome || "");
   const [deadline, setDeadline]               = useState(goal?.deadline || "");
-  const [status, setStatus]                   = useState(goal?.status || "active");
+  const [status, setStatus]                   = useState<Goal['status']>(goal?.status || "active");
   const [milestones, setMilestones]           = useState<GoalMilestone[]>(
     goal?.milestones?.length ? goal.milestones : [{ month: "Month 1", target: "" }]
   );
@@ -172,7 +172,7 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Priority</label>
-            <Select value={priority} onValueChange={setPriority}>
+            <Select value={priority} onValueChange={v => setPriority(v as Goal['priority'])}>
               <SelectTrigger data-testid="select-priority"><SelectValue /></SelectTrigger>
               <SelectContent>{priorities.map(p => <SelectItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>)}</SelectContent>
             </Select>
@@ -181,7 +181,7 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Status</label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={v => setStatus(v as Goal['status'])}>
               <SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger>
               <SelectContent>{statuses.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}</SelectContent>
             </Select>
@@ -243,7 +243,7 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Priority</label>
-              <Select value={priority} onValueChange={setPriority}>
+              <Select value={priority} onValueChange={v => setPriority(v as Goal['priority'])}>
                 <SelectTrigger data-testid="select-priority"><SelectValue /></SelectTrigger>
                 <SelectContent>{priorities.map(p => <SelectItem key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>)}</SelectContent>
               </Select>
@@ -499,7 +499,7 @@ export default function Goals() {
   });
 
   const quickStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateGoal(id, { status }),
+    mutationFn: ({ id, status }: { id: string; status: Goal['status'] }) => updateGoal(id, { status }),
     onMutate: async ({ id, status }) => {
       await qc.cancelQueries({ queryKey: ["goals", userId] });
       const previous = qc.getQueryData<Goal[]>(["goals", userId]);

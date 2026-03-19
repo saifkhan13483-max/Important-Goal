@@ -1,0 +1,55 @@
+════════════════════════════════════════════════════════════════ SECTION 15 — BUILD VERIFICATION ════════════════════════════════════════════════════════════════
+
+After all changes are made, run these commands in order:
+
+npx tsc --noEmit → Fix ALL TypeScript errors before proceeding. Do not suppress errors with 'any' unless the type is genuinely unknown and documented with a comment.
+
+vite build → The build must complete with 0 errors. → Warnings about chunk size are acceptable. → Fix any import errors, missing modules, or unresolved aliases.
+
+If build succeeds, run: vite --port 5000 → Open the app, verify: a. Landing page loads b. Signup creates a Firebase Auth user AND a Firestore 'users' document c. Login works with email/password d. Google OAuth works e. Dashboard loads user data from Firestore f. Creating a goal writes to Firestore 'goals' collection g. Creating a system writes to Firestore 'systems' collection h. /api/groq-proxy returns a response (check browser network tab) i. No calls to any Express endpoint except /api/groq-proxy
+
+════════════════════════════════════════════════════════════════ SECTION 16 — COMMON ERRORS AND HOW TO FIX THEM ════════════════════════════════════════════════════════════════
+
+If you encounter these errors, apply these fixes:
+
+ERROR: "Firebase: Error (auth/invalid-api-key)" FIX: VITE_FIREBASE_API_KEY is undefined. Confirm .env file is in project root, confirm variable is VITE_ prefixed, restart vite dev server.
+
+ERROR: "Cannot read properties of undefined (reading 'collection')" FIX: db is undefined. The firebase.ts init ran before env vars loaded, or VITE_FIREBASE_PROJECT_ID is missing. Check .env and firebase.ts.
+
+ERROR: "Missing or insufficient permissions" from Firestore FIX: Firestore security rules are blocking the request. Check firestore.rules and ensure the authenticated user's uid matches the document's userId field.
+
+ERROR: "Cloudinary upload failed: 400"
+FIX: VITE_CLOUDINARY_UPLOAD_PRESET is wrong or the preset is not set to 'unsigned' in the Cloudinary dashboard. Verify preset type.
+
+ERROR: Module not found: @/ or @shared/ aliases FIX: vite.config.ts resolve.alias is misconfigured. Verify paths use path.resolve(__dirname, ...) and that tsconfig.json paths match.
+
+ERROR: "useQuery is not a function" or TanStack Query v4/v5 mismatch FIX: Ensure @tanstack/react-query v5 is installed. In v5, useQuery takes { queryKey, queryFn } as a single object — not positional arguments.
+
+ERROR: Groq proxy returns 401 FIX: GROQ_API_KEY is not set in the server environment. In Replit, add it to Secrets, not to .env (Replit Secrets are injected into process.env).
+
+ERROR: "act(...) warning" or React 18 hydration errors FIX: Ensure index.tsx uses createRoot from 'react-dom/client', not ReactDOM.render.
+
+════════════════════════════════════════════════════════════════ SECTION 17 — FINAL CHECKLIST (VERIFY BEFORE CLOSING) ════════════════════════════════════════════════════════════════
+
+Check each item. Mark done only when confirmed:
+
+[ ] .env file has all required keys with correct VITE_ prefixes [ ] firebase.ts exports only auth and db (no Storage) [ ] cloudinary.ts exports uploadToCloudinary and uploadImage [ ] All 10 service files exist under client/src/services/ [ ] No service file makes HTTP calls to Express except ai.service.ts → /api/groq-proxy [ ] auth.store.ts has user, profile, isAuthLoading, and their setters [ ] use-auth.ts registers onAuthStateChanged and populates Zustand store [ ] ProtectedRoute handles isAuthLoading spinner before redirecting [ ] App.tsx has AuthInitializer + QueryClientProvider + all routes [ ] server/index.ts has only Groq proxy + static serving [ ] vite.config.ts has embedded dev proxy server on port 35001 [ ] firestore.rules has ownership rules for all 8 collections [ ] TypeScript compiles with 0 errors (npx tsc --noEmit) [ ] vite build succeeds with 0 errors [ ] Dev server runs on port 5000 with no crashes [ ] No Firebase Storage imports anywhere in client/ [ ] No Drizzle/PostgreSQL imports anywhere in client/ [ ] No Express data routes in server/index.ts (only Groq proxy + static)
+
+
+---
+
+## **How to Use This Prompt:**
+
+Here is the recommended approach for feeding this to the Replit agent in order to get the best results without hitting context limits or agent confusion.
+
+**Step 1 — Paste Sections 1–4 first.** Let the agent set up the environment, clean packages, and initialize Firebase. Confirm it completes before moving on.
+
+**Step 2 — Paste Sections 5–8.** This covers Cloudinary, Auth, all services, and TanStack Query. These are the most critical and interconnected pieces.
+
+**Step 3 — Paste Sections 9–11.** Server, Vite config, and Firestore rules. These are more isolated and the agent can handle them quickly.
+
+**Step 4 — Paste Sections 12–14.** The cleanup pass, type definitions, and routing verification.
+
+**Step 5 — Paste Sections 15–17.** Build, test, and final checklist. Do not skip the TypeScript check — it will catch 80% of migration bugs before they hit the browser.
+
+> **Important:** When the agent asks for environment variable values, paste them directly in the chat. Never commit real keys to the repo — use Replit's **Secrets** panel for `GROQ_API_KEY` and any other sensitive values, since Replit Secrets inject directly into `process.env` without needing a `.env` file on the server side.

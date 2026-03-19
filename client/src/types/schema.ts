@@ -39,8 +39,8 @@ export interface Goal {
   measurableOutcome?: string | null;
   milestones?: GoalMilestone[] | null;
   category: string;
-  priority: string;
-  status: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'active' | 'completed' | 'archived' | 'paused';
   deadline?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
@@ -114,11 +114,24 @@ export interface WorkspaceMember {
   joinedAt: string;
 }
 
+export interface MemberStats {
+  activeSystems: number;
+  bestStreak: number;
+  currentStreak: number;
+  completionRate: number;
+  weeklyRate: number;
+  last7: Array<{ dateKey: string; done: number; total: number }>;
+  syncedAt?: string;
+}
+
 export interface Workspace {
   id: string;
   ownerId: string;
   name: string;
   inviteCode: string;
+  memberIds: string[];
   members: WorkspaceMember[];
+  memberStats: Record<string, MemberStats>;
   createdAt: string;
+  updatedAt?: string;
 }
