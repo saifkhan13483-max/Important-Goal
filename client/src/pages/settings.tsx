@@ -1,21 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppStore } from "@/store/auth.store";
 import { useTheme } from "@/components/theme-provider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { deleteUser } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import * as AuthService from "@/services/auth.service";
+import { getGoals } from "@/services/goals.service";
+import { getSystems } from "@/services/systems.service";
+import { getCheckins } from "@/services/checkins.service";
+import { getJournals } from "@/services/journal.service";
 import {
   Loader2, Sun, Moon, Monitor, LogOut, User, Palette, Globe,
-  Bell, Shield, HelpCircle, Sparkles, Zap, Target, BookOpen,
-  ChevronRight, ExternalLink, Heart, BellRing, BellOff, Mic,
-  CreditCard, Crown, Lock,
+  Bell, Shield, Sparkles, Zap, Lock, CreditCard, Crown,
+  BellRing, BellOff, Mic, ExternalLink, Download, Trash2,
+  KeyRound, Camera, ChevronRight, Heart, CheckCircle2,
+  AlertTriangle, Target, BookOpen,
 } from "lucide-react";
 import { STRIPE_CUSTOMER_PORTAL_URL } from "@/lib/stripe";
 import type { PlanTier } from "@/types/schema";
@@ -23,149 +32,67 @@ import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { FutureSelfAudioSetup, FutureSelfAudioSettings } from "@/components/future-self-audio";
 import { getPlanFeatures } from "@/lib/plan-limits";
+import { SiteLogo } from "@/components/site-logo";
 
-const timezones = [
-  "UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
-  "Europe/London", "Europe/Paris", "Europe/Berlin", "Asia/Tokyo", "Asia/Shanghai",
-  "Asia/Kolkata", "Australia/Sydney",
+const TIMEZONES = [
+  "UTC",
+  "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+  "America/Anchorage", "America/Honolulu", "America/Toronto", "America/Vancouver",
+  "America/Mexico_City", "America/Sao_Paulo", "America/Buenos_Aires", "America/Bogota",
+  "Europe/London", "Europe/Dublin", "Europe/Lisbon", "Europe/Paris", "Europe/Berlin",
+  "Europe/Madrid", "Europe/Rome", "Europe/Amsterdam", "Europe/Brussels", "Europe/Stockholm",
+  "Europe/Oslo", "Europe/Copenhagen", "Europe/Warsaw", "Europe/Prague", "Europe/Vienna",
+  "Europe/Zurich", "Europe/Athens", "Europe/Istanbul", "Europe/Moscow", "Europe/Helsinki",
+  "Africa/Cairo", "Africa/Lagos", "Africa/Nairobi", "Africa/Johannesburg",
+  "Asia/Dubai", "Asia/Riyadh", "Asia/Karachi", "Asia/Kolkata", "Asia/Dhaka",
+  "Asia/Bangkok", "Asia/Singapore", "Asia/Hong_Kong", "Asia/Shanghai", "Asia/Tokyo",
+  "Asia/Seoul", "Australia/Perth", "Australia/Adelaide", "Australia/Sydney",
+  "Australia/Melbourne", "Pacific/Auckland", "Pacific/Fiji",
 ];
 
-function SectionCard({
-  icon: Icon,
-  title,
-  description,
-  children,
-  badge,
-}: {
-  icon: any;
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-  badge?: string;
-}) {
-  return (
-    <Card>
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Icon className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-base">{title}</CardTitle>
-              {description && <CardDescription className="text-xs mt-0">{description}</CardDescription>}
-            </div>
-          </div>
-          {badge && (
-            <Badge variant="secondary" className="text-xs flex-shrink-0">{badge}</Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
-  );
-}
+type TabId = "profile" | "appearance" | "notifications" | "audio" | "privacy" | "billing" | "account";
 
-const PLAN_DETAILS: Record<PlanTier, { label: string; description: string; color: string; icon: any }> = {
-  free: {
-    label: "Free",
-    description: "Up to 2 goals, 3 systems",
-    color: "secondary",
-    icon: Sparkles,
-  },
-  starter: {
-    label: "Starter",
-    description: "Up to 10 goals · Full template library",
-    color: "default",
-    icon: Zap,
-  },
-  pro: {
-    label: "Pro",
-    description: "Unlimited goals · Advanced analytics · Priority support",
-    color: "default",
-    icon: Sparkles,
-  },
-  elite: {
-    label: "Elite",
-    description: "Everything in Pro · AI Coach · Team workspace",
-    color: "default",
-    icon: Crown,
-  },
+const TABS: { id: TabId; label: string; icon: any }[] = [
+  { id: "profile",       label: "Profile",       icon: User },
+  { id: "appearance",    label: "Appearance",    icon: Palette },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "audio",         label: "Audio",         icon: Mic },
+  { id: "privacy",       label: "Privacy",       icon: Shield },
+  { id: "billing",       label: "Billing",       icon: CreditCard },
+  { id: "account",       label: "Account",       icon: KeyRound },
+];
+
+const PLAN_DETAILS: Record<PlanTier, { label: string; description: string; icon: any; color: string }> = {
+  free:    { label: "Free",    description: "Up to 2 goals, 3 systems",                                icon: Sparkles, color: "" },
+  starter: { label: "Starter", description: "Up to 10 goals · Full template library",                  icon: Zap,      color: "bg-primary/80 text-white border-0" },
+  pro:     { label: "Pro",     description: "Unlimited goals · Advanced analytics · AI Coach",         icon: Sparkles, color: "gradient-brand text-white border-0" },
+  elite:   { label: "Elite",   description: "Everything in Pro · Unlimited AI · Team workspace",       icon: Crown,    color: "bg-amber-500 text-white border-0" },
 };
 
-function BillingCard({ plan }: { plan: PlanTier }) {
-  const details = PLAN_DETAILS[plan] || PLAN_DETAILS.free;
-  const isPaid = plan !== "free";
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h3 className="text-sm font-semibold text-foreground mb-4">{children}</h3>;
+}
 
+function SettingRow({
+  label, description, children, locked, onUpgrade,
+}: { label: string; description?: string; children: React.ReactNode; locked?: boolean; onUpgrade?: string }) {
   return (
-    <SectionCard
-      icon={CreditCard}
-      title="Subscription & Billing"
-      description="Your current plan and billing options"
-    >
-      <div className="space-y-3">
-        <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border border-border/40">
-          <div>
-            <p className="text-sm font-medium">Current plan</p>
-            <p className="text-xs text-muted-foreground">{details.description}</p>
-          </div>
-          <Badge
-            variant={isPaid ? "default" : "secondary"}
-            className={cn(
-              "flex items-center gap-1 flex-shrink-0",
-              plan === "elite" && "bg-amber-500 hover:bg-amber-500 text-white",
-              plan === "pro" && "gradient-brand text-white border-0",
-              plan === "starter" && "bg-primary/80 text-white border-0",
-            )}
-            data-testid="badge-current-plan"
-          >
-            <details.icon className="w-3 h-3" />
-            {details.label}
-          </Badge>
+    <div className="flex items-center justify-between gap-4 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium">{label}</p>
+          {locked && onUpgrade && (
+            <Link href={onUpgrade}>
+              <Badge variant="secondary" className="text-[10px] cursor-pointer gap-0.5 h-4 px-1.5">
+                <Lock className="w-2.5 h-2.5" /> Upgrade
+              </Badge>
+            </Link>
+          )}
         </div>
-
-        {isPaid ? (
-          STRIPE_CUSTOMER_PORTAL_URL ? (
-            <a href={STRIPE_CUSTOMER_PORTAL_URL} target="_blank" rel="noopener noreferrer">
-              <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border border-border/40 cursor-pointer hover:bg-muted/50 transition-colors">
-                <div>
-                  <p className="text-sm font-medium">Manage billing</p>
-                  <p className="text-xs text-muted-foreground">Update payment method, cancel or change plan</p>
-                </div>
-                <Button size="sm" variant="outline" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-manage-billing" asChild>
-                  <span>
-                    <ExternalLink className="w-3 h-3" />
-                    Billing portal
-                  </span>
-                </Button>
-              </div>
-            </a>
-          ) : (
-            <div className="p-3 rounded-md bg-muted/20 border border-border/40">
-              <p className="text-xs text-muted-foreground">
-                To manage your subscription, visit your Stripe billing portal.{" "}
-                <a href="mailto:support@strivo.life" className="underline hover:text-foreground transition-colors">Contact support</a> if you need help.
-              </p>
-            </div>
-          )
-        ) : (
-          <Link href="/pricing">
-            <div className="flex items-center justify-between p-3 rounded-md bg-chart-3/5 border border-chart-3/20 cursor-pointer hover:bg-chart-3/10 transition-colors">
-              <div>
-                <p className="text-sm font-medium text-chart-3">Upgrade your plan</p>
-                <p className="text-xs text-muted-foreground">Unlock unlimited goals, systems, and advanced analytics</p>
-              </div>
-              <Button size="sm" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-upgrade" asChild>
-                <span>
-                  <Sparkles className="w-3 h-3" />
-                  Upgrade
-                </span>
-              </Button>
-            </div>
-          </Link>
-        )}
+        {description && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</p>}
       </div>
-    </SectionCard>
+      <div className="flex-shrink-0">{children}</div>
+    </div>
   );
 }
 
@@ -176,16 +103,25 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const [showLogout, setShowLogout] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<TabId>("profile");
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Profile fields
   const [name, setName] = useState(user?.name || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
+  const [avatarError, setAvatarError] = useState(false);
   const [timezone, setTimezone] = useState(user?.timezone || "UTC");
   const [identityStatement, setIdentityStatement] = useState(user?.identityStatement || "");
+
+  // Notifications
   const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled ?? false);
   const [reminderTime, setReminderTime] = useState(user?.reminderTime || "08:00");
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(
     typeof Notification !== "undefined" ? Notification.permission : "default",
   );
+
+  // Audio prefs
   const [audioPrefs, setAudioPrefs] = useState({
     playOnFirstVisit: user?.futureAudioPlayOnFirstVisit ?? true,
     playAfterMissed:  user?.futureAudioPlayAfterMissed  ?? true,
@@ -193,31 +129,52 @@ export default function Settings() {
     muted:            user?.futureAudioMuted             ?? false,
   });
 
+  // Dialogs
+  const [showLogout, setShowLogout] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletePending, setDeletePending] = useState(false);
+  const [exportPending, setExportPending] = useState(false);
+  const [passwordResetSent, setPasswordResetSent] = useState(false);
+
   useEffect(() => {
-    if (typeof Notification !== "undefined") {
-      setNotifPermission(Notification.permission);
-    }
+    if (typeof Notification !== "undefined") setNotifPermission(Notification.permission);
   }, []);
+
+  // Scroll active tab into view on mobile
+  useEffect(() => {
+    const el = tabsRef.current?.querySelector(`[data-tab="${activeTab}"]`) as HTMLElement;
+    el?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeTab]);
 
   const requestNotifPermission = async () => {
     if (typeof Notification === "undefined") {
-      toast({ title: "Notifications not supported", description: "Your browser doesn't support notifications.", variant: "destructive" });
+      toast({ title: "Not supported", description: "Your browser doesn't support notifications.", variant: "destructive" });
       return;
     }
     const perm = await Notification.requestPermission();
     setNotifPermission(perm);
     if (perm === "granted") {
       setReminderEnabled(true);
-      toast({ title: "Reminders enabled!", description: "You'll get a daily nudge at your chosen time." });
+      toast({ title: "Reminders enabled!" });
     } else {
-      toast({ title: "Permission denied", description: "Enable notifications in your browser settings to use reminders.", variant: "destructive" });
+      toast({ title: "Permission denied", description: "Enable notifications in browser settings first.", variant: "destructive" });
     }
   };
 
   const handleSaveProfile = async () => {
     try {
-      await updateProfile({ name, avatarUrl: avatarUrl || undefined, timezone, preferredTheme: theme, identityStatement: identityStatement.trim() || null } as any);
+      await updateProfile({ name, avatarUrl: avatarUrl || null, timezone, preferredTheme: theme, identityStatement: identityStatement.trim() || null } as any);
       toast({ title: "Profile saved!", description: "Your changes have been applied." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleSaveAppearance = async () => {
+    try {
+      await updateProfile({ preferredTheme: theme, timezone } as any);
+      toast({ title: "Preferences saved!" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -233,7 +190,7 @@ export default function Settings() {
         localStorage.removeItem("strivo_reminder_enabled");
         localStorage.removeItem("strivo_reminder_time");
       }
-      toast({ title: "Reminder saved!", description: reminderEnabled ? `You'll be reminded daily at ${reminderTime}.` : "Daily reminder turned off." });
+      toast({ title: "Reminder saved!", description: reminderEnabled ? `Daily reminder set for ${reminderTime}.` : "Reminder turned off." });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
@@ -247,9 +204,80 @@ export default function Settings() {
         futureAudioAutoplay:         audioPrefs.autoplay,
         futureAudioMuted:            audioPrefs.muted,
       } as any);
-      toast({ title: "Audio settings saved!", description: "Your Future Self Audio preferences have been updated." });
+      toast({ title: "Audio preferences saved!" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleSendPasswordReset = async () => {
+    if (!user?.email) return;
+    try {
+      await AuthService.sendPasswordResetEmail(user.email);
+      setPasswordResetSent(true);
+      toast({ title: "Reset email sent!", description: `Check ${user.email} for a password reset link.` });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user?.id) return;
+    setExportPending(true);
+    try {
+      const [goals, systems, checkins, journals] = await Promise.all([
+        getGoals(user.id),
+        getSystems(user.id),
+        getCheckins(user.id),
+        getJournals(user.id),
+      ]);
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: { name: user.name, email: user.email, plan: user.plan, timezone: user.timezone, identityStatement: user.identityStatement },
+        goals,
+        systems,
+        checkins,
+        journals,
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `strivo-data-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Export complete!", description: "Your data has been downloaded." });
+    } catch (err: any) {
+      toast({ title: "Export failed", description: err.message, variant: "destructive" });
+    } finally {
+      setExportPending(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") return;
+    setDeletePending(true);
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Not authenticated");
+      await deleteUser(currentUser);
+      logout().catch(() => {});
+      navigate("/");
+      toast({ title: "Account deleted", description: "Your account has been permanently removed." });
+    } catch (err: any) {
+      if (err.code === "auth/requires-recent-login") {
+        toast({
+          title: "Re-authentication required",
+          description: "For security, please sign out and sign back in, then try deleting your account again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Error", description: err.message, variant: "destructive" });
+      }
+    } finally {
+      setDeletePending(false);
+      setShowDeleteAccount(false);
+      setDeleteConfirmText("");
     }
   };
 
@@ -258,419 +286,773 @@ export default function Settings() {
     navigate("/login");
   };
 
+  const initials = name
+    ? name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.[0]?.toUpperCase() || "?";
+
+  const plan = (user?.plan as PlanTier | null | undefined) || "free";
+  const planDetails = PLAN_DETAILS[plan] || PLAN_DETAILS.free;
+  const isPaid = plan !== "free";
+  const canExport = features.aiCoach || plan === "pro" || plan === "elite";
+
   return (
-    <div className="p-5 md:p-6 max-w-2xl mx-auto space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Manage your account and preferences</p>
+    <div className="min-h-full bg-background">
+      {/* Page header */}
+      <div className="border-b border-border bg-background/95 sticky top-0 z-10 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+          <SiteLogo className="h-6" />
+          <Separator orientation="vertical" className="h-4" />
+          <div>
+            <h1 className="text-sm font-semibold">Settings</h1>
+          </div>
+        </div>
       </div>
 
-      {/* Profile info */}
-      <SectionCard
-        icon={User}
-        title="Profile"
-        description="Update your personal information"
-      >
-        <div className="space-y-4">
-          {/* Avatar preview */}
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full gradient-brand flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
-              {name ? name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "SF"}
-            </div>
-            <div>
-              <p className="text-sm font-medium">{name || "Your name"}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-          </div>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+        <div className="flex gap-6 lg:gap-8">
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your name"
-              data-testid="input-settings-name"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              value={user?.email || ""}
-              disabled
-              className="text-muted-foreground"
-              data-testid="input-settings-email"
-            />
-            <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="avatar">Avatar URL <span className="text-muted-foreground">(optional)</span></Label>
-            <Input
-              id="avatar"
-              value={avatarUrl}
-              onChange={e => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
-              data-testid="input-settings-avatar"
-            />
-          </div>
+          {/* Sidebar nav — visible on lg+ */}
+          <aside className="hidden lg:flex flex-col w-48 flex-shrink-0">
+            <nav className="sticky top-24 space-y-0.5">
+              {TABS.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    data-testid={`tab-${tab.id}`}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-left",
+                      activeTab === tab.id
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
 
-          <div className="space-y-2">
-            <Label htmlFor="identity-statement" className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              Identity Statement
-            </Label>
-            <p className="text-xs text-muted-foreground">Complete the sentence: "I AM a person who ___"</p>
-            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/30">
-              <span className="text-sm text-muted-foreground flex-shrink-0">I AM a person who</span>
-              <Input
-                id="identity-statement"
-                value={identityStatement}
-                onChange={e => setIdentityStatement(e.target.value)}
-                placeholder="shows up every day, no matter what."
-                className="border-none bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 focus-visible:ring-offset-0"
-                data-testid="input-settings-identity"
-              />
+          {/* Main content */}
+          <div className="flex-1 min-w-0 space-y-6">
+            {/* Mobile tab pills */}
+            <div
+              ref={tabsRef}
+              className="lg:hidden flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6"
+            >
+              {TABS.map(tab => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    data-tab={tab.id}
+                    data-testid={`tab-mobile-${tab.id}`}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors flex-shrink-0",
+                      activeTab === tab.id
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:border-primary/40",
+                    )}
+                  >
+                    <Icon className="w-3 h-3" />
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
-            {identityStatement.trim() && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-                <p className="text-sm font-semibold text-foreground">
-                  "I AM a person who {identityStatement.trim()}."
-                </p>
+
+            {/* ── PROFILE TAB ── */}
+            {activeTab === "profile" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="pt-6 space-y-5">
+                    <SectionTitle>Personal Information</SectionTitle>
+
+                    {/* Avatar row */}
+                    <div className="flex items-center gap-4">
+                      <div className="relative flex-shrink-0">
+                        {avatarUrl && !avatarError ? (
+                          <img
+                            src={avatarUrl}
+                            alt={name}
+                            onError={() => setAvatarError(true)}
+                            className="w-16 h-16 rounded-full object-cover ring-2 ring-border"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full gradient-brand flex items-center justify-center text-white text-xl font-bold">
+                            {initials}
+                          </div>
+                        )}
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center">
+                          <Camera className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">{name || "Your name"}</p>
+                        <p className="text-xs text-muted-foreground">{user?.email}</p>
+                        <Badge
+                          variant="secondary"
+                          className={cn("mt-1 text-[10px] h-4 px-1.5", planDetails.color)}
+                        >
+                          <planDetails.icon className="w-2.5 h-2.5 mr-0.5" />
+                          {planDetails.label}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input
+                          id="name"
+                          value={name}
+                          onChange={e => setName(e.target.value)}
+                          placeholder="Your name"
+                          data-testid="input-settings-name"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          value={user?.email || ""}
+                          disabled
+                          className="text-muted-foreground bg-muted/30"
+                          data-testid="input-settings-email"
+                        />
+                        <p className="text-xs text-muted-foreground">Email cannot be changed directly.</p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="avatar">
+                          Avatar URL <span className="text-muted-foreground font-normal">(optional)</span>
+                        </Label>
+                        <Input
+                          id="avatar"
+                          value={avatarUrl}
+                          onChange={e => { setAvatarUrl(e.target.value); setAvatarError(false); }}
+                          placeholder="https://example.com/photo.jpg"
+                          data-testid="input-settings-avatar"
+                        />
+                        <p className="text-xs text-muted-foreground">Paste a direct image URL to use as your avatar.</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <SectionTitle>Identity Statement</SectionTitle>
+                    <p className="text-xs text-muted-foreground -mt-2">
+                      Complete the sentence: <span className="font-medium text-foreground">"I AM a person who ___"</span> — this anchors your habits to who you're becoming.
+                    </p>
+                    <div className="flex items-center gap-2 p-3 rounded-xl border bg-muted/30 focus-within:border-primary/40 transition-colors">
+                      <span className="text-sm text-muted-foreground flex-shrink-0 whitespace-nowrap">I AM a person who</span>
+                      <Input
+                        id="identity-statement"
+                        value={identityStatement}
+                        onChange={e => setIdentityStatement(e.target.value)}
+                        placeholder="shows up every day, no matter what."
+                        className="border-none bg-transparent p-0 h-auto text-sm font-medium focus-visible:ring-0 focus-visible:ring-offset-0"
+                        data-testid="input-settings-identity"
+                      />
+                    </div>
+                    {identityStatement.trim() && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+                        <Sparkles className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                        <p className="text-sm font-semibold text-foreground leading-relaxed">
+                          "I AM a person who {identityStatement.trim()}."
+                        </p>
+                      </div>
+                    )}
+                    <Button onClick={handleSaveProfile} disabled={updatePending} data-testid="button-save-profile">
+                      {updatePending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Save Profile
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             )}
-          </div>
 
-          <Button onClick={handleSaveProfile} disabled={updatePending} data-testid="button-save-profile">
-            {updatePending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            Save Profile
-          </Button>
-        </div>
-      </SectionCard>
+            {/* ── APPEARANCE TAB ── */}
+            {activeTab === "appearance" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="pt-6 space-y-5">
+                    <div className="flex items-center justify-between">
+                      <SectionTitle>Theme</SectionTitle>
+                      {!features.darkMode && (
+                        <Link href="/pricing">
+                          <Badge variant="secondary" className="text-[10px] cursor-pointer hover:bg-primary/10 gap-1 mb-4">
+                            <Lock className="w-2.5 h-2.5" /> Starter+ required
+                          </Badge>
+                        </Link>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { value: "light",  label: "Light",  icon: Sun,     desc: "Clean and bright",   locked: false },
+                        { value: "dark",   label: "Dark",   icon: Moon,    desc: "Easy on the eyes",   locked: !features.darkMode },
+                        { value: "system", label: "System", icon: Monitor, desc: "Follows your OS",    locked: !features.darkMode },
+                      ].map(({ value, label, icon: Icon, desc, locked }) => (
+                        <button
+                          key={value}
+                          onClick={() => !locked && setTheme(value as any)}
+                          data-testid={`button-theme-${value}`}
+                          disabled={locked}
+                          className={cn(
+                            "relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all",
+                            locked
+                              ? "border-border/40 text-muted-foreground/40 cursor-not-allowed opacity-50"
+                              : theme === value
+                                ? "border-primary bg-primary/10 text-foreground shadow-sm"
+                                : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
+                          )}
+                        >
+                          {theme === value && !locked && (
+                            <div className="absolute top-2 right-2">
+                              <div className="w-2 h-2 rounded-full bg-primary" />
+                            </div>
+                          )}
+                          {locked && <Lock className="w-3 h-3 absolute top-2 right-2 text-muted-foreground/50" />}
+                          <Icon className="w-5 h-5" />
+                          <span className="text-xs font-semibold">{label}</span>
+                          <span className="text-[10px] text-muted-foreground text-center">{desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
 
-      {/* Appearance */}
-      <SectionCard
-        icon={Palette}
-        title="Appearance"
-        description="Customize how Strivo looks"
-      >
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label>Theme</Label>
-            {!features.darkMode && (
-              <Link href="/pricing">
-                <Badge variant="secondary" className="text-[10px] cursor-pointer hover:bg-primary/10 gap-1">
-                  <Lock className="w-2.5 h-2.5" />
-                  Starter+ only
-                </Badge>
-              </Link>
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <SectionTitle>Timezone</SectionTitle>
+                    <p className="text-xs text-muted-foreground -mt-2">
+                      Your check-ins and streak tracking are based on this timezone.
+                    </p>
+                    <Select value={timezone} onValueChange={setTimezone}>
+                      <SelectTrigger data-testid="select-timezone">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-64">
+                        {TIMEZONES.map(tz => (
+                          <SelectItem key={tz} value={tz}>{tz.replace(/_/g, " ")}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={handleSaveAppearance} disabled={updatePending} data-testid="button-save-appearance">
+                      {updatePending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Save Preferences
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             )}
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { value: "light", label: "Light", icon: Sun, desc: "Clean and bright", requiresDarkMode: false },
-              { value: "dark", label: "Dark", icon: Moon, desc: "Easy on the eyes", requiresDarkMode: true },
-              { value: "system", label: "System", icon: Monitor, desc: "Follows your OS", requiresDarkMode: true },
-            ].map(({ value, label, icon: Icon, desc, requiresDarkMode }) => {
-              const locked = requiresDarkMode && !features.darkMode;
-              return (
-                <button
-                  key={value}
-                  onClick={() => !locked && setTheme(value as any)}
-                  data-testid={`button-theme-${value}`}
-                  disabled={locked}
-                  className={cn(
-                    "relative flex flex-col items-center gap-1.5 p-4 rounded-xl border transition-all",
-                    locked
-                      ? "border-border/40 text-muted-foreground/40 cursor-not-allowed opacity-50"
-                      : theme === value
-                        ? "border-primary bg-primary/10 text-foreground"
-                        : "border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-xs font-semibold">{label}</span>
-                  <span className="text-[10px] text-muted-foreground">{desc}</span>
-                  {locked && (
-                    <Lock className="w-3 h-3 absolute top-2 right-2 text-muted-foreground/60" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </SectionCard>
 
-      {/* Regional */}
-      <SectionCard
-        icon={Globe}
-        title="Regional"
-        description="Set your timezone for accurate daily tracking"
-      >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Timezone</Label>
-            <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger data-testid="select-timezone">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {timezones.map(tz => (
-                  <SelectItem key={tz} value={tz}>{tz.replace(/_/g, " ")}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Your check-ins and streak tracking are based on this timezone.
-            </p>
-          </div>
-          <Button onClick={handleSaveProfile} disabled={updatePending} variant="outline" data-testid="button-save-timezone">
-            Save Timezone
-          </Button>
-        </div>
-      </SectionCard>
+            {/* ── NOTIFICATIONS TAB ── */}
+            {activeTab === "notifications" && (
+              <Card>
+                <CardContent className="pt-6 space-y-5">
+                  <SectionTitle>Daily Check-in Reminder</SectionTitle>
+                  <p className="text-xs text-muted-foreground -mt-2">
+                    Get a browser notification each day to log your habits and keep your streak alive.
+                  </p>
 
-      {/* Notifications */}
-      <SectionCard
-        icon={Bell}
-        title="Daily Reminder"
-        description="Get a nudge to check in with your habits each day"
-      >
-        <div className="space-y-4">
-          {notifPermission === "denied" && (
-            <div className="flex items-start gap-2.5 p-3 rounded-xl bg-destructive/8 border border-destructive/20">
-              <BellOff className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-destructive leading-relaxed">
-                Notifications are blocked in your browser. To enable reminders, update your browser's notification settings for this site, then return here.
+                  {notifPermission === "denied" && (
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive/8 border border-destructive/20">
+                      <BellOff className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-destructive mb-1">Notifications are blocked</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Go to your browser's site settings and allow notifications for this site, then reload the page.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {notifPermission === "default" && (
+                    <div className="flex flex-col sm:flex-row items-start gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <BellRing className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold mb-1">Enable browser notifications</p>
+                        <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                          Allow Strivo to send you a daily nudge at your preferred time. No account needed — purely browser-based.
+                        </p>
+                        <Button size="sm" onClick={requestNotifPermission} data-testid="button-enable-notifications">
+                          <BellRing className="w-3.5 h-3.5 mr-1.5" />
+                          Enable Reminders
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {notifPermission === "granted" && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-xs text-chart-3 font-medium mb-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Notifications are enabled
+                      </div>
+
+                      <SettingRow
+                        label="Daily reminder"
+                        description="A gentle nudge to log your habits each day"
+                      >
+                        <Switch
+                          checked={reminderEnabled}
+                          onCheckedChange={setReminderEnabled}
+                          data-testid="switch-reminder-enabled"
+                        />
+                      </SettingRow>
+
+                      {reminderEnabled && (
+                        <div className="space-y-1.5 pt-1">
+                          <Label htmlFor="reminder-time">Reminder time</Label>
+                          <Input
+                            id="reminder-time"
+                            type="time"
+                            value={reminderTime}
+                            onChange={e => setReminderTime(e.target.value)}
+                            className="w-36"
+                            data-testid="input-reminder-time"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            You'll receive a notification at this time if you haven't checked in yet.
+                          </p>
+                        </div>
+                      )}
+
+                      {reminderEnabled && (
+                        <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            <span className="font-medium text-foreground">Missed day message: </span>
+                            "Missed yesterday? Restart tiny. Your system only needs the minimum version today."
+                          </p>
+                        </div>
+                      )}
+
+                      <Button
+                        size="sm"
+                        onClick={handleSaveReminder}
+                        disabled={updatePending}
+                        data-testid="button-save-reminder"
+                      >
+                        {updatePending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
+                        Save Reminder
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ── AUDIO TAB ── */}
+            {activeTab === "audio" && (
+              <div className="space-y-6">
+                {!features.futureSelfAudio ? (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-5 rounded-xl border border-border/60 bg-muted/20">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Lock className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold">Future Self Audio</p>
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            Record a motivational message as your future self and have it play back daily to reinforce your identity. Available on <span className="font-medium text-primary">Starter</span> and above.
+                          </p>
+                        </div>
+                        <Link href="/pricing">
+                          <Button size="sm" className="flex-shrink-0 gap-1.5" data-testid="button-upgrade-audio">
+                            <Sparkles className="w-3.5 h-3.5" /> Upgrade
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    <Card>
+                      <CardContent className="pt-6 space-y-4">
+                        <SectionTitle>Your Recording</SectionTitle>
+                        <FutureSelfAudioSetup
+                          compact
+                          existingUrl={user?.futureAudioUrl}
+                          onSaved={async (url) => {
+                            try { await updateProfile({ futureAudioUrl: url ?? null } as any); } catch {}
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-6 space-y-4">
+                        <SectionTitle>Playback Settings</SectionTitle>
+                        <FutureSelfAudioSettings prefs={audioPrefs} onChange={setAudioPrefs} />
+                        <Button size="sm" onClick={handleSaveAudioPrefs} disabled={updatePending} data-testid="button-save-audio-prefs">
+                          {updatePending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
+                          Save Audio Preferences
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ── PRIVACY TAB ── */}
+            {activeTab === "privacy" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <SectionTitle>Export Your Data</SectionTitle>
+                    <p className="text-xs text-muted-foreground -mt-2">
+                      Download all your goals, systems, check-ins, and journal entries as a single JSON file.
+                    </p>
+
+                    {canExport ? (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border border-border/60 bg-muted/20">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Download className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Full data export</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Includes goals, systems, check-ins, and journal entries
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleExportData}
+                          disabled={exportPending}
+                          className="flex-shrink-0 gap-1.5"
+                          data-testid="button-export-data"
+                        >
+                          {exportPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                          {exportPending ? "Exporting…" : "Export JSON"}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border border-border/60 bg-muted/20 opacity-75">
+                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                          <Lock className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Data export</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Available on Pro and Elite plans</p>
+                        </div>
+                        <Link href="/pricing">
+                          <Button size="sm" variant="outline" className="flex-shrink-0 gap-1.5" data-testid="button-upgrade-export">
+                            <Sparkles className="w-3.5 h-3.5" /> Upgrade
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <SectionTitle>Privacy Commitment</SectionTitle>
+                    <div className="space-y-3">
+                      {[
+                        { title: "Your data stays yours", body: "We never sell, rent, or share your personal data with third parties for advertising or marketing purposes." },
+                        { title: "End-to-end privacy", body: "Your habits, journal entries, and goals are private to you. Only you can see your data." },
+                        { title: "Minimal collection", body: "We only collect what's necessary to run the service — nothing more." },
+                      ].map(item => (
+                        <div key={item.title} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/40">
+                          <CheckCircle2 className="w-4 h-4 text-chart-3 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium">{item.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.body}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-3 pt-1">
+                      <Link href="/privacy">
+                        <Button size="sm" variant="outline" className="gap-1.5 text-xs" data-testid="link-privacy-policy">
+                          <ExternalLink className="w-3 h-3" /> Privacy Policy
+                        </Button>
+                      </Link>
+                      <Link href="/terms">
+                        <Button size="sm" variant="outline" className="gap-1.5 text-xs" data-testid="link-terms">
+                          <ExternalLink className="w-3 h-3" /> Terms of Service
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* ── BILLING TAB ── */}
+            {activeTab === "billing" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <SectionTitle>Current Plan</SectionTitle>
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-muted/20">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <planDetails.icon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">{planDetails.label} Plan</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{planDetails.description}</p>
+                        </div>
+                      </div>
+                      <Badge
+                        className={cn("flex-shrink-0", planDetails.color)}
+                        variant={isPaid ? "default" : "secondary"}
+                        data-testid="badge-current-plan"
+                      >
+                        {planDetails.label}
+                      </Badge>
+                    </div>
+
+                    {isPaid ? (
+                      STRIPE_CUSTOMER_PORTAL_URL ? (
+                        <a href={STRIPE_CUSTOMER_PORTAL_URL} target="_blank" rel="noopener noreferrer">
+                          <div className="flex items-center justify-between p-4 rounded-xl border border-border/60 hover:bg-muted/40 transition-colors cursor-pointer">
+                            <div>
+                              <p className="text-sm font-medium">Manage billing</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">Update payment, cancel, or change plan</p>
+                            </div>
+                            <Button size="sm" variant="outline" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-manage-billing" asChild>
+                              <span><ExternalLink className="w-3 h-3" /> Billing portal</span>
+                            </Button>
+                          </div>
+                        </a>
+                      ) : (
+                        <div className="p-4 rounded-xl bg-muted/20 border border-border/40">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            To manage your subscription, contact{" "}
+                            <a href="mailto:support@strivo.life" className="underline hover:text-foreground transition-colors">support@strivo.life</a>.
+                          </p>
+                        </div>
+                      )
+                    ) : (
+                      <Link href="/pricing">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors">
+                          <div>
+                            <p className="text-sm font-semibold text-primary">Upgrade your plan</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Unlock unlimited goals, AI coaching, and advanced analytics</p>
+                          </div>
+                          <Button size="sm" className="gap-1.5 flex-shrink-0 text-xs" data-testid="button-upgrade" asChild>
+                            <span><Sparkles className="w-3.5 h-3.5" /> See Plans</span>
+                          </Button>
+                        </div>
+                      </Link>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6 space-y-3">
+                    <SectionTitle>Plan Features</SectionTitle>
+                    {[
+                      { label: "Goals",              value: plan === "free" ? "Up to 2" : plan === "starter" ? "Up to 10" : "Unlimited" },
+                      { label: "Habit Systems",      value: plan === "free" ? "Up to 3" : "Unlimited" },
+                      { label: "Dark Mode",          value: features.darkMode ? "Included" : "Starter+" },
+                      { label: "AI Habit Coach",     value: features.aiCoachUnlimited ? "Unlimited" : features.aiCoach ? "10/day" : "Not included" },
+                      { label: "Future Self Audio",  value: features.futureSelfAudio ? "Included" : "Starter+" },
+                      { label: "Advanced Analytics", value: features.betterAnalytics ? "Included" : "Starter+" },
+                      { label: "Data Export",        value: canExport ? "Included" : "Pro+" },
+                    ].map(row => (
+                      <div key={row.label} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
+                        <span className="text-sm text-muted-foreground">{row.label}</span>
+                        <span className={cn(
+                          "text-xs font-medium",
+                          row.value === "Unlimited" || row.value === "Included" ? "text-chart-3" : "text-muted-foreground",
+                        )}>{row.value}</span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* ── ACCOUNT TAB ── */}
+            {activeTab === "account" && (
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <SectionTitle>Password</SectionTitle>
+                    <p className="text-xs text-muted-foreground -mt-2">
+                      We'll send a password reset link to <span className="font-medium text-foreground">{user?.email}</span>.
+                    </p>
+                    {passwordResetSent ? (
+                      <div className="flex items-start gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/20">
+                        <CheckCircle2 className="w-5 h-5 text-chart-3 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-chart-3">Reset email sent!</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Check your inbox for the password reset link.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSendPasswordReset}
+                        className="gap-1.5"
+                        data-testid="button-change-password"
+                      >
+                        <KeyRound className="w-3.5 h-3.5" />
+                        Send Password Reset Email
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <SectionTitle>Help & Resources</SectionTitle>
+                    <div className="space-y-1">
+                      {[
+                        { icon: Zap,      label: "System Builder guide",  sub: "How to build your first habit system",  href: "/systems/new" },
+                        { icon: Target,   label: "Goal-setting guide",    sub: "How to write goals that stick",          href: "/goals" },
+                        { icon: BookOpen, label: "Journaling tips",       sub: "Make the most of daily reflection",      href: "/journal" },
+                      ].map(item => (
+                        <Link key={item.label} href={item.href}>
+                          <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer border border-transparent hover:border-border/40">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <item.icon className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">{item.label}</p>
+                              <p className="text-xs text-muted-foreground">{item.sub}</p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6 space-y-3">
+                    <SectionTitle>Session</SectionTitle>
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-muted/20">
+                      <div>
+                        <p className="text-sm font-medium">Sign out</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Log out of your account on this device</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowLogout(true)}
+                        className="gap-1.5 flex-shrink-0"
+                        data-testid="button-logout-settings"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        Sign Out
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-destructive/30">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-destructive" />
+                      <SectionTitle>Danger Zone</SectionTitle>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-destructive">Delete account</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                          Permanently delete your account and all associated data. This action cannot be undone.
+                        </p>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setShowDeleteAccount(true)}
+                        className="gap-1.5 flex-shrink-0"
+                        data-testid="button-delete-account"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete Account
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="text-center py-4">
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                <Heart className="w-3 h-3 text-chart-5" />
+                Built with care for people who want to actually change
               </p>
             </div>
-          )}
-
-          {notifPermission === "default" && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
-              <BellRing className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium mb-0.5">Enable browser reminders</p>
-                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                  Allow notifications so Strivo can send you a daily check-in reminder at your chosen time. No sign-up required.
-                </p>
-                <Button size="sm" onClick={requestNotifPermission} data-testid="button-enable-notifications">
-                  <BellRing className="w-3.5 h-3.5 mr-1.5" />
-                  Enable Reminders
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {notifPermission === "granted" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/40">
-                <div>
-                  <p className="text-sm font-medium">Daily check-in reminder</p>
-                  <p className="text-xs text-muted-foreground">A gentle nudge to log your habits</p>
-                </div>
-                <Switch
-                  checked={reminderEnabled}
-                  onCheckedChange={setReminderEnabled}
-                  data-testid="switch-reminder-enabled"
-                />
-              </div>
-
-              {reminderEnabled && (
-                <div className="space-y-2">
-                  <Label htmlFor="reminder-time">Reminder time</Label>
-                  <Input
-                    id="reminder-time"
-                    type="time"
-                    value={reminderTime}
-                    onChange={e => setReminderTime(e.target.value)}
-                    className="w-40"
-                    data-testid="input-reminder-time"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    You'll get a browser notification at this time each day you haven't checked in yet.
-                  </p>
-                </div>
-              )}
-
-              <div className="p-3 rounded-lg bg-muted/20 border border-border/30">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  <strong className="text-foreground">Comeback message</strong> — if you miss a day, your next reminder will say: "Missed yesterday? Restart tiny. Your system only needs the minimum version today."
-                </p>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveReminder}
-                disabled={updatePending}
-                data-testid="button-save-reminder"
-              >
-                {updatePending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
-                Save Reminder
-              </Button>
-            </div>
-          )}
-        </div>
-      </SectionCard>
-
-      {/* Future Self Audio */}
-      <SectionCard
-        icon={Mic}
-        title="Future Self Audio"
-        description="A personal message from who you're becoming — played back as a daily reminder"
-        badge={!features.futureSelfAudio ? "Starter+" : undefined}
-      >
-        {!features.futureSelfAudio ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-4 rounded-xl border border-border/60 bg-muted/30">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Lock className="w-4 h-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium leading-tight">Future Self Audio</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Available on <span className="font-semibold text-primary">Starter</span> and above
-                </p>
-              </div>
-              <Link href="/pricing">
-                <Button size="sm" variant="outline" className="flex-shrink-0 gap-1 text-xs" data-testid="button-upgrade-audio">
-                  Upgrade
-                  <Lock className="w-3 h-3" />
-                </Button>
-              </Link>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed px-1">
-              Record a motivational message to yourself and have it play back automatically to reinforce your identity and keep you on track.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Your recording</p>
-              <FutureSelfAudioSetup
-                compact
-                existingUrl={user?.futureAudioUrl}
-                onSaved={async (url) => {
-                  if (url) {
-                    try { await updateProfile({ futureAudioUrl: url } as any); } catch {}
-                  } else {
-                    try { await updateProfile({ futureAudioUrl: null } as any); } catch {}
-                  }
-                }}
-              />
-            </div>
-            <div className="border-t border-border/40 pt-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Playback settings</p>
-              <FutureSelfAudioSettings prefs={audioPrefs} onChange={setAudioPrefs} />
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveAudioPrefs}
-              disabled={updatePending}
-              data-testid="button-save-audio-prefs"
-            >
-              {updatePending ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : null}
-              Save Audio Preferences
-            </Button>
-          </div>
-        )}
-      </SectionCard>
-
-      {/* Data & Privacy */}
-      <SectionCard
-        icon={Shield}
-        title="Data & Privacy"
-        description="Your data, your control"
-      >
-        <div className="space-y-3">
-          <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-            <p className="text-sm font-medium mb-1">Export your data</p>
-            <p className="text-xs text-muted-foreground mb-2">
-              Download all your goals, systems, check-ins, and journal entries as a CSV or JSON file.
-            </p>
-            <Badge variant="secondary" className="text-[10px] text-muted-foreground">Available on Pro plan</Badge>
-          </div>
-          <div className="p-3 rounded-lg bg-muted/30 border border-border/40">
-            <p className="text-sm font-medium mb-1">Your data stays yours</p>
-            <p className="text-xs text-muted-foreground">
-              We never sell your data. All your habits, journal entries, and goals are private to you.
-            </p>
           </div>
         </div>
-      </SectionCard>
-
-      {/* Quick links */}
-      <SectionCard
-        icon={HelpCircle}
-        title="Help & Resources"
-        description="Learn to get the most out of Strivo"
-      >
-        <div className="space-y-2">
-          {[
-            { icon: Zap, label: "System Builder guide", sub: "How to build your first habit system", href: "/systems/new" },
-            { icon: Target, label: "Goal-setting guide", sub: "How to write goals that stick", href: "/goals" },
-            { icon: BookOpen, label: "Journaling tips", sub: "Make the most of daily reflection", href: "/journal" },
-          ].map(item => (
-            <Link key={item.label} href={item.href}>
-              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer border border-transparent hover:border-border/40">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <item.icon className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.sub}</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </SectionCard>
-
-      {/* Subscription / Billing */}
-      <BillingCard plan={(user?.plan as PlanTier | null | undefined) || "free"} />
-
-      {/* Account */}
-      <SectionCard
-        icon={User}
-        title="Account"
-      >
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border border-border/40">
-            <div>
-              <p className="text-sm font-medium">Sign out</p>
-              <p className="text-xs text-muted-foreground">Log out of your account on this device</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setShowLogout(true)} data-testid="button-logout-settings" className="flex-shrink-0">
-              <LogOut className="w-3.5 h-3.5 mr-1.5" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </SectionCard>
-
-      {/* Footer note */}
-      <div className="text-center py-2">
-        <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-          <Heart className="w-3 h-3 text-chart-5" />
-          Built with care for people who want to actually change
-        </p>
       </div>
 
-      {/* Logout confirm */}
+      {/* Sign out dialog */}
       <AlertDialog open={showLogout} onOpenChange={setShowLogout}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Sign Out</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to sign out of Strivo? You can always come back and your data will be waiting.
+              Are you sure you want to sign out? Your data will be waiting when you come back.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Stay in</AlertDialogCancel>
             <Button onClick={handleLogout} data-testid="button-confirm-logout">Sign Out</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete account dialog */}
+      <AlertDialog open={showDeleteAccount} onOpenChange={open => { setShowDeleteAccount(open); if (!open) setDeleteConfirmText(""); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="w-4 h-4" /> Delete Account
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <span className="block">
+                This will <strong>permanently delete</strong> your account, goals, habit systems, check-ins, and all data. This cannot be undone.
+              </span>
+              <span className="block mt-3">
+                Type <strong>DELETE</strong> to confirm:
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="px-6 pb-2">
+            <Input
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="border-destructive/40 focus-visible:ring-destructive/40"
+              data-testid="input-delete-confirm"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirmText !== "DELETE" || deletePending}
+              onClick={handleDeleteAccount}
+              data-testid="button-confirm-delete"
+            >
+              {deletePending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Delete Forever
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
