@@ -88,6 +88,9 @@ export interface JournalEntry {
   dateKey: string;
   promptType?: string | null;
   content: string;
+  mood?: number | null;
+  isFavorite?: boolean | null;
+  tags?: string[] | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
