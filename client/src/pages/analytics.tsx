@@ -218,7 +218,7 @@ function exportToPdf(opts: {
 
   const dowCols = opts.dayOfWeekStats.filter(d => d.totalCount > 0).map(d => {
     const pctVal = Math.round(d.doneRate * 100);
-    const barH = Math.max(6, Math.round((pctVal / 100) * 72));
+    const barH = Math.max(4, Math.round((pctVal / 100) * 44));
     const barColor = pctVal >= 80 ? "#16a34a" : pctVal >= 50 ? "#d97706" : "#dc2626";
     return `<td style="text-align:center;vertical-align:bottom;padding:6px 8px">
       <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
@@ -281,7 +281,7 @@ function exportToPdf(opts: {
     .table-wrap { border: 1.5px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
     .print-hint { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fcd34d; border-radius: 10px; padding: 11px 16px; font-size: 12px; color: #92400e; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
     ul { list-style: none; padding: 0; margin: 0; }
-    .dow-wrap { border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 20px 12px 12px; }
+    .dow-wrap { border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 12px 8px; }
     .footer { margin-top: 32px; padding-top: 14px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 10px; text-align: center; }
     .badge-green { background: #dcfce7; color: #16a34a; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
     .badge-yellow { background: #fef9c3; color: #d97706; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
