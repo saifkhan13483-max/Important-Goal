@@ -35,20 +35,26 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 /* ─── CSV export ─────────────────────────────────────────────────── */
+const CRLF = "\r\n";
+
+function csvQuote(val: unknown): string {
+  if (val == null) return "";
+  const s = String(val);
+  // Quote if contains comma, double-quote, newline, or carriage return
+  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
 function buildCsv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return "";
   const headers = Object.keys(rows[0]);
   const lines = [
-    headers.join(","),
-    ...rows.map(r =>
-      headers.map(h => {
-        const val = r[h] == null ? "" : String(r[h]);
-        return val.includes(",") || val.includes('"') || val.includes("\n")
-          ? `"${val.replace(/"/g, '""')}"` : val;
-      }).join(",")
-    ),
+    headers.map(csvQuote).join(","),
+    ...rows.map(r => headers.map(h => csvQuote(r[h])).join(",")),
   ];
-  return lines.join("\n");
+  return lines.join(CRLF);
 }
 
 function downloadBlob(content: string, filename: string, mime: string) {
@@ -73,11 +79,25 @@ function filterCheckinsByRange(
   return checkins.filter(c => c.dateKey >= cutoffKey);
 }
 
+function pctGrade(pct: number): string {
+  if (pct >= 90) return "A+";
+  if (pct >= 80) return "A";
+  if (pct >= 70) return "B";
+  if (pct >= 60) return "C";
+  if (pct >= 50) return "D";
+  return "F";
+}
+
+function addSection(sections: string[], header: string, csvContent: string) {
+  if (!csvContent) return; // skip section entirely if no data
+  sections.push("", `=== ${header} ===`, csvContent);
+}
+
 function exportToCsv(opts: {
   checkins: { dateKey: string; systemId: string; status: string; moodBefore?: number | null; difficulty?: number | null; note?: string | null }[];
   systems: { id: string; title: string; goalId?: string | null; active: boolean }[];
   goals: { id: string; title: string }[];
-  systemStats: { systemId: string; title: string; pct: number; totalCheckins: number; missedCount: number }[];
+  systemStats: { systemId: string; title: string; pct: number; totalCheckins: number; doneCount: number; missedCount: number }[];
   goalCompletion: { goalId: string; title: string; avgPct: number }[];
   dayOfWeekStats: { day: string; doneCount: number; totalCount: number; doneRate: number }[];
   streaks: Record<string, number>;
@@ -92,9 +112,10 @@ function exportToCsv(opts: {
   topBestStreak: number;
   exportRange: ExportRange;
 }) {
-  const date = new Date().toISOString().slice(0, 10);
+  const dateShort = new Date().toISOString().slice(0, 10);
   const generatedAt = new Date().toLocaleString();
   const rangeLabel = opts.exportRange === "all" ? "All Time" : opts.exportRange === "7d" ? "Last 7 Days" : opts.exportRange === "30d" ? "Last 30 Days" : "Last 90 Days";
+  const rangeSlug = opts.exportRange === "all" ? "all-time" : opts.exportRange;
   const systemsById = Object.fromEntries(opts.systems.map(s => [s.id, s.title]));
   const goalsById   = Object.fromEntries(opts.goals.map(g => [g.id, g.title]));
   const systemGoalMap = Object.fromEntries(opts.systems.map(s => [s.id, s.goalId ?? ""]));
@@ -104,31 +125,44 @@ function exportToCsv(opts: {
   const missedCount  = opts.checkins.filter(c => c.status === "missed").length;
   const activeSystems = opts.systems.filter(s => s.active).length;
 
-  const checkinRows = opts.checkins.map(c => {
-    const moodLabel = c.moodBefore == null ? "" : c.moodBefore === 1 ? "Very Low" : c.moodBefore === 2 ? "Low" : c.moodBefore === 3 ? "Neutral" : c.moodBefore === 4 ? "Good" : "Great";
-    const diffLabel = c.difficulty == null ? "" : c.difficulty === 1 ? "Very Easy" : c.difficulty === 2 ? "Easy" : c.difficulty === 3 ? "Moderate" : c.difficulty === 4 ? "Hard" : "Very Hard";
-    return {
-      Date: c.dateKey,
-      System: systemsById[c.systemId] ?? c.systemId,
-      Goal: systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? "") : "",
-      Status: c.status === "done" ? "Done" : c.status === "partial" ? "Partial" : c.status === "missed" ? "Missed" : c.status,
-      "Mood (1-5)": c.moodBefore ?? "",
-      "Mood Label": moodLabel,
-      "Difficulty (1-5)": c.difficulty ?? "",
-      "Difficulty Label": diffLabel,
-      Notes: c.note ?? "",
-    };
-  });
+  const sortedDates = opts.checkins.map(c => c.dateKey).sort();
+  const firstDate = sortedDates[0] ?? "";
+  const lastDate  = sortedDates[sortedDates.length - 1] ?? "";
+  const uniqueDays = new Set(opts.checkins.map(c => c.dateKey)).size;
+
+  const checkinRows = opts.checkins
+    .slice()
+    .sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+    .map(c => {
+      const moodLabel = c.moodBefore == null ? "" : c.moodBefore === 1 ? "Very Low" : c.moodBefore === 2 ? "Low" : c.moodBefore === 3 ? "Neutral" : c.moodBefore === 4 ? "Good" : "Great";
+      const diffLabel = c.difficulty == null ? "" : c.difficulty === 1 ? "Very Easy" : c.difficulty === 2 ? "Easy" : c.difficulty === 3 ? "Moderate" : c.difficulty === 4 ? "Hard" : "Very Hard";
+      return {
+        Date: c.dateKey,
+        System: systemsById[c.systemId] ?? c.systemId,
+        Goal: systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? "") : "",
+        Status: c.status === "done" ? "Done" : c.status === "partial" ? "Partial" : c.status === "missed" ? "Missed" : c.status,
+        "Mood (1-5)": c.moodBefore ?? "",
+        "Mood Label": moodLabel,
+        "Difficulty (1-5)": c.difficulty ?? "",
+        "Difficulty Label": diffLabel,
+        Notes: c.note ?? "",
+      };
+    });
 
   const systemRows = opts.systemStats.map(s => {
     const sys = opts.systems.find(x => x.id === s.systemId);
+    const pct = Math.round(s.pct);
+    const partials = s.totalCheckins - s.doneCount - s.missedCount;
     return {
       System: s.title,
+      Goal: systemGoalMap[s.systemId] ? (goalsById[systemGoalMap[s.systemId]] ?? "") : "",
       Status: sys?.active ? "Active" : "Inactive",
-      "Completion %": s.pct,
+      Grade: pctGrade(pct),
+      "Completion %": pct,
       "Total Check-ins": s.totalCheckins,
-      "Missed": s.missedCount,
-      "Done": s.totalCheckins - s.missedCount,
+      Done: s.doneCount,
+      Partial: Math.max(0, partials),
+      Missed: s.missedCount,
       "Current Streak (days)": opts.streaks[s.systemId] ?? 0,
       "Best Streak (days)": opts.bestStreaks[s.systemId] ?? 0,
       "Consistency Score (0-100)": opts.consistencyScores[s.systemId] ?? 0,
@@ -138,14 +172,17 @@ function exportToCsv(opts: {
 
   const goalRows = opts.goalCompletion.map(g => ({
     Goal: g.title,
-    "Avg Completion %": g.avgPct,
+    "Avg Completion %": Math.round(g.avgPct),
+    Grade: pctGrade(Math.round(g.avgPct)),
   }));
 
   const dowRows = opts.dayOfWeekStats.filter(d => d.totalCount > 0).map(d => {
     const rawPct = d.doneRate > 1 ? d.doneRate : d.doneRate * 100;
+    const pct = Math.min(100, Math.round(rawPct));
     return {
       "Day of Week": d.day,
-      "Completion %": Math.min(100, Math.round(rawPct)),
+      "Completion %": pct,
+      Grade: pctGrade(pct),
       "Check-ins Done": d.doneCount,
       "Total Check-ins": d.totalCount,
     };
@@ -154,52 +191,50 @@ function exportToCsv(opts: {
   const moodRows = opts.hasMoodData ? opts.moodBuckets.filter(b => b.count > 0).map(b => {
     const label = b.mood === 1 ? "Very Low" : b.mood === 2 ? "Low" : b.mood === 3 ? "Neutral" : b.mood === 4 ? "Good" : "Great";
     return {
-      "Mood": label,
+      Mood: label,
       "Mood Score (1-5)": b.mood,
       "Days Logged": b.count,
-      "Avg Completion %": b.completionPct,
+      "Avg Completion %": Math.round(b.completionPct),
     };
   }) : [];
 
   const diffRows = opts.hasDifficultyData ? opts.difficultyBuckets.filter(b => b.count > 0).map(b => ({
-    "Difficulty": b.label,
+    Difficulty: b.label,
     "Difficulty Score (1-5)": b.difficulty,
     "Days Logged": b.count,
-    "Avg Completion %": b.completionPct,
+    "Avg Completion %": Math.round(b.completionPct),
   })) : [];
 
-  const sections = [
+  // Summary block (plain key,value rows — no section headers mixed in)
+  const summaryLines = [
     `Strivo Progress Report`,
-    `Generated,${generatedAt}`,
-    `Date Range,${rangeLabel}`,
+    `Generated,${csvQuote(generatedAt)}`,
+    `Date Range,${csvQuote(rangeLabel)}`,
     ``,
     `=== SUMMARY ===`,
-    `Total Check-ins in Range,${opts.checkins.length}`,
+    `Total Check-ins,${opts.checkins.length}`,
     `Done,${doneCount}`,
     `Partial,${partialCount}`,
     `Missed,${missedCount}`,
+    `Unique Active Days,${uniqueDays}`,
+    ...(firstDate ? [`First Check-in,${firstDate}`] : []),
+    ...(lastDate  ? [`Last Check-in,${lastDate}`]  : []),
     `Avg Completion (30d),${opts.avgCompletion}%`,
     `Best Streak Ever,${opts.topBestStreak} days`,
     `Active Systems,${activeSystems}`,
     `Total Systems,${opts.systems.length}`,
     `Total Goals,${opts.goals.length}`,
-    "",
-    "=== CHECK-IN LOG ===",
-    buildCsv(checkinRows),
-    "",
-    "=== SYSTEM PERFORMANCE ===",
-    buildCsv(systemRows),
-    "",
-    "=== GOAL PROGRESS ===",
-    buildCsv(goalRows),
-    "",
-    "=== DAY OF WEEK BREAKDOWN ===",
-    buildCsv(dowRows),
-    ...(moodRows.length > 0 ? ["", "=== MOOD vs. COMPLETION ===", buildCsv(moodRows)] : []),
-    ...(diffRows.length > 0 ? ["", "=== DIFFICULTY vs. COMPLETION ===", buildCsv(diffRows)] : []),
   ];
 
-  downloadBlob(sections.join("\n"), `strivo-report-${date}.csv`, "text/csv;charset=utf-8;");
+  const sections: string[] = summaryLines;
+  addSection(sections, "CHECK-IN LOG (newest first)", buildCsv(checkinRows));
+  addSection(sections, "SYSTEM PERFORMANCE", buildCsv(systemRows));
+  addSection(sections, "GOAL PROGRESS", buildCsv(goalRows));
+  addSection(sections, "DAY OF WEEK BREAKDOWN", buildCsv(dowRows));
+  if (moodRows.length > 0) addSection(sections, "MOOD vs. COMPLETION", buildCsv(moodRows));
+  if (diffRows.length > 0) addSection(sections, "DIFFICULTY vs. COMPLETION", buildCsv(diffRows));
+
+  downloadBlob(sections.join(CRLF), `strivo-report-${rangeSlug}-${dateShort}.csv`, "text/csv;charset=utf-8;");
 }
 
 /* ─── PDF export ─────────────────────────────────────────────────── */
@@ -658,7 +693,7 @@ export default function Analytics() {
     } finally {
       setIsExportingCsv(false);
     }
-  }, [checkins, filteredCheckins, systems, goals, systemStats, goalCompletion, dayOfWeekStats, streaks, bestStreaks, consistencyScores, resilienceScores, avgCompletion, topBestStreak, exportRange, toast]);
+  }, [checkins, filteredCheckins, systems, goals, systemStats, goalCompletion, dayOfWeekStats, streaks, bestStreaks, consistencyScores, resilienceScores, moodBuckets, difficultyBuckets, hasMoodData, hasDifficultyData, avgCompletion, topBestStreak, exportRange, toast]);
 
   const handleExportPdf = useCallback(async () => {
     if (checkins.length === 0) {
