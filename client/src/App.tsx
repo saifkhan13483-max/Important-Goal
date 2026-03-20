@@ -30,7 +30,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ProtectedRoute, PublicOnlyRoute, OnboardingRoute } from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { CookieConsent } from "@/components/cookie-consent";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /* ── Eagerly loaded (critical path / small pages) ── */
@@ -208,7 +207,6 @@ export default function App() {
             <ReminderChecker />
             <Router />
             <Toaster />
-            <CookieConsent />
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
