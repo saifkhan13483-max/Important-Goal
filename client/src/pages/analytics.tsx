@@ -217,8 +217,9 @@ function exportToPdf(opts: {
     }).join("");
 
   const dowCols = opts.dayOfWeekStats.filter(d => d.totalCount > 0).map(d => {
-    const pctVal = Math.round(d.doneRate * 100);
-    const barH = Math.max(4, Math.round((pctVal / 100) * 44));
+    const rawPct = d.doneRate > 1 ? d.doneRate : d.doneRate * 100;
+    const pctVal = Math.min(100, Math.round(rawPct));
+    const barH = Math.max(2, Math.round((pctVal / 100) * 13));
     const barColor = pctVal >= 80 ? "#16a34a" : pctVal >= 50 ? "#d97706" : "#dc2626";
     return `<td style="text-align:center;vertical-align:bottom;padding:6px 8px">
       <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
