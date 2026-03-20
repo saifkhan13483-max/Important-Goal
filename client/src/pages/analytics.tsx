@@ -258,7 +258,7 @@ function exportToPdf(opts: {
   <title>Strivo Progress Report — ${dateShort}</title>
   <style>
     @page { size: A4; margin: 16mm 12mm; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #111827; background: #fff; font-size: 13px; line-height: 1.5; }
     .page { max-width: 800px; margin: 0 auto; padding: 28px 24px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid #7c3aed; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
