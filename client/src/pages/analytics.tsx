@@ -84,55 +84,105 @@ function exportToCsv(opts: {
   bestStreaks: Record<string, number>;
   consistencyScores: Record<string, number>;
   resilienceScores: Record<string, number>;
+  moodBuckets: { mood: number; count: number; completionPct: number }[];
+  difficultyBuckets: { difficulty: number; label: string; count: number; completionPct: number }[];
+  hasMoodData: boolean;
+  hasDifficultyData: boolean;
   avgCompletion: number;
   topBestStreak: number;
   exportRange: ExportRange;
 }) {
   const date = new Date().toISOString().slice(0, 10);
+  const generatedAt = new Date().toLocaleString();
   const rangeLabel = opts.exportRange === "all" ? "All Time" : opts.exportRange === "7d" ? "Last 7 Days" : opts.exportRange === "30d" ? "Last 30 Days" : "Last 90 Days";
   const systemsById = Object.fromEntries(opts.systems.map(s => [s.id, s.title]));
   const goalsById   = Object.fromEntries(opts.goals.map(g => [g.id, g.title]));
   const systemGoalMap = Object.fromEntries(opts.systems.map(s => [s.id, s.goalId ?? ""]));
 
-  const checkinRows = opts.checkins.map(c => ({
-    Date: c.dateKey,
-    System: systemsById[c.systemId] ?? c.systemId,
-    Goal: systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? "") : "",
-    Status: c.status === "done" ? "Done" : c.status === "partial" ? "Partial" : c.status === "missed" ? "Missed" : c.status,
-    "Mood (1-5)": c.moodBefore ?? "",
-    "Difficulty (1-5)": c.difficulty ?? "",
-    Notes: c.note ?? "",
-  }));
+  const doneCount    = opts.checkins.filter(c => c.status === "done").length;
+  const partialCount = opts.checkins.filter(c => c.status === "partial").length;
+  const missedCount  = opts.checkins.filter(c => c.status === "missed").length;
+  const activeSystems = opts.systems.filter(s => s.active).length;
 
-  const systemRows = opts.systemStats.map(s => ({
-    System: s.title,
-    "Completion %": s.pct,
-    "Total Check-ins": s.totalCheckins,
-    Missed: s.missedCount,
-    "Current Streak (days)": opts.streaks[s.systemId] ?? 0,
-    "Best Streak (days)": opts.bestStreaks[s.systemId] ?? 0,
-    "Consistency Score": opts.consistencyScores[s.systemId] ?? 0,
-    "Resilience Score": opts.resilienceScores[s.systemId] ?? 0,
-  }));
+  const checkinRows = opts.checkins.map(c => {
+    const moodLabel = c.moodBefore == null ? "" : c.moodBefore === 1 ? "Very Low" : c.moodBefore === 2 ? "Low" : c.moodBefore === 3 ? "Neutral" : c.moodBefore === 4 ? "Good" : "Great";
+    const diffLabel = c.difficulty == null ? "" : c.difficulty === 1 ? "Very Easy" : c.difficulty === 2 ? "Easy" : c.difficulty === 3 ? "Moderate" : c.difficulty === 4 ? "Hard" : "Very Hard";
+    return {
+      Date: c.dateKey,
+      System: systemsById[c.systemId] ?? c.systemId,
+      Goal: systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? "") : "",
+      Status: c.status === "done" ? "Done" : c.status === "partial" ? "Partial" : c.status === "missed" ? "Missed" : c.status,
+      "Mood (1-5)": c.moodBefore ?? "",
+      "Mood Label": moodLabel,
+      "Difficulty (1-5)": c.difficulty ?? "",
+      "Difficulty Label": diffLabel,
+      Notes: c.note ?? "",
+    };
+  });
+
+  const systemRows = opts.systemStats.map(s => {
+    const sys = opts.systems.find(x => x.id === s.systemId);
+    return {
+      System: s.title,
+      Status: sys?.active ? "Active" : "Inactive",
+      "Completion %": s.pct,
+      "Total Check-ins": s.totalCheckins,
+      "Missed": s.missedCount,
+      "Done": s.totalCheckins - s.missedCount,
+      "Current Streak (days)": opts.streaks[s.systemId] ?? 0,
+      "Best Streak (days)": opts.bestStreaks[s.systemId] ?? 0,
+      "Consistency Score (0-100)": opts.consistencyScores[s.systemId] ?? 0,
+      "Resilience Score (0-100)": opts.resilienceScores[s.systemId] ?? 0,
+    };
+  });
 
   const goalRows = opts.goalCompletion.map(g => ({
     Goal: g.title,
     "Avg Completion %": g.avgPct,
   }));
 
-  const dowRows = opts.dayOfWeekStats.filter(d => d.totalCount > 0).map(d => ({
-    "Day of Week": d.day,
-    "Completion %": Math.round(d.doneRate * 100),
-    "Check-ins Done": d.doneCount,
-    "Total Check-ins": d.totalCount,
-  }));
+  const dowRows = opts.dayOfWeekStats.filter(d => d.totalCount > 0).map(d => {
+    const rawPct = d.doneRate > 1 ? d.doneRate : d.doneRate * 100;
+    return {
+      "Day of Week": d.day,
+      "Completion %": Math.min(100, Math.round(rawPct)),
+      "Check-ins Done": d.doneCount,
+      "Total Check-ins": d.totalCount,
+    };
+  });
+
+  const moodRows = opts.hasMoodData ? opts.moodBuckets.filter(b => b.count > 0).map(b => {
+    const label = b.mood === 1 ? "Very Low" : b.mood === 2 ? "Low" : b.mood === 3 ? "Neutral" : b.mood === 4 ? "Good" : "Great";
+    return {
+      "Mood": label,
+      "Mood Score (1-5)": b.mood,
+      "Days Logged": b.count,
+      "Avg Completion %": b.completionPct,
+    };
+  }) : [];
+
+  const diffRows = opts.hasDifficultyData ? opts.difficultyBuckets.filter(b => b.count > 0).map(b => ({
+    "Difficulty": b.label,
+    "Difficulty Score (1-5)": b.difficulty,
+    "Days Logged": b.count,
+    "Avg Completion %": b.completionPct,
+  })) : [];
 
   const sections = [
-    `Strivo Progress Report — ${date}`,
+    `Strivo Progress Report`,
+    `Generated,${generatedAt}`,
     `Date Range,${rangeLabel}`,
+    ``,
+    `=== SUMMARY ===`,
     `Total Check-ins in Range,${opts.checkins.length}`,
+    `Done,${doneCount}`,
+    `Partial,${partialCount}`,
+    `Missed,${missedCount}`,
     `Avg Completion (30d),${opts.avgCompletion}%`,
-    `Best Streak,${opts.topBestStreak} days`,
+    `Best Streak Ever,${opts.topBestStreak} days`,
+    `Active Systems,${activeSystems}`,
+    `Total Systems,${opts.systems.length}`,
+    `Total Goals,${opts.goals.length}`,
     "",
     "=== CHECK-IN LOG ===",
     buildCsv(checkinRows),
@@ -145,6 +195,8 @@ function exportToCsv(opts: {
     "",
     "=== DAY OF WEEK BREAKDOWN ===",
     buildCsv(dowRows),
+    ...(moodRows.length > 0 ? ["", "=== MOOD vs. COMPLETION ===", buildCsv(moodRows)] : []),
+    ...(diffRows.length > 0 ? ["", "=== DIFFICULTY vs. COMPLETION ===", buildCsv(diffRows)] : []),
   ];
 
   downloadBlob(sections.join("\n"), `strivo-report-${date}.csv`, "text/csv;charset=utf-8;");
@@ -591,6 +643,10 @@ export default function Analytics() {
         bestStreaks,
         consistencyScores,
         resilienceScores,
+        moodBuckets,
+        difficultyBuckets,
+        hasMoodData,
+        hasDifficultyData,
         avgCompletion,
         topBestStreak,
         exportRange,
@@ -1069,13 +1125,13 @@ export default function Analytics() {
         {features.betterAnalytics && (
           <Card className="overflow-hidden">
             <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="flex flex-col xs:flex-row xs:items-start xs:justify-between gap-2">
                 <SectionTitle icon={BarChart2} color="bg-primary/10 text-primary" title={`Completion Rate — ${periodLabel[period]}`} />
-                <Tabs value={period} onValueChange={v => setPeriod(v as Period)}>
+                <Tabs value={period} onValueChange={v => setPeriod(v as Period)} className="flex-shrink-0">
                   <TabsList className="h-8 rounded-xl">
-                    <TabsTrigger value="daily"   className="text-xs px-3 rounded-lg" data-testid="tab-period-daily">Daily</TabsTrigger>
-                    <TabsTrigger value="weekly"  className="text-xs px-3 rounded-lg" data-testid="tab-period-weekly">Weekly</TabsTrigger>
-                    <TabsTrigger value="monthly" className="text-xs px-3 rounded-lg" data-testid="tab-period-monthly">Monthly</TabsTrigger>
+                    <TabsTrigger value="daily"   className="text-xs px-2 sm:px-3 rounded-lg" data-testid="tab-period-daily">Daily</TabsTrigger>
+                    <TabsTrigger value="weekly"  className="text-xs px-2 sm:px-3 rounded-lg" data-testid="tab-period-weekly">Weekly</TabsTrigger>
+                    <TabsTrigger value="monthly" className="text-xs px-2 sm:px-3 rounded-lg" data-testid="tab-period-monthly">Monthly</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -1474,10 +1530,10 @@ export default function Analytics() {
                 </div>
               </div>
               {features.csvPdfExport && hasData && (
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
                   <Filter className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                   <Select value={exportRange} onValueChange={v => setExportRange(v as ExportRange)}>
-                    <SelectTrigger className="h-8 w-36 text-xs rounded-lg" data-testid="select-export-range">
+                    <SelectTrigger className="h-8 flex-1 sm:w-36 text-xs rounded-lg" data-testid="select-export-range">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1522,11 +1578,13 @@ export default function Analytics() {
                     </div>
                     <ul className="space-y-1.5 mb-4 text-xs text-muted-foreground flex-1">
                       {[
-                        "Full check-in log with dates, mood & notes",
-                        "System performance, streaks & resilience",
+                        "Full check-in log with mood & difficulty labels",
+                        "System performance, streaks & resilience scores",
                         "Goal completion breakdown",
-                        "Day-of-week analysis",
-                        "Excel-compatible (UTF-8 BOM)",
+                        "Day-of-week & mood vs. completion analysis",
+                        "Difficulty vs. completion breakdown",
+                        "Detailed summary with done/partial/missed counts",
+                        "Excel & Google Sheets compatible (UTF-8 BOM)",
                       ].map(item => (
                         <li key={item} className="flex items-start gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 mt-1" />
