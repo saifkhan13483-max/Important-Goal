@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Search, LayoutGrid, Brain, Zap, CheckSquare, Trophy, ShieldCheck,
   BookOpen, Sparkles, ArrowRight, Star, Lock, X, Dumbbell, Moon,
-  Briefcase, Timer, PenLine, Sunset, Eye,
+  Briefcase, Timer, PenLine, Sunset, Eye, Heart, Droplets, Languages,
+  DollarSign, Salad, Lightbulb, Users, Sun, ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
@@ -23,20 +24,29 @@ import { Link } from "wouter";
 const FREE_TEMPLATE_LIMIT = 3;
 
 const ALL_CATEGORIES = [
-  { value: "all",              label: "All",           emoji: "✨" },
-  { value: "beginner",         label: "Beginner",      emoji: "⭐" },
-  { value: "fitness",          label: "Fitness",       emoji: "🏃" },
-  { value: "reading",          label: "Reading",       emoji: "📚" },
-  { value: "meditation",       label: "Meditation",    emoji: "🧘" },
-  { value: "exam-prep",        label: "Exam Prep",     emoji: "📝" },
-  { value: "content-creation", label: "Content",       emoji: "🎨" },
-  { value: "relationship",     label: "Relationship",  emoji: "❤️" },
-  { value: "sleep",            label: "Sleep",         emoji: "😴" },
-  { value: "deep-work",        label: "Deep Work",     emoji: "🧠" },
-  { value: "mindset",          label: "Mindset",       emoji: "💡" },
-  { value: "evening-reset",    label: "Evening Reset", emoji: "🌙" },
-  { value: "job-search",       label: "Job Search",    emoji: "💼" },
-  { value: "study-sprint",     label: "Study Sprint",  emoji: "⚡" },
+  { value: "all",              label: "All",            emoji: "✨" },
+  { value: "beginner",         label: "Beginner",       emoji: "⭐" },
+  { value: "fitness",          label: "Fitness",        emoji: "🏃" },
+  { value: "morning-routine",  label: "Morning",        emoji: "☀️" },
+  { value: "mindset",          label: "Mindset",        emoji: "💡" },
+  { value: "deep-work",        label: "Deep Work",      emoji: "🧠" },
+  { value: "reading",          label: "Reading",        emoji: "📚" },
+  { value: "meditation",       label: "Meditation",     emoji: "🧘" },
+  { value: "gratitude",        label: "Gratitude",      emoji: "🙏" },
+  { value: "sleep",            label: "Sleep",          emoji: "😴" },
+  { value: "nutrition",        label: "Nutrition",      emoji: "🥗" },
+  { value: "hydration",        label: "Hydration",      emoji: "💧" },
+  { value: "relationship",     label: "Relationship",   emoji: "❤️" },
+  { value: "finance",          label: "Finance",        emoji: "💰" },
+  { value: "language",         label: "Language",       emoji: "🗣️" },
+  { value: "content-creation", label: "Content",        emoji: "🎨" },
+  { value: "creativity",       label: "Creativity",     emoji: "🎭" },
+  { value: "networking",       label: "Networking",     emoji: "🤝" },
+  { value: "productivity",     label: "Productivity",   emoji: "⚙️" },
+  { value: "evening-reset",    label: "Evening Reset",  emoji: "🌙" },
+  { value: "exam-prep",        label: "Exam Prep",      emoji: "📝" },
+  { value: "job-search",       label: "Job Search",     emoji: "💼" },
+  { value: "study-sprint",     label: "Study Sprint",   emoji: "⚡" },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -55,13 +65,22 @@ const CATEGORY_COLORS: Record<string, string> = {
   "evening-reset":   "bg-indigo-500/15 text-indigo-500 border-indigo-500/30",
   "job-search":      "bg-amber-500/15 text-amber-500 border-amber-500/30",
   "study-sprint":    "bg-chart-2/15 text-chart-2 border-chart-2/30",
+  gratitude:         "bg-yellow-500/15 text-yellow-600 border-yellow-500/30",
+  "morning-routine": "bg-orange-400/15 text-orange-500 border-orange-400/30",
+  hydration:         "bg-sky-500/15 text-sky-500 border-sky-500/30",
+  language:          "bg-teal-500/15 text-teal-600 border-teal-500/30",
+  finance:           "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+  nutrition:         "bg-lime-600/15 text-lime-700 border-lime-600/30",
+  creativity:        "bg-chart-4/15 text-chart-4 border-chart-4/30",
+  networking:        "bg-blue-500/15 text-blue-600 border-blue-500/30",
+  productivity:      "bg-primary/15 text-primary border-primary/30",
 };
 
 const CATEGORY_ICONS: Record<string, any> = {
   fitness:           Dumbbell,
   reading:           BookOpen,
   "deep-work":       Brain,
-  mindset:           PenLine,
+  mindset:           Lightbulb,
   meditation:        Sunset,
   "content-creation":PenLine,
   "evening-reset":   Moon,
@@ -69,10 +88,23 @@ const CATEGORY_ICONS: Record<string, any> = {
   "study-sprint":    Timer,
   "exam-prep":       BookOpen,
   sleep:             Moon,
-  relationship:      Star,
+  relationship:      Heart,
+  gratitude:         Star,
+  "morning-routine": Sun,
+  hydration:         Droplets,
+  language:          Languages,
+  finance:           DollarSign,
+  nutrition:         Salad,
+  creativity:        PenLine,
+  networking:        Users,
+  productivity:      ListChecks,
 };
 
-const BEGINNER_CATEGORIES = new Set(["fitness", "reading", "meditation", "sleep", "mindset", "evening-reset", "study-sprint"]);
+const BEGINNER_CATEGORIES = new Set([
+  "fitness", "reading", "meditation", "sleep", "mindset",
+  "evening-reset", "study-sprint", "gratitude", "morning-routine",
+  "hydration", "nutrition",
+]);
 
 function categoryColor(cat: string) {
   return CATEGORY_COLORS[cat] ?? "bg-muted text-muted-foreground border-border";
