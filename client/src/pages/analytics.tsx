@@ -21,8 +21,11 @@ import {
   Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
   Trophy, AlertCircle, Star, CheckSquare, Lightbulb,
   TrendingDown, Heart, Award, Smile, Dumbbell, Bot, Loader2, Sparkles, Download,
-  ChevronRight,
+  ChevronRight, FileText, Lock,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { generateAnalyticsInsights, type AnalyticsInsight } from "@/services/ai.service";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
@@ -48,6 +51,122 @@ function exportToCsv(rows: Record<string, unknown>[], filename: string) {
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+/* ─── PDF export ─────────────────────────────────────────────────── */
+function exportToPdf(opts: {
+  userName?: string;
+  avgCompletion: number;
+  totalCheckins: number;
+  topBestStreak: number;
+  activeSystems: number;
+  systemStats: { title: string; pct: number; totalCheckins: number; missedCount: number }[];
+  goalCompletion: { title: string; pct: number }[];
+}) {
+  const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const systemRows = opts.systemStats
+    .filter(s => s.totalCheckins > 0)
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 20)
+    .map(s => `
+      <tr>
+        <td>${s.title}</td>
+        <td style="text-align:center">${s.pct}%</td>
+        <td style="text-align:center">${s.totalCheckins}</td>
+        <td style="text-align:center">${s.missedCount}</td>
+      </tr>`)
+    .join("");
+
+  const goalRows = opts.goalCompletion
+    .slice(0, 10)
+    .map(g => `
+      <tr>
+        <td>${g.title}</td>
+        <td style="text-align:center">${g.pct}%</td>
+      </tr>`)
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Strivo Progress Report — ${date}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a2e; background: #fff; padding: 32px; font-size: 13px; }
+    header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #7c3aed; margin-bottom: 24px; }
+    .logo { font-size: 22px; font-weight: 800; color: #7c3aed; letter-spacing: -0.5px; }
+    .meta { text-align: right; color: #6b7280; font-size: 12px; line-height: 1.6; }
+    h2 { font-size: 15px; font-weight: 700; color: #111; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+    .stat-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; text-align: center; }
+    .stat-value { font-size: 26px; font-weight: 800; color: #7c3aed; }
+    .stat-label { font-size: 11px; color: #6b7280; margin-top: 3px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+    th { background: #f3f4f6; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; padding: 8px 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) { background: #fafafa; }
+    footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 11px; text-align: center; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="logo">Strivo</div>
+      <div style="color:#6b7280;font-size:12px;margin-top:4px">Progress Report</div>
+    </div>
+    <div class="meta">
+      ${opts.userName ? `<div><strong>${opts.userName}</strong></div>` : ""}
+      <div>Generated ${date}</div>
+    </div>
+  </header>
+
+  <h2>Summary</h2>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value">${opts.avgCompletion}%</div>
+      <div class="stat-label">Avg Completion (30d)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${opts.totalCheckins}</div>
+      <div class="stat-label">Total Check-ins</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${opts.topBestStreak}d</div>
+      <div class="stat-label">Best Streak</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">${opts.activeSystems}</div>
+      <div class="stat-label">Active Systems</div>
+    </div>
+  </div>
+
+  ${systemRows ? `
+  <h2>System Performance</h2>
+  <table>
+    <thead><tr><th>System</th><th style="text-align:center">Completion</th><th style="text-align:center">Check-ins</th><th style="text-align:center">Missed</th></tr></thead>
+    <tbody>${systemRows}</tbody>
+  </table>` : ""}
+
+  ${goalRows ? `
+  <h2>Goal Progress</h2>
+  <table>
+    <thead><tr><th>Goal</th><th style="text-align:center">Progress</th></tr></thead>
+    <tbody>${goalRows}</tbody>
+  </table>` : ""}
+
+  <footer>Strivo &mdash; Build something that survives hard days &mdash; ${date}</footer>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank");
+  if (!win) { alert("Pop-up blocked — please allow pop-ups to export PDF."); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 400);
 }
 
 /* ─── Metric card ────────────────────────────────────────────────── */
@@ -172,6 +291,19 @@ export default function Analytics() {
     if (daysWithData.length === 0) return 0;
     return Math.round(daysWithData.reduce((sum: number, d: any) => sum + (d.done / d.total) * 100, 0) / daysWithData.length);
   }, [last30Days]);
+
+  const handleExportPdf = useCallback(() => {
+    if (checkins.length === 0) { alert("No data to export yet — complete some check-ins first!"); return; }
+    exportToPdf({
+      userName: user?.name,
+      avgCompletion,
+      totalCheckins: analytics.totalCheckins,
+      topBestStreak,
+      activeSystems: analytics.activeSystems,
+      systemStats,
+      goalCompletion,
+    });
+  }, [checkins, user, avgCompletion, analytics, topBestStreak, systemStats, goalCompletion]);
 
   const insightCards = useMemo(() => {
     if (checkins.length < 3) return [];
@@ -316,15 +448,43 @@ export default function Analytics() {
               <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">Your Progress</h1>
               <p className="text-white/60 text-xs sm:text-sm mt-0.5">Track consistency and growth over time</p>
             </div>
-            <button
-              type="button" onClick={handleExportCsv}
-              disabled={isLoading || checkins.length === 0}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 text-sm font-medium hover:bg-white/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed backdrop-blur-sm flex-shrink-0"
-              data-testid="button-export-csv"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export CSV
-            </button>
+            {features.csvPdfExport ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={isLoading || checkins.length === 0}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 text-sm font-medium hover:bg-white/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed backdrop-blur-sm flex-shrink-0"
+                    data-testid="button-export-menu"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Export
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={handleExportCsv} data-testid="button-export-csv">
+                    <Download className="w-3.5 h-3.5 mr-2" />
+                    Export CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportPdf} data-testid="button-export-pdf">
+                    <FileText className="w-3.5 h-3.5 mr-2" />
+                    Export PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/pricing">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 border border-white/20 text-sm font-medium hover:bg-white/20 transition-colors backdrop-blur-sm flex-shrink-0 opacity-70"
+                  data-testid="button-export-locked"
+                  title="Upgrade to Pro to export your data"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  Export (Pro+)
+                </button>
+              </Link>
+            )}
           </div>
 
           {/* Hero stats grid */}
