@@ -33,8 +33,8 @@ import { PlanGate } from "@/components/plan-gate";
 import { Link } from "wouter";
 
 /* ─── CSV export ─────────────────────────────────────────────────── */
-function exportToCsv(rows: Record<string, unknown>[], filename: string) {
-  if (rows.length === 0) return;
+function buildCsv(rows: Record<string, unknown>[]): string {
+  if (rows.length === 0) return "";
   const headers = Object.keys(rows[0]);
   const lines = [
     headers.join(","),
@@ -46,127 +46,321 @@ function exportToCsv(rows: Record<string, unknown>[], filename: string) {
       }).join(",")
     ),
   ];
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  return lines.join("\n");
+}
+
+function downloadBlob(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function exportToCsv(opts: {
+  checkins: { dateKey: string; systemId: string; status: string; moodBefore?: number | null; difficulty?: number | null; note?: string | null }[];
+  systems: { id: string; title: string; goalId?: string | null; active: boolean }[];
+  goals: { id: string; title: string }[];
+  systemStats: { systemId: string; title: string; pct: number; totalCheckins: number; missedCount: number }[];
+  goalCompletion: { goalId: string; title: string; avgPct: number }[];
+  dayOfWeekStats: { day: string; doneCount: number; totalCount: number; doneRate: number }[];
+  streaks: Record<string, number>;
+  bestStreaks: Record<string, number>;
+  avgCompletion: number;
+  topBestStreak: number;
+}) {
+  const date = new Date().toISOString().slice(0, 10);
+  const systemsById = Object.fromEntries(opts.systems.map(s => [s.id, s.title]));
+  const goalsById   = Object.fromEntries(opts.goals.map(g => [g.id, g.title]));
+  const systemGoalMap = Object.fromEntries(opts.systems.map(s => [s.id, s.goalId ?? ""]));
+
+  const checkinRows = opts.checkins.map(c => ({
+    Date: c.dateKey,
+    System: systemsById[c.systemId] ?? c.systemId,
+    Goal: systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? "") : "",
+    Done: c.status === "done" ? "yes" : "no",
+    Mood: c.moodBefore ?? "",
+    Difficulty: c.difficulty ?? "",
+    Note: c.note ?? "",
+  }));
+
+  const systemRows = opts.systemStats.map(s => ({
+    System: s.title,
+    "Completion %": s.pct,
+    "Total Check-ins": s.totalCheckins,
+    Missed: s.missedCount,
+    "Current Streak (days)": opts.streaks[s.systemId] ?? 0,
+    "Best Streak (days)": opts.bestStreaks[s.systemId] ?? 0,
+  }));
+
+  const goalRows = opts.goalCompletion.map(g => ({
+    Goal: g.title,
+    "Avg Completion %": g.avgPct,
+  }));
+
+  const dowRows = opts.dayOfWeekStats.filter(d => d.totalCount > 0).map(d => ({
+    "Day of Week": d.day,
+    "Completion %": Math.round(d.doneRate * 100),
+    "Check-ins Done": d.doneCount,
+    "Total Check-ins": d.totalCount,
+  }));
+
+  const sections = [
+    `Strivo Progress Report — ${date}`,
+    `Avg Completion (30d),${opts.avgCompletion}%`,
+    `Best Streak,${opts.topBestStreak} days`,
+    "",
+    "=== CHECK-IN LOG ===",
+    buildCsv(checkinRows),
+    "",
+    "=== SYSTEM PERFORMANCE ===",
+    buildCsv(systemRows),
+    "",
+    "=== GOAL PROGRESS ===",
+    buildCsv(goalRows),
+    "",
+    "=== DAY OF WEEK BREAKDOWN ===",
+    buildCsv(dowRows),
+  ];
+
+  downloadBlob(sections.join("\n"), `strivo-report-${date}.csv`, "text/csv;charset=utf-8;");
 }
 
 /* ─── PDF export ─────────────────────────────────────────────────── */
+function pct2bar(pct: number): string {
+  const color = pct >= 80 ? "#16a34a" : pct >= 50 ? "#d97706" : "#dc2626";
+  return `<div style="display:flex;align-items:center;gap:8px">
+    <div style="flex:1;background:#f3f4f6;border-radius:4px;height:8px;overflow:hidden">
+      <div style="width:${pct}%;height:100%;background:${color};border-radius:4px"></div>
+    </div>
+    <span style="font-size:12px;font-weight:700;color:${color};min-width:36px;text-align:right">${pct}%</span>
+  </div>`;
+}
+
 function exportToPdf(opts: {
   userName?: string;
   avgCompletion: number;
   totalCheckins: number;
   topBestStreak: number;
   activeSystems: number;
-  systemStats: { title: string; pct: number; totalCheckins: number; missedCount: number }[];
-  goalCompletion: { title: string; pct: number }[];
+  totalSystems: number;
+  systemStats: { systemId: string; title: string; pct: number; totalCheckins: number; missedCount: number }[];
+  goalCompletion: { goalId: string; title: string; avgPct: number }[];
+  dayOfWeekStats: { day: string; doneCount: number; totalCount: number; doneRate: number }[];
+  streaks: Record<string, number>;
+  streakEntries: { title: string; streak: number }[];
 }) {
   const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const dateShort = new Date().toISOString().slice(0, 10);
+
+  const completionColor = opts.avgCompletion >= 80 ? "#16a34a" : opts.avgCompletion >= 50 ? "#d97706" : "#dc2626";
+
   const systemRows = opts.systemStats
     .filter(s => s.totalCheckins > 0)
     .sort((a, b) => b.pct - a.pct)
-    .slice(0, 20)
-    .map(s => `
-      <tr>
-        <td>${s.title}</td>
-        <td style="text-align:center">${s.pct}%</td>
-        <td style="text-align:center">${s.totalCheckins}</td>
-        <td style="text-align:center">${s.missedCount}</td>
-      </tr>`)
-    .join("");
+    .slice(0, 25)
+    .map((s, i) => {
+      const rank = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
+      const rowBg = i % 2 === 0 ? "#fff" : "#fafafa";
+      return `<tr style="background:${rowBg}">
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0">${rank} ${s.title}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;min-width:160px">${pct2bar(s.pct)}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:#374151">${s.totalCheckins}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:${s.missedCount > 5 ? "#dc2626" : "#374151"}">${s.missedCount}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:#7c3aed;font-weight:700">${opts.streaks[s.systemId] ?? 0}d</td>
+      </tr>`;
+    }).join("");
 
   const goalRows = opts.goalCompletion
-    .slice(0, 10)
-    .map(g => `
-      <tr>
-        <td>${g.title}</td>
-        <td style="text-align:center">${g.pct}%</td>
-      </tr>`)
-    .join("");
+    .slice(0, 15)
+    .map((g, i) => {
+      const rowBg = i % 2 === 0 ? "#fff" : "#fafafa";
+      return `<tr style="background:${rowBg}">
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0">${g.title}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;min-width:160px">${pct2bar(g.avgPct)}</td>
+      </tr>`;
+    }).join("");
+
+  const dowCols = opts.dayOfWeekStats.filter(d => d.totalCount > 0).map(d => {
+    const pctVal = Math.round(d.doneRate * 100);
+    const barH = Math.max(4, Math.round((pctVal / 100) * 64));
+    const barColor = pctVal >= 80 ? "#16a34a" : pctVal >= 50 ? "#d97706" : "#dc2626";
+    return `<td style="text-align:center;vertical-align:bottom;padding:4px 6px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <span style="font-size:11px;font-weight:700;color:${barColor}">${pctVal}%</span>
+        <div style="width:28px;height:${barH}px;background:${barColor};border-radius:4px 4px 0 0"></div>
+        <span style="font-size:10px;color:#6b7280">${d.day.slice(0, 3)}</span>
+      </div>
+    </td>`;
+  }).join("");
+
+  const streakRows = opts.streakEntries.slice(0, 5).map((e, i) => {
+    const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
+    return `<li style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:13px">
+      <span>${medal} ${e.title}</span>
+      <span style="font-weight:700;color:#7c3aed">${e.streak}d 🔥</span>
+    </li>`;
+  }).join("");
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Strivo Progress Report — ${date}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strivo Progress Report — ${dateShort}</title>
   <style>
+    @page { size: A4; margin: 18mm 14mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a2e; background: #fff; padding: 32px; font-size: 13px; }
-    header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 2px solid #7c3aed; margin-bottom: 24px; }
-    .logo { font-size: 22px; font-weight: 800; color: #7c3aed; letter-spacing: -0.5px; }
-    .meta { text-align: right; color: #6b7280; font-size: 12px; line-height: 1.6; }
-    h2 { font-size: 15px; font-weight: 700; color: #111; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #111827; background: #fff; font-size: 13px; line-height: 1.5; }
+    .page { max-width: 780px; margin: 0 auto; padding: 28px 24px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 18px; border-bottom: 3px solid #7c3aed; margin-bottom: 28px; }
+    .logo-mark { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 16px; }
+    .logo-text { font-size: 22px; font-weight: 800; color: #7c3aed; letter-spacing: -0.5px; }
+    .logo-sub { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+    .meta { text-align: right; font-size: 12px; color: #6b7280; line-height: 1.7; }
+    .meta strong { color: #111827; font-size: 14px; display: block; }
+    .section { margin-bottom: 30px; page-break-inside: avoid; }
+    .section-title { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 14px; padding-bottom: 7px; border-bottom: 1.5px solid #e5e7eb; display: flex; align-items: center; gap: 6px; }
+    .section-title .dot { width: 10px; height: 10px; border-radius: 50%; background: #7c3aed; display: inline-block; flex-shrink: 0; }
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
-    .stat-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px; text-align: center; }
-    .stat-value { font-size: 26px; font-weight: 800; color: #7c3aed; }
-    .stat-label { font-size: 11px; color: #6b7280; margin-top: 3px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
-    th { background: #f3f4f6; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; padding: 8px 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-    td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; }
-    tr:last-child td { border-bottom: none; }
-    tr:nth-child(even) { background: #fafafa; }
-    footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 11px; text-align: center; }
-    @media print { body { padding: 20px; } }
+    .stat-card { background: linear-gradient(135deg, #faf5ff, #f5f3ff); border: 1.5px solid #e9d5ff; border-radius: 12px; padding: 16px 14px; text-align: center; }
+    .stat-value { font-size: 28px; font-weight: 800; color: #7c3aed; line-height: 1; }
+    .stat-label { font-size: 11px; color: #6b7280; margin-top: 5px; font-weight: 500; }
+    .stat-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th { background: #f9fafb; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; padding: 9px 12px; text-align: left; border-bottom: 1.5px solid #e5e7eb; }
+    .print-hint { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #92400e; margin-bottom: 22px; display: flex; align-items: center; gap: 8px; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    .dow-table { border: 1.5px solid #e5e7eb; border-radius: 10px; overflow: hidden; padding: 16px; }
+    .dow-bars { display: flex; align-items: flex-end; justify-content: space-around; height: 100px; padding-bottom: 8px; }
+    .footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 10.5px; text-align: center; }
+    @media print {
+      .print-hint { display: none !important; }
+      body { font-size: 12px; }
+      .page { padding: 0; }
+      .section { page-break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <div class="logo">Strivo</div>
-      <div style="color:#6b7280;font-size:12px;margin-top:4px">Progress Report</div>
+  <div class="page">
+    <div class="print-hint">
+      💡 <span><strong>Save as PDF:</strong> Press <kbd>Ctrl+P</kbd> (or <kbd>Cmd+P</kbd> on Mac) → choose <strong>"Save as PDF"</strong> as the destination.</span>
     </div>
-    <div class="meta">
-      ${opts.userName ? `<div><strong>${opts.userName}</strong></div>` : ""}
-      <div>Generated ${date}</div>
-    </div>
-  </header>
 
-  <h2>Summary</h2>
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-value">${opts.avgCompletion}%</div>
-      <div class="stat-label">Avg Completion (30d)</div>
+    <div class="header">
+      <div class="logo-mark">
+        <div class="logo-icon">S</div>
+        <div>
+          <div class="logo-text">Strivo</div>
+          <div class="logo-sub">Progress Report</div>
+        </div>
+      </div>
+      <div class="meta">
+        ${opts.userName ? `<strong>${opts.userName}</strong>` : ""}
+        <span>Generated on ${date}</span>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-value">${opts.totalCheckins}</div>
-      <div class="stat-label">Total Check-ins</div>
+
+    <!-- Summary -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> Summary</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" style="color:${completionColor}">${opts.avgCompletion}%</div>
+          <div class="stat-label">Avg Completion</div>
+          <div class="stat-sub">last 30 days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${opts.totalCheckins}</div>
+          <div class="stat-label">Total Check-ins</div>
+          <div class="stat-sub">all time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${opts.topBestStreak}d</div>
+          <div class="stat-label">Best Streak</div>
+          <div class="stat-sub">personal record</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${opts.activeSystems}</div>
+          <div class="stat-label">Active Systems</div>
+          <div class="stat-sub">of ${opts.totalSystems} total</div>
+        </div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-value">${opts.topBestStreak}d</div>
-      <div class="stat-label">Best Streak</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">${opts.activeSystems}</div>
-      <div class="stat-label">Active Systems</div>
+
+    ${systemRows ? `
+    <!-- System Performance -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> System Performance</div>
+      <table>
+        <thead>
+          <tr>
+            <th>System</th>
+            <th style="min-width:160px">Completion</th>
+            <th style="text-align:center">Check-ins</th>
+            <th style="text-align:center">Missed</th>
+            <th style="text-align:center">Streak</th>
+          </tr>
+        </thead>
+        <tbody>${systemRows}</tbody>
+      </table>
+    </div>` : ""}
+
+    ${goalRows ? `
+    <!-- Goal Progress -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> Goal Progress</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Goal</th>
+            <th style="min-width:160px">Avg Completion</th>
+          </tr>
+        </thead>
+        <tbody>${goalRows}</tbody>
+      </table>
+    </div>` : ""}
+
+    ${streakRows ? `
+    <!-- Active Streaks -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> Active Streaks</div>
+      <ul>${streakRows}</ul>
+    </div>` : ""}
+
+    ${dowCols ? `
+    <!-- Day of Week Breakdown -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> Day of Week Breakdown</div>
+      <div class="dow-table">
+        <table><tbody><tr>${dowCols}</tr></tbody></table>
+      </div>
+    </div>` : ""}
+
+    <div class="footer">
+      Strivo &mdash; Build something that survives hard days &mdash; ${date}
     </div>
   </div>
 
-  ${systemRows ? `
-  <h2>System Performance</h2>
-  <table>
-    <thead><tr><th>System</th><th style="text-align:center">Completion</th><th style="text-align:center">Check-ins</th><th style="text-align:center">Missed</th></tr></thead>
-    <tbody>${systemRows}</tbody>
-  </table>` : ""}
-
-  ${goalRows ? `
-  <h2>Goal Progress</h2>
-  <table>
-    <thead><tr><th>Goal</th><th style="text-align:center">Progress</th></tr></thead>
-    <tbody>${goalRows}</tbody>
-  </table>` : ""}
-
-  <footer>Strivo &mdash; Build something that survives hard days &mdash; ${date}</footer>
+  <script>
+    window.addEventListener("load", function() {
+      setTimeout(function() { window.print(); }, 600);
+    });
+  <\/script>
 </body>
 </html>`;
 
-  const win = window.open("", "_blank");
-  if (!win) { alert("Pop-up blocked — please allow pop-ups to export PDF."); return; }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(() => { win.print(); }, 400);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+  if (!win) {
+    alert("Pop-up blocked — please allow pop-ups for this site and try again.");
+    URL.revokeObjectURL(url);
+    return;
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 /* ─── Metric card ────────────────────────────────────────────────── */
@@ -258,23 +452,6 @@ export default function Analytics() {
 
   const isLoading = systemsLoading || goalsLoading || checkinsLoading;
 
-  const handleExportCsv = useCallback(() => {
-    const systemsById = Object.fromEntries(systems.map(s => [s.id, s.title]));
-    const goalsById   = Object.fromEntries(goals.map(g => [g.id, g.title]));
-    const systemGoalMap = Object.fromEntries(systems.map(s => [s.id, s.goalId ?? ""]));
-    const rows = checkins.map(c => ({
-      date:        c.dateKey,
-      systemTitle: systemsById[c.systemId] ?? c.systemId,
-      goalTitle:   systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? systemGoalMap[c.systemId]) : "",
-      done:        c.status === "done" ? "yes" : "no",
-      mood:        c.moodBefore ?? "",
-      difficulty:  c.difficulty ?? "",
-      note:        c.note ?? "",
-    }));
-    if (rows.length === 0) { alert("No data to export yet — complete some check-ins first!"); return; }
-    exportToCsv(rows, `strivo-checkins-${new Date().toISOString().slice(0, 10)}.csv`);
-  }, [checkins, systems, goals]);
-
   const analytics = useMemo(() => computeAnalytics(checkins, systems, goals), [checkins, systems, goals]);
 
   const {
@@ -292,6 +469,22 @@ export default function Analytics() {
     return Math.round(daysWithData.reduce((sum: number, d: any) => sum + (d.done / d.total) * 100, 0) / daysWithData.length);
   }, [last30Days]);
 
+  const streakEntries = useMemo(() =>
+    Object.entries(streaks)
+      .filter(([, v]) => (v as number) > 0)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .slice(0, 5)
+      .map(([id, streak]) => ({
+        title: systems.find(s => s.id === id)?.title ?? id,
+        streak: streak as number,
+      })),
+  [streaks, systems]);
+
+  const handleExportCsv = useCallback(() => {
+    if (checkins.length === 0) { alert("No data to export yet — complete some check-ins first!"); return; }
+    exportToCsv({ checkins, systems, goals, systemStats, goalCompletion, dayOfWeekStats, streaks, bestStreaks, avgCompletion, topBestStreak });
+  }, [checkins, systems, goals, systemStats, goalCompletion, dayOfWeekStats, streaks, bestStreaks, avgCompletion, topBestStreak]);
+
   const handleExportPdf = useCallback(() => {
     if (checkins.length === 0) { alert("No data to export yet — complete some check-ins first!"); return; }
     exportToPdf({
@@ -300,10 +493,14 @@ export default function Analytics() {
       totalCheckins: analytics.totalCheckins,
       topBestStreak,
       activeSystems: analytics.activeSystems,
+      totalSystems: analytics.totalSystems,
       systemStats,
       goalCompletion,
+      dayOfWeekStats,
+      streaks,
+      streakEntries,
     });
-  }, [checkins, user, avgCompletion, analytics, topBestStreak, systemStats, goalCompletion]);
+  }, [checkins, user, avgCompletion, analytics, topBestStreak, systemStats, goalCompletion, dayOfWeekStats, streaks, streakEntries]);
 
   const insightCards = useMemo(() => {
     if (checkins.length < 3) return [];
@@ -454,21 +651,27 @@ export default function Analytics() {
                   <button
                     type="button"
                     disabled={isLoading || checkins.length === 0}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 text-sm font-medium hover:bg-white/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed backdrop-blur-sm flex-shrink-0"
+                    className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl bg-white/15 border border-white/25 text-sm font-medium hover:bg-white/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed backdrop-blur-sm flex-shrink-0"
                     data-testid="button-export-menu"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    Export
+                    <span className="hidden sm:inline">Export</span>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={handleExportCsv} data-testid="button-export-csv">
-                    <Download className="w-3.5 h-3.5 mr-2" />
-                    Export CSV
+                    <Download className="w-3.5 h-3.5 mr-2 text-green-600" />
+                    <div>
+                      <div className="font-medium">Export CSV</div>
+                      <div className="text-[11px] text-muted-foreground">Spreadsheet data</div>
+                    </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExportPdf} data-testid="button-export-pdf">
-                    <FileText className="w-3.5 h-3.5 mr-2" />
-                    Export PDF
+                    <FileText className="w-3.5 h-3.5 mr-2 text-primary" />
+                    <div>
+                      <div className="font-medium">Export PDF</div>
+                      <div className="text-[11px] text-muted-foreground">Full progress report</div>
+                    </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -476,12 +679,13 @@ export default function Analytics() {
               <Link href="/pricing">
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 border border-white/20 text-sm font-medium hover:bg-white/20 transition-colors backdrop-blur-sm flex-shrink-0 opacity-70"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2 rounded-xl bg-white/10 border border-white/20 text-sm font-medium hover:bg-white/20 transition-colors backdrop-blur-sm flex-shrink-0 opacity-70"
                   data-testid="button-export-locked"
                   title="Upgrade to Pro to export your data"
                 >
                   <Lock className="w-3.5 h-3.5" />
-                  Export (Pro+)
+                  <span className="hidden sm:inline">Export</span>
+                  <span className="hidden sm:inline text-xs opacity-70">(Pro+)</span>
                 </button>
               </Link>
             )}
@@ -1114,6 +1318,107 @@ export default function Analytics() {
             </CardContent>
           </Card>
         )}
+
+        {/* ── Export Data Panel ── */}
+        <Card className="overflow-hidden" data-testid="export-panel">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Download className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Export Your Data</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Download your full progress history in your preferred format</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {features.csvPdfExport ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* CSV card */}
+                <div className="group relative rounded-xl border border-border bg-muted/30 p-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                      <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm">CSV Spreadsheet</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Open in Excel, Google Sheets, or Numbers</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-1 mb-4 text-xs text-muted-foreground">
+                    {["Full check-in log with dates & notes", "System performance & streaks", "Goal completion breakdown", "Day-of-week analysis"].map(item => (
+                      <li key={item} className="flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-green-500 flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={handleExportCsv}
+                    disabled={!hasData}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    data-testid="button-export-csv-panel"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download CSV
+                  </button>
+                </div>
+
+                {/* PDF card */}
+                <div className="group relative rounded-xl border border-border bg-muted/30 p-4 hover:bg-muted/50 transition-colors">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm">PDF Progress Report</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Share or print a polished summary</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-1 mb-4 text-xs text-muted-foreground">
+                    {["Summary stats with visual progress bars", "System & goal performance tables", "Active streaks leaderboard", "Day-of-week bar chart"].map(item => (
+                      <li key={item} className="flex items-center gap-1.5">
+                        <span className="w-1 h-1 rounded-full bg-primary flex-shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={handleExportPdf}
+                    disabled={!hasData}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    data-testid="button-export-pdf-panel"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    Generate PDF
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center">
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                  <Lock className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="font-semibold text-sm mb-1">Export is a Pro feature</p>
+                <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
+                  Upgrade to Pro or Elite to download your full progress data as CSV or a polished PDF report.
+                </p>
+                <Link href="/pricing">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors"
+                    data-testid="button-export-upgrade"
+                  >
+                    Upgrade to Pro
+                  </button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Bottom spacer */}
         <div className="h-4" />
