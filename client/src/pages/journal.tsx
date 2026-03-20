@@ -343,7 +343,7 @@ function JournalForm({ entry, userId, goals, systemNames = [], onClose, onSaved,
   const { toast } = useToast();
   const [promptType, setPromptType] = useState(entry?.promptType || "daily");
   const [content, setContent] = useState(entry?.content || "");
-  const [goalId, setGoalId] = useState(entry?.goalId || "");
+  const [goalId, setGoalId] = useState(entry?.goalId || "none");
   const [mood, setMood] = useState<number | null>(entry?.mood ?? null);
   const [tags, setTags] = useState<string[]>(entry?.tags ?? []);
   const [showOptions, setShowOptions] = useState(false);
@@ -419,7 +419,7 @@ function JournalForm({ entry, userId, goals, systemNames = [], onClose, onSaved,
     mutation.mutate({
       promptType,
       content,
-      goalId: goalId || undefined,
+      goalId: goalId && goalId !== "none" ? goalId : undefined,
       mood: mood || undefined,
       tags: tags.length ? tags : undefined,
       dateKey: entry?.dateKey || getTodayKey(),
@@ -582,7 +582,7 @@ function JournalForm({ entry, userId, goals, systemNames = [], onClose, onSaved,
                   <SelectValue placeholder="No goal linked" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No goal linked</SelectItem>
+                  <SelectItem value="none">No goal linked</SelectItem>
                   {goals.map(g => <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>)}
                 </SelectContent>
               </Select>
