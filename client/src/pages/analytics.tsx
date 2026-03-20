@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   LineChart, Line, CartesianGrid, Area, AreaChart,
@@ -21,7 +22,7 @@ import {
   Flame, Target, Zap, TrendingUp, BarChart2, Calendar,
   Trophy, AlertCircle, Star, CheckSquare, Lightbulb,
   TrendingDown, Heart, Award, Smile, Dumbbell, Bot, Loader2, Sparkles, Download,
-  ChevronRight, FileText, Lock,
+  ChevronRight, FileText, Lock, CheckCircle2, Filter,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
 import { PlanGate } from "@/components/plan-gate";
 import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 /* ─── CSV export ─────────────────────────────────────────────────── */
 function buildCsv(rows: Record<string, unknown>[]): string {
@@ -50,11 +52,25 @@ function buildCsv(rows: Record<string, unknown>[]): string {
 }
 
 function downloadBlob(content: string, filename: string, mime: string) {
-  const blob = new Blob([content], { type: mime });
+  const blob = new Blob(["\uFEFF" + content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = filename; a.click();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+type ExportRange = "7d" | "30d" | "90d" | "all";
+
+function filterCheckinsByRange(
+  checkins: { dateKey: string; systemId: string; status: string; moodBefore?: number | null; difficulty?: number | null; note?: string | null }[],
+  range: ExportRange,
+) {
+  if (range === "all") return checkins;
+  const days = range === "7d" ? 7 : range === "30d" ? 30 : 90;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffKey = cutoff.toISOString().slice(0, 10);
+  return checkins.filter(c => c.dateKey >= cutoffKey);
 }
 
 function exportToCsv(opts: {
@@ -66,10 +82,14 @@ function exportToCsv(opts: {
   dayOfWeekStats: { day: string; doneCount: number; totalCount: number; doneRate: number }[];
   streaks: Record<string, number>;
   bestStreaks: Record<string, number>;
+  consistencyScores: Record<string, number>;
+  resilienceScores: Record<string, number>;
   avgCompletion: number;
   topBestStreak: number;
+  exportRange: ExportRange;
 }) {
   const date = new Date().toISOString().slice(0, 10);
+  const rangeLabel = opts.exportRange === "all" ? "All Time" : opts.exportRange === "7d" ? "Last 7 Days" : opts.exportRange === "30d" ? "Last 30 Days" : "Last 90 Days";
   const systemsById = Object.fromEntries(opts.systems.map(s => [s.id, s.title]));
   const goalsById   = Object.fromEntries(opts.goals.map(g => [g.id, g.title]));
   const systemGoalMap = Object.fromEntries(opts.systems.map(s => [s.id, s.goalId ?? ""]));
@@ -78,10 +98,10 @@ function exportToCsv(opts: {
     Date: c.dateKey,
     System: systemsById[c.systemId] ?? c.systemId,
     Goal: systemGoalMap[c.systemId] ? (goalsById[systemGoalMap[c.systemId]] ?? "") : "",
-    Done: c.status === "done" ? "yes" : "no",
-    Mood: c.moodBefore ?? "",
-    Difficulty: c.difficulty ?? "",
-    Note: c.note ?? "",
+    Status: c.status === "done" ? "Done" : c.status === "partial" ? "Partial" : c.status === "missed" ? "Missed" : c.status,
+    "Mood (1-5)": c.moodBefore ?? "",
+    "Difficulty (1-5)": c.difficulty ?? "",
+    Notes: c.note ?? "",
   }));
 
   const systemRows = opts.systemStats.map(s => ({
@@ -91,6 +111,8 @@ function exportToCsv(opts: {
     Missed: s.missedCount,
     "Current Streak (days)": opts.streaks[s.systemId] ?? 0,
     "Best Streak (days)": opts.bestStreaks[s.systemId] ?? 0,
+    "Consistency Score": opts.consistencyScores[s.systemId] ?? 0,
+    "Resilience Score": opts.resilienceScores[s.systemId] ?? 0,
   }));
 
   const goalRows = opts.goalCompletion.map(g => ({
@@ -107,6 +129,8 @@ function exportToCsv(opts: {
 
   const sections = [
     `Strivo Progress Report — ${date}`,
+    `Date Range,${rangeLabel}`,
+    `Total Check-ins in Range,${opts.checkins.length}`,
     `Avg Completion (30d),${opts.avgCompletion}%`,
     `Best Streak,${opts.topBestStreak} days`,
     "",
@@ -148,10 +172,17 @@ function exportToPdf(opts: {
   goalCompletion: { goalId: string; title: string; avgPct: number }[];
   dayOfWeekStats: { day: string; doneCount: number; totalCount: number; doneRate: number }[];
   streaks: Record<string, number>;
+  consistencyScores: Record<string, number>;
+  resilienceScores: Record<string, number>;
   streakEntries: { title: string; streak: number }[];
+  moodBuckets: { mood: number; count: number; completionPct: number }[];
+  hasMoodData: boolean;
+  exportRange: ExportRange;
+  filteredCheckinCount: number;
 }) {
   const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   const dateShort = new Date().toISOString().slice(0, 10);
+  const rangeLabel = opts.exportRange === "all" ? "All Time" : opts.exportRange === "7d" ? "Last 7 Days" : opts.exportRange === "30d" ? "Last 30 Days" : "Last 90 Days";
 
   const completionColor = opts.avgCompletion >= 80 ? "#16a34a" : opts.avgCompletion >= 50 ? "#d97706" : "#dc2626";
 
@@ -162,12 +193,16 @@ function exportToPdf(opts: {
     .map((s, i) => {
       const rank = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
       const rowBg = i % 2 === 0 ? "#fff" : "#fafafa";
+      const consistency = opts.consistencyScores[s.systemId] ?? 0;
+      const resilience = opts.resilienceScores[s.systemId] ?? 0;
       return `<tr style="background:${rowBg}">
-        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0">${rank} ${s.title}</td>
-        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;min-width:160px">${pct2bar(s.pct)}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-weight:500">${rank} ${s.title}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;min-width:140px">${pct2bar(s.pct)}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:#374151">${s.totalCheckins}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:${s.missedCount > 5 ? "#dc2626" : "#374151"}">${s.missedCount}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:#7c3aed;font-weight:700">${opts.streaks[s.systemId] ?? 0}d</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:${consistency >= 70 ? "#16a34a" : consistency >= 40 ? "#d97706" : "#6b7280"};font-weight:600">${consistency}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:${resilience >= 70 ? "#16a34a" : resilience >= 40 ? "#d97706" : "#6b7280"};font-weight:600">${resilience}</td>
       </tr>`;
     }).join("");
 
@@ -176,31 +211,43 @@ function exportToPdf(opts: {
     .map((g, i) => {
       const rowBg = i % 2 === 0 ? "#fff" : "#fafafa";
       return `<tr style="background:${rowBg}">
-        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0">${g.title}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-weight:500">${g.title}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;min-width:160px">${pct2bar(g.avgPct)}</td>
       </tr>`;
     }).join("");
 
   const dowCols = opts.dayOfWeekStats.filter(d => d.totalCount > 0).map(d => {
     const pctVal = Math.round(d.doneRate * 100);
-    const barH = Math.max(4, Math.round((pctVal / 100) * 64));
+    const barH = Math.max(6, Math.round((pctVal / 100) * 72));
     const barColor = pctVal >= 80 ? "#16a34a" : pctVal >= 50 ? "#d97706" : "#dc2626";
-    return `<td style="text-align:center;vertical-align:bottom;padding:4px 6px">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        <span style="font-size:11px;font-weight:700;color:${barColor}">${pctVal}%</span>
-        <div style="width:28px;height:${barH}px;background:${barColor};border-radius:4px 4px 0 0"></div>
-        <span style="font-size:10px;color:#6b7280">${d.day.slice(0, 3)}</span>
+    return `<td style="text-align:center;vertical-align:bottom;padding:6px 8px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+        <span style="font-size:12px;font-weight:700;color:${barColor}">${pctVal}%</span>
+        <div style="width:32px;height:${barH}px;background:${barColor};border-radius:5px 5px 0 0;box-shadow:0 2px 4px ${barColor}40"></div>
+        <span style="font-size:11px;color:#6b7280;font-weight:500">${d.day.slice(0, 3)}</span>
+        <span style="font-size:9px;color:#9ca3af">${d.doneCount}/${d.totalCount}</span>
       </div>
     </td>`;
   }).join("");
 
-  const streakRows = opts.streakEntries.slice(0, 5).map((e, i) => {
+  const streakRows = opts.streakEntries.slice(0, 8).map((e, i) => {
     const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`;
-    return `<li style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:13px">
-      <span>${medal} ${e.title}</span>
-      <span style="font-weight:700;color:#7c3aed">${e.streak}d 🔥</span>
-    </li>`;
+    const rowBg = i % 2 === 0 ? "#fff" : "#fafafa";
+    return `<tr style="background:${rowBg}">
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0">${medal} ${e.title}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-weight:700;color:#7c3aed">${e.streak} days 🔥</td>
+    </tr>`;
   }).join("");
+
+  const moodRows = opts.hasMoodData ? opts.moodBuckets.filter(b => b.count > 0).map(b => {
+    const moodLabel = b.mood === 1 ? "😞 Very Low" : b.mood === 2 ? "😕 Low" : b.mood === 3 ? "😐 Neutral" : b.mood === 4 ? "😊 Good" : "😄 Great";
+    const rowBg = (b.mood % 2 === 0) ? "#fff" : "#fafafa";
+    return `<tr style="background:${rowBg}">
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0">${moodLabel}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;color:#374151">${b.count}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;min-width:140px">${pct2bar(b.completionPct)}</td>
+    </tr>`;
+  }).join("") : "";
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -209,44 +256,54 @@ function exportToPdf(opts: {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Strivo Progress Report — ${dateShort}</title>
   <style>
-    @page { size: A4; margin: 18mm 14mm; }
+    @page { size: A4; margin: 16mm 12mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #111827; background: #fff; font-size: 13px; line-height: 1.5; }
-    .page { max-width: 780px; margin: 0 auto; padding: 28px 24px; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 18px; border-bottom: 3px solid #7c3aed; margin-bottom: 28px; }
-    .logo-mark { display: flex; align-items: center; gap: 10px; }
-    .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 16px; }
-    .logo-text { font-size: 22px; font-weight: 800; color: #7c3aed; letter-spacing: -0.5px; }
-    .logo-sub { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-    .meta { text-align: right; font-size: 12px; color: #6b7280; line-height: 1.7; }
-    .meta strong { color: #111827; font-size: 14px; display: block; }
-    .section { margin-bottom: 30px; page-break-inside: avoid; }
-    .section-title { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 14px; padding-bottom: 7px; border-bottom: 1.5px solid #e5e7eb; display: flex; align-items: center; gap: 6px; }
+    .page { max-width: 800px; margin: 0 auto; padding: 28px 24px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid #7c3aed; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+    .logo-mark { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #7c3aed, #5b21b6); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 18px; flex-shrink: 0; }
+    .logo-text { font-size: 24px; font-weight: 800; color: #7c3aed; letter-spacing: -0.5px; line-height: 1; }
+    .logo-sub { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+    .logo-range { font-size: 10px; color: #7c3aed; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 4px; padding: 2px 7px; display: inline-block; margin-top: 4px; font-weight: 600; }
+    .meta { text-align: right; font-size: 12px; color: #6b7280; line-height: 1.8; }
+    .meta strong { color: #111827; font-size: 15px; display: block; font-weight: 700; }
+    .section { margin-bottom: 28px; }
+    .section-title { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1.5px solid #e5e7eb; display: flex; align-items: center; gap: 8px; }
     .section-title .dot { width: 10px; height: 10px; border-radius: 50%; background: #7c3aed; display: inline-block; flex-shrink: 0; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
-    .stat-card { background: linear-gradient(135deg, #faf5ff, #f5f3ff); border: 1.5px solid #e9d5ff; border-radius: 12px; padding: 16px 14px; text-align: center; }
-    .stat-value { font-size: 28px; font-weight: 800; color: #7c3aed; line-height: 1; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 28px; }
+    .stat-card { background: linear-gradient(135deg, #faf5ff, #f5f3ff); border: 1.5px solid #e9d5ff; border-radius: 12px; padding: 14px 12px; text-align: center; }
+    .stat-value { font-size: 26px; font-weight: 800; color: #7c3aed; line-height: 1; }
     .stat-label { font-size: 11px; color: #6b7280; margin-top: 5px; font-weight: 500; }
     .stat-sub { font-size: 10px; color: #9ca3af; margin-top: 2px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    th { background: #f9fafb; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; padding: 9px 12px; text-align: left; border-bottom: 1.5px solid #e5e7eb; }
-    .print-hint { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #92400e; margin-bottom: 22px; display: flex; align-items: center; gap: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #f9fafb; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7280; padding: 9px 12px; text-align: left; border-bottom: 1.5px solid #e5e7eb; }
+    .table-wrap { border: 1.5px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+    .print-hint { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fcd34d; border-radius: 10px; padding: 11px 16px; font-size: 12px; color: #92400e; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
     ul { list-style: none; padding: 0; margin: 0; }
-    .dow-table { border: 1.5px solid #e5e7eb; border-radius: 10px; overflow: hidden; padding: 16px; }
-    .dow-bars { display: flex; align-items: flex-end; justify-content: space-around; height: 100px; padding-bottom: 8px; }
-    .footer { margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 10.5px; text-align: center; }
+    .dow-wrap { border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 20px 12px 12px; }
+    .footer { margin-top: 32px; padding-top: 14px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 10px; text-align: center; }
+    .badge-green { background: #dcfce7; color: #16a34a; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
+    .badge-yellow { background: #fef9c3; color: #d97706; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
+    .badge-red { background: #fee2e2; color: #dc2626; border-radius: 4px; padding: 2px 7px; font-size: 10px; font-weight: 700; }
     @media print {
       .print-hint { display: none !important; }
       body { font-size: 12px; }
       .page { padding: 0; }
       .section { page-break-inside: avoid; }
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .header { flex-direction: column; }
+      .meta { text-align: left; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <div class="print-hint">
-      💡 <span><strong>Save as PDF:</strong> Press <kbd>Ctrl+P</kbd> (or <kbd>Cmd+P</kbd> on Mac) → choose <strong>"Save as PDF"</strong> as the destination.</span>
+      💡 <span><strong>Save as PDF:</strong> Press <kbd>Ctrl+P</kbd> (or <kbd>Cmd+P</kbd> on Mac) &rarr; choose <strong>"Save as PDF"</strong> as destination. Set margins to <strong>None</strong> or <strong>Minimum</strong> for best results.</span>
     </div>
 
     <div class="header">
@@ -255,15 +312,17 @@ function exportToPdf(opts: {
         <div>
           <div class="logo-text">Strivo</div>
           <div class="logo-sub">Progress Report</div>
+          <div class="logo-range">${rangeLabel}</div>
         </div>
       </div>
       <div class="meta">
         ${opts.userName ? `<strong>${opts.userName}</strong>` : ""}
         <span>Generated on ${date}</span>
+        <span style="display:block;color:#9ca3af;font-size:10px">${opts.filteredCheckinCount} check-ins included</span>
       </div>
     </div>
 
-    <!-- Summary -->
+    <!-- Summary Stats -->
     <div class="section">
       <div class="section-title"><span class="dot"></span> Summary</div>
       <div class="stats-grid">
@@ -294,59 +353,83 @@ function exportToPdf(opts: {
     <!-- System Performance -->
     <div class="section">
       <div class="section-title"><span class="dot"></span> System Performance</div>
-      <table>
-        <thead>
-          <tr>
-            <th>System</th>
-            <th style="min-width:160px">Completion</th>
-            <th style="text-align:center">Check-ins</th>
-            <th style="text-align:center">Missed</th>
-            <th style="text-align:center">Streak</th>
-          </tr>
-        </thead>
-        <tbody>${systemRows}</tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>System</th>
+              <th style="min-width:140px">Completion</th>
+              <th style="text-align:center">Check-ins</th>
+              <th style="text-align:center">Missed</th>
+              <th style="text-align:center">Streak</th>
+              <th style="text-align:center">Consistency</th>
+              <th style="text-align:center">Resilience</th>
+            </tr>
+          </thead>
+          <tbody>${systemRows}</tbody>
+        </table>
+      </div>
+      <p style="font-size:10px;color:#9ca3af;margin-top:8px">Consistency = % of days showed up (last 30). Resilience = habit-building score including comeback rate.</p>
     </div>` : ""}
 
     ${goalRows ? `
     <!-- Goal Progress -->
     <div class="section">
       <div class="section-title"><span class="dot"></span> Goal Progress</div>
-      <table>
-        <thead>
-          <tr>
-            <th>Goal</th>
-            <th style="min-width:160px">Avg Completion</th>
-          </tr>
-        </thead>
-        <tbody>${goalRows}</tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Goal</th>
+              <th style="min-width:160px">Avg Completion</th>
+            </tr>
+          </thead>
+          <tbody>${goalRows}</tbody>
+        </table>
+      </div>
     </div>` : ""}
 
     ${streakRows ? `
-    <!-- Active Streaks -->
+    <!-- Active Streaks Leaderboard -->
     <div class="section">
-      <div class="section-title"><span class="dot"></span> Active Streaks</div>
-      <ul>${streakRows}</ul>
+      <div class="section-title"><span class="dot"></span> Active Streaks Leaderboard</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>System</th><th style="text-align:right">Current Streak</th></tr></thead>
+          <tbody>${streakRows}</tbody>
+        </table>
+      </div>
     </div>` : ""}
 
     ${dowCols ? `
     <!-- Day of Week Breakdown -->
     <div class="section">
       <div class="section-title"><span class="dot"></span> Day of Week Breakdown</div>
-      <div class="dow-table">
-        <table><tbody><tr>${dowCols}</tr></tbody></table>
+      <div class="dow-wrap">
+        <table><tbody><tr style="vertical-align:bottom">${dowCols}</tr></tbody></table>
+      </div>
+    </div>` : ""}
+
+    ${moodRows ? `
+    <!-- Mood vs. Completion -->
+    <div class="section">
+      <div class="section-title"><span class="dot"></span> Mood vs. Completion</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Mood</th><th style="text-align:center">Days</th><th style="min-width:140px">Completion Rate</th></tr></thead>
+          <tbody>${moodRows}</tbody>
+        </table>
       </div>
     </div>` : ""}
 
     <div class="footer">
-      Strivo &mdash; Build something that survives hard days &mdash; ${date}
+      Strivo &mdash; Build something that survives hard days &mdash; Generated ${date}
     </div>
   </div>
 
   <script>
     window.addEventListener("load", function() {
-      setTimeout(function() { window.print(); }, 600);
+      setTimeout(function() { window.print(); }, 700);
     });
   <\/script>
 </body>
@@ -356,11 +439,10 @@ function exportToPdf(opts: {
   const url = URL.createObjectURL(blob);
   const win = window.open(url, "_blank");
   if (!win) {
-    alert("Pop-up blocked — please allow pop-ups for this site and try again.");
-    URL.revokeObjectURL(url);
-    return;
+    return false;
   }
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  setTimeout(() => URL.revokeObjectURL(url), 90000);
+  return true;
 }
 
 /* ─── Metric card ────────────────────────────────────────────────── */
@@ -430,6 +512,10 @@ export default function Analytics() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
   const [period, setPeriod] = useState<Period>("daily");
+  const [exportRange, setExportRange] = useState<ExportRange>("all");
+  const [isExportingCsv, setIsExportingCsv] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const { toast } = useToast();
   const features = getPlanFeatures(user?.plan);
 
   const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
@@ -480,27 +566,81 @@ export default function Analytics() {
       })),
   [streaks, systems]);
 
-  const handleExportCsv = useCallback(() => {
-    if (checkins.length === 0) { alert("No data to export yet — complete some check-ins first!"); return; }
-    exportToCsv({ checkins, systems, goals, systemStats, goalCompletion, dayOfWeekStats, streaks, bestStreaks, avgCompletion, topBestStreak });
-  }, [checkins, systems, goals, systemStats, goalCompletion, dayOfWeekStats, streaks, bestStreaks, avgCompletion, topBestStreak]);
+  const filteredCheckins = useMemo(
+    () => filterCheckinsByRange(checkins, exportRange),
+    [checkins, exportRange],
+  );
 
-  const handleExportPdf = useCallback(() => {
-    if (checkins.length === 0) { alert("No data to export yet — complete some check-ins first!"); return; }
-    exportToPdf({
-      userName: user?.name,
-      avgCompletion,
-      totalCheckins: analytics.totalCheckins,
-      topBestStreak,
-      activeSystems: analytics.activeSystems,
-      totalSystems: analytics.totalSystems,
-      systemStats,
-      goalCompletion,
-      dayOfWeekStats,
-      streaks,
-      streakEntries,
-    });
-  }, [checkins, user, avgCompletion, analytics, topBestStreak, systemStats, goalCompletion, dayOfWeekStats, streaks, streakEntries]);
+  const handleExportCsv = useCallback(async () => {
+    if (checkins.length === 0) {
+      toast({ title: "No data to export", description: "Complete some check-ins first to export your data.", variant: "destructive" });
+      return;
+    }
+    setIsExportingCsv(true);
+    try {
+      await new Promise(r => setTimeout(r, 80));
+      exportToCsv({
+        checkins: filteredCheckins,
+        systems,
+        goals,
+        systemStats,
+        goalCompletion,
+        dayOfWeekStats,
+        streaks,
+        bestStreaks,
+        consistencyScores,
+        resilienceScores,
+        avgCompletion,
+        topBestStreak,
+        exportRange,
+      });
+      const rangeLabel = exportRange === "all" ? "all time" : exportRange === "7d" ? "last 7 days" : exportRange === "30d" ? "last 30 days" : "last 90 days";
+      toast({ title: "CSV downloaded!", description: `${filteredCheckins.length} check-ins exported (${rangeLabel}).` });
+    } catch {
+      toast({ title: "Export failed", description: "Something went wrong. Please try again.", variant: "destructive" });
+    } finally {
+      setIsExportingCsv(false);
+    }
+  }, [checkins, filteredCheckins, systems, goals, systemStats, goalCompletion, dayOfWeekStats, streaks, bestStreaks, consistencyScores, resilienceScores, avgCompletion, topBestStreak, exportRange, toast]);
+
+  const handleExportPdf = useCallback(async () => {
+    if (checkins.length === 0) {
+      toast({ title: "No data to export", description: "Complete some check-ins first to export your data.", variant: "destructive" });
+      return;
+    }
+    setIsExportingPdf(true);
+    try {
+      await new Promise(r => setTimeout(r, 80));
+      const success = exportToPdf({
+        userName: user?.name,
+        avgCompletion,
+        totalCheckins: analytics.totalCheckins,
+        topBestStreak,
+        activeSystems: analytics.activeSystems,
+        totalSystems: analytics.totalSystems,
+        systemStats,
+        goalCompletion,
+        dayOfWeekStats,
+        streaks,
+        consistencyScores,
+        resilienceScores,
+        streakEntries,
+        moodBuckets,
+        hasMoodData,
+        exportRange,
+        filteredCheckinCount: filteredCheckins.length,
+      });
+      if (!success) {
+        toast({ title: "Pop-up blocked", description: "Please allow pop-ups for this site and try again.", variant: "destructive" });
+      } else {
+        toast({ title: "PDF report opened!", description: "Use your browser's print dialog and choose 'Save as PDF'." });
+      }
+    } catch {
+      toast({ title: "Export failed", description: "Something went wrong. Please try again.", variant: "destructive" });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }, [checkins, filteredCheckins, user, avgCompletion, analytics, topBestStreak, systemStats, goalCompletion, dayOfWeekStats, streaks, consistencyScores, resilienceScores, streakEntries, moodBuckets, hasMoodData, exportRange, toast]);
 
   const insightCards = useMemo(() => {
     if (checkins.length < 3) return [];
@@ -658,18 +798,18 @@ export default function Analytics() {
                     <span className="hidden sm:inline">Export</span>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={handleExportCsv} data-testid="button-export-csv">
-                    <Download className="w-3.5 h-3.5 mr-2 text-green-600" />
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={handleExportCsv} disabled={isExportingCsv} data-testid="button-export-csv">
+                    {isExportingCsv ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Download className="w-3.5 h-3.5 mr-2 text-green-600" />}
                     <div>
-                      <div className="font-medium">Export CSV</div>
-                      <div className="text-[11px] text-muted-foreground">Spreadsheet data</div>
+                      <div className="font-medium">{isExportingCsv ? "Preparing…" : "Export CSV"}</div>
+                      <div className="text-[11px] text-muted-foreground">Excel-compatible spreadsheet</div>
                     </div>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportPdf} data-testid="button-export-pdf">
-                    <FileText className="w-3.5 h-3.5 mr-2 text-primary" />
+                  <DropdownMenuItem onClick={handleExportPdf} disabled={isExportingPdf} data-testid="button-export-pdf">
+                    {isExportingPdf ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <FileText className="w-3.5 h-3.5 mr-2 text-primary" />}
                     <div>
-                      <div className="font-medium">Export PDF</div>
+                      <div className="font-medium">{isExportingPdf ? "Preparing…" : "Export PDF"}</div>
                       <div className="text-[11px] text-muted-foreground">Full progress report</div>
                     </div>
                   </DropdownMenuItem>
@@ -1322,94 +1462,151 @@ export default function Analytics() {
         {/* ── Export Data Panel ── */}
         <Card className="overflow-hidden" data-testid="export-panel">
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Download className="w-4 h-4 text-primary" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Download className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Export Your Data</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">Download your progress history in CSV or PDF format</p>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-base">Export Your Data</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Download your full progress history in your preferred format</p>
-              </div>
+              {features.csvPdfExport && hasData && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  <Select value={exportRange} onValueChange={v => setExportRange(v as ExportRange)}>
+                    <SelectTrigger className="h-8 w-36 text-xs rounded-lg" data-testid="select-export-range">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7d">Last 7 days</SelectItem>
+                      <SelectItem value="30d">Last 30 days</SelectItem>
+                      <SelectItem value="90d">Last 90 days</SelectItem>
+                      <SelectItem value="all">All time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent className="pt-0">
             {features.csvPdfExport ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* CSV card */}
-                <div className="group relative rounded-xl border border-border bg-muted/30 p-4 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                      <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm">CSV Spreadsheet</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Open in Excel, Google Sheets, or Numbers</p>
-                    </div>
+              <div className="space-y-4">
+                {/* Range summary badge */}
+                {hasData && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border/50 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                    <span>
+                      <span className="font-semibold text-foreground">{filteredCheckins.length}</span> check-in{filteredCheckins.length !== 1 ? "s" : ""} selected
+                      {exportRange !== "all" && (
+                        <span className="ml-1">({exportRange === "7d" ? "last 7 days" : exportRange === "30d" ? "last 30 days" : "last 90 days"})</span>
+                      )}
+                      {exportRange === "all" && <span className="ml-1">(all time)</span>}
+                    </span>
                   </div>
-                  <ul className="space-y-1 mb-4 text-xs text-muted-foreground">
-                    {["Full check-in log with dates & notes", "System performance & streaks", "Goal completion breakdown", "Day-of-week analysis"].map(item => (
-                      <li key={item} className="flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-green-500 flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    type="button"
-                    onClick={handleExportCsv}
-                    disabled={!hasData}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    data-testid="button-export-csv-panel"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    Download CSV
-                  </button>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* CSV card */}
+                  <div className="group rounded-xl border border-border bg-muted/20 p-4 hover:bg-muted/40 transition-colors flex flex-col">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                        <Download className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">CSV Spreadsheet</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Open in Excel, Google Sheets, or Numbers</p>
+                      </div>
+                    </div>
+                    <ul className="space-y-1.5 mb-4 text-xs text-muted-foreground flex-1">
+                      {[
+                        "Full check-in log with dates, mood & notes",
+                        "System performance, streaks & resilience",
+                        "Goal completion breakdown",
+                        "Day-of-week analysis",
+                        "Excel-compatible (UTF-8 BOM)",
+                      ].map(item => (
+                        <li key={item} className="flex items-start gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0 mt-1" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={handleExportCsv}
+                      disabled={!hasData || isExportingCsv}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      data-testid="button-export-csv-panel"
+                    >
+                      {isExportingCsv ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" />Preparing…</>
+                      ) : (
+                        <><Download className="w-3.5 h-3.5" />Download CSV</>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* PDF card */}
+                  <div className="group rounded-xl border border-border bg-muted/20 p-4 hover:bg-muted/40 transition-colors flex flex-col">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">PDF Progress Report</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Polished report — share or print</p>
+                      </div>
+                    </div>
+                    <ul className="space-y-1.5 mb-4 text-xs text-muted-foreground flex-1">
+                      {[
+                        "Summary stats with visual progress bars",
+                        "System performance + consistency & resilience",
+                        "Goal progress tables",
+                        "Active streaks leaderboard",
+                        "Day-of-week bar chart & mood analysis",
+                      ].map(item => (
+                        <li key={item} className="flex items-start gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mt-1" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={handleExportPdf}
+                      disabled={!hasData || isExportingPdf}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      data-testid="button-export-pdf-panel"
+                    >
+                      {isExportingPdf ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" />Preparing…</>
+                      ) : (
+                        <><FileText className="w-3.5 h-3.5" />Generate PDF</>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
-                {/* PDF card */}
-                <div className="group relative rounded-xl border border-border bg-muted/30 p-4 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm">PDF Progress Report</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Share or print a polished summary</p>
-                    </div>
-                  </div>
-                  <ul className="space-y-1 mb-4 text-xs text-muted-foreground">
-                    {["Summary stats with visual progress bars", "System & goal performance tables", "Active streaks leaderboard", "Day-of-week bar chart"].map(item => (
-                      <li key={item} className="flex items-center gap-1.5">
-                        <span className="w-1 h-1 rounded-full bg-primary flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    type="button"
-                    onClick={handleExportPdf}
-                    disabled={!hasData}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    data-testid="button-export-pdf-panel"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    Generate PDF
-                  </button>
-                </div>
+                {/* Mobile tip */}
+                <p className="text-[11px] text-muted-foreground text-center leading-relaxed px-2">
+                  PDF opens in a new tab — use your browser's print menu and choose <strong className="text-foreground">Save as PDF</strong>.
+                </p>
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
-                  <Lock className="w-4 h-4 text-muted-foreground" />
+              <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 sm:p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                  <Lock className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <p className="font-semibold text-sm mb-1">Export is a Pro feature</p>
-                <p className="text-xs text-muted-foreground mb-4 max-w-xs mx-auto">
-                  Upgrade to Pro or Elite to download your full progress data as CSV or a polished PDF report.
+                <p className="text-xs text-muted-foreground mb-5 max-w-xs mx-auto leading-relaxed">
+                  Upgrade to Pro or Elite to download your full progress as a CSV spreadsheet or a polished PDF report — with date range filtering, mood analysis, consistency scores, and more.
                 </p>
                 <Link href="/pricing">
                   <button
                     type="button"
-                    className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors"
                     data-testid="button-export-upgrade"
                   >
                     Upgrade to Pro
