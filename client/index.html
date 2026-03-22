@@ -306,11 +306,42 @@
 
     <!-- ═══════════════════════════════════════════════
          PWA SERVICE WORKER REGISTRATION
+         When a new service worker takes over (after a deployment),
+         the page reloads automatically so users never see a white
+         screen caused by a stale cached HTML referencing old assets.
     ═══════════════════════════════════════════════ -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-          navigator.serviceWorker.register('/sw.js').catch(function () {});
+          navigator.serviceWorker.register('/sw.js').then(function (reg) {
+            // Detect when a new SW has taken control (after a deployment)
+            // and reload the page so the fresh HTML + assets are used.
+            var refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+              if (!refreshing) {
+                refreshing = true;
+                window.location.reload();
+              }
+            });
+
+            // If a new SW is waiting (installed but not yet active),
+            // tell it to skip waiting and take over immediately.
+            function promptUpdate(worker) {
+              worker.postMessage({ type: 'SKIP_WAITING' });
+            }
+            if (reg.waiting) {
+              promptUpdate(reg.waiting);
+            }
+            reg.addEventListener('updatefound', function () {
+              var newWorker = reg.installing;
+              if (!newWorker) return;
+              newWorker.addEventListener('statechange', function () {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  promptUpdate(newWorker);
+                }
+              });
+            });
+          }).catch(function () {});
         });
       }
     </script>
