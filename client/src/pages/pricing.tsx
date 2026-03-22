@@ -235,6 +235,32 @@ export default function Pricing() {
         <meta name="twitter:title" content="Pricing — Free, Starter, Pro & Elite | Strivo" />
         <meta name="twitter:description" content="Simple, transparent pricing for Strivo. Start free — upgrade when you're ready." />
         <meta name="twitter:image" content="https://strivo.life/og-image.png" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "@id": "https://strivo.life/pricing#webpage",
+          "url": "https://strivo.life/pricing",
+          "name": "Pricing — Free, Starter, Pro & Elite | Strivo",
+          "description": "Simple, transparent pricing for every level. Start free, upgrade when you're ready.",
+          "isPartOf": { "@id": "https://strivo.life/#website" },
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://strivo.life/" },
+              { "@type": "ListItem", "position": 2, "name": "Pricing", "item": "https://strivo.life/pricing" }
+            ]
+          },
+          "mainEntity": {
+            "@type": "SoftwareApplication",
+            "name": "Strivo",
+            "offers": [
+              { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock", "url": "https://strivo.life/signup" },
+              { "@type": "Offer", "name": "Starter", "price": "9", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
+              { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
+              { "@type": "Offer", "name": "Elite", "price": "49", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" }
+            ]
+          }
+        })}</script>
       </Helmet>
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">

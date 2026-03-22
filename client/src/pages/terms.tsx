@@ -19,6 +19,22 @@ export default function TermsOfService() {
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Terms of Service | Strivo" />
+        <meta name="twitter:description" content="Read Strivo's terms of service governing your use of the platform." />
+        <meta name="robots" content="noindex, follow" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "url": "https://strivo.life/terms",
+          "name": "Terms of Service | Strivo",
+          "isPartOf": { "@id": "https://strivo.life/#website" },
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://strivo.life/" },
+              { "@type": "ListItem", "position": 2, "name": "Terms of Service", "item": "https://strivo.life/terms" }
+            ]
+          }
+        })}</script>
       </Helmet>
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">

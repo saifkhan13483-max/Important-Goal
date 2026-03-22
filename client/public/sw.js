@@ -23,7 +23,7 @@ const ASSET_CACHE   = "strivo-assets-v3";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) =>
-      cache.addAll(["/manifest.json", "/favicon.png"])
+      cache.addAll(["/manifest.json", "/favicon.png", "/favicon.ico"])
     )
   );
   self.skipWaiting();

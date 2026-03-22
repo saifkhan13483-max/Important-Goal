@@ -168,10 +168,48 @@ export default function Support() {
         <meta property="og:title" content="Help & Support | Strivo" />
         <meta property="og:description" content="Get help with Strivo. Browse FAQs, learn how the app works, and contact our support team." />
         <meta property="og:image" content="https://strivo.life/og-image.png" />
-        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Help & Support | Strivo" />
         <meta name="twitter:description" content="Get help with Strivo. Browse FAQs and contact our support team." />
+        <meta name="twitter:image" content="https://strivo.life/og-image.png" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "@id": "https://strivo.life/support#faq",
+          "url": "https://strivo.life/support",
+          "name": "Help & Support | Strivo",
+          "isPartOf": { "@id": "https://strivo.life/#website" },
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://strivo.life/" },
+              { "@type": "ListItem", "position": 2, "name": "Support", "item": "https://strivo.life/support" }
+            ]
+          },
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is a 'system' in Strivo?",
+              "acceptedAnswer": { "@type": "Answer", "text": "A system is a structured habit built around a trigger, a minimum action, and a reward loop. Instead of a vague goal like 'exercise more', you build a system anchored to a specific daily cue." }
+            },
+            {
+              "@type": "Question",
+              "name": "How do I create my first system?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Go to the Systems page and click 'New System'. The System Builder wizard guides you through 7 steps — identity, trigger, minimum action, fallback plan, and reward. Takes about 5 minutes." }
+            },
+            {
+              "@type": "Question",
+              "name": "What's the difference between a Goal and a System?",
+              "acceptedAnswer": { "@type": "Answer", "text": "A Goal is an outcome (e.g. 'Run a 5K'). A System is the daily process that gets you there (e.g. 'Put on running shoes every morning'). Both work together in Strivo." }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Strivo free to use?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. The free plan includes up to 2 goals, 3 systems, daily check-ins, streak tracking, and basic analytics. Paid plans unlock more systems, advanced analytics, and AI coaching." }
+            }
+          ]
+        })}</script>
       </Helmet>
 
       {/* ── Nav ── */}

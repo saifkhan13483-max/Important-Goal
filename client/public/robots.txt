@@ -1,4 +1,5 @@
 User-agent: *
+
 # Public marketing and content pages — allow indexing
 Allow: /
 Allow: /pricing
@@ -27,5 +28,8 @@ Disallow: /workspace
 # Block static build artifacts and source maps
 Disallow: /*.map$
 Disallow: /assets/*.map
+
+# Crawl-delay to be polite (optional — remove if you want aggressive crawling)
+Crawl-delay: 1
 
 Sitemap: https://strivo.life/sitemap.xml
