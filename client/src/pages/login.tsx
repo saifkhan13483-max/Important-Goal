@@ -16,6 +16,7 @@ import { SiGoogle } from "react-icons/si";
 import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
 import { useQueryClient } from "@tanstack/react-query";
+import { Helmet } from "react-helmet-async";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -86,6 +87,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <Helmet>
+        <title>Log In | Strivo</title>
+        <meta name="description" content="Log in to your Strivo account and continue building habits that survive real life." />
+        <link rel="canonical" href="https://strivo.life/login" />
+      </Helmet>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">

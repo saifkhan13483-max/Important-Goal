@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import { track } from "@/lib/track";
+import { Helmet } from "react-helmet-async";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,11 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
+      <Helmet>
+        <title>Sign Up Free | Strivo</title>
+        <meta name="description" content="Create your free Strivo account and start building habits that actually stick — with a minimum action, a fallback plan, and a recovery path." />
+        <link rel="canonical" href="https://strivo.life/signup" />
+      </Helmet>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">

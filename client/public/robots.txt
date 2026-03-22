@@ -3,6 +3,7 @@ Allow: /
 Allow: /pricing
 Allow: /signup
 Allow: /login
+Allow: /support
 Allow: /privacy
 Allow: /terms
 
@@ -19,5 +20,7 @@ Disallow: /ai-coach
 Disallow: /onboarding
 Disallow: /checkout/
 Disallow: /admin
+Disallow: /forgot-password
+Disallow: /workspace
 
 Sitemap: https://strivo.life/sitemap.xml
