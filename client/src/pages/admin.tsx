@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
 import { SiteLogo } from "@/components/site-logo";
 import { useAppStore } from "@/store/auth.store";
@@ -792,6 +793,10 @@ export default function AdminPage() {
   /* ── Layout ── */
   return (
     <div className="min-h-screen bg-muted/30 dark:bg-background flex">
+      <Helmet>
+        <title>Admin Panel | Strivo</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <AdminSidebar
         active={activeSection}
         onSelect={setActiveSection}

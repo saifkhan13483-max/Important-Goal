@@ -48,6 +48,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <Helmet>
         <title>Reset Password | Strivo</title>
+        <link rel="canonical" href="https://strivo.life/forgot-password" />
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <div className="w-full max-w-sm">

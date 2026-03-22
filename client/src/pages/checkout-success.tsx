@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { SiteLogo } from "@/components/site-logo";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,10 @@ export default function CheckoutSuccess() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 text-center">
+      <Helmet>
+        <title>Subscription Confirmed | Strivo</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="max-w-md w-full">
         {saving ? (
           <div className="flex flex-col items-center gap-4">

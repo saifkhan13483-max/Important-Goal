@@ -29,7 +29,4 @@ Disallow: /workspace
 Disallow: /*.map$
 Disallow: /assets/*.map
 
-# Crawl-delay to be polite (optional — remove if you want aggressive crawling)
-Crawl-delay: 1
-
 Sitemap: https://strivo.life/sitemap.xml

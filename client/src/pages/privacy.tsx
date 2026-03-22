@@ -20,7 +20,6 @@ export default function PrivacyPolicy() {
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Privacy Policy | Strivo" />
         <meta name="twitter:description" content="Read Strivo's privacy policy to understand how we collect, use, and protect your personal data." />
-        <meta name="robots" content="noindex, follow" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebPage",

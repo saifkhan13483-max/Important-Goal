@@ -20,7 +20,7 @@ export default function TermsOfService() {
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Terms of Service | Strivo" />
         <meta name="twitter:description" content="Read Strivo's terms of service governing your use of the platform." />
-        <meta name="robots" content="noindex, follow" />
+
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebPage",
