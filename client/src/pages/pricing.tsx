@@ -219,9 +219,22 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
-        <title>Pricing | Strivo</title>
+        <title>Pricing — Free, Starter, Pro & Elite | Strivo</title>
         <link rel="canonical" href="https://strivo.life/pricing" />
-        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter, Pro, and Elite plans." />
+        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter ($9/mo), Pro ($19/mo), and Elite ($49/mo) plans." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://strivo.life/pricing" />
+        <meta property="og:site_name" content="Strivo" />
+        <meta property="og:title" content="Pricing — Free, Starter, Pro & Elite | Strivo" />
+        <meta property="og:description" content="Simple, transparent pricing for every level. Start free — upgrade when you need more. Free, Starter, Pro, and Elite plans available." />
+        <meta property="og:image" content="https://strivo.life/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@strivoapp" />
+        <meta name="twitter:title" content="Pricing — Free, Starter, Pro & Elite | Strivo" />
+        <meta name="twitter:description" content="Simple, transparent pricing for Strivo. Start free — upgrade when you're ready." />
+        <meta name="twitter:image" content="https://strivo.life/og-image.png" />
       </Helmet>
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">

@@ -11,6 +11,14 @@ export default function PrivacyPolicy() {
         <title>Privacy Policy | Strivo</title>
         <link rel="canonical" href="https://strivo.life/privacy" />
         <meta name="description" content="Read Strivo's privacy policy to understand how we collect, use, and protect your personal data." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://strivo.life/privacy" />
+        <meta property="og:site_name" content="Strivo" />
+        <meta property="og:title" content="Privacy Policy | Strivo" />
+        <meta property="og:description" content="Read Strivo's privacy policy to understand how we collect, use, and protect your personal data." />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:site" content="@strivoapp" />
+        <meta name="twitter:title" content="Privacy Policy | Strivo" />
       </Helmet>
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">

@@ -31,14 +31,6 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- Login -->
-  <url>
-    <loc>https://strivo.life/login</loc>
-    <lastmod>2026-03-22</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
   <!-- Support / Help -->
   <url>
     <loc>https://strivo.life/support</loc>

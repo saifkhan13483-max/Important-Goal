@@ -90,6 +90,7 @@ export default function Login() {
       <Helmet>
         <title>Log In | Strivo</title>
         <meta name="description" content="Log in to your Strivo account and continue building habits that survive real life." />
+        <meta name="robots" content="noindex, follow" />
         <link rel="canonical" href="https://strivo.life/login" />
       </Helmet>
       <div className="w-full max-w-sm">

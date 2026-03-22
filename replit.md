@@ -5,7 +5,7 @@ Strivo is a React + Firebase web application that helps users turn goals into da
 
 ## Deployment Status
 - **Deployment target**: Static site (`npm run build` → `dist/`)
-- **Production build**: Verified working (3062 modules, ~558KB gzip)
+- **Production build**: Verified working (3062+ modules, ~558KB gzip)
 - **Market-ready fixes applied**:
   - Terms & Privacy agreement checkbox added to signup form
   - Stripe payment integration added to pricing page (redirectToCheckout)
@@ -15,6 +15,55 @@ Strivo is a React + Firebase web application that helps users turn goals into da
   - Testimonials upgraded with DiceBear persona photo avatars (lazy-loaded)
   - Interactive "Watch Demo" video section added to landing page (YouTube embed via `VITE_DEMO_VIDEO_ID`)
   - EmailJS welcome email integration added for signup and newsletter capture
+
+## SEO & Google Search Console Setup
+All technical SEO elements are fully implemented.
+
+### Google Search Console Verification
+- Set `VITE_GOOGLE_SITE_VERIFICATION` in Replit Secrets to the verification code from Google Search Console → Settings → Ownership verification → HTML tag (the `content=` value only, not the whole tag)
+- Vite replaces `%VITE_GOOGLE_SITE_VERIFICATION%` in `index.html` at build time — redeploy after setting the variable
+
+### Sitemap & Robots
+- `client/public/sitemap.xml` — lists 6 public indexable pages with priorities and lastmod dates
+- `client/public/robots.txt` — allows public marketing pages, disallows all authenticated app routes, login, forgot-password, checkout, admin. References sitemap URL.
+
+### Per-Page SEO (react-helmet-async)
+Every public page has unique title, meta description, canonical URL, Open Graph tags, and Twitter Card tags:
+- `/` Landing — full OG + Twitter Card with og-image
+- `/pricing` — full OG + Twitter Card
+- `/signup` — full OG + Twitter Card
+- `/support` — OG + Twitter Card
+- `/privacy` — OG + Twitter Card
+- `/terms` — OG + Twitter Card
+- `/login` — `noindex, follow` (excluded from sitemap)
+- `/forgot-password` — `noindex, nofollow`
+- `404` — `noindex, follow`
+
+### Protected Routes (noindex)
+`AppLayout` (`client/src/components/app/app-layout.tsx`) injects `<meta name="robots" content="noindex, nofollow">` for all authenticated app routes, ensuring they are never indexed.
+
+### JSON-LD Structured Data
+Consolidated into a single `@graph` block in `index.html` to avoid duplicate entity warnings in Google's Rich Results Test:
+- `Organization` — company identity, logo, contact
+- `WebSite` — with SearchAction pointing to `/templates?q=`
+- `WebPage` — homepage with BreadcrumbList
+- `SoftwareApplication` — full app schema with offers, aggregateRating (4.8/5), 3 reviews, featureList
+- `FAQPage` — 6 Q&A pairs covering common user questions
+
+### Performance Basics
+- Font preconnect to Google Fonts in `index.html`
+- PWA service worker caches static assets (offline support)
+- All route chunks are lazy-loaded (React.lazy) for fast initial load
+- Viewport meta: `maximum-scale=5` allows user zoom (accessibility + Core Web Vitals)
+
+### Mobile Friendliness
+- Fully responsive Tailwind layout
+- 44px minimum touch targets on interactive elements
+- `apple-mobile-web-app-capable` and `mobile-web-app-capable` meta tags set
+- PWA manifest with `orientation: portrait-primary` and theme colors
+
+### Google Analytics
+- Set `VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX` to enable GA4 event forwarding
 
 ## EmailJS Integration
 - **Package**: `@emailjs/browser`

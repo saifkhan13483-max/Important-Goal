@@ -16,10 +16,12 @@
 
     <!-- ═══════════════════════════════════════════════
          GOOGLE SEARCH CONSOLE VERIFICATION
-         Replace REPLACE_WITH_YOUR_CODE with the value
-         from Google Search Console → Settings → Ownership verification → HTML tag
+         Injected dynamically via react-helmet-async in App.tsx
+         when VITE_GOOGLE_SITE_VERIFICATION env var is set.
+         Set it in Replit Secrets (or Vercel env vars) to the
+         content= value from: Search Console → Settings → Ownership
+         verification → HTML tag.
     ═══════════════════════════════════════════════ -->
-    <meta name="google-site-verification" content="REPLACE_WITH_YOUR_CODE" />
     <meta name="theme-color" content="#7c3aed" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#4c1d95" media="(prefers-color-scheme: dark)" />
 
@@ -60,6 +62,8 @@
 
     <!-- ═══════════════════════════════════════════════
          CANONICAL & MANIFEST
+         Note: per-page canonicals are overridden via react-helmet-async
+         in each page component. This serves as the global fallback.
     ═══════════════════════════════════════════════ -->
     <link rel="canonical" href="https://strivo.life/" />
     <link rel="manifest" href="/manifest.json" />
@@ -74,176 +78,77 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
 
     <!-- ═══════════════════════════════════════════════
-         JSON-LD STRUCTURED DATA
-    ═══════════════════════════════════════════════ -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Strivo",
-      "url": "https://strivo.life",
-      "logo": "https://strivo.life/favicon.png",
-      "description": "Strivo helps you turn any goal into a repeatable daily system using behavioral science — minimum actions, fallback plans, and recovery paths so you stay consistent even on hard days.",
-      "applicationCategory": "LifestyleApplication",
-      "operatingSystem": "Web",
-      "browserRequirements": "Requires JavaScript. Works in all modern browsers.",
-      "offers": [
-        {
-          "@type": "Offer",
-          "name": "Free",
-          "price": "0",
-          "priceCurrency": "USD"
-        },
-        {
-          "@type": "Offer",
-          "name": "Starter",
-          "price": "9",
-          "priceCurrency": "USD",
-          "billingDuration": "P1M"
-        },
-        {
-          "@type": "Offer",
-          "name": "Pro",
-          "price": "19",
-          "priceCurrency": "USD",
-          "billingDuration": "P1M"
-        },
-        {
-          "@type": "Offer",
-          "name": "Elite",
-          "price": "49",
-          "priceCurrency": "USD",
-          "billingDuration": "P1M"
-        }
-      ],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "reviewCount": "340"
-      },
-      "featureList": [
-        "Habit system builder with identity statements",
-        "Minimum viable action planning",
-        "Fallback plan and recovery path",
-        "Daily check-ins with mood and difficulty tracking",
-        "Streak tracking and resilience scoring",
-        "AI habit coach (Pro & Elite)",
-        "Advanced analytics and insights",
-        "Journal with AI-powered prompts",
-        "Template library of proven habit systems",
-        "Dark mode support"
-      ],
-      "screenshot": "https://strivo.life/og-image.png",
-      "author": {
-        "@type": "Organization",
-        "name": "Strivo",
-        "url": "https://strivo.life"
-      }
-    }
-    </script>
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Strivo",
-      "url": "https://strivo.life",
-      "logo": "https://strivo.life/favicon.png",
-      "sameAs": [],
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "contactType": "customer support",
-        "email": "support@strivo.life"
-      }
-    }
-    </script>
-
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Strivo",
-      "url": "https://strivo.life",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": "https://strivo.life/templates?q={search_term_string}"
-        },
-        "query-input": "required name=search_term_string"
-      }
-    }
-    </script>
-
-    <!-- ═══════════════════════════════════════════════
-         STRUCTURED DATA — WebApplication
-    ═══════════════════════════════════════════════ -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Strivo",
-      "url": "https://strivo.life",
-      "applicationCategory": "LifestyleApplication",
-      "operatingSystem": "Web, iOS, Android",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "312",
-        "bestRating": "5",
-        "worstRating": "1"
-      },
-      "description": "Turn any goal into a daily system with a minimum action and a recovery plan.",
-      "screenshot": "https://strivo.life/og-image.png",
-      "featureList": [
-        "Goal tracking",
-        "Daily habit check-ins",
-        "Streak analytics",
-        "Recovery flow for missed days",
-        "AI habit coach",
-        "Journal with prompts",
-        "System templates"
-      ]
-    }
-    </script>
-
-    <!-- ═══════════════════════════════════════════════
-         THEME BOOTSTRAP (prevent FOUC before React)
-    ═══════════════════════════════════════════════ -->
-    <script>
-      (function () {
-        try {
-          var stored = localStorage.getItem('strivo-app-store');
-          var state = stored ? JSON.parse(stored).state : null;
-          var theme = state ? state.theme : 'system';
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (theme === 'dark' || (theme === 'system' && prefersDark)) {
-            document.documentElement.classList.add('dark');
-          }
-        } catch (e) {}
-      })();
-    </script>
-
-    <!-- ═══════════════════════════════════════════════
-         STRUCTURED DATA (JSON-LD)
+         JSON-LD STRUCTURED DATA (consolidated @graph)
+         Single @graph block avoids duplicate entity warnings
+         in Google Search Console's Rich Results Test.
     ═══════════════════════════════════════════════ -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "Organization",
+          "@id": "https://strivo.life/#organization",
+          "name": "Strivo",
+          "url": "https://strivo.life",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://strivo.life/favicon.png"
+          },
+          "sameAs": [],
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "email": "support@strivo.life"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://strivo.life/#website",
+          "url": "https://strivo.life",
+          "name": "Strivo",
+          "description": "Build habits that survive real life",
+          "publisher": { "@id": "https://strivo.life/#organization" },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://strivo.life/templates?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://strivo.life/#webpage",
+          "url": "https://strivo.life",
+          "name": "Strivo — Build Habits That Survive Real Life",
+          "description": "Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't.",
+          "isPartOf": { "@id": "https://strivo.life/#website" },
+          "about": { "@id": "https://strivo.life/#app" },
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://strivo.life/"
+              }
+            ]
+          }
+        },
+        {
           "@type": "SoftwareApplication",
           "@id": "https://strivo.life/#app",
           "name": "Strivo",
           "url": "https://strivo.life",
-          "description": "Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't.",
+          "description": "Strivo helps you turn any goal into a repeatable daily system using behavioral science — minimum actions, fallback plans, and recovery paths so you stay consistent even on hard days.",
           "applicationCategory": "LifestyleApplication",
           "operatingSystem": "Web, iOS, Android",
+          "browserRequirements": "Requires JavaScript. Works in all modern browsers.",
+          "screenshot": "https://strivo.life/og-image.png",
+          "publisher": { "@id": "https://strivo.life/#organization" },
           "offers": [
             {
               "@type": "Offer",
@@ -257,6 +162,7 @@
               "name": "Starter",
               "price": "9",
               "priceCurrency": "USD",
+              "billingDuration": "P1M",
               "availability": "https://schema.org/InStock"
             },
             {
@@ -264,6 +170,7 @@
               "name": "Pro",
               "price": "19",
               "priceCurrency": "USD",
+              "billingDuration": "P1M",
               "availability": "https://schema.org/InStock"
             },
             {
@@ -271,13 +178,14 @@
               "name": "Elite",
               "price": "49",
               "priceCurrency": "USD",
+              "billingDuration": "P1M",
               "availability": "https://schema.org/InStock"
             }
           ],
           "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": "4.8",
-            "reviewCount": "1247",
+            "reviewCount": "340",
             "bestRating": "5",
             "worstRating": "1"
           },
@@ -301,15 +209,18 @@
               "reviewBody": "The trigger setup step made me realise I'd been trying to build habits at random times. Anchoring to my coffee routine made the habit automatic within two weeks."
             }
           ],
-          "publisher": {
-            "@type": "Organization",
-            "name": "Strivo",
-            "url": "https://strivo.life",
-            "logo": {
-              "@type": "ImageObject",
-              "url": "https://strivo.life/favicon.png"
-            }
-          }
+          "featureList": [
+            "Habit system builder with identity statements",
+            "Minimum viable action planning",
+            "Fallback plan and recovery path",
+            "Daily check-ins with mood and difficulty tracking",
+            "Streak tracking and resilience scoring",
+            "AI habit coach (Pro and Elite)",
+            "Advanced analytics and insights",
+            "Journal with AI-powered prompts",
+            "Template library of proven habit systems",
+            "Dark mode support"
+          ]
         },
         {
           "@type": "FAQPage",
@@ -364,21 +275,26 @@
               }
             }
           ]
-        },
-        {
-          "@type": "WebSite",
-          "@id": "https://strivo.life/#website",
-          "url": "https://strivo.life",
-          "name": "Strivo",
-          "description": "Build habits that survive real life",
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": "https://strivo.life/templates?q={search_term_string}",
-            "query-input": "required name=search_term_string"
-          }
         }
       ]
     }
+    </script>
+
+    <!-- ═══════════════════════════════════════════════
+         THEME BOOTSTRAP (prevent FOUC before React)
+    ═══════════════════════════════════════════════ -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem('strivo-app-store');
+          var state = stored ? JSON.parse(stored).state : null;
+          var theme = state ? state.theme : 'system';
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (theme === 'dark' || (theme === 'system' && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
     </script>
 
     <!-- ═══════════════════════════════════════════════

@@ -23,7 +23,7 @@ import { AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { HelmetProvider } from "react-helmet-async";
+import { HelmetProvider, Helmet } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -197,9 +197,16 @@ function Router() {
 }
 
 export default function App() {
+  const gscCode = import.meta.env.VITE_GOOGLE_SITE_VERIFICATION as string | undefined;
+
   return (
     <HelmetProvider>
     <ErrorBoundary>
+      {gscCode && (
+        <Helmet>
+          <meta name="google-site-verification" content={gscCode} />
+        </Helmet>
+      )}
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TooltipProvider>

@@ -159,12 +159,19 @@ export default function Support() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
-        <title>Support | Strivo</title>
+        <title>Help & Support | Strivo</title>
         <link rel="canonical" href="https://strivo.life/support" />
-        <meta
-          name="description"
-          content="Get help with Strivo. Browse FAQs, learn how the app works, and contact our support team."
-        />
+        <meta name="description" content="Get help with Strivo. Browse FAQs, learn how the app works, and contact our support team." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://strivo.life/support" />
+        <meta property="og:site_name" content="Strivo" />
+        <meta property="og:title" content="Help & Support | Strivo" />
+        <meta property="og:description" content="Get help with Strivo. Browse FAQs, learn how the app works, and contact our support team." />
+        <meta property="og:image" content="https://strivo.life/og-image.png" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:site" content="@strivoapp" />
+        <meta name="twitter:title" content="Help & Support | Strivo" />
+        <meta name="twitter:description" content="Get help with Strivo. Browse FAQs and contact our support team." />
       </Helmet>
 
       {/* ── Nav ── */}

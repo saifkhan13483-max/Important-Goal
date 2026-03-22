@@ -12,6 +12,7 @@
  *  - Descriptive aria-label on every icon-only interactive element
  */
 
+import { Helmet } from "react-helmet-async";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AiChatWidget } from "@/components/ai/ai-chat";
@@ -49,6 +50,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
+      {/* All authenticated app routes should not be indexed by search engines */}
+      <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+
       {/* Phase 5 — Skip link: visible only on keyboard focus, bypasses nav */}
       <a href="#main-content" className="skip-to-content">
         Skip to main content

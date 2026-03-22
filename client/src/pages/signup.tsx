@@ -104,8 +104,19 @@ export default function Signup() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <Helmet>
         <title>Sign Up Free | Strivo</title>
-        <meta name="description" content="Create your free Strivo account and start building habits that actually stick — with a minimum action, a fallback plan, and a recovery path." />
         <link rel="canonical" href="https://strivo.life/signup" />
+        <meta name="description" content="Create your free Strivo account and start building habits that actually stick — with a minimum action, a fallback plan, and a recovery path." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://strivo.life/signup" />
+        <meta property="og:site_name" content="Strivo" />
+        <meta property="og:title" content="Sign Up Free | Strivo" />
+        <meta property="og:description" content="Create your free account and start building habits that actually stick. No credit card required." />
+        <meta property="og:image" content="https://strivo.life/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@strivoapp" />
+        <meta name="twitter:title" content="Sign Up Free | Strivo" />
+        <meta name="twitter:description" content="Create your free account and start building habits that actually stick. No credit card required." />
+        <meta name="twitter:image" content="https://strivo.life/og-image.png" />
       </Helmet>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">

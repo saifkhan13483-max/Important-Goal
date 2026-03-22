@@ -529,13 +529,23 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
-        <title>Strivo — Build Habits That Survive Hard Days</title>
+        <title>Strivo — Build Habits That Survive Real Life</title>
         <link rel="canonical" href="https://strivo.life/" />
         <meta name="description" content="Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't. Free to start." />
-        <meta property="og:title" content="Strivo — Build Habits That Survive Hard Days" />
-        <meta property="og:description" content="Turn any goal into a daily system with a minimum action and a recovery plan. Free to start." />
         <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://strivo.life/" />
+        <meta property="og:site_name" content="Strivo" />
+        <meta property="og:title" content="Strivo — Build Habits That Survive Real Life" />
+        <meta property="og:description" content="Stop starting over. Turn any goal into a daily system with a minimum action, fallback plan, and recovery path. Free to start." />
+        <meta property="og:image" content="https://strivo.life/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Strivo — Build Habits That Survive Real Life" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@strivoapp" />
+        <meta name="twitter:title" content="Strivo — Build Habits That Survive Real Life" />
+        <meta name="twitter:description" content="Stop starting over. Turn any goal into a daily system with a minimum action and recovery plan. Free to start." />
+        <meta name="twitter:image" content="https://strivo.life/og-image.png" />
       </Helmet>
 
       <a href="#main-content" className="skip-to-content">Skip to main content</a>

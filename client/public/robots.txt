@@ -1,13 +1,13 @@
 User-agent: *
+# Public marketing and content pages — allow indexing
 Allow: /
 Allow: /pricing
 Allow: /signup
-Allow: /login
 Allow: /support
 Allow: /privacy
 Allow: /terms
 
-# Block authenticated app routes — no indexable value for crawlers
+# Block authenticated and utility routes — no indexable value for crawlers
 Disallow: /dashboard
 Disallow: /goals
 Disallow: /systems
@@ -20,7 +20,12 @@ Disallow: /ai-coach
 Disallow: /onboarding
 Disallow: /checkout/
 Disallow: /admin
+Disallow: /login
 Disallow: /forgot-password
 Disallow: /workspace
+
+# Block static build artifacts and source maps
+Disallow: /*.map$
+Disallow: /assets/*.map
 
 Sitemap: https://strivo.life/sitemap.xml
