@@ -1,0 +1,62 @@
+Role: Act as a Senior Technical SEO Engineer with deep expertise in Google Search Console (GSC), crawl optimization, and search indexing best practices.
+Objective: Audit and optimize this website to be fully production-ready for Google Search Console — ensuring maximum crawlability, indexability, and search visibility in compliance with Google's latest webmaster guidelines.
+
+1. Google Search Console Verification & Setup
+Implement the most reliable GSC verification method for this stack (DNS TXT record, HTML tag, or file upload — recommend the best option and explain why).
+Confirm ownership for both www and non-www versions, plus http and https variants.
+Set the preferred domain and ensure proper 301 redirects are in place between variants.
+2. XML Sitemap
+Generate a clean, valid sitemap.xml that includes all indexable pages, prioritized by importance.
+Exclude non-indexable pages (noindex, redirected, paginated, or thin content pages).
+Ensure the sitemap is auto-updating (dynamic) if the tech stack supports it.
+Submit the sitemap URL inside the robots.txt file AND directly to GSC.
+3. Robots.txt Configuration
+Create or optimize the robots.txt file to properly allow/disallow crawling.
+Ensure critical resources (CSS, JS, images) are not blocked from Googlebot.
+Include the sitemap directive.
+Validate using Google's Robots Testing Tool logic.
+4. Indexing Control & Canonical URLs
+Set proper <link rel="canonical"> tags on every page to prevent duplicate content issues.
+Apply noindex, nofollow meta tags where appropriate (admin pages, internal search results, staging environments, etc.).
+Handle pagination correctly using self-referencing canonicals (no longer rel=next/prev reliance).
+Ensure no conflicting signals between canonical tags, redirects, and sitemap entries.
+5. Mobile Friendliness & Responsive Design
+Verify the site passes Google's Mobile-Friendly standards.
+Ensure the viewport meta tag is properly configured: <meta name="viewport" content="width=device-width, initial-scale=1">.
+Confirm no content is hidden, truncated, or inaccessible on mobile devices.
+Check tap targets, font sizes, and layout shifts on small screens.
+6. Page Speed & Core Web Vitals
+Optimize for Google's Core Web Vitals thresholds:
+LCP (Largest Contentful Paint) → under 2.5s
+INP (Interaction to Next Paint) → under 200ms
+CLS (Cumulative Layout Shift) → under 0.1
+Implement: image compression/lazy loading, minified CSS/JS, proper caching headers, font optimization, reduced render-blocking resources.
+Enable GZIP/Brotli compression and HTTP/2 if not already active.
+7. Structured Data & Metadata
+Add/validate JSON-LD structured data (Schema.org) appropriate for the site type (e.g., Organization, LocalBusiness, Article, Product, FAQ, BreadcrumbList).
+Ensure every page has unique, optimized:
+<title> tag (50–60 characters)
+<meta description> (120–160 characters)
+Proper heading hierarchy (H1 → H2 → H3, one H1 per page)
+Open Graph and Twitter Card meta tags for social sharing.
+Validate structured data using Google's Rich Results Test logic.
+8. Crawl Health & Coverage Issue Resolution
+Identify and fix all potential crawl errors: 404s, soft 404s, 5xx server errors, redirect chains/loops.
+Ensure clean internal linking with no orphan pages and no broken links.
+Optimize crawl budget by eliminating duplicate, thin, or parameter-heavy URLs.
+Implement proper hreflang tags if the site serves multiple languages/regions.
+Ensure HTTPS is enforced sitewide with a valid SSL certificate (no mixed content).
+9. Additional Best Practices
+Add a proper favicon.ico (Google displays favicons in SERPs).
+Implement breadcrumb navigation (both UX and structured data).
+Create or verify a custom 404 error page that is helpful and links back to key pages.
+Ensure URL structure is clean, lowercase, hyphenated, and human-readable.
+
+Deliverables: After completing the optimization, provide:
+A checklist summary of all changes made.
+A list of any issues found and how they were resolved.
+Any recommendations for ongoing monitoring in GSC (e.g., what reports to watch, how often to check).
+Constraints:
+Follow only white-hat SEO practices.
+Adhere to the latest Google Search Essentials (formerly Webmaster Guidelines).
+Do not implement any cloaking, hidden text, keyword stuffing, or manipulative techniques.
