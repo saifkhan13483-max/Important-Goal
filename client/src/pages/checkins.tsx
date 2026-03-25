@@ -22,7 +22,7 @@ import {
   CheckSquare, Check, Minus, X, Flame, MessageSquare,
   ChevronDown, ChevronUp, History, CalendarDays, Grid3x3, Trophy,
   ArrowRight, ClipboardList, Sparkles, RefreshCw, Zap, Target,
-  ChevronLeft, ChevronRight, TrendingUp, Star, Award, Timer,
+  ChevronLeft, ChevronRight, TrendingUp, Star, Award, Timer, Loader2,
 } from "lucide-react";
 import { FocusTimer } from "@/components/focus-timer";
 import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addMonths } from "date-fns";
@@ -37,6 +37,25 @@ function getTodayKey() {
 
 function toLocalDateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+/* ─── Frequency scheduling helper ──────────────────────────────────── */
+function isScheduledToday(system: System): boolean {
+  const freq = system.frequency ?? "daily";
+  if (freq === "daily" || freq === "weekly") return true;
+  const dow = new Date().getDay(); // 0=Sun, 6=Sat
+  if (freq === "weekdays") return dow >= 1 && dow <= 5;
+  if (freq === "weekends") return dow === 0 || dow === 6;
+  return true;
+}
+
+function frequencyLabel(freq: string | undefined): string {
+  switch (freq) {
+    case "weekdays": return "Weekdays only";
+    case "weekends": return "Weekends only";
+    case "weekly":   return "Weekly";
+    default:         return "Daily";
+  }
 }
 
 /* ─── Circular Progress Ring ─────────────────────────────────────── */
@@ -631,6 +650,18 @@ function SystemCheckinCard({
             {system.triggerStatement && (
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{system.triggerStatement}</p>
             )}
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              {system.frequency && system.frequency !== "daily" && (
+                <span className="text-[10px] font-medium text-muted-foreground bg-muted/60 rounded-full px-2 py-0.5" data-testid={`badge-frequency-${system.id}`}>
+                  {frequencyLabel(system.frequency)}
+                </span>
+              )}
+              {system.preferredTime && system.preferredTime !== "flexible" && (
+                <span className="text-[10px] font-medium text-muted-foreground bg-muted/60 rounded-full px-2 py-0.5" data-testid={`badge-time-${system.id}`}>
+                  {system.preferredTime.charAt(0).toUpperCase() + system.preferredTime.slice(1)}
+                </span>
+              )}
+            </div>
           </div>
           {current && (
             <Badge variant="outline" className={cn("text-xs flex-shrink-0 gap-1 rounded-full", STATUS_CONFIG[current]?.bg)}>
@@ -734,7 +765,69 @@ function SystemCheckinCard({
   );
 }
 
-/* ─── Checkin Consistency Banner ─────────────────────────────────── */
+/* ─── Streak Freeze Banner ──────────────────────────────────────── */
+function StreakFreezeBanner({
+  user, yesterdayCheckins, activeSystems, userId,
+}: {
+  user: import("@/types/schema").User | null;
+  yesterdayCheckins: Checkin[];
+  activeSystems: System[];
+  userId: string;
+}) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [used, setUsed] = useState(false);
+
+  const freezes = user?.streakFreezes ?? 0;
+  const yesterdayKey = toLocalDateKey(new Date(Date.now() - 86400000));
+  const alreadyUsedToday = user?.streakFreezeUsedDate === yesterdayKey;
+  const missedYesterday = activeSystems.length > 0 && activeSystems.some(s => {
+    const c = yesterdayCheckins.find(ch => ch.systemId === s.id);
+    return !c || (c.status !== "done" && c.status !== "partial");
+  });
+
+  const useFreezeM = useMutation({
+    mutationFn: () => updateUser(userId, {
+      streakFreezes: Math.max(0, freezes - 1),
+      streakFreezeUsedDate: yesterdayKey,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user"] });
+      setUsed(true);
+      toast({ title: "❄️ Streak Freeze used!", description: "Yesterday's miss is protected. Your streak is safe." });
+    },
+    onError: () => toast({ title: "Couldn't use freeze", variant: "destructive" }),
+  });
+
+  if (freezes <= 0 || !missedYesterday || alreadyUsedToday || used) return null;
+
+  return (
+    <div className="flex items-start gap-3 p-4 rounded-2xl bg-blue-500/8 border border-blue-500/25" data-testid="streak-freeze-banner">
+      <span className="text-xl flex-shrink-0">❄️</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold">Protect your streak with a Freeze</p>
+        <p className="text-xs text-muted-foreground mt-0.5 mb-3 leading-relaxed">
+          You missed some systems yesterday. Use one of your {freezes} streak freeze{freezes !== 1 ? "s" : ""} to protect your progress.
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 px-4 text-xs gap-2 border-blue-500/40 text-blue-700 dark:text-blue-300 hover:bg-blue-500/10"
+          onClick={() => useFreezeM.mutate()}
+          disabled={useFreezeM.isPending}
+          data-testid="button-use-streak-freeze"
+        >
+          {useFreezeM.isPending ? (
+            <><Loader2 className="w-3 h-3 animate-spin" /> Applying…</>
+          ) : (
+            <>❄️ Use a Streak Freeze</>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function CheckinConsistencyBanner({ bestStreak, activeSystems, yesterdayCheckins }: {
   bestStreak: number; activeSystems: System[]; yesterdayCheckins: Checkin[];
 }) {
@@ -1178,8 +1271,10 @@ export default function Checkins() {
     enabled: !!userId,
   });
 
-  const analytics     = useMemo(() => computeAnalytics(allCheckins, systems, []), [allCheckins, systems]);
-  const activeSystems = systems.filter(s => s.active);
+  const analytics        = useMemo(() => computeAnalytics(allCheckins, systems, []), [allCheckins, systems]);
+  const allActiveSystems = systems.filter(s => s.active);
+  const activeSystems    = useMemo(() => allActiveSystems.filter(isScheduledToday), [allActiveSystems]);
+  const skippedToday     = useMemo(() => allActiveSystems.filter(s => !isScheduledToday(s)), [allActiveSystems]);
   const doneCount     = todayCheckins.filter(c => c.status === "done").length;
   const partialCount  = todayCheckins.filter(c => c.status === "partial").length;
   const missedCount   = todayCheckins.filter(c => c.status === "missed" || c.status === "skipped").length;
@@ -1385,6 +1480,14 @@ export default function Checkins() {
               </div>
             )}
 
+            {/* Streak Freeze Banner */}
+            <StreakFreezeBanner
+              user={user}
+              yesterdayCheckins={yesterdayCheckins}
+              activeSystems={allActiveSystems}
+              userId={userId}
+            />
+
             {/* Hype Drop Consistency Banner */}
             <CheckinConsistencyBanner bestStreak={bestStreak} activeSystems={activeSystems} yesterdayCheckins={yesterdayCheckins} />
 
@@ -1410,6 +1513,25 @@ export default function Checkins() {
                     <p className="text-[10px] text-muted-foreground font-medium">{s.label}</p>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Frequency-filtered systems info */}
+            {!isLoading && skippedToday.length > 0 && (
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-muted/40 border border-border/40 text-sm" data-testid="banner-skipped-frequency">
+                <span className="text-base mt-0.5">📅</span>
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-xs">
+                    {skippedToday.length} system{skippedToday.length !== 1 ? "s" : ""} not scheduled for today
+                  </p>
+                  <p className="text-muted-foreground text-xs mt-0.5 leading-relaxed">
+                    {skippedToday.map(s => (
+                      <span key={s.id} className="inline-flex items-center gap-1 mr-2">
+                        {s.title} <span className="opacity-60">({frequencyLabel(s.frequency ?? "daily")})</span>
+                      </span>
+                    ))}
+                  </p>
+                </div>
               </div>
             )}
 

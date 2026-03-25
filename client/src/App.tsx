@@ -64,6 +64,7 @@ const AdminPage       = lazy(() => import("@/pages/admin"));
 const WorkspacePage   = lazy(() => import("@/pages/workspace"));
 const PublicProfile   = lazy(() => import("@/pages/public-profile"));
 const AchievementsPage = lazy(() => import("@/pages/achievements"));
+const WeeklyReview     = lazy(() => import("@/pages/weekly-review"));
 
 /**
  * PageLoader — minimal skeleton shown while a lazy chunk is downloading.
@@ -260,6 +261,7 @@ function Router() {
           <Route path="/checkout/success" component={CheckoutSuccess} />
           <Route path="/admin" component={AdminPage} />
           <Route path="/achievements" component={() => <ProtectedRoute component={AchievementsPage} />} />
+          <Route path="/review" component={() => <ProtectedRoute component={WeeklyReview} />} />
 
           {/* Public profile pages */}
           <Route path="/profile/:code" component={PublicProfile} />

@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 import { FutureSelfAudioSetup, FutureSelfAudioSettings } from "@/components/future-self-audio";
 import { getPlanFeatures } from "@/lib/plan-limits";
 import { SiteLogo } from "@/components/site-logo";
-import { linkAccountabilityPartner, unlinkAccountabilityPartner } from "@/services/accountability.service";
+import { linkAccountabilityPartner, unlinkAccountabilityPartner, getPartnerPublicStats } from "@/services/accountability.service";
 import { updateUser } from "@/services/user.service";
 import { generateReferralCode } from "@/services/public-profile.service";
 import { generateCalendarICS, downloadICS } from "@/lib/calendar-export";
@@ -101,6 +101,88 @@ function SettingRow({
         {description && <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</p>}
       </div>
       <div className="flex-shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function AccountabilityPartnerCard({
+  partnerId, partnerName, partnerEmail, onUnlink,
+}: { partnerId: string; partnerName: string; partnerEmail: string; onUnlink: () => void }) {
+  const todayKey = new Date().toISOString().split("T")[0];
+
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["partner-stats", partnerId],
+    queryFn: () => getPartnerPublicStats(partnerId),
+    enabled: !!partnerId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const todayPct = stats && stats.todayTotal > 0
+    ? Math.round((stats.todayDone / stats.todayTotal) * 100)
+    : null;
+
+  const todayDone = stats?.todayDone ?? 0;
+  const todayTotal = stats?.todayTotal ?? 0;
+  const allDone = todayTotal > 0 && todayDone === todayTotal;
+  const lastSeen = stats?.lastCheckInDate;
+  const isActiveToday = lastSeen === todayKey;
+
+  return (
+    <div className="space-y-3" data-testid="partner-card">
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/25">
+        <div className="w-10 h-10 rounded-xl bg-chart-3/20 flex items-center justify-center flex-shrink-0 text-lg font-bold text-chart-3">
+          {partnerName[0].toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm" data-testid="partner-name">{partnerName}</p>
+          <p className="text-xs text-muted-foreground">{partnerEmail}</p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            {isLoading ? (
+              <span className="text-xs text-muted-foreground">Loading…</span>
+            ) : stats ? (
+              <>
+                <span className={cn(
+                  "text-xs font-medium flex items-center gap-1",
+                  allDone ? "text-chart-3" : isActiveToday ? "text-chart-4" : "text-muted-foreground"
+                )} data-testid="partner-today-status">
+                  {allDone ? "✅ All done today!" :
+                   isActiveToday ? `✔ ${todayDone}/${todayTotal} today` :
+                   "⏳ Not checked in yet today"}
+                </span>
+                {stats.currentStreak > 0 && (
+                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5 gap-0.5">
+                    🔥 {stats.currentStreak}d streak
+                  </Badge>
+                )}
+                {stats.activeSystems > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {stats.activeSystems} habit{stats.activeSystems !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-xs text-chart-3 font-medium">Active accountability partner</span>
+            )}
+          </div>
+        </div>
+        <Button size="sm" variant="outline" onClick={onUnlink} data-testid="button-unlink-partner">
+          Remove
+        </Button>
+      </div>
+      {stats && todayPct !== null && !allDone && (
+        <div className="px-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+            <span>Today's progress</span>
+            <span className="font-medium">{todayPct}%</span>
+          </div>
+          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-chart-3 rounded-full transition-all"
+              style={{ width: `${todayPct}%` }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -945,19 +1027,12 @@ export default function Settings() {
                       Link up with a friend who also uses Strivo. You'll stay visible to each other and be more likely to show up.
                     </p>
                     {user?.accountabilityPartnerName ? (
-                      <div className="flex items-center gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/25">
-                        <div className="w-10 h-10 rounded-xl bg-chart-3/20 flex items-center justify-center flex-shrink-0 text-lg font-bold text-chart-3">
-                          {user.accountabilityPartnerName[0].toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm">{user.accountabilityPartnerName}</p>
-                          <p className="text-xs text-muted-foreground">{user.accountabilityPartnerEmail}</p>
-                          <p className="text-xs text-chart-3 font-medium mt-0.5">Active accountability partner</p>
-                        </div>
-                        <Button size="sm" variant="outline" onClick={handleUnlinkPartner} data-testid="button-unlink-partner">
-                          Remove
-                        </Button>
-                      </div>
+                      <AccountabilityPartnerCard
+                        partnerId={user.accountabilityPartnerId ?? ""}
+                        partnerName={user.accountabilityPartnerName}
+                        partnerEmail={user.accountabilityPartnerEmail ?? ""}
+                        onUnlink={handleUnlinkPartner}
+                      />
                     ) : (
                       <div className="space-y-3">
                         <p className="text-xs text-muted-foreground">Enter the email address of a friend who is already on Strivo:</p>

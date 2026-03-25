@@ -47,15 +47,49 @@ export async function unlinkAccountabilityPartner(userId: string): Promise<void>
 export async function getPartnerPublicStats(partnerId: string): Promise<{
   name: string;
   activeSystems: number;
+  todayDone: number;
+  todayTotal: number;
+  currentStreak: number;
+  lastCheckInDate: string | null;
 } | null> {
   try {
-    const q = query(collection(db, "users"), where("__name__", "==", partnerId));
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const data = snap.docs[0].data() as User;
+    const userQ = query(collection(db, "users"), where("__name__", "==", partnerId));
+    const userSnap = await getDocs(userQ);
+    if (userSnap.empty) return null;
+    const data = userSnap.docs[0].data() as User;
+
+    const todayKey = new Date().toISOString().split("T")[0];
+
+    const systemsQ = query(collection(db, "systems"), where("userId", "==", partnerId), where("active", "==", true));
+    const systemsSnap = await getDocs(systemsQ);
+    const activeSystems = systemsSnap.docs.length;
+
+    const checkinsQ = query(collection(db, "checkins"), where("userId", "==", partnerId));
+    const checkinsSnap = await getDocs(checkinsQ);
+    const allCheckins = checkinsSnap.docs.map(d => d.data());
+
+    const todayCheckins = allCheckins.filter(c => c.dateKey === todayKey);
+    const todayDone = todayCheckins.filter(c => c.status === "done").length;
+
+    let currentStreak = 0;
+    const doneByDate = new Set(allCheckins.filter(c => c.status === "done").map(c => c.dateKey));
+    const cur = new Date();
+    for (let i = 0; i < 365; i++) {
+      const key = cur.toISOString().split("T")[0];
+      if (doneByDate.has(key)) { currentStreak++; cur.setDate(cur.getDate() - 1); }
+      else break;
+    }
+
+    const sortedDates = [...doneByDate].sort().reverse();
+    const lastCheckInDate = sortedDates[0] ?? null;
+
     return {
       name: data.name,
-      activeSystems: 0,
+      activeSystems,
+      todayDone,
+      todayTotal: activeSystems,
+      currentStreak,
+      lastCheckInDate,
     };
   } catch {
     return null;

@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, Target, Zap, CheckSquare, BarChart2, BookOpen, Settings,
-  Sparkles, LogOut, LayoutGrid, Plus, Calendar, Bot, Users, Trophy,
+  Sparkles, LogOut, LayoutGrid, Plus, Calendar, Bot, Users, Trophy, CalendarCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -86,6 +86,12 @@ const navItems = [
     url: "/workspace",
     icon: Users,
     hint: "Collaborate with your team",
+  },
+  {
+    title: "Weekly Review",
+    url: "/review",
+    icon: CalendarCheck,
+    hint: "Review your week's performance",
   },
   {
     title: "Achievements",
