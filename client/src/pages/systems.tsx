@@ -23,6 +23,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { HabitStackBuilder } from "@/components/habit-stack-builder";
 import { isAtSystemLimit, getPlanLimits, planDisplayName } from "@/lib/plan-limits";
 import { subDays, format } from "date-fns";
 
@@ -704,6 +705,13 @@ export default function SystemsPage() {
           </>
         )}
       </div>
+
+      {/* Habit Stacking section */}
+      {systems.length >= 2 && (
+        <div className="px-4 sm:px-6 pb-6 max-w-5xl mx-auto">
+          <HabitStackBuilder systems={systems} userId={user?.id ?? ""} />
+        </div>
+      )}
 
       {/* Delete confirmation */}
       <AlertDialog open={!!deleteSystemItem} onOpenChange={() => setDeleteSystemItem(undefined)}>

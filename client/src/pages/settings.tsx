@@ -19,12 +19,14 @@ import { getGoals } from "@/services/goals.service";
 import { getSystems } from "@/services/systems.service";
 import { getCheckins } from "@/services/checkins.service";
 import { getJournals } from "@/services/journal.service";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Loader2, Sun, Moon, Monitor, LogOut, User, Palette, Globe,
   Bell, Shield, Sparkles, Zap, Lock, CreditCard, Crown,
   BellRing, BellOff, Mic, ExternalLink, Download, Trash2,
   KeyRound, Camera, ChevronRight, Heart, CheckCircle2,
-  AlertTriangle, Target, BookOpen,
+  AlertTriangle, Target, BookOpen, Users, Gift, Calendar,
+  Snowflake, Copy, Share2, BarChart2, Languages,
 } from "lucide-react";
 import { STRIPE_CUSTOMER_PORTAL_URL } from "@/lib/stripe";
 import type { PlanTier } from "@/types/schema";
@@ -33,6 +35,11 @@ import { cn } from "@/lib/utils";
 import { FutureSelfAudioSetup, FutureSelfAudioSettings } from "@/components/future-self-audio";
 import { getPlanFeatures } from "@/lib/plan-limits";
 import { SiteLogo } from "@/components/site-logo";
+import { linkAccountabilityPartner, unlinkAccountabilityPartner } from "@/services/accountability.service";
+import { updateUser } from "@/services/user.service";
+import { generateReferralCode } from "@/services/public-profile.service";
+import { generateCalendarICS, downloadICS } from "@/lib/calendar-export";
+import { LANGUAGES, setLanguage, getLanguage, type Language } from "@/lib/i18n";
 
 const TIMEZONES = [
   "UTC",
@@ -50,13 +57,14 @@ const TIMEZONES = [
   "Australia/Melbourne", "Pacific/Auckland", "Pacific/Fiji",
 ];
 
-type TabId = "profile" | "appearance" | "notifications" | "audio" | "privacy" | "billing" | "account";
+type TabId = "profile" | "appearance" | "notifications" | "audio" | "social" | "privacy" | "billing" | "account";
 
 const TABS: { id: TabId; label: string; icon: any }[] = [
   { id: "profile",       label: "Profile",       icon: User },
   { id: "appearance",    label: "Appearance",    icon: Palette },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "audio",         label: "Audio",         icon: Mic },
+  { id: "social",        label: "Social",        icon: Users },
   { id: "privacy",       label: "Privacy",       icon: Shield },
   { id: "billing",       label: "Billing",       icon: CreditCard },
   { id: "account",       label: "Account",       icon: KeyRound },
@@ -127,6 +135,25 @@ export default function Settings() {
     playAfterMissed:  user?.futureAudioPlayAfterMissed  ?? true,
     autoplay:         user?.futureAudioAutoplay          ?? true,
     muted:            user?.futureAudioMuted             ?? false,
+  });
+
+  // New feature states
+  const [partnerEmail, setPartnerEmail] = useState("");
+  const [partnerLinking, setPartnerLinking] = useState(false);
+  const [publicProfile, setPublicProfile] = useState(user?.publicProfile ?? false);
+  const [weeklyReport, setWeeklyReport] = useState(user?.weeklyReportEnabled ?? false);
+  const [streakFreezeEnabled, setStreakFreezeEnabled] = useState((user?.streakFreezes ?? 0) > 0);
+  const [currentLang, setCurrentLang] = useState<Language>(getLanguage());
+  const [calendarSyncing, setCalendarSyncing] = useState(false);
+  const [weeklyReportSending, setWeeklyReportSending] = useState(false);
+  const qc = useQueryClient();
+
+  const referralCode = user?.referralCode ?? generateReferralCode(user?.id ?? "anon");
+
+  const { data: systemsForCalendar = [] } = useQuery({
+    queryKey: ["systems", user?.id ?? ""],
+    queryFn: () => getSystems(user?.id ?? ""),
+    enabled: !!user?.id,
   });
 
   // Dialogs
@@ -208,6 +235,100 @@ export default function Settings() {
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
+  };
+
+  const handleLinkPartner = async () => {
+    if (!partnerEmail.trim() || !user?.id) return;
+    setPartnerLinking(true);
+    try {
+      const result = await linkAccountabilityPartner(user.id, partnerEmail.trim());
+      if (result.success) {
+        toast({ title: "Partner linked!", description: result.message });
+        qc.invalidateQueries({ queryKey: ["user"] });
+        setPartnerEmail("");
+      } else {
+        toast({ title: "Could not link partner", description: result.message, variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setPartnerLinking(false);
+    }
+  };
+
+  const handleUnlinkPartner = async () => {
+    if (!user?.id) return;
+    try {
+      await unlinkAccountabilityPartner(user.id);
+      toast({ title: "Partner unlinked" });
+      qc.invalidateQueries({ queryKey: ["user"] });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleTogglePublicProfile = async (val: boolean) => {
+    setPublicProfile(val);
+    if (!user?.id) return;
+    try {
+      const code = referralCode;
+      await updateUser(user.id, { publicProfile: val, referralCode: code });
+      qc.invalidateQueries({ queryKey: ["user"] });
+      toast({ title: val ? "Public profile enabled!" : "Profile is now private." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleToggleWeeklyReport = async (val: boolean) => {
+    setWeeklyReport(val);
+    if (!user?.id) return;
+    try {
+      await updateUser(user.id, { weeklyReportEnabled: val });
+      qc.invalidateQueries({ queryKey: ["user"] });
+      toast({ title: val ? "Weekly reports enabled!" : "Weekly reports disabled." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleToggleStreakFreeze = async (val: boolean) => {
+    setStreakFreezeEnabled(val);
+    if (!user?.id) return;
+    try {
+      await updateUser(user.id, { streakFreezes: val ? 1 : 0 });
+      qc.invalidateQueries({ queryKey: ["user"] });
+      toast({ title: val ? "Streak freeze activated!" : "Streak freeze removed." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleLanguageChange = (lang: Language) => {
+    setCurrentLang(lang);
+    setLanguage(lang);
+    toast({ title: "Language updated!", description: "Refresh the page to see all changes." });
+  };
+
+  const handleCalendarSync = async () => {
+    setCalendarSyncing(true);
+    try {
+      const ics = generateCalendarICS(systemsForCalendar);
+      downloadICS(ics);
+      toast({ title: "Calendar file downloaded!", description: "Open the .ics file to import into your calendar app." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setCalendarSyncing(false);
+    }
+  };
+
+  const handleCopyReferralLink = () => {
+    if (!user?.id) return;
+    const link = `https://strivo.life/?ref=${referralCode}`;
+    navigator.clipboard.writeText(link).then(() => {
+      toast({ title: "Referral link copied!", description: "Share it with friends to invite them to Strivo." });
+    });
   };
 
   const handleSendPasswordReset = async () => {
@@ -553,6 +674,41 @@ export default function Settings() {
                     </Button>
                   </CardContent>
                 </Card>
+
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Languages className="w-4 h-4 text-primary" />
+                      <SectionTitle>Language</SectionTitle>
+                    </div>
+                    <p className="text-xs text-muted-foreground -mt-2">
+                      Choose your preferred display language for the Strivo interface.
+                    </p>
+                    <div className="grid grid-cols-3 gap-3">
+                      {LANGUAGES.map(lang => (
+                        <button
+                          key={lang.code}
+                          onClick={() => handleLanguageChange(lang.code)}
+                          data-testid={`button-lang-${lang.code}`}
+                          className={cn(
+                            "relative flex flex-col items-center gap-1.5 p-4 rounded-xl border transition-all",
+                            currentLang === lang.code
+                              ? "border-primary bg-primary/10 text-foreground shadow-sm"
+                              : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
+                          )}
+                        >
+                          {currentLang === lang.code && (
+                            <div className="absolute top-2 right-2">
+                              <div className="w-2 h-2 rounded-full bg-primary" />
+                            </div>
+                          )}
+                          <span className="text-lg">{lang.flag}</span>
+                          <span className="text-xs font-semibold">{lang.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
 
@@ -650,6 +806,32 @@ export default function Settings() {
                       </Button>
                     </div>
                   )}
+
+                  <Separator className="my-2" />
+
+                  <div className="flex items-center gap-2 mb-1">
+                    <Snowflake className="w-4 h-4 text-sky-400" />
+                    <p className="text-sm font-semibold">Streak Freeze</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                    Activate a streak freeze to protect your streak on days you have to skip. It absorbs one missed day without breaking your record.
+                  </p>
+                  <SettingRow
+                    label="Streak freeze active"
+                    description={streakFreezeEnabled ? "Your next missed day won't break your streak." : "Enable to protect your streak on one missed day."}
+                  >
+                    <Switch
+                      checked={streakFreezeEnabled}
+                      onCheckedChange={handleToggleStreakFreeze}
+                      data-testid="switch-streak-freeze"
+                    />
+                  </SettingRow>
+                  {streakFreezeEnabled && (
+                    <div className="flex items-center gap-2 mt-1 text-xs text-sky-500 font-medium">
+                      <Snowflake className="w-3.5 h-3.5" />
+                      Streak freeze armed — you're protected for 1 missed day
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -704,6 +886,182 @@ export default function Settings() {
                     </Card>
                   </>
                 )}
+              </div>
+            )}
+
+            {/* ── SOCIAL TAB ── */}
+            {activeTab === "social" && (
+              <div className="space-y-6">
+
+                {/* Accountability Partner */}
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Users className="w-4 h-4 text-primary" />
+                      <SectionTitle>Accountability Partner</SectionTitle>
+                    </div>
+                    <p className="text-xs text-muted-foreground -mt-2 leading-relaxed">
+                      Link up with a friend who also uses Strivo. You'll stay visible to each other and be more likely to show up.
+                    </p>
+                    {user?.accountabilityPartnerName ? (
+                      <div className="flex items-center gap-3 p-4 rounded-xl bg-chart-3/8 border border-chart-3/25">
+                        <div className="w-10 h-10 rounded-xl bg-chart-3/20 flex items-center justify-center flex-shrink-0 text-lg font-bold text-chart-3">
+                          {user.accountabilityPartnerName[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm">{user.accountabilityPartnerName}</p>
+                          <p className="text-xs text-muted-foreground">{user.accountabilityPartnerEmail}</p>
+                          <p className="text-xs text-chart-3 font-medium mt-0.5">Active accountability partner</p>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={handleUnlinkPartner} data-testid="button-unlink-partner">
+                          Remove
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-xs text-muted-foreground">Enter the email address of a friend who is already on Strivo:</p>
+                        <div className="flex gap-2">
+                          <Input
+                            type="email"
+                            placeholder="friend@example.com"
+                            value={partnerEmail}
+                            onChange={e => setPartnerEmail(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && handleLinkPartner()}
+                            data-testid="input-partner-email"
+                          />
+                          <Button
+                            onClick={handleLinkPartner}
+                            disabled={partnerLinking || !partnerEmail.trim()}
+                            data-testid="button-link-partner"
+                          >
+                            {partnerLinking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Link"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Referral Program */}
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Gift className="w-4 h-4 text-primary" />
+                      <SectionTitle>Refer a Friend</SectionTitle>
+                    </div>
+                    <p className="text-xs text-muted-foreground -mt-2 leading-relaxed">
+                      Share Strivo with friends. When they sign up through your link, you both get credited!
+                    </p>
+                    <div className="p-4 rounded-xl bg-muted/50 border border-border/60 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Your referral code</p>
+                          <p className="font-bold text-lg tracking-widest">{referralCode}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <p className="text-xs text-muted-foreground">Total referrals</p>
+                          <p className="font-bold text-2xl text-primary">{user?.referralCount ?? 0}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={handleCopyReferralLink} className="gap-1.5 flex-1" data-testid="button-copy-referral">
+                          <Copy className="w-3.5 h-3.5" /> Copy Link
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 flex-1"
+                          onClick={() => {
+                            const link = `https://strivo.life/?ref=${referralCode}`;
+                            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I've been building habits with @strivohq — it's changing how I think about consistency. Try it free: ${link}`)}`);
+                          }}
+                          data-testid="button-share-twitter"
+                        >
+                          <Share2 className="w-3.5 h-3.5" /> Share on X
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Public Profile */}
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe className="w-4 h-4 text-primary" />
+                      <SectionTitle>Public Profile</SectionTitle>
+                    </div>
+                    <SettingRow
+                      label="Enable public profile"
+                      description="Share your habit progress with anyone via a public link — no login required."
+                    >
+                      <Switch
+                        checked={publicProfile}
+                        onCheckedChange={handleTogglePublicProfile}
+                        data-testid="switch-public-profile"
+                      />
+                    </SettingRow>
+                    {publicProfile && (
+                      <div className="pt-2 space-y-2">
+                        <p className="text-xs text-muted-foreground">Your public profile link:</p>
+                        <div className="flex gap-2">
+                          <Input
+                            readOnly
+                            value={`https://strivo.life/profile/${referralCode}`}
+                            className="text-xs"
+                            data-testid="input-public-profile-link"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`https://strivo.life/profile/${referralCode}`);
+                              toast({ title: "Profile link copied!" });
+                            }}
+                            data-testid="button-copy-profile-link"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                        <Link href={`/profile/${referralCode}`} target="_blank">
+                          <Button size="sm" variant="ghost" className="gap-1.5 text-xs">
+                            <ExternalLink className="w-3 h-3" /> Preview your profile
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Weekly Progress Report */}
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BarChart2 className="w-4 h-4 text-primary" />
+                      <SectionTitle>Weekly Progress Report</SectionTitle>
+                    </div>
+                    <SettingRow
+                      label="Weekly email summary"
+                      description="Receive a weekly email every Monday with your completion rate, streaks, and wins."
+                    >
+                      <Switch
+                        checked={weeklyReport}
+                        onCheckedChange={handleToggleWeeklyReport}
+                        data-testid="switch-weekly-report"
+                      />
+                    </SettingRow>
+                    {weeklyReport && (
+                      <p className="text-xs text-chart-3 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Weekly reports enabled — sent to {user?.email}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Note: You'll need to configure EmailJS templates to enable email delivery. See <Link href="/support" className="underline">support</Link> for setup instructions.
+                    </p>
+                  </CardContent>
+                </Card>
+
               </div>
             )}
 

@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, Target, Zap, CheckSquare, BarChart2, BookOpen, Settings,
-  Sparkles, LogOut, LayoutGrid, Plus, Calendar, Bot, Users,
+  Sparkles, LogOut, LayoutGrid, Plus, Calendar, Bot, Users, Trophy,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -26,6 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NotificationsCenter } from "@/components/notifications-center";
 
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
@@ -85,6 +86,12 @@ const navItems = [
     url: "/workspace",
     icon: Users,
     hint: "Collaborate with your team",
+  },
+  {
+    title: "Achievements",
+    url: "/achievements",
+    icon: Trophy,
+    hint: "Your badges and milestones",
   },
 ];
 
@@ -281,6 +288,7 @@ export function AppSidebar() {
             <p className="text-xs text-muted-foreground truncate leading-tight">{user?.email}</p>
           </div>
           <div className="flex gap-1">
+            <NotificationsCenter />
             <Link href="/settings">
               <Button size="icon" variant="ghost" className="w-7 h-7" data-testid="nav-settings" title="Settings">
                 <Settings className="w-3.5 h-3.5" />

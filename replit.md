@@ -3,6 +3,22 @@
 ## Overview
 Strivo is a React + Firebase web application that helps users turn goals into daily systems they can follow. It allows users to create goals, break them into repeatable daily actions, track progress, and stay consistent.
 
+## Features Implemented (All 15)
+**Pre-existing (4):** Google Login, CSV/JSON Export, Calendar Heat Map in Check-ins, Daily Reminders
+
+**Newly Added (11):**
+1. **Achievements & Badges** — 23 achievements with XP tiers; `client/src/lib/achievements.ts`, `client/src/components/achievements-panel.tsx`, `client/src/pages/achievements.tsx` (routed `/achievements`)
+2. **Streak Freeze** — Toggle in Settings → Notifications tab; saves `streakFreezes` field on User in Firestore
+3. **In-App Notifications Center** — Bell icon in sidebar with popover; `client/src/components/notifications-center.tsx`, `client/src/services/notifications.service.ts`
+4. **Focus Timer (Pomodoro)** — 25/5/15 min modes; `client/src/components/focus-timer.tsx`; launched from "Focus" button in Check-ins header
+5. **Public Profile** — Toggle in Settings → Social tab; shareable URL `/profile/:code`; `client/src/pages/public-profile.tsx`, `client/src/services/public-profile.service.ts`
+6. **Accountability Partner** — Link by email in Settings → Social tab; `client/src/services/accountability.service.ts`
+7. **Referral Program** — Referral code + copy/share in Settings → Social tab; deterministic code from userId
+8. **Google Calendar Sync (.ics)** — Download .ics of all systems; `client/src/lib/calendar-export.ts`; button in Settings → Social tab
+9. **Weekly Email Progress Report** — Toggle in Settings → Social tab; stores `weeklyReportEnabled` on User
+10. **Habit Stacking** — Drag-to-order systems; `client/src/components/habit-stack-builder.tsx`; appears in Systems page when user has 2+ systems
+11. **Multi-language Support (EN/ES/FR)** — Language switcher in Settings → Appearance tab; `client/src/lib/i18n.ts` with translations and localStorage persistence
+
 ## Deployment Status
 - **Deployment target**: Static site (`npm run build` → `dist/`)
 - **Production build**: Verified working (3062+ modules, ~558KB gzip)

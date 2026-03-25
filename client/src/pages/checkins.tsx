@@ -19,8 +19,9 @@ import {
   CheckSquare, Check, Minus, X, Flame, MessageSquare,
   ChevronDown, ChevronUp, History, CalendarDays, Grid3x3, Trophy,
   ArrowRight, ClipboardList, Sparkles, RefreshCw, Zap, Target,
-  ChevronLeft, ChevronRight, TrendingUp, Star, Award,
+  ChevronLeft, ChevronRight, TrendingUp, Star, Award, Timer,
 } from "lucide-react";
+import { FocusTimer } from "@/components/focus-timer";
 import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
@@ -1150,6 +1151,7 @@ export default function Checkins() {
   const today  = getTodayKey();
 
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showFocusTimer, setShowFocusTimer] = useState(false);
   const prevPerfect = useRef(false);
 
   const { data: systems = [], isLoading: systemsLoading } = useQuery<System[]>({
@@ -1200,6 +1202,9 @@ export default function Checkins() {
     <div className="min-h-screen bg-background">
       <CelebrationOverlay show={showCelebration} onDismiss={() => setShowCelebration(false)} />
 
+      {/* Focus Timer dialog */}
+      <FocusTimer open={showFocusTimer} onClose={() => setShowFocusTimer(false)} />
+
       {/* ── Hero Header ── */}
       <div className="relative overflow-hidden gradient-brand text-white">
         {/* Decorative blobs */}
@@ -1214,6 +1219,15 @@ export default function Checkins() {
               <div className="flex items-center gap-2 mb-1">
                 <CheckSquare className="w-4 h-4 text-white/70 flex-shrink-0" />
                 <p className="text-white/70 text-xs font-medium tracking-wide uppercase">Daily Check-ins</p>
+                <button
+                  onClick={() => setShowFocusTimer(v => !v)}
+                  title="Focus Timer"
+                  data-testid="button-focus-timer-toggle"
+                  className="ml-1 flex items-center gap-1 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg px-2 py-0.5 text-[10px] font-medium transition-all"
+                >
+                  <Timer className="w-3 h-3" />
+                  Focus
+                </button>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight truncate">
                 {format(new Date(), "EEEE")}
