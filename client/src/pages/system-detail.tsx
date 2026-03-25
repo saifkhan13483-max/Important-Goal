@@ -16,13 +16,16 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Zap, Target, Clock, CheckSquare, Trophy, ShieldCheck, Brain, Heart, Repeat,
   MoreVertical, Pencil, Pause, Play, Copy, Trash2, ExternalLink, Activity, Flame, CalendarDays,
+  TrendingDown, TrendingUp, BarChart2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { format, subDays } from "date-fns";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 const frequencyLabels: Record<string, string> = {
-  daily: "Daily", weekdays: "Weekdays", weekends: "Weekends", weekly: "Weekly",
+  daily: "Every day", weekdays: "Weekdays", weekends: "Weekends", weekly: "Once a week",
+  "2x-week": "2× per week", "3x-week": "3× per week", "4x-week": "4× per week", "5x-week": "5× per week",
 };
 
 const timeLabels: Record<string, string> = {
@@ -137,6 +140,131 @@ function ChainCalendar({ checkins }: { checkins: Checkin[] }) {
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-chart-4/70 inline-block" /> Partial</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-muted-foreground/20 inline-block" /> Skipped</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-muted/40 border inline-block" /> None</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Stats Summary ────────────────────────────────────────────── */
+function StatsSummary({ checkins }: { checkins: Checkin[] }) {
+  const stats = useMemo(() => {
+    const total = checkins.length;
+    const done = checkins.filter(c => c.status === "done").length;
+    const partial = checkins.filter(c => c.status === "partial").length;
+    const missed = checkins.filter(c => c.status === "missed" || c.status === "skipped").length;
+    const rate = total > 0 ? Math.round((done / total) * 100) : 0;
+    const withDiff = checkins.filter(c => c.difficulty != null);
+    const avgDiff = withDiff.length > 0 ? (withDiff.reduce((s, c) => s + (c.difficulty ?? 3), 0) / withDiff.length).toFixed(1) : null;
+    const withNote = checkins.filter(c => c.note && c.note.length > 0).length;
+    return { total, done, partial, missed, rate, avgDiff, withNote };
+  }, [checkins]);
+
+  if (checkins.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+          <BarChart2 className="w-4 h-4" />
+          All-Time Stats
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "Completion Rate", value: `${stats.rate}%`, color: "text-chart-3" },
+            { label: "Total Done", value: stats.done, color: "text-primary" },
+            { label: "Partial Days", value: stats.partial, color: "text-chart-4" },
+            { label: "Notes Added", value: stats.withNote, color: "text-chart-2" },
+          ].map(s => (
+            <div key={s.label} className="rounded-xl bg-muted/40 p-3 text-center">
+              <p className={`text-2xl font-extrabold ${s.color}`}>{s.value}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+        {stats.avgDiff && (
+          <div className="mt-3 p-3 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Activity className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold">Avg Difficulty Rating</p>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-bold text-foreground">{stats.avgDiff}/5</span>
+                {parseFloat(stats.avgDiff) <= 2 ? " — Getting easier! Great progress." : parseFloat(stats.avgDiff) >= 4 ? " — Tough habit. Consider simplifying." : " — Balanced effort."}
+              </p>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Difficulty Trend Chart ────────────────────────────────────── */
+function DifficultyTrend({ checkins }: { checkins: Checkin[] }) {
+  const data = useMemo(() => {
+    const withRating = checkins
+      .filter(c => c.difficulty != null)
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+      .slice(-30);
+
+    return withRating.map(c => ({
+      date: c.dateKey.slice(5), // MM-DD
+      difficulty: c.difficulty,
+      status: c.status,
+    }));
+  }, [checkins]);
+
+  if (data.length < 3) return null;
+
+  const avg = data.reduce((s, d) => s + (d.difficulty ?? 0), 0) / data.length;
+  const trend = data.length >= 4
+    ? (data[data.length - 1].difficulty ?? 0) - (data[0].difficulty ?? 0)
+    : 0;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            Difficulty Trend · Last {data.length} entries
+          </CardTitle>
+          <div className={cn("flex items-center gap-1 text-xs font-semibold", trend < 0 ? "text-chart-3" : trend > 0 ? "text-chart-4" : "text-muted-foreground")}>
+            {trend < -0.3 ? <TrendingDown className="w-3.5 h-3.5" /> : trend > 0.3 ? <TrendingUp className="w-3.5 h-3.5" /> : null}
+            {trend < -0.3 ? "Getting easier" : trend > 0.3 ? "Getting harder" : "Steady"}
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          As you stay consistent, this habit should feel easier over time.
+          {avg <= 2 ? " It already does — great sign." : avg >= 4 ? " Still feels hard — consider simplifying your minimum action." : ""}
+        </p>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={120}>
+          <LineChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+            <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+            <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 9 }} tickLine={false} axisLine={false} />
+            <Tooltip
+              contentStyle={{ fontSize: 11, borderRadius: 8 }}
+              formatter={(v: number) => [`${v}/5`, "Difficulty"]}
+              labelFormatter={(l) => `Date: ${l}`}
+            />
+            <Line
+              type="monotone" dataKey="difficulty" stroke="hsl(var(--primary))"
+              strokeWidth={2} dot={{ r: 3, fill: "hsl(var(--primary))" }}
+              activeDot={{ r: 5 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+        <div className="flex items-center justify-between mt-2 text-[10px] text-muted-foreground">
+          <span>1 = Very easy</span>
+          <span>Avg: <span className="font-bold text-foreground">{avg.toFixed(1)}/5</span></span>
+          <span>5 = Very hard</span>
         </div>
       </CardContent>
     </Card>
@@ -367,7 +495,11 @@ export default function SystemDetailPage() {
         </CardContent>
       </Card>
 
+      <StatsSummary checkins={systemCheckins} />
+
       <ChainCalendar checkins={systemCheckins} />
+
+      <DifficultyTrend checkins={systemCheckins} />
 
       <div className="flex gap-3">
         <Link href={`/systems/${id}/edit`} className="flex-1">

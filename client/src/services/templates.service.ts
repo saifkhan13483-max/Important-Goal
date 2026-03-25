@@ -1,8 +1,8 @@
 import {
-  collection, getDocs, addDoc, query, where,
+  collection, getDocs, addDoc, getDoc, query, where, updateDoc, doc, increment, orderBy, limit,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Template } from "@/types/schema";
+import type { Template, CommunityTemplate } from "@/types/schema";
 
 export const STATIC_TEMPLATES: Template[] = [
   {
@@ -733,4 +733,45 @@ export async function seedPublicTemplates(): Promise<void> {
   } catch {
     // Silently ignore — static data is the fallback
   }
+}
+
+/* ─── Community Templates ─────────────────────────────────────────────────── */
+
+const communityCol = () => collection(db, "community_templates");
+
+export async function getCommunityTemplates(limitCount = 50): Promise<CommunityTemplate[]> {
+  try {
+    const q = query(communityCol(), orderBy("upvotes", "desc"), limit(limitCount));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as CommunityTemplate));
+  } catch {
+    return [];
+  }
+}
+
+export async function publishCommunityTemplate(
+  authorId: string,
+  authorName: string,
+  data: Omit<CommunityTemplate, "id" | "authorId" | "authorName" | "upvotes" | "usedCount" | "createdAt">,
+): Promise<CommunityTemplate> {
+  const now = new Date().toISOString();
+  const ref = await addDoc(communityCol(), {
+    ...data,
+    authorId,
+    authorName,
+    upvotes: 0,
+    usedCount: 0,
+    createdAt: now,
+  });
+  return { id: ref.id, authorId, authorName, upvotes: 0, usedCount: 0, createdAt: now, ...data };
+}
+
+export async function upvoteCommunityTemplate(templateId: string): Promise<void> {
+  await updateDoc(doc(db, "community_templates", templateId), { upvotes: increment(1) });
+}
+
+export async function incrementCommunityTemplateUsed(templateId: string): Promise<void> {
+  try {
+    await updateDoc(doc(db, "community_templates", templateId), { usedCount: increment(1) });
+  } catch {}
 }

@@ -804,9 +804,14 @@ export default function SystemBuilderPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {["daily", "weekdays", "weekends", "weekly"].map(f => (
-                        <SelectItem key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</SelectItem>
-                      ))}
+                      <SelectItem value="daily">Every day</SelectItem>
+                      <SelectItem value="weekdays">Weekdays only</SelectItem>
+                      <SelectItem value="weekends">Weekends only</SelectItem>
+                      <SelectItem value="2x-week">2× per week</SelectItem>
+                      <SelectItem value="3x-week">3× per week</SelectItem>
+                      <SelectItem value="4x-week">4× per week</SelectItem>
+                      <SelectItem value="5x-week">5× per week</SelectItem>
+                      <SelectItem value="weekly">Once a week</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

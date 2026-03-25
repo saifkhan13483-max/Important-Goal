@@ -1,21 +1,24 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { getPublicTemplates } from "@/services/templates.service";
+import { getPublicTemplates, getCommunityTemplates, publishCommunityTemplate, upvoteCommunityTemplate, incrementCommunityTemplateUsed } from "@/services/templates.service";
 import { getSystems } from "@/services/systems.service";
 import { useAppStore } from "@/store/auth.store";
-import type { Template } from "@/types/schema";
+import type { Template, CommunityTemplate } from "@/types/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import {
   Search, LayoutGrid, Brain, Zap, CheckSquare, Trophy, ShieldCheck,
   BookOpen, Sparkles, ArrowRight, Star, Lock, X, Dumbbell, Moon,
   Briefcase, Timer, PenLine, Sunset, Eye, Heart, Droplets, Languages,
-  DollarSign, Salad, Lightbulb, Users, Sun, ListChecks,
+  DollarSign, Salad, Lightbulb, Users, Sun, ListChecks, ThumbsUp, Share2, Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
@@ -268,12 +271,46 @@ export default function TemplatesPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [activeTab, setActiveTab] = useState<"official" | "community">("official");
+  const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [publishForm, setPublishForm] = useState({ title: "", category: "fitness", description: "", minimumAction: "", identityStatement: "" });
+  const { toast } = useToast();
+  const qc = useQueryClient();
 
   const features = getPlanFeatures(user?.plan);
 
   const { data: templates = [], isLoading } = useQuery<Template[]>({
     queryKey: ["templates"],
     queryFn: () => getPublicTemplates(),
+  });
+
+  const { data: communityTemplates = [], isLoading: communityLoading } = useQuery<CommunityTemplate[]>({
+    queryKey: ["community-templates"],
+    queryFn: () => getCommunityTemplates(),
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: () => publishCommunityTemplate(userId, user?.name || "Anonymous", {
+      title: publishForm.title,
+      category: publishForm.category,
+      description: publishForm.description || null,
+      minimumAction: publishForm.minimumAction || null,
+      identityStatement: publishForm.identityStatement || null,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["community-templates"] });
+      setShowPublishDialog(false);
+      setPublishForm({ title: "", category: "fitness", description: "", minimumAction: "", identityStatement: "" });
+      toast({ title: "Template published!", description: "Your template is now visible to the community." });
+    },
+    onError: () => {
+      toast({ title: "Couldn't publish", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  const upvoteMutation = useMutation({
+    mutationFn: (id: string) => upvoteCommunityTemplate(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["community-templates"] }); },
   });
 
   const { data: systems = [] } = useQuery({
@@ -352,6 +389,101 @@ export default function TemplatesPage() {
       </div>
 
       <div className="px-4 sm:px-6 py-5 max-w-5xl mx-auto space-y-5">
+        {/* Tab switcher */}
+        <div className="flex items-center gap-2 border border-border rounded-xl p-1 w-fit">
+          {([["official", "✨ Curated"], ["community", "🌍 Community"]] as const).map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                activeTab === tab ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+              data-testid={`tab-templates-${tab}`}
+            >{label}</button>
+          ))}
+        </div>
+
+        {/* Community tab content */}
+        {activeTab === "community" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold">Community Templates</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Habit systems shared by other Strivo users. Use one or share your own.</p>
+              </div>
+              {userId && (
+                <Button size="sm" className="gap-1.5 flex-shrink-0" onClick={() => setShowPublishDialog(true)} data-testid="button-publish-template">
+                  <Share2 className="w-3.5 h-3.5" />
+                  Share Template
+                </Button>
+              )}
+            </div>
+
+            {communityLoading ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1,2,3].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}
+              </div>
+            ) : communityTemplates.length === 0 ? (
+              <div className="text-center py-16">
+                <Globe className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-sm font-medium">No community templates yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Be the first to share a habit system with the community.</p>
+                {userId && (
+                  <Button size="sm" className="mt-4 gap-1.5" onClick={() => setShowPublishDialog(true)}>
+                    <Share2 className="w-3.5 h-3.5" /> Share Your First Template
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {communityTemplates.map(ct => (
+                  <Card key={ct.id} className="flex flex-col hover-elevate border">
+                    <CardContent className="p-4 flex flex-col flex-1">
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Globe className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm leading-snug">{ct.title}</h3>
+                          <p className="text-[10px] text-muted-foreground">by {ct.authorName}</p>
+                        </div>
+                      </div>
+                      {ct.description && <p className="text-xs text-muted-foreground leading-relaxed mb-3 line-clamp-2 flex-1">{ct.description}</p>}
+                      {ct.minimumAction && (
+                        <div className="flex items-start gap-2 bg-chart-3/5 border border-chart-3/15 rounded-lg px-2.5 py-2 mb-3">
+                          <CheckSquare className="w-3 h-3 text-chart-3 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs">{ct.minimumAction}</p>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between gap-2 mt-auto">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <button
+                            onClick={() => upvoteMutation.mutate(ct.id)}
+                            disabled={upvoteMutation.isPending}
+                            className="flex items-center gap-1 hover:text-primary transition-colors"
+                          ><ThumbsUp className="w-3 h-3" /> {ct.upvotes}</button>
+                          <span>·</span>
+                          <span>{ct.usedCount} used</span>
+                        </div>
+                        <Button size="sm" variant="outline" className="gap-1 text-xs h-7 px-2.5" onClick={() => {
+                          incrementCommunityTemplateUsed(ct.id).catch(() => {});
+                          navigate(`/systems/new?communityTitle=${encodeURIComponent(ct.title)}&minimumAction=${encodeURIComponent(ct.minimumAction || "")}&identity=${encodeURIComponent(ct.identityStatement || "")}`);
+                        }}>
+                          Use <ArrowRight className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Official tab content - only render when on official tab */}
+        {activeTab === "official" && (<>
+
         {/* First-time user banner */}
         {isFirstTime && !isLoading && (
           <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20" data-testid="banner-first-time">
@@ -523,7 +655,57 @@ export default function TemplatesPage() {
             )}
           </>
         )}
+        </>)}
+
       </div>
+
+      {/* Publish Community Template Dialog */}
+      <Dialog open={showPublishDialog} onOpenChange={setShowPublishDialog}>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Share2 className="w-4 h-4 text-primary" /> Share a Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>Title *</Label>
+              <Input placeholder="e.g. Morning Cold Shower Habit" value={publishForm.title} onChange={e => setPublishForm(f => ({ ...f, title: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Category</Label>
+              <select
+                value={publishForm.category}
+                onChange={e => setPublishForm(f => ({ ...f, category: e.target.value }))}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
+                {ALL_CATEGORIES.filter(c => c.value !== "all" && c.value !== "beginner").map(c => (
+                  <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Textarea placeholder="What does this habit system help with?" value={publishForm.description} onChange={e => setPublishForm(f => ({ ...f, description: e.target.value }))} rows={2} className="text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Minimum Action</Label>
+              <Input placeholder="e.g. Do 2 push-ups" value={publishForm.minimumAction} onChange={e => setPublishForm(f => ({ ...f, minimumAction: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Identity Statement</Label>
+              <Input placeholder="e.g. I am someone who..." value={publishForm.identityStatement} onChange={e => setPublishForm(f => ({ ...f, identityStatement: e.target.value }))} />
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <Button variant="outline" onClick={() => setShowPublishDialog(false)}>Cancel</Button>
+              <Button
+                onClick={() => publishMutation.mutate()}
+                disabled={!publishForm.title.trim() || publishMutation.isPending}
+              >
+                {publishMutation.isPending ? "Publishing…" : "Publish Template"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Template Detail Dialog */}
       <Dialog open={!!selectedTemplate} onOpenChange={open => !open && setSelectedTemplate(null)}>

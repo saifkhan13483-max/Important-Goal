@@ -22,8 +22,9 @@ import {
   CheckSquare, Check, Minus, X, Flame, MessageSquare,
   ChevronDown, ChevronUp, History, CalendarDays, Grid3x3, Trophy,
   ArrowRight, ClipboardList, Sparkles, RefreshCw, Zap, Target,
-  ChevronLeft, ChevronRight, TrendingUp, Star, Award, Timer, Loader2,
+  ChevronLeft, ChevronRight, TrendingUp, Star, Award, Timer, Loader2, Camera, ImageIcon,
 } from "lucide-react";
+import { uploadImage } from "@/lib/cloudinary";
 import { FocusTimer } from "@/components/focus-timer";
 import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -42,19 +43,28 @@ function toLocalDateKey(date: Date): string {
 /* ─── Frequency scheduling helper ──────────────────────────────────── */
 function isScheduledToday(system: System): boolean {
   const freq = system.frequency ?? "daily";
-  if (freq === "daily" || freq === "weekly") return true;
+  if (freq === "daily") return true;
   const dow = new Date().getDay(); // 0=Sun, 6=Sat
   if (freq === "weekdays") return dow >= 1 && dow <= 5;
   if (freq === "weekends") return dow === 0 || dow === 6;
+  if (freq === "weekly") return dow === 1; // Mondays
+  if (freq === "2x-week") return dow === 1 || dow === 4; // Mon + Thu
+  if (freq === "3x-week") return dow === 1 || dow === 3 || dow === 5; // Mon + Wed + Fri
+  if (freq === "4x-week") return dow >= 1 && dow <= 4; // Mon–Thu
+  if (freq === "5x-week") return dow >= 1 && dow <= 5; // Mon–Fri (same as weekdays)
   return true;
 }
 
 function frequencyLabel(freq: string | undefined): string {
   switch (freq) {
-    case "weekdays": return "Weekdays only";
-    case "weekends": return "Weekends only";
-    case "weekly":   return "Weekly";
-    default:         return "Daily";
+    case "weekdays":  return "Weekdays only";
+    case "weekends":  return "Weekends only";
+    case "weekly":    return "Once a week";
+    case "2x-week":   return "2× per week";
+    case "3x-week":   return "3× per week";
+    case "4x-week":   return "4× per week";
+    case "5x-week":   return "5× per week";
+    default:          return "Daily";
   }
 }
 
@@ -524,6 +534,8 @@ function SystemCheckinCard({
   const [moodBefore, setMoodBefore] = useState<number | null>(existingCheckin?.moodBefore ?? null);
   const [moodAfter, setMoodAfter] = useState<number | null>(existingCheckin?.moodAfter ?? null);
   const [difficulty, setDifficulty] = useState<number | null>(existingCheckin?.difficulty ?? null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(existingCheckin?.photoUrl ?? null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [justDone, setJustDone] = useState(false);
   const [showRitual, setShowRitual] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
@@ -532,6 +544,29 @@ function SystemCheckinCard({
 
   const current = existingCheckin?.status as keyof typeof STATUS_CONFIG | undefined;
 
+  const handlePhotoUpload = useCallback(async (file: File) => {
+    setUploadingPhoto(true);
+    try {
+      const url = await uploadImage(file, "strivo/checkins");
+      setPhotoUrl(url);
+      if (current) {
+        await upsertCheckin(userId, system.id, today, {
+          status: current, photoUrl: url,
+          note: note || undefined,
+          moodBefore: moodBefore ?? undefined,
+          moodAfter: moodAfter ?? undefined,
+          difficulty: difficulty ?? undefined,
+        });
+        qc.invalidateQueries({ queryKey: ["checkins", userId, today] });
+        toast({ title: "Photo saved!" });
+      }
+    } catch {
+      toast({ title: "Upload failed", description: "Couldn't upload photo. Try again.", variant: "destructive" });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }, [current, difficulty, moodAfter, moodBefore, note, qc, system.id, today, toast, userId]);
+
   const checkInMutation = useMutation({
     mutationFn: (status: string) =>
       upsertCheckin(userId, system.id, today, {
@@ -539,6 +574,7 @@ function SystemCheckinCard({
         moodBefore: moodBefore ?? undefined,
         moodAfter: moodAfter ?? undefined,
         difficulty: difficulty ?? undefined,
+        photoUrl: photoUrl ?? undefined,
       }),
     onSuccess: (_, status) => {
       qc.invalidateQueries({ queryKey: ["checkins", userId, today] });
@@ -573,6 +609,7 @@ function SystemCheckinCard({
         moodBefore: moodBefore ?? undefined,
         moodAfter: moodAfter ?? undefined,
         difficulty: difficulty ?? undefined,
+        photoUrl: photoUrl ?? undefined,
       });
     },
     onSuccess: () => {
@@ -738,6 +775,30 @@ function SystemCheckinCard({
             </div>
             <RatingRow label="Difficulty" value={difficulty} onChange={setDifficulty} />
             <Textarea placeholder="How did it go? What did you notice?" value={note} onChange={e => setNote(e.target.value)} rows={2} className="text-sm rounded-xl" data-testid={`input-checkin-note-${system.id}`} />
+
+            {/* Progress photo */}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5"><Camera className="w-3.5 h-3.5" /> Progress photo <span className="text-[10px] opacity-60">(optional)</span></p>
+              {photoUrl ? (
+                <div className="relative group">
+                  <img src={photoUrl} alt="Progress" className="w-full max-h-48 object-cover rounded-xl border border-border" />
+                  <button
+                    onClick={() => setPhotoUrl(null)}
+                    className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  ><X className="w-3 h-3" /></button>
+                </div>
+              ) : (
+                <label className={cn(
+                  "flex items-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-border bg-muted/30 text-xs text-muted-foreground cursor-pointer hover:border-primary/40 hover:bg-muted/50 transition-all",
+                  uploadingPhoto && "opacity-50 pointer-events-none"
+                )}>
+                  {uploadingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                  {uploadingPhoto ? "Uploading…" : "Tap to add a photo"}
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f); e.target.value = ""; }} />
+                </label>
+              )}
+            </div>
+
             {current ? (
               <Button size="sm" variant="outline" onClick={() => saveNotesMutation.mutate()} disabled={saveNotesMutation.isPending} className="rounded-xl" data-testid={`button-save-note-${system.id}`}>
                 {saveNotesMutation.isPending ? "Saving…" : "Save note & mood"}

@@ -92,6 +92,7 @@ export interface Checkin {
   moodAfter?: number | null;
   difficulty?: number | null;
   tomorrowIntention?: string | null;
+  photoUrl?: string | null;
   createdAt?: string | null;
 }
 
@@ -122,6 +123,23 @@ export interface Template {
   fallbackPlan?: string | null;
   isPublic?: boolean | null;
   isPremium?: boolean | null;
+}
+
+export interface CommunityTemplate {
+  id: string;
+  authorId: string;
+  authorName: string;
+  title: string;
+  category: string;
+  description?: string | null;
+  identityStatement?: string | null;
+  triggerStatement?: string | null;
+  minimumAction?: string | null;
+  rewardPlan?: string | null;
+  fallbackPlan?: string | null;
+  upvotes: number;
+  usedCount: number;
+  createdAt: string;
 }
 
 export interface WorkspaceMember {

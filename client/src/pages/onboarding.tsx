@@ -11,6 +11,21 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/auth.store";
 import { FutureSelfAudioSetup } from "@/components/future-self-audio";
 
+const GOAL_AREAS = [
+  { value: "fitness",     label: "Get Fit",          emoji: "💪", identity: "fit",        minAction: "Do 5 push-ups or walk for 5 minutes" },
+  { value: "sleep",       label: "Sleep Better",     emoji: "😴", identity: "calm",       minAction: "Be in bed with phone away by 10:30 PM" },
+  { value: "focus",       label: "Be More Focused",  emoji: "🎯", identity: "focused",    minAction: "Work for 25 minutes without checking my phone" },
+  { value: "read",        label: "Read More",        emoji: "📚", identity: "creative",   minAction: "Read 1 page before checking social media" },
+  { value: "health",      label: "Eat Healthier",    emoji: "🥗", identity: "disciplined",minAction: "Drink 2 glasses of water before each meal" },
+  { value: "creative",    label: "Create More",      emoji: "✨", identity: "creative",   minAction: "Spend 10 minutes on my creative project" },
+  { value: "learn",       label: "Learn Something",  emoji: "🧠", identity: "disciplined",minAction: "Study or practice for 15 minutes" },
+  { value: "meditate",    label: "Reduce Stress",    emoji: "🌿", identity: "calm",       minAction: "Take 5 deep breaths or sit quietly for 2 minutes" },
+  { value: "journal",     label: "Reflect Daily",    emoji: "📝", identity: "consistent", minAction: "Write 3 sentences about my day" },
+  { value: "save",        label: "Save Money",       emoji: "💰", identity: "disciplined",minAction: "Track one expense or skip one unnecessary purchase" },
+  { value: "connect",     label: "Build Relationships",emoji: "❤️",identity: "consistent",minAction: "Send one message to someone I care about" },
+  { value: "other",       label: "Something Else",   emoji: "🔁", identity: "consistent", minAction: "" },
+] as const;
+
 const CONFETTI_COLORS = [
   "#a78bfa", "#818cf8", "#34d399", "#fbbf24", "#f472b6",
   "#60a5fa", "#fb923c", "#e879f9", "#4ade80", "#f87171",
@@ -80,6 +95,7 @@ const MINIMUM_ACTION_EXAMPLES = [
 
 interface OnboardingData {
   name: string;
+  goalArea: string;
   identityPreset: string;
   customIdentity: string;
   minimumAction: string;
@@ -87,6 +103,7 @@ interface OnboardingData {
 
 const STEPS = [
   { id: "name",            title: "What should we call you?",                skippable: false },
+  { id: "goalArea",        title: "What are you working on?",                skippable: false },
   { id: "identity",        title: "Who are you becoming?",                   skippable: false },
   { id: "minimumAction",   title: "What still counts on your worst day?",    skippable: false },
   { id: "futureSelfAudio", title: "Leave a message for your future self.",   skippable: true  },
@@ -102,6 +119,7 @@ export default function Onboarding() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [data, setData] = useState<OnboardingData>({
     name:            user?.name || "",
+    goalArea:        "",
     identityPreset:  "",
     customIdentity:  "",
     minimumAction:   "",
@@ -124,6 +142,7 @@ export default function Onboarding() {
 
   const canProceed = () => {
     if (current.id === "name")          return data.name.trim().length >= 2;
+    if (current.id === "goalArea")      return !!data.goalArea;
     if (current.id === "identity")      return !!data.identityPreset && (data.identityPreset !== "custom" || data.customIdentity.trim().length >= 2);
     if (current.id === "minimumAction") return data.minimumAction.trim().length >= 3;
     return true;
@@ -168,6 +187,7 @@ export default function Onboarding() {
 
   const subtitleMap: Record<string, string> = {
     name:            "This is how we'll greet you in the app.",
+    goalArea:        "We'll personalize your habit journey based on this.",
     identity:        "This is who you're building toward — one day at a time.",
     minimumAction:   "This is the action that keeps your system alive on hard days.",
     futureSelfAudio: "Optional, but powerful. Your voice is the best motivation you'll ever hear.",
@@ -222,6 +242,38 @@ export default function Onboarding() {
                 {data.name.trim().length > 0 && data.name.trim().length < 2 && (
                   <p className="text-xs text-destructive">Name must be at least 2 characters</p>
                 )}
+              </div>
+            )}
+
+            {current.id === "goalArea" && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">Pick the area you most want to improve. We'll suggest identity statements and starter actions tailored to it.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {GOAL_AREAS.map(goal => (
+                    <button
+                      key={goal.value}
+                      onClick={() => {
+                        const matched = IDENTITY_PRESETS.find(p => p.value === goal.identity);
+                        setData(d => ({
+                          ...d,
+                          goalArea: goal.value,
+                          identityPreset: matched ? goal.identity : "",
+                          minimumAction: goal.minAction || d.minimumAction,
+                        }));
+                      }}
+                      data-testid={`button-goal-${goal.value}`}
+                      className={cn(
+                        "flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all",
+                        data.goalArea === goal.value
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-muted/30 hover:border-primary/50"
+                      )}
+                    >
+                      <span className="text-xl">{goal.emoji}</span>
+                      <span className="text-sm font-medium">{goal.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
