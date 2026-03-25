@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppStore } from "@/store/auth.store";
+import { uploadImage } from "@/lib/cloudinary";
 import { useTheme } from "@/components/theme-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,8 @@ export default function Settings() {
   const [name, setName] = useState(user?.name || "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || "");
   const [avatarError, setAvatarError] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
   const [timezone, setTimezone] = useState(user?.timezone || "UTC");
   const [identityStatement, setIdentityStatement] = useState(user?.identityStatement || "");
 
@@ -186,6 +189,23 @@ export default function Settings() {
       toast({ title: "Reminders enabled!" });
     } else {
       toast({ title: "Permission denied", description: "Enable notifications in browser settings first.", variant: "destructive" });
+    }
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const url = await uploadImage(file, "strivo/avatars");
+      setAvatarUrl(url);
+      setAvatarError(false);
+      toast({ title: "Photo uploaded!", description: "Save your profile to apply the change." });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message ?? "Could not upload photo.", variant: "destructive" });
+    } finally {
+      setAvatarUploading(false);
+      if (avatarFileRef.current) avatarFileRef.current.value = "";
     }
   };
 
@@ -496,21 +516,41 @@ export default function Settings() {
                     {/* Avatar row */}
                     <div className="flex items-center gap-4">
                       <div className="relative flex-shrink-0">
-                        {avatarUrl && !avatarError ? (
-                          <img
-                            src={avatarUrl}
-                            alt={name}
-                            onError={() => setAvatarError(true)}
-                            className="w-16 h-16 rounded-full object-cover ring-2 ring-border"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 rounded-full gradient-brand flex items-center justify-center text-white text-xl font-bold">
-                            {initials}
+                        <button
+                          type="button"
+                          onClick={() => avatarFileRef.current?.click()}
+                          disabled={avatarUploading}
+                          className="focus:outline-none"
+                          aria-label="Upload profile photo"
+                          data-testid="button-avatar-upload"
+                        >
+                          {avatarUrl && !avatarError ? (
+                            <img
+                              src={avatarUrl}
+                              alt={name}
+                              onError={() => setAvatarError(true)}
+                              className="w-16 h-16 rounded-full object-cover ring-2 ring-border"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full gradient-brand flex items-center justify-center text-white text-xl font-bold">
+                              {initials}
+                            </div>
+                          )}
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center">
+                            {avatarUploading
+                              ? <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                              : <Camera className="w-3 h-3 text-muted-foreground" />
+                            }
                           </div>
-                        )}
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center">
-                          <Camera className="w-3 h-3 text-muted-foreground" />
-                        </div>
+                        </button>
+                        <input
+                          ref={avatarFileRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleAvatarFileChange}
+                          data-testid="input-avatar-file"
+                        />
                       </div>
                       <div>
                         <p className="text-sm font-semibold">{name || "Your name"}</p>
@@ -522,6 +562,7 @@ export default function Settings() {
                           <planDetails.icon className="w-2.5 h-2.5 mr-0.5" />
                           {planDetails.label}
                         </Badge>
+                        <p className="text-[11px] text-muted-foreground mt-1">Click photo to upload</p>
                       </div>
                     </div>
 

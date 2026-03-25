@@ -20,7 +20,9 @@
 import { lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { AnimatePresence } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+import { useAppStore } from "@/store/auth.store";
+import { sendWeeklyReport, isWeeklyReportDue, markWeeklyReportSent } from "@/lib/emailjs";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider, Helmet } from "react-helmet-async";
@@ -141,6 +143,74 @@ function ReminderChecker() {
 }
 
 /**
+ * WeeklyReportChecker — fires weekly report emails via EmailJS.
+ * Checks once on mount (and once an hour) whether a report is due.
+ */
+function WeeklyReportChecker() {
+  const { user } = useAppStore();
+
+  const check = useCallback(async () => {
+    if (!user || !user.weeklyReportEnabled) return;
+    if (!isWeeklyReportDue()) return;
+    try {
+      const { getCheckins } = await import("@/services/checkins.service");
+      const { getSystems } = await import("@/services/systems.service");
+      const [checkins, systems] = await Promise.all([
+        getCheckins(user.id),
+        getSystems(user.id),
+      ]);
+
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const weekKey = (d: Date) => d.toISOString().split("T")[0];
+      const weekStart = weekKey(weekAgo);
+
+      const weekCheckins = checkins.filter(c => c.dateKey >= weekStart);
+      const done = weekCheckins.filter(c => c.status === "done").length;
+      const total = weekCheckins.length;
+      const completionRate = total > 0 ? Math.round((done / total) * 100) : 0;
+
+      const streakMap: Record<string, number> = {};
+      const sortedDates = [...new Set(checkins.map(c => c.dateKey))].sort().reverse();
+      for (const sys of systems) {
+        let streak = 0;
+        for (const dateKey of sortedDates) {
+          const c = checkins.find(ci => ci.systemId === sys.id && ci.dateKey === dateKey);
+          if (c?.status === "done") streak++;
+          else break;
+        }
+        streakMap[sys.id] = streak;
+      }
+
+      const currentStreak = Math.max(0, ...Object.values(streakMap));
+      const activeSystems = systems.filter(s => s.isActive).length;
+
+      await sendWeeklyReport({
+        email: user.email ?? "",
+        name: user.name ?? "there",
+        completionRate,
+        currentStreak,
+        bestStreak: (user as any).bestStreak ?? currentStreak,
+        checkinsThisWeek: done,
+        activeSystems,
+        dashboardUrl: window.location.origin + "/dashboard",
+      });
+      markWeeklyReportSent();
+    } catch {
+      // silently ignore — don't disrupt app on email failure
+    }
+  }, [user]);
+
+  useEffect(() => {
+    check();
+    const interval = setInterval(check, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [check]);
+
+  return null;
+}
+
+/**
  * ScrollToTop — scrolls window to top on every route change.
  * Prevents users from landing mid-page when navigating between routes.
  */
@@ -218,6 +288,7 @@ export default function App() {
           <TooltipProvider>
             <AuthInitializer />
             <ReminderChecker />
+            <WeeklyReportChecker />
             <Router />
             <Toaster />
           </TooltipProvider>

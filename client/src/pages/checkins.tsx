@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { track } from "@/lib/track";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
@@ -7,6 +7,9 @@ import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/future-s
 import { getSystems } from "@/services/systems.service";
 import { getCheckinsByDate, getCheckins, upsertCheckin } from "@/services/checkins.service";
 import { computeAnalytics } from "@/services/analytics.service";
+import { computeAchievements } from "@/lib/achievements";
+import { addNotification } from "@/services/notifications.service";
+import { updateUser } from "@/services/user.service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -487,11 +490,11 @@ const STATUS_CONFIG = {
 /* ─── Individual check-in card ──────────────────────────────────── */
 function SystemCheckinCard({
   system, existingCheckin, userId, streakDays, onPerfectDay, identityStatement,
-  consistencyScore, weeklyVotes,
+  consistencyScore, weeklyVotes, onDone,
 }: {
   system: System; existingCheckin?: Checkin; userId: string; streakDays: number;
   onPerfectDay?: () => void; identityStatement?: string | null;
-  consistencyScore?: number; weeklyVotes?: number;
+  consistencyScore?: number; weeklyVotes?: number; onDone?: () => void;
 }) {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -529,6 +532,7 @@ function SystemCheckinCard({
         setJustDone(true);
         pulseDoneTimer.current = setTimeout(() => setJustDone(false), 600);
         setShowRitual(true);
+        onDone?.();
       } else if (status === "skipped" || status === "partial") {
         localStorage.setItem("strivo_missed_yesterday", "true");
         setRecoveryStatus(status as "skipped" | "partial");
@@ -1149,6 +1153,8 @@ export default function Checkins() {
   const { user } = useAppStore();
   const userId = user?.id ?? "";
   const today  = getTodayKey();
+  const qcMain = useQueryClient();
+  const { toast } = useToast();
 
   const [showCelebration, setShowCelebration] = useState(false);
   const [showFocusTimer, setShowFocusTimer] = useState(false);
@@ -1185,6 +1191,70 @@ export default function Checkins() {
     () => Math.max(0, ...Object.values(analytics.streaks).map(Number)),
     [analytics.streaks]
   );
+
+  const checkAndUnlockAchievements = useCallback(async () => {
+    if (!userId || !user) return;
+    try {
+      const latestCheckins: Checkin[] = qcMain.getQueryData(["checkins", userId]) ?? allCheckins;
+      const latestSystems: System[] = qcMain.getQueryData(["systems", userId]) ?? systems;
+      const doneCheckins = latestCheckins.filter(c => c.status === "done");
+      const activeSys = latestSystems.filter(s => s.active);
+      const maxStreak = Math.max(0, ...Object.values(analytics.streaks).map(Number));
+      const maxBestStreak = Math.max(0, ...Object.values(analytics.bestStreaks).map(Number));
+
+      const doneByDay = new Set(doneCheckins.map(c => c.dateKey));
+      let perfectDays = 0;
+      if (activeSys.length > 0) {
+        for (const dateKey of Array.from(doneByDay).sort().reverse().slice(0, 30)) {
+          const dayDone = doneCheckins.filter(c => c.dateKey === dateKey).length;
+          if (dayDone >= activeSys.length) perfectDays++;
+          else break;
+        }
+      }
+
+      const stats = {
+        totalCheckins: latestCheckins.length,
+        doneCheckins: doneCheckins.length,
+        bestStreak: maxBestStreak,
+        currentStreak: maxStreak,
+        totalGoals: 0,
+        completedGoals: 0,
+        totalSystems: latestSystems.length,
+        activeSystems: activeSys.length,
+        totalJournalEntries: 0,
+        totalDaysActive: doneByDay.size,
+        referralCount: user.referralCount ?? 0,
+        hasAccountabilityPartner: !!user.accountabilityPartnerId,
+        consecutivePerfectDays: perfectDays,
+        totalAchievements: (user.unlockedAchievements ?? []).length,
+      };
+
+      const { newlyUnlocked } = computeAchievements(stats, user.unlockedAchievements ?? []);
+      if (newlyUnlocked.length === 0) return;
+
+      const newIds = newlyUnlocked.map(a => a.id);
+      const updatedIds = [...(user.unlockedAchievements ?? []), ...newIds];
+      await updateUser(userId, { unlockedAchievements: updatedIds });
+      qcMain.invalidateQueries({ queryKey: ["user"] });
+
+      for (const achievement of newlyUnlocked) {
+        await addNotification(userId, {
+          type: "achievement",
+          title: `Achievement unlocked: ${achievement.title}`,
+          message: `${achievement.icon} ${achievement.description}`,
+          href: "/achievements",
+        });
+        toast({
+          title: `🏆 Achievement Unlocked!`,
+          description: `${achievement.icon} ${achievement.title} — ${achievement.description}`,
+        });
+      }
+      qcMain.invalidateQueries({ queryKey: ["notifications", userId] });
+    } catch {
+      // silent — don't interrupt the user experience
+    }
+  }, [userId, user, allCheckins, systems, analytics, qcMain, toast]);
+
   const yesterdayCheckins = useMemo(() => {
     const d = new Date(); d.setDate(d.getDate() - 1);
     return allCheckins.filter(c => c.dateKey === toLocalDateKey(d));
@@ -1378,6 +1448,7 @@ export default function Checkins() {
                     identityStatement={user?.identityStatement}
                     consistencyScore={analytics.consistencyScores[system.id]}
                     weeklyVotes={analytics.weeklyVotes[system.id]}
+                    onDone={checkAndUnlockAchievements}
                   />
                 ))}
               </div>

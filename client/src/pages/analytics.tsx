@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useAppStore } from "@/store/auth.store";
+import { subDays, eachDayOfInterval, getDay, format as dateFnsFormat } from "date-fns";
 import type { System, Goal, Checkin } from "@/types/schema";
 import { getSystems } from "@/services/systems.service";
 import { getGoals } from "@/services/goals.service";
@@ -578,6 +579,138 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+/* ─── Contribution Heatmap ───────────────────────────────────────── */
+const HEAT_COLORS = [
+  "bg-muted",
+  "bg-primary/20",
+  "bg-primary/40",
+  "bg-primary/65",
+  "bg-primary",
+];
+
+function ContributionHeatmap({ checkins }: { checkins: Checkin[] }) {
+  const today = new Date();
+  const start = subDays(today, 364);
+  const days = eachDayOfInterval({ start, end: today });
+
+  const countByDate = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const c of checkins) {
+      if (c.status === "done") m[c.dateKey] = (m[c.dateKey] ?? 0) + 1;
+    }
+    return m;
+  }, [checkins]);
+
+  const maxCount = useMemo(() => Math.max(1, ...Object.values(countByDate)), [countByDate]);
+
+  const weeks = useMemo(() => {
+    const cols: (typeof days[number] | null)[][] = [];
+    let col: (typeof days[number] | null)[] = [];
+    const firstDow = getDay(days[0]);
+    for (let i = 0; i < firstDow; i++) col.push(null);
+    for (const day of days) {
+      if (col.length === 7) { cols.push(col); col = []; }
+      col.push(day);
+    }
+    while (col.length < 7) col.push(null);
+    cols.push(col);
+    return cols;
+  }, [days]);
+
+  const monthLabels = useMemo(() => {
+    const labels: { label: string; colIndex: number }[] = [];
+    let lastMonth = -1;
+    weeks.forEach((week, i) => {
+      const firstReal = week.find(d => d != null);
+      if (!firstReal) return;
+      const m = firstReal.getMonth();
+      if (m !== lastMonth) {
+        labels.push({ label: dateFnsFormat(firstReal, "MMM"), colIndex: i });
+        lastMonth = m;
+      }
+    });
+    return labels;
+  }, [weeks]);
+
+  const totalDone = checkins.filter(c => c.status === "done").length;
+  const activeDays = Object.keys(countByDate).length;
+
+  function colorClass(dateKey: string) {
+    const n = countByDate[dateKey] ?? 0;
+    if (n === 0) return HEAT_COLORS[0];
+    const bucket = Math.ceil((n / maxCount) * 4);
+    return HEAT_COLORS[Math.min(bucket, 4)];
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3 pt-4">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <SectionTitle icon={Calendar} color="bg-chart-2/15 text-chart-2" title="Activity Heatmap" subtitle="Every day you showed up in the last year" />
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span data-testid="heatmap-total-done">{totalDone} check-ins</span>
+            <span>·</span>
+            <span data-testid="heatmap-active-days">{activeDays} active days</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 overflow-x-auto">
+        <div className="min-w-[640px]">
+          <div className="flex items-end gap-px mb-1 ml-6">
+            {monthLabels.map(({ label, colIndex }) => (
+              <div
+                key={`${label}-${colIndex}`}
+                className="text-[10px] text-muted-foreground"
+                style={{ gridColumn: colIndex + 1, minWidth: 0, position: "relative", left: `${colIndex * 13}px` }}
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-px">
+            <div className="flex flex-col gap-px mr-1">
+              {["", "Mon", "", "Wed", "", "Fri", ""].map((d, i) => (
+                <div key={i} className="h-[11px] text-[9px] text-muted-foreground leading-none flex items-center">
+                  {d}
+                </div>
+              ))}
+            </div>
+            {weeks.map((week, wi) => (
+              <div key={wi} className="flex flex-col gap-px">
+                {week.map((day, di) => {
+                  if (!day) return <div key={di} className="w-[11px] h-[11px]" />;
+                  const key = dateFnsFormat(day, "yyyy-MM-dd");
+                  const count = countByDate[key] ?? 0;
+                  const isToday = key === dateFnsFormat(today, "yyyy-MM-dd");
+                  return (
+                    <div
+                      key={key}
+                      title={`${dateFnsFormat(day, "MMM d, yyyy")}: ${count} check-in${count !== 1 ? "s" : ""}`}
+                      className={cn(
+                        "w-[11px] h-[11px] rounded-[2px] transition-opacity",
+                        colorClass(key),
+                        isToday ? "ring-1 ring-primary ring-offset-1 ring-offset-background" : "",
+                      )}
+                      data-testid={`heatmap-cell-${key}`}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 mt-2 justify-end text-[10px] text-muted-foreground">
+            <span>Less</span>
+            {HEAT_COLORS.map((c, i) => (
+              <div key={i} className={cn("w-[11px] h-[11px] rounded-[2px]", c)} />
+            ))}
+            <span>More</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 /* ─── Section header helper ──────────────────────────────────────── */
 function SectionTitle({ icon: Icon, color, title, subtitle }: { icon: any; color: string; title: string; subtitle?: string }) {
   return (
@@ -1009,6 +1142,9 @@ export default function Analytics() {
             })}
           </div>
         )}
+
+        {/* Activity Heatmap */}
+        {hasData && <ContributionHeatmap checkins={checkins} />}
 
         {/* Empty state */}
         {!hasData && (

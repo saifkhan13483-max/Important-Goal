@@ -19,6 +19,13 @@ Strivo is a React + Firebase web application that helps users turn goals into da
 10. **Habit Stacking** — Drag-to-order systems; `client/src/components/habit-stack-builder.tsx`; appears in Systems page when user has 2+ systems
 11. **Multi-language Support (EN/ES/FR)** — Language switcher in Settings → Appearance tab; `client/src/lib/i18n.ts` with translations and localStorage persistence
 
+## Features Completed in Latest Session
+1. **Profile Photo Upload** — Avatar in Settings now has a clickable photo that opens a file picker; uploads to Cloudinary (`strivo/avatars` folder) via `uploadImage()` from `client/src/lib/cloudinary.ts`; spinner shown during upload; URL auto-populated in the avatar field after success
+2. **Achievement Auto-Unlock on Check-in** — `checkins.tsx` fires `checkAndUnlockAchievements` via `onDone` callback on `SystemCheckinCard` completion; saves newly earned achievements to Firestore and sends in-app notifications + toasts
+3. **Weekly Report Emails via EmailJS** — `WeeklyReportChecker` component in `App.tsx` runs on mount and every hour; reads `user.weeklyReportEnabled`; computes last-7-days completion rate, current streak, active systems; calls `sendWeeklyReport()` from `client/src/lib/emailjs.ts`; uses `VITE_EMAILJS_WEEKLY_TEMPLATE` env var
+4. **Contribution Heatmap in Analytics** — `ContributionHeatmap` component in `analytics.tsx` renders a 52-week GitHub-style grid; color intensity based on done check-ins per day; month labels, day-of-week labels, legend, active-day count, total check-in count; uses `date-fns` helpers
+5. **Streak Freeze Activation** — Toggle switch in Settings → Notifications tab; stores `streakFreezes` count in Firestore on the User document (was already complete)
+
 ## Deployment Status
 - **Deployment target**: Static site (`npm run build` → `dist/`)
 - **Production build**: Verified working (3062+ modules, ~558KB gzip)
