@@ -81,8 +81,6 @@ export default function WeeklyReview() {
   const userId = user?.id ?? "";
   const features = getPlanFeatures(user?.plan);
   const { toast } = useToast();
-  const { sendMessage, isLoading: aiLoading } = useAI();
-
   const [weekOffset, setWeekOffset] = useState(0);
   const [intention, setIntention] = useState("");
   const [intentionSaved, setIntentionSaved] = useState(false);
