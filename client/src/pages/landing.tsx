@@ -1100,7 +1100,6 @@ export default function Landing() {
           <div className="text-center mb-8 md:mb-12">
             <Badge variant="secondary" className="mb-3 text-xs">Simple pricing</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Start free. Upgrade when you're ready.</h2>
-            <p className="text-muted-foreground text-base md:text-lg">All plans include a 14-day free trial. No credit card required.</p>
             {/* Billing toggle */}
             <div className="flex items-center justify-center gap-3 mt-6">
               <span className={cn("text-sm", !billingYearly && "font-semibold text-foreground", billingYearly && "text-muted-foreground")}>Monthly</span>
@@ -1160,7 +1159,6 @@ export default function Landing() {
               </Card>
             ))}
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-6">All plans include a 14-day free trial. No credit card required.</p>
 
           {/* Quick comparison strip */}
           <div className="mt-10 max-w-3xl mx-auto">
