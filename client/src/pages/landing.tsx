@@ -94,19 +94,19 @@ const pricingPlans = [
     cta: "Get Started", ctaVariant: "outline" as const, href: "/signup",
   },
   {
-    name: "Starter", price: "$9", yearlyPrice: "$7", period: "/month",
+    name: "Starter", price: "$6", yearlyPrice: "$5", period: "/month",
     tagline: "For people building consistency", badge: null,
     features: ["Up to 10 active goals", "Unlimited systems", "Full template library", "Advanced streak tracking", "Weekly reflection prompts", "Better analytics", "Future self audio", "Dark mode", "Export basic reports"],
     cta: "Get Started", ctaVariant: "outline" as const, href: "/signup",
   },
   {
-    name: "Pro", price: "$19", yearlyPrice: "$15", period: "/month",
+    name: "Pro", price: "$12", yearlyPrice: "$9", period: "/month",
     tagline: "For ambitious, data-driven users", badge: "Most Popular",
     features: ["Unlimited goals", "Unlimited systems", "AI Coach (10 msgs/day)", "Advanced analytics dashboard", "Mood & habit correlation insights", "Premium templates", "Advanced journaling", "CSV / PDF exports", "Priority support"],
     cta: "Get Started", ctaVariant: "default" as const, href: "/signup",
   },
   {
-    name: "Elite", price: "$39", yearlyPrice: "$29", period: "/month",
+    name: "Elite", price: "$24", yearlyPrice: "$18", period: "/month",
     tagline: "For power users who want everything", badge: "Best Value",
     features: ["Unlimited goals & systems", "AI Coach (unlimited msgs/day)", "Advanced analytics & AI insights", "Full template library", "AI journal prompts", "CSV / PDF exports", "Future self audio", "Priority support", "Team workspace", "Coach dashboard"],
     cta: "Go Elite", ctaVariant: "outline" as const, href: "/signup",

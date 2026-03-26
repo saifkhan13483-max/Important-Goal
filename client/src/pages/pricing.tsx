@@ -42,8 +42,8 @@ const plans = [
   {
     name: "Starter",
     planKey: "starter",
-    monthlyPrice: 9,
-    yearlyPrice: 7,
+    monthlyPrice: 6,
+    yearlyPrice: 5,
     tagline: "Build real consistency",
     idealFor: "Individuals building lasting habits",
     badge: null,
@@ -70,8 +70,8 @@ const plans = [
   {
     name: "Pro",
     planKey: "pro",
-    monthlyPrice: 19,
-    yearlyPrice: 15,
+    monthlyPrice: 12,
+    yearlyPrice: 9,
     tagline: "Deep insights, unlimited potential",
     idealFor: "Ambitious users who want full control",
     badge: "Most Popular",
@@ -98,8 +98,8 @@ const plans = [
   {
     name: "Elite",
     planKey: "elite",
-    monthlyPrice: 39,
-    yearlyPrice: 29,
+    monthlyPrice: 24,
+    yearlyPrice: 18,
     tagline: "For serious systems builders",
     idealFor: "Power users & high-performance individuals",
     badge: "Best Value",
@@ -225,7 +225,7 @@ export default function Pricing() {
       <Helmet>
         <title>Pricing — Free, Starter, Pro & Elite | Strivo</title>
         <link rel="canonical" href="https://strivo.life/pricing" />
-        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter ($9/mo), Pro ($19/mo), and Elite ($39/mo) plans." />
+        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter ($6/mo), Pro ($12/mo), and Elite ($24/mo) plans." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://strivo.life/pricing" />
         <meta property="og:site_name" content="Strivo" />
@@ -259,9 +259,9 @@ export default function Pricing() {
             "name": "Strivo",
             "offers": [
               { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock", "url": "https://strivo.life/signup" },
-              { "@type": "Offer", "name": "Starter", "price": "9", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
-              { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
-              { "@type": "Offer", "name": "Elite", "price": "39", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" }
+              { "@type": "Offer", "name": "Starter", "price": "6", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
+              { "@type": "Offer", "name": "Pro", "price": "12", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
+              { "@type": "Offer", "name": "Elite", "price": "24", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" }
             ]
           }
         })}</script>
