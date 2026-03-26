@@ -1051,7 +1051,7 @@ export default function Dashboard() {
 
       {/* ── Banners row ── */}
       <div className="mt-4 sm:mt-5 space-y-3">
-        {hasFutureSelfAudio() && (
+        {hasFutureSelfAudio(user?.id ?? "", user?.futureAudioUrl) && (
           missedYesterday.length > 0
             ? <FutureSelfAudioPlayer context="missedDay" firestoreUrl={user?.futureAudioUrl} userName={user?.name} playOnFirstVisit={user?.futureAudioPlayOnFirstVisit ?? true} playAfterMissed={user?.futureAudioPlayAfterMissed ?? true} autoplay={user?.futureAudioAutoplay ?? true} muted={user?.futureAudioMuted ?? false} />
             : <FutureSelfAudioPlayer context="firstVisit" firestoreUrl={user?.futureAudioUrl} userName={user?.name} playOnFirstVisit={user?.futureAudioPlayOnFirstVisit ?? true} playAfterMissed={user?.futureAudioPlayAfterMissed ?? true} autoplay={user?.futureAudioAutoplay ?? true} muted={user?.futureAudioMuted ?? false} />

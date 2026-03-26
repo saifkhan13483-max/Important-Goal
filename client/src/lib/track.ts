@@ -31,7 +31,8 @@ type EventName =
   | "upgrade_clicked"
   | "newsletter_subscribed"
   | "journal_entry_created"
-  | "hero_cta_click";
+  | "hero_cta_click"
+  | "sticky_cta_click";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

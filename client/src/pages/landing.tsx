@@ -437,9 +437,9 @@ function AnimatedStat({ value, label, icon: Icon, suffix = "" }: { value: number
   return (
     <div className="flex flex-col items-center gap-1">
       <Icon className="w-4 h-4 text-primary mb-1 opacity-70" />
-      <p ref={ref} className="text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums">
+      <span ref={ref} className="text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums block">
         {count.toLocaleString()}{suffix}
-      </p>
+      </span>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
@@ -1197,7 +1197,7 @@ export default function Landing() {
                       <td className={`p-3 text-center ${free === "✗" ? "text-muted-foreground/40" : "text-foreground/60 font-semibold"}`}>{free}</td>
                       <td className={`p-3 text-center ${starter === "✗" ? "text-muted-foreground/40" : "text-foreground/80 font-semibold"}`}>{starter}</td>
                       <td className={`p-3 text-center ${pro === "✗" ? "text-muted-foreground/40" : "font-semibold text-primary"}`}>{pro}</td>
-                      <td className={`p-3 text-center ${elite === "✗" ? "text-muted-foreground/40" : "font-semibold text-chart-4"}`}>{elite}</td>
+                      <td className={`p-3 text-center ${(elite as string) === "✗" ? "text-muted-foreground/40" : "font-semibold text-chart-4"}`}>{elite}</td>
                     </tr>
                   ))}
                 </tbody>

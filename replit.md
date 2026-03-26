@@ -26,6 +26,17 @@ Strivo is a React + Firebase web application that helps users turn goals into da
 4. **Contribution Heatmap in Analytics** — `ContributionHeatmap` component in `analytics.tsx` renders a 52-week GitHub-style grid; color intensity based on done check-ins per day; month labels, day-of-week labels, legend, active-day count, total check-in count; uses `date-fns` helpers
 5. **Streak Freeze Activation** — Toggle switch in Settings → Notifications tab; stores `streakFreezes` count in Firestore on the User document (was already complete)
 
+## Bug Fixes — TypeScript Compile-Error Pass (Second Audit)
+
+All TypeScript compile errors eliminated (18 errors across 8 files → 0):
+
+1. **`tsconfig.json` missing `target`** (root cause of 12 errors): Default target was ES3, causing all `Set`/`Map` iteration with `for...of` or spread to fail with TS2802 across `App.tsx`, `journal.tsx`, `achievements.tsx`, `achievements-panel.tsx`, `accountability.service.ts`, `public-profile.service.ts`. Fixed by adding `"target": "es2015"`.
+2. **`hasFutureSelfAudio()` missing required argument** (`dashboard.tsx:1054`): Called with 0 arguments but the function signature requires `userId: string` and an optional `firestoreUrl`. Fixed to `hasFutureSelfAudio(user?.id ?? "", user?.futureAudioUrl)`.
+3. **`RefObject<HTMLSpanElement>` assigned to `<p>` element** (`landing.tsx:440`): `useCountUp` returns a `RefObject<HTMLSpanElement>` but it was applied to a `<p>` tag. Changed to `<span>` (with `block` display class to preserve layout).
+4. **`"sticky_cta_click"` not in `EventName` union** (`landing.tsx:472`, `track.ts`): The event name used in the mobile CTA bar click handler wasn't listed in the `EventName` type. Added it to `track.ts`.
+5. **`elite === "✗"` comparison always false** (`landing.tsx:1200`): TypeScript inferred the elite column values as the literal union `"∞" | "✓"`, making `=== "✗"` a type error. Fixed by casting `elite as string` for the comparison (the pricing data itself is correct — Elite never has ✗).
+6. **`System.active` type incompatibility** (`analytics.tsx:805`): `exportToCsv` expects `active: boolean` but `System.active` is `boolean | null | undefined`. Fixed by mapping systems with `s.active ?? false` before passing.
+
 ## Bug Fixes — Full Audit (Production-Ready Pass)
 
 The following bugs were identified and fixed during a full end-to-end codebase audit:

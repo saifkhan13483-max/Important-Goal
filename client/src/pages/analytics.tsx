@@ -802,7 +802,7 @@ export default function Analytics() {
       await new Promise(r => setTimeout(r, 80));
       exportToCsv({
         checkins: filteredCheckins,
-        systems,
+        systems: systems.map(s => ({ ...s, active: s.active ?? false })),
         goals,
         systemStats,
         goalCompletion,
