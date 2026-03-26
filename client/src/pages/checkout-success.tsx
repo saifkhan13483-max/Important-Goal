@@ -40,7 +40,7 @@ export default function CheckoutSuccess() {
       }
     }
     savePlan();
-  }, []);
+  }, [user?.id]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 text-center">

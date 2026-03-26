@@ -38,7 +38,7 @@ import { getPlanFeatures } from "@/lib/plan-limits";
 import { SiteLogo } from "@/components/site-logo";
 import { linkAccountabilityPartner, unlinkAccountabilityPartner, getPartnerPublicStats } from "@/services/accountability.service";
 import { updateUser } from "@/services/user.service";
-import { generateReferralCode } from "@/services/public-profile.service";
+import { getReferralCode, ensureReferralCode } from "@/services/referral.service";
 import { generateCalendarICS, downloadICS } from "@/lib/calendar-export";
 import { LANGUAGES, setLanguage, getLanguage, type Language } from "@/lib/i18n";
 
@@ -233,7 +233,7 @@ export default function Settings() {
   const [weeklyReportSending, setWeeklyReportSending] = useState(false);
   const qc = useQueryClient();
 
-  const referralCode = user?.referralCode ?? generateReferralCode(user?.id ?? "anon");
+  const referralCode = user ? getReferralCode(user) : "";
 
   const { data: systemsForCalendar = [] } = useQuery({
     queryKey: ["systems", user?.id ?? ""],
@@ -252,6 +252,13 @@ export default function Settings() {
   useEffect(() => {
     if (typeof Notification !== "undefined") setNotifPermission(Notification.permission);
   }, []);
+
+  // Persist referral code to Firestore on first visit if not already saved
+  useEffect(() => {
+    if (user && !user.referralCode) {
+      ensureReferralCode(user).catch(() => {});
+    }
+  }, [user?.id]);
 
   // Scroll active tab into view on mobile
   useEffect(() => {

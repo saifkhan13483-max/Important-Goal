@@ -60,9 +60,9 @@ export async function getPartnerPublicStats(partnerId: string): Promise<{
 
     const todayKey = new Date().toISOString().split("T")[0];
 
-    const systemsQ = query(collection(db, "systems"), where("userId", "==", partnerId), where("active", "==", true));
+    const systemsQ = query(collection(db, "systems"), where("userId", "==", partnerId));
     const systemsSnap = await getDocs(systemsQ);
-    const activeSystems = systemsSnap.docs.length;
+    const activeSystems = systemsSnap.docs.filter(d => d.data().active !== false).length;
 
     const checkinsQ = query(collection(db, "checkins"), where("userId", "==", partnerId));
     const checkinsSnap = await getDocs(checkinsQ);
