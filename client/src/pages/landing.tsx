@@ -513,18 +513,83 @@ function SocialProofRow() {
   );
 }
 
+// ─── Hero floating notification ─────────────────────────────────────────────
+const ACTIVITY_NOTIFICATIONS = [
+  { name: "Sophie L.", action: "hit a 21-day streak 🔥", time: "2 min ago" },
+  { name: "Marcus R.", action: "completed Morning Movement ✅", time: "4 min ago" },
+  { name: "Aisha K.",  action: "bounced back after a missed day 💪", time: "7 min ago" },
+  { name: "Tom W.",    action: "built their first system 🎯", time: "11 min ago" },
+];
+
+function HeroNotification() {
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const cycle = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIndex((i) => (i + 1) % ACTIVITY_NOTIFICATIONS.length);
+        setVisible(true);
+      }, 400);
+    }, 4000);
+    return () => clearInterval(cycle);
+  }, []);
+
+  const n = ACTIVITY_NOTIFICATIONS[index];
+  return (
+    <AnimatePresence mode="wait">
+      {visible && (
+        <motion.div
+          key={index}
+          initial={{ opacity: 0, y: 8, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.96 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="inline-flex items-center gap-2.5 bg-card border border-border rounded-full px-3.5 py-2 shadow-md text-xs"
+        >
+          <img
+            src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(n.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc`}
+            alt="" width={22} height={22} className="w-5.5 h-5.5 rounded-full bg-muted border border-border/40 flex-shrink-0"
+          />
+          <span className="font-semibold text-foreground">{n.name}</span>
+          <span className="text-muted-foreground">{n.action}</span>
+          <span className="text-muted-foreground/50 text-[10px] flex-shrink-0">{n.time}</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ─── Main page ───────────────────────────────────────────────────────────────
 export default function Landing() {
   const [billingYearly, setBillingYearly] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("onboarding");
+  const [activeSection, setActiveSection] = useState("");
   const ctaVariant = useCtaVariant();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const sectionIds = ["how-it-works", "features", "templates", "pricing", "faq"];
+    const observers: IntersectionObserver[] = [];
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+        { rootMargin: "-40% 0px -50% 0px" }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+    return () => observers.forEach((o) => o.disconnect());
   }, []);
 
   return (
@@ -565,11 +630,24 @@ export default function Landing() {
           </div>
 
           <div className="hidden md:flex items-center gap-7 text-sm text-muted-foreground font-medium">
-            {navLinks.map((link) => (
-              <a key={link.label} href={link.href} className="hover:text-foreground transition-colors">
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const sectionId = link.href.replace("#", "");
+              const isActive = activeSection === sectionId;
+              return (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className={cn(
+                    "transition-colors relative pb-0.5",
+                    isActive
+                      ? "text-foreground font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-primary"
+                      : "hover:text-foreground"
+                  )}
+                >
+                  {link.label}
+                </a>
+              );
+            })}
           </div>
 
           <div className="hidden md:flex items-center gap-2">
@@ -676,6 +754,11 @@ export default function Landing() {
           </p>
         </div>
 
+        {/* Live activity ticker */}
+        <div className="flex justify-center mt-5 sm:mt-6 mb-2">
+          <HeroNotification />
+        </div>
+
         <ProductPreview />
       </section>
 
@@ -693,57 +776,6 @@ export default function Landing() {
               <p className="text-xs text-muted-foreground">Average rating</p>
             </div>
             <AnimatedStat value={73} suffix="%" label="Still active after 30 days"   icon={Flame}       />
-          </div>
-        </div>
-      </section>
-
-      {/* ── What is a system strip ─────────────────────────────── */}
-      <section className="py-10 sm:py-14 px-4 border-t border-border bg-muted/20">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-xs text-muted-foreground mb-4 uppercase tracking-widest font-medium">What is a system?</p>
-          <p className="text-base sm:text-lg text-foreground font-medium mb-6 max-w-2xl mx-auto leading-relaxed">
-            A goal says what you want. A habit says what to repeat. A system makes it easier to keep going.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
-            {[
-              { icon: UserCircle2, label: "An identity",      sub: "Who you're becoming",                       color: "text-primary bg-primary/10"   },
-              { icon: Zap,         label: "A minimum action", sub: "What still counts on your worst day",        color: "text-chart-4 bg-chart-4/10"   },
-              { icon: RefreshCw,   label: "A recovery plan",  sub: "How the system adapts when life gets messy", color: "text-chart-3 bg-chart-3/10"   },
-            ].map(item => (
-              <div key={item.label} className="flex flex-col items-center gap-2 p-5 rounded-2xl border bg-background/60">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
-                  <item.icon className="w-5 h-5" />
-                </div>
-                <p className="font-semibold text-sm">{item.label}</p>
-                <p className="text-xs text-muted-foreground text-center">{item.sub}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Why other tools fail ───────────────────────────────── */}
-      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
-        <div className="max-w-3xl mx-auto text-center">
-          <Badge variant="secondary" className="mb-3 text-xs">The problem with most habit apps</Badge>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Most habit tools help you track perfect days.</h2>
-          <p className="text-muted-foreground text-base md:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
-            But real progress depends on what happens on imperfect ones. When motivation drops, most people don't need more reminders. They need a smaller action, a better fallback, and a system that doesn't collapse after one miss.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-4 text-left">
-            {[
-              { icon: Zap,       title: "A smaller action",  body: "Your minimum action is what keeps the system alive when full effort isn't possible.",                                                              color: "text-primary bg-primary/10"  },
-              { icon: Shield,    title: "A better fallback", body: "Every system includes a recovery plan for when life gets messy — not as failure insurance, but as built-in intelligence.",                          color: "text-chart-4 bg-chart-4/10"  },
-              { icon: RefreshCw, title: "A recovery path",   body: "Missing a day doesn't break the system. The recovery flow guides you back without shame or losing momentum.",                                       color: "text-chart-3 bg-chart-3/10"  },
-            ].map(item => (
-              <div key={item.title} className="p-5 rounded-2xl border bg-background/60 space-y-2">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${item.color}`}>
-                  <item.icon className="w-4 h-4" />
-                </div>
-                <p className="font-semibold text-sm">{item.title}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{item.body}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -810,13 +842,29 @@ export default function Landing() {
               </CardContent>
             </Card>
           </div>
-          <div className="text-center">
+          <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-primary/8 border border-primary/20 rounded-2xl px-6 py-3">
               <Sparkles className="w-4 h-4 text-primary" />
               <p className="text-sm text-foreground font-medium">
                 Strivo turns your vague goals into specific daily systems — in under 5 minutes.
               </p>
             </div>
+          </div>
+          {/* What a system includes */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+            {[
+              { icon: UserCircle2, label: "An identity",      sub: "Who you're building yourself into — not just what you want to do.", color: "text-primary bg-primary/10"  },
+              { icon: Zap,         label: "A minimum action", sub: "The smallest version that still counts — keeps you going on bad days.", color: "text-chart-4 bg-chart-4/10" },
+              { icon: RefreshCw,   label: "A recovery plan",  sub: "A pre-built path back after a miss — no guilt, no restart Mondays.", color: "text-chart-3 bg-chart-3/10"  },
+            ].map(item => (
+              <div key={item.label} className="flex flex-col items-center gap-2.5 p-5 rounded-2xl border bg-background/60 text-center">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <p className="font-semibold text-sm">{item.label}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{item.sub}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -829,17 +877,19 @@ export default function Landing() {
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">How Strivo works</h2>
             <p className="text-muted-foreground text-base md:text-lg">Set up in 60 seconds. Designed to keep working when motivation disappears.</p>
           </div>
-          <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid sm:grid-cols-3 gap-8 sm:gap-10">
             {steps.map((s, i) => (
               <div key={s.step} className="relative text-center">
                 {i < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[calc(50%+2.5rem)] right-0 h-px border-t border-dashed border-border" />
+                  <div className="hidden md:block absolute top-9 left-[calc(50%+3.5rem)] right-[-1rem] h-px border-t-2 border-dashed border-primary/25" />
                 )}
-                <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center mx-auto mb-5 shadow-md">
-                  <s.icon className="w-7 h-7 text-white" />
-                </div>
-                <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center mx-auto mb-3">
-                  {s.step}
+                <div className="relative w-18 h-18 mx-auto mb-5">
+                  <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center mx-auto shadow-lg shadow-primary/20">
+                    <s.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-background border-2 border-primary text-primary text-xs font-extrabold flex items-center justify-center shadow-sm">
+                    {s.step}
+                  </div>
                 </div>
                 <h3 className="font-bold text-lg mb-2">{s.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
@@ -936,12 +986,12 @@ export default function Landing() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[
-              { icon: "💪", name: "Morning Movement",  category: "Fitness",       desc: "5 pushups after brushing teeth",                   time: "~5 min/day",  difficulty: "Easy"   },
-              { icon: "📚", name: "Daily Reading",     category: "Learning",      desc: "1 page before bed",                                time: "~10 min/day", difficulty: "Easy"   },
-              { icon: "🧘", name: "Mindful Morning",   category: "Mindfulness",   desc: "3 minutes of breathing after waking up",           time: "~3 min/day",  difficulty: "Easy"   },
-              { icon: "✍️", name: "Daily Writing",     category: "Creativity",    desc: "100 words at 8am",                                 time: "~15 min/day", difficulty: "Medium" },
-              { icon: "💧", name: "Hydration Habit",   category: "Health",        desc: "Drink a glass of water with each meal",            time: "~0 min/day",  difficulty: "Easy"   },
-              { icon: "🎯", name: "Focus Block",       category: "Productivity",  desc: "25-min deep work before email",                    time: "~25 min/day", difficulty: "Medium" },
+              { icon: "💪", name: "Morning Movement",  category: "Fitness",       desc: "5 pushups after brushing teeth",                   time: "~5 min/day",  difficulty: "Easy",   users: "2,400+" },
+              { icon: "📚", name: "Daily Reading",     category: "Learning",      desc: "1 page before bed",                                time: "~10 min/day", difficulty: "Easy",   users: "1,900+" },
+              { icon: "🧘", name: "Mindful Morning",   category: "Mindfulness",   desc: "3 minutes of breathing after waking up",           time: "~3 min/day",  difficulty: "Easy",   users: "1,600+" },
+              { icon: "✍️", name: "Daily Writing",     category: "Creativity",    desc: "100 words at 8am",                                 time: "~15 min/day", difficulty: "Medium", users: "870+"   },
+              { icon: "💧", name: "Hydration Habit",   category: "Health",        desc: "Drink a glass of water with each meal",            time: "~0 min/day",  difficulty: "Easy",   users: "1,200+" },
+              { icon: "🎯", name: "Focus Block",       category: "Productivity",  desc: "25-min deep work before email",                    time: "~25 min/day", difficulty: "Medium", users: "1,100+" },
             ].map((t) => (
               <Link key={t.name} href="/signup">
                 <Card className="hover-elevate border-border/60 cursor-pointer group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md h-full">
@@ -958,10 +1008,10 @@ export default function Landing() {
                         </div>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{t.desc}</p>
+                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{t.desc}</p>
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {t.time}
+                        <Users className="w-3 h-3" /> {t.users} using this
                       </p>
                       <span className="text-[10px] text-primary font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         Use this <ChevronRight className="w-3 h-3" />
@@ -1035,9 +1085,22 @@ export default function Landing() {
           <div className="text-center mb-8 md:mb-12">
             <Badge variant="secondary" className="mb-3 text-xs">From our community</Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">Real results from real people</h2>
-            <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto">
+            <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto mb-6">
               Honest stories from people who stopped restarting and started building systems that stick.
             </p>
+            {/* Stat banner */}
+            <div className="inline-flex flex-col sm:flex-row items-center gap-4 sm:gap-8 bg-primary/5 border border-primary/15 rounded-2xl px-6 py-4 max-w-2xl mx-auto">
+              {[
+                { value: "73%", label: "Still active after 30 days" },
+                { value: "4.8★", label: "Average user rating" },
+                { value: "2.1×", label: "More consistent than goals alone" },
+              ].map((s) => (
+                <div key={s.label} className="text-center">
+                  <p className="text-xl font-extrabold text-primary">{s.value}</p>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
           {/* Mobile: horizontal scroll; md+: 3-col grid */}
           <div className="flex md:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
@@ -1168,8 +1231,22 @@ export default function Landing() {
             ))}
           </div>
 
+          {/* Guarantee strip */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mt-6 py-4 border-y border-border/50">
+            {[
+              { icon: Shield, text: "No contracts · Cancel anytime" },
+              { icon: RefreshCw, text: "30-day money-back guarantee" },
+              { icon: Trophy, text: "Free plan available — no card needed" },
+            ].map((item) => (
+              <div key={item.text} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <item.icon className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" />
+                {item.text}
+              </div>
+            ))}
+          </div>
+
           {/* Quick comparison strip */}
-          <div className="mt-10 max-w-3xl mx-auto">
+          <div className="mt-8 max-w-3xl mx-auto">
             <p className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">Quick comparison</p>
             <div className="overflow-x-auto rounded-2xl border border-border">
               <table className="w-full text-xs">
@@ -1229,42 +1306,31 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Email capture ─────────────────────────────────────────── */}
-      <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border" id="newsletter">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-            <Mail className="w-6 h-6 text-primary" />
-          </div>
-          <Badge variant="secondary" className="mb-3 text-xs">Free habit tips</Badge>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3">Get weekly insights on building habits that stick</h2>
-          <p className="text-muted-foreground text-sm sm:text-base mb-8 max-w-md mx-auto leading-relaxed">
-            One email per week. Real strategies, no fluff — on identity, minimum actions, and recovering from missed days.
-          </p>
-          <EmailCaptureForm />
-          <p className="text-xs text-muted-foreground mt-4">No spam. Unsubscribe anytime. Used by 10,000+ habit builders.</p>
-        </div>
-      </section>
-
       {/* ── Final CTA banner ─────────────────────────────────────── */}
       <section className="py-14 sm:py-20 md:py-24 px-4 border-t border-border">
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="max-w-4xl mx-auto">
           <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden gradient-brand p-8 sm:p-12 md:p-16 text-white">
             <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 -translate-y-1/2 pointer-events-none" />
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 opacity-0 sm:opacity-100">
+              <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-[10px] text-white/80">
+                🔥 73% still active after 30 days
+              </div>
+            </div>
             <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-3 sm:mb-4 opacity-80" />
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 leading-tight">
-              You do not need a better mood.
+              You don't need a better mood.
             </h2>
             <p className="text-white/80 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed">
               You need a system that still works in a bad one. Build yours in 60 seconds — free, no credit card needed.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4">
               <Link href="/signup">
                 <Button
                   size="lg"
                   className="btn-scale bg-white text-primary hover:bg-white/90 gap-2 h-12 px-8 text-base font-semibold shadow-lg rounded-full w-full sm:w-auto"
                   data-testid="button-final-cta"
                 >
-                  Build My First System
+                  Build My First System — Free
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -1275,11 +1341,19 @@ export default function Landing() {
                   className="gap-2 h-12 px-8 text-base font-semibold rounded-full border-white/40 text-white hover:bg-white/10 bg-transparent w-full sm:w-auto"
                   data-testid="button-final-signin"
                 >
-                  Already have an account?
+                  Sign in to my account
                 </Button>
               </Link>
             </div>
-            <p className="text-white/60 text-xs mt-4">No credit card required · Takes 60 seconds</p>
+            <p className="text-white/60 text-xs">No credit card · Takes 60 seconds · Cancel anytime</p>
+          </div>
+
+          {/* Newsletter strip below CTA */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-muted-foreground mb-3">Prefer to try before committing? Get free weekly habit tips.</p>
+            <div className="max-w-md mx-auto">
+              <EmailCaptureForm />
+            </div>
           </div>
         </div>
       </section>
