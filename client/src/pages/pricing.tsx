@@ -95,8 +95,8 @@ const plans = [
   {
     name: "Elite",
     planKey: "elite",
-    monthlyPrice: 49,
-    yearlyPrice: 37,
+    monthlyPrice: 39,
+    yearlyPrice: 29,
     tagline: "For serious systems builders",
     idealFor: "Power users & high-performance individuals",
     badge: "Best Value",
@@ -122,8 +122,8 @@ const faqs = [
     a: "Absolutely. You can upgrade, downgrade, or cancel at any time. Changes take effect at the start of your next billing cycle.",
   },
   {
-    q: "Is there a free trial for paid plans?",
-    a: "All paid plans come with a 14-day money-back guarantee. If you're not happy for any reason, contact us within 14 days for a full refund — no questions asked.",
+    q: "Is there a money-back guarantee?",
+    a: "Yes. All paid plans come with a 14-day money-back guarantee. If you're not happy for any reason, contact us within 14 days for a full refund — no questions asked.",
   },
   {
     q: "What happens to my data if I downgrade?",
@@ -257,7 +257,7 @@ export default function Pricing() {
               { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock", "url": "https://strivo.life/signup" },
               { "@type": "Offer", "name": "Starter", "price": "9", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
               { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
-              { "@type": "Offer", "name": "Elite", "price": "49", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" }
+              { "@type": "Offer", "name": "Elite", "price": "39", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" }
             ]
           }
         })}</script>

@@ -70,7 +70,7 @@ const faqs = [
     items: [
       {
         q: "Is Strivo really free?",
-        a: "Yes — the Free plan lets you create unlimited goals and systems, track check-ins, and access core analytics at no cost. Paid plans unlock premium features like advanced analytics, AI coaching, CSV exports, and priority support.",
+        a: "Yes — the Free plan lets you create up to 2 active goals and 3 active systems, track daily check-ins, and access core analytics at no cost. Paid plans unlock more goals, unlimited systems, advanced analytics, AI coaching, CSV exports, and priority support.",
       },
       {
         q: "How do I upgrade my plan?",
@@ -82,7 +82,7 @@ const faqs = [
       },
       {
         q: "Do you offer refunds?",
-        a: "We offer a 7-day money-back guarantee on all paid plans. If you're not satisfied, email us at support@strivo.life within 7 days of your first payment and we'll refund you in full — no questions asked.",
+        a: "We offer a 14-day money-back guarantee on all paid plans. If you're not satisfied, email us at support@strivo.life within 14 days of your first payment and we'll refund you in full — no questions asked.",
       },
     ],
   },
