@@ -624,9 +624,10 @@ export default function Landing() {
       <section id="main-content" className="relative pt-20 sm:pt-32 pb-8 px-4 overflow-hidden sm:min-h-[85vh] sm:flex sm:flex-col sm:justify-center" aria-label="Hero">
         {/* Background blobs */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-3xl" />
-          <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-chart-2/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-chart-5/5 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[560px] bg-primary/[0.13] rounded-full blur-3xl" />
+          <div className="absolute top-20 right-0 w-[500px] h-[400px] bg-chart-2/[0.09] rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[300px] bg-chart-5/[0.07] rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-0 w-[250px] h-[250px] bg-chart-4/[0.05] rounded-full blur-3xl" />
         </div>
 
         <div className="max-w-4xl mx-auto text-center">
@@ -655,7 +656,7 @@ export default function Landing() {
             <Link href="/signup" className="w-full sm:w-auto">
               <Button
                 size="lg"
-                className="btn-scale gap-2 h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full"
+                className="btn-scale animate-cta-ping gap-2 h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full"
                 data-testid="button-hero-cta"
                 data-cta-variant={ctaVariant}
                 onClick={() => track("hero_cta_click", { variant: ctaVariant })}
@@ -683,10 +684,12 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <AnimatedStat value={10000} suffix="+" label="Active users"              icon={Users}      />
-            <AnimatedStat value={340000} suffix="+" label="Habits tracked"            icon={CheckSquare} />
+            <AnimatedStat value={340000} suffix="+" label="Habits tracked"           icon={CheckSquare} />
             <div className="flex flex-col items-center gap-1">
               <Star className="w-4 h-4 text-primary mb-1 opacity-70" />
-              <p className="text-2xl sm:text-3xl font-extrabold tracking-tight">4.8<span className="text-base font-semibold">/5</span></p>
+              <span className="text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums block">
+                4.8<span className="text-base font-semibold">/5</span>
+              </span>
               <p className="text-xs text-muted-foreground">Average rating</p>
             </div>
             <AnimatedStat value={73} suffix="%" label="Still active after 30 days"   icon={Flame}       />
@@ -956,9 +959,14 @@ export default function Landing() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{t.desc}</p>
-                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> {t.time}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> {t.time}
+                      </p>
+                      <span className="text-[10px] text-primary font-medium flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Use this <ChevronRight className="w-3 h-3" />
+                      </span>
+                    </div>
                   </CardContent>
                 </Card>
               </Link>
@@ -1124,7 +1132,7 @@ export default function Landing() {
                 key={plan.name}
                 className={cn(
                   "relative flex flex-col hover-elevate transition-all duration-200",
-                  plan.badge ? "border-primary/40 shadow-lg scale-[1.02]" : "border-border/60",
+                  plan.badge ? "border-primary/50 shadow-xl shadow-primary/20 scale-[1.03] bg-primary/[0.025]" : "border-border/60",
                 )}
               >
                 {plan.badge && (
@@ -1288,9 +1296,27 @@ export default function Landing() {
               <p className="text-xs text-muted-foreground leading-relaxed mb-3">
                 Built for people who are tired of starting over.
               </p>
-              <p className="text-[11px] text-muted-foreground/70">
+              <p className="text-[11px] text-muted-foreground/70 mb-4">
                 Not another habit tracker.<br />A system that survives real life.
               </p>
+              <div className="flex items-center gap-3">
+                <a
+                  href="https://twitter.com/strivoapp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary flex items-center justify-center text-muted-foreground transition-colors"
+                  aria-label="Follow Strivo on X (Twitter)"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href="mailto:support@strivo.life"
+                  className="w-8 h-8 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary flex items-center justify-center text-muted-foreground transition-colors"
+                  aria-label="Email Strivo support"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                </a>
+              </div>
             </div>
             {/* Product links */}
             <div>

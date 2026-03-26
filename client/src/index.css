@@ -357,6 +357,13 @@
   100% { box-shadow: 0 0 0 0   hsl(var(--primary) / 0); }
 }
 
+/* CTA button attention ping */
+@keyframes cta-ping {
+  0%   { box-shadow: 0 0 0 0   hsl(var(--primary) / 0.40); }
+  60%  { box-shadow: 0 0 0 14px hsl(var(--primary) / 0); }
+  100% { box-shadow: 0 0 0 0   hsl(var(--primary) / 0); }
+}
+
 /* Number count-up — handled via JS; keyframe for initial reveal */
 @keyframes count-up {
   from { opacity: 0; transform: translateY(8px); }
@@ -553,6 +560,7 @@
   .animate-toast-in      { animation: toast-in       300ms cubic-bezier(0.22,1,0.36,1) both; }
   .animate-pulse-success { animation: pulse-success  400ms ease-out; }
   .animate-glow-pulse    { animation: glow-pulse     500ms ease-out; }
+  .animate-cta-ping      { animation: cta-ping 2.4s ease-out infinite; }
   .animate-count-up      { animation: count-up       800ms cubic-bezier(0.22,1,0.36,1) both; }
   .animate-bar-grow      { animation: bar-grow       600ms cubic-bezier(0.22,1,0.36,1) both; }
   .animate-skeleton      { animation: skeleton-shimmer 1500ms ease-in-out infinite; }
