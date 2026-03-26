@@ -782,7 +782,22 @@ export function FutureSelfAudioPlayer({
     audioRef.current = el;
 
     if (autoplay) {
-      el.play().then(() => setPlaying(true)).catch(() => setAutoplayBlocked(true));
+      // Muted autoplay is always permitted by browsers.
+      // Start muted, then prompt user to unmute with one tap.
+      el.muted = true;
+      el.play()
+        .then(() => {
+          setPlaying(true);
+          if (!mutedPref) {
+            // Playing but muted — show unmute prompt so user knows audio is ready
+            setAutoplayBlocked(true);
+          }
+        })
+        .catch(() => {
+          // Even muted autoplay failed — show manual play button
+          el.muted = mutedPref;
+          setAutoplayBlocked(true);
+        });
     }
 
     return () => { el.pause(); el.src = ""; };
@@ -802,6 +817,8 @@ export function FutureSelfAudioPlayer({
     if (!el) return;
     el.muted = !muted;
     setMuted(m => !m);
+    // Dismiss the muted-autoplay prompt once user explicitly taps mute/unmute
+    setAutoplayBlocked(false);
   };
 
   const skipForToday = () => {
@@ -849,9 +866,22 @@ export function FutureSelfAudioPlayer({
           <p className="text-sm font-bold leading-snug">
             {userName ? `${userName.split(" ")[0]}, ` : ""}{copy.label}
           </p>
-          {(autoplayBlocked || !playing) && (
+          {autoplayBlocked && playing ? (
+            <button
+              type="button"
+              onClick={toggleMute}
+              className={cn(
+                "flex items-center gap-1 mt-1 text-xs font-semibold animate-pulse",
+                context === "missedDay" ? "text-warning" : "text-primary"
+              )}
+              data-testid="button-future-audio-unmute-prompt"
+            >
+              <Volume2 className="w-3 h-3" />
+              Tap to unmute
+            </button>
+          ) : (!playing && (
             <p className="text-xs text-muted-foreground mt-0.5">{copy.sub}</p>
-          )}
+          ))}
         </div>
       </div>
 
