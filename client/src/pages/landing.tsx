@@ -699,67 +699,272 @@ export default function Landing() {
       </nav>
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section id="main-content" className="relative pt-20 sm:pt-32 pb-8 px-4 overflow-hidden sm:min-h-[85vh] sm:flex sm:flex-col sm:justify-center" aria-label="Hero">
-        {/* Background blobs */}
+      <section
+        id="main-content"
+        aria-label="Hero"
+        className="relative min-h-[100svh] flex items-center overflow-hidden px-4 pt-16"
+      >
+        {/* ── Background: dot grid + gradient blobs ── */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[560px] bg-primary/[0.13] rounded-full blur-3xl" />
-          <div className="absolute top-20 right-0 w-[500px] h-[400px] bg-chart-2/[0.09] rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[300px] bg-chart-5/[0.07] rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-0 w-[250px] h-[250px] bg-chart-4/[0.05] rounded-full blur-3xl" />
+          {/* Subtle dot grid */}
+          <div
+            className="absolute inset-0 opacity-[0.035]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
+            }}
+          />
+          {/* Colour blobs */}
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/[0.18] rounded-full blur-[120px]" />
+          <div className="absolute top-1/3 right-0 w-[500px] h-[500px] bg-chart-2/[0.10] rounded-full blur-[100px]" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[350px] bg-chart-5/[0.08] rounded-full blur-[80px]" />
         </div>
 
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Social proof cluster */}
-          <div className="mb-5 sm:mb-6 flex justify-center">
-            <SocialProofRow />
-          </div>
+        <div className="max-w-7xl mx-auto w-full py-12 sm:py-16 lg:py-0">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-          <h1 className="text-[1.75rem] leading-[1.15] sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6 sm:leading-[1.1]">
-            Stop starting over.{" "}
-            <span className="gradient-text block sm:inline">Build something that survives hard days.</span>
-          </h1>
-          <p className="text-sm sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-5 sm:mb-7 leading-relaxed px-1 sm:px-0">
-            Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't.
-          </p>
-
-          {/* Trust bullets */}
-          <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6 sm:gap-y-1 text-sm text-muted-foreground mb-6 sm:mb-10">
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No perfect routines needed</span>
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No guilt spirals</span>
-            <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-chart-3 flex-shrink-0" /> No "start again Monday"</span>
-          </div>
-
-          {/* CTA row */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-4 sm:mb-6 px-2 sm:px-0">
-            <Link href="/signup" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                className="btn-scale animate-cta-ping gap-2 h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full"
-                data-testid="button-hero-cta"
-                data-cta-variant={ctaVariant}
-                onClick={() => track("hero_cta_click", { variant: ctaVariant })}
+            {/* ── LEFT: Copy ──────────────────────────────────────── */}
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col items-start text-left"
+            >
+              {/* Social proof pill */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="mb-6"
               >
-                {ctaVariant === "A" ? "Build My System Free" : "Start Building — It's Free"}
-                <ArrowRight className="w-4 h-4 flex-shrink-0" />
-              </Button>
-            </Link>
-            <a href="#how-it-works" className="w-full sm:w-auto">
-              <Button size="lg" variant="outline" className="btn-scale h-12 px-6 sm:px-7 text-sm sm:text-base rounded-full w-full" data-testid="button-hero-how-it-works">
-                See How It Works
-              </Button>
-            </a>
+                <SocialProofRow />
+              </motion.div>
+
+              {/* Headline */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.65, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="text-[2.1rem] leading-[1.1] sm:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-extrabold tracking-tight mb-5"
+              >
+                Stop starting over.{" "}
+                <span className="gradient-text">Build something that survives hard days.</span>
+              </motion.h1>
+
+              {/* Sub-headline */}
+              <motion.p
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                className="text-base sm:text-lg text-muted-foreground max-w-lg mb-6 leading-relaxed"
+              >
+                Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't.
+              </motion.p>
+
+              {/* Trust bullets */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.38 }}
+                className="flex flex-col gap-2 mb-8"
+              >
+                {[
+                  "No perfect routines — just a minimum that still counts",
+                  "No guilt spirals — recovery flow gets you back on track",
+                  "No 'start again Monday' — the system survives one missed day",
+                ].map((item) => (
+                  <span key={item} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                    <span className="w-5 h-5 rounded-full bg-chart-3/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 text-chart-3" />
+                    </span>
+                    {item}
+                  </span>
+                ))}
+              </motion.div>
+
+              {/* CTA buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.46 }}
+                className="flex flex-col sm:flex-row gap-3 mb-4 w-full sm:w-auto"
+              >
+                <Link href="/signup" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    className="btn-scale gap-2 h-13 px-8 text-base font-semibold rounded-full w-full shadow-lg shadow-primary/25"
+                    data-testid="button-hero-cta"
+                    data-cta-variant={ctaVariant}
+                    onClick={() => track("hero_cta_click", { variant: ctaVariant })}
+                  >
+                    {ctaVariant === "A" ? "Build My System Free" : "Start Building — It's Free"}
+                    <ArrowRight className="w-4 h-4 flex-shrink-0" />
+                  </Button>
+                </Link>
+                <a href="#how-it-works" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="btn-scale h-13 px-7 text-base rounded-full w-full"
+                    data-testid="button-hero-how-it-works"
+                  >
+                    See How It Works
+                  </Button>
+                </a>
+              </motion.div>
+
+              {/* Trust micro-line */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.56 }}
+                className="text-xs text-muted-foreground/70"
+              >
+                Free forever · No credit card needed · 73% still active after 30 days
+              </motion.p>
+            </motion.div>
+
+            {/* ── RIGHT: Floating card composition ──────────────── */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="relative hidden lg:flex items-center justify-center min-h-[480px]"
+            >
+              {/* Glow behind cards */}
+              <div className="absolute inset-0 bg-primary/[0.07] rounded-3xl blur-3xl -z-10" />
+
+              {/* ── Main check-in card ── */}
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="relative z-10 bg-card border border-border rounded-2xl shadow-2xl shadow-primary/10 p-5 w-72"
+              >
+                {/* Card header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground font-medium">Thursday, March 26</p>
+                    <p className="text-sm font-bold">Today's Systems</p>
+                  </div>
+                  <div className="gradient-brand rounded-xl px-2.5 py-1 text-white text-xs font-bold shadow-sm">
+                    2/3 done
+                  </div>
+                </div>
+
+                {/* Habit rows */}
+                <div className="space-y-2 mb-4">
+                  {[
+                    { name: "Morning Movement", streak: 12, done: true  },
+                    { name: "Daily Reading",    streak: 7,  done: true  },
+                    { name: "Focus Block",      streak: 4,  done: false },
+                  ].map((h) => (
+                    <div key={h.name} className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all",
+                      h.done ? "bg-chart-3/5 border-chart-3/20" : "bg-muted/40 border-border"
+                    )}>
+                      <div className={cn(
+                        "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
+                        h.done ? "gradient-brand shadow-sm" : "bg-muted border border-border"
+                      )}>
+                        {h.done && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold leading-none mb-0.5 truncate">{h.name}</p>
+                        <p className="text-[10px] text-muted-foreground">🔥 {h.streak}d streak</p>
+                      </div>
+                      {!h.done && (
+                        <span className="text-[9px] text-chart-4 font-semibold bg-chart-4/10 rounded-md px-1.5 py-0.5 flex-shrink-0">
+                          Pending
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Progress bar */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                    <motion.div
+                      className="h-1.5 rounded-full gradient-brand"
+                      initial={{ width: 0 }}
+                      animate={{ width: "67%" }}
+                      transition={{ duration: 1.2, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">67%</span>
+                </div>
+              </motion.div>
+
+              {/* ── Floating: Streak badge (top-right) ── */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute top-4 -right-2 z-20 bg-card border border-border rounded-2xl px-4 py-3 shadow-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl leading-none">🔥</span>
+                  <div>
+                    <p className="text-sm font-extrabold leading-none">12-day streak</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Personal best!</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* ── Floating: Recovery card (bottom-left) ── */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, x: -20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 1.05, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute -bottom-2 -left-6 z-20 bg-card border border-border rounded-2xl px-3.5 py-3 shadow-lg max-w-[180px]"
+              >
+                <div className="flex items-center gap-1.5 mb-1">
+                  <RefreshCw className="w-3.5 h-3.5 text-chart-3" />
+                  <p className="text-xs font-semibold text-foreground">Missed yesterday?</p>
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-snug">Recovery flow activated — back on track 💪</p>
+              </motion.div>
+
+              {/* ── Floating: Live activity (top-left) ── */}
+              <motion.div
+                initial={{ opacity: 0, y: -16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 1.2 }}
+                className="absolute top-[-16px] left-2 z-20"
+              >
+                <HeroNotification />
+              </motion.div>
+            </motion.div>
+
           </div>
-          <p className="text-xs text-muted-foreground">
-            Free forever · No credit card needed · 73% still active after 30 days
-          </p>
+
+          {/* Mobile: simple activity notification below buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="flex justify-center mt-8 lg:hidden"
+          >
+            <HeroNotification />
+          </motion.div>
         </div>
 
-        {/* Live activity ticker */}
-        <div className="flex justify-center mt-5 sm:mt-6 mb-2">
-          <HeroNotification />
-        </div>
-
-        <ProductPreview />
+        {/* Scroll hint */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4, duration: 0.5 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-1.5"
+        >
+          <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Scroll</p>
+          <motion.div
+            animate={{ y: [0, 5, 0] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronDown className="w-4 h-4 text-muted-foreground/30" />
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* ── Social proof stats strip ───────────────────────────── */}
