@@ -32,7 +32,7 @@ function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
-const navItems = [
+const coreNavItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -52,12 +52,6 @@ const navItems = [
     hint: "Your daily habits",
   },
   {
-    title: "Templates",
-    url: "/templates",
-    icon: LayoutGrid,
-    hint: "Start from proven habits",
-  },
-  {
     title: "Today's Progress",
     url: "/checkins",
     icon: CheckSquare,
@@ -70,22 +64,25 @@ const navItems = [
     hint: "Charts & streaks",
   },
   {
+    title: "AI Coach",
+    url: "/ai-coach",
+    icon: Bot,
+    hint: "Get personalized habit coaching",
+  },
+];
+
+const exploreNavItems = [
+  {
     title: "Reflections",
     url: "/journal",
     icon: BookOpen,
     hint: "Your daily journal",
   },
   {
-    title: "AI Coach",
-    url: "/ai-coach",
-    icon: Bot,
-    hint: "Get personalized habit coaching",
-  },
-  {
-    title: "Team Workspace",
-    url: "/workspace",
-    icon: Users,
-    hint: "Collaborate with your team",
+    title: "Templates",
+    url: "/templates",
+    icon: LayoutGrid,
+    hint: "Start from proven habits",
   },
   {
     title: "Weekly Review",
@@ -98,6 +95,12 @@ const navItems = [
     url: "/achievements",
     icon: Trophy,
     hint: "Your badges and milestones",
+  },
+  {
+    title: "Team Workspace",
+    url: "/workspace",
+    icon: Users,
+    hint: "Collaborate with your team",
   },
 ];
 
@@ -179,17 +182,16 @@ export function AppSidebar() {
       <SidebarContent className="py-3">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase tracking-wider">
-            Navigation
+            Core
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
+              {coreNavItems.map((item) => {
                 const isActive = location === item.url || location.startsWith(item.url + "/");
 
                 const showBadge = item.url === "/checkins" && completionPct !== null && !allDone;
                 const showComplete = item.url === "/checkins" && allDone;
                 const showProBadge = item.url === "/ai-coach" && !features.aiCoach;
-                const showEliteBadge = item.url === "/workspace" && !features.teamWorkspace;
 
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -221,6 +223,35 @@ export function AppSidebar() {
                             Pro
                           </Badge>
                         )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-1">
+          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-1 uppercase tracking-wider">
+            Explore
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {exploreNavItems.map((item) => {
+                const isActive = location === item.url || location.startsWith(item.url + "/");
+                const showEliteBadge = item.url === "/workspace" && !features.teamWorkspace;
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link
+                        href={item.url}
+                        data-testid={`nav-${item.title.toLowerCase().replace(/ /g, "-").replace(/'/g, "")}`}
+                        title={item.hint}
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span className="flex-1">{item.title}</span>
                         {showEliteBadge && (
                           <Badge
                             className="ml-auto text-[10px] px-1.5 py-0 h-4 bg-amber-500/20 text-amber-700 dark:text-amber-300 border-0"

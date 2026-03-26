@@ -107,15 +107,15 @@ const pricingPlans = [
   },
   {
     name: "Elite", price: "$25", yearlyPrice: "$19", period: "/month",
-    tagline: "For power users who want everything", badge: "Best Value",
+    tagline: "For power users who want everything", badge: "All-Inclusive",
     features: ["Unlimited goals & systems", "AI Coach (unlimited msgs/day)", "Advanced analytics & AI insights", "Full template library", "AI journal prompts", "CSV / PDF exports", "Future self audio", "Priority support", "Team workspace", "Coach dashboard"],
     cta: "Go Elite", ctaVariant: "outline" as const, href: "/signup",
   },
 ];
 
 const navLinks = [
-  { label: "Features",    href: "#features"    },
   { label: "How It Works",href: "#how-it-works"},
+  { label: "Features",    href: "#features"    },
   { label: "Templates",   href: "#templates"   },
   { label: "Pricing",     href: "#pricing"     },
   { label: "FAQ",         href: "#faq"         },
@@ -856,7 +856,7 @@ export default function Landing() {
               Everything built around one idea: make it easier to show up on hard days.
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {allFeatures.map((f) => (
               <Card key={f.title} className="card-interactive border-border/60 transition-all">
                 <CardContent className="p-4 sm:p-5">
@@ -864,7 +864,7 @@ export default function Landing() {
                     <f.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <h3 className="font-semibold text-xs sm:text-sm mb-1.5 leading-snug">{f.title}</h3>
-                  <p className="text-muted-foreground text-[11px] sm:text-xs leading-relaxed hidden sm:block">{f.desc}</p>
+                  <p className="text-muted-foreground text-[11px] sm:text-xs leading-relaxed">{f.desc}</p>
                 </CardContent>
               </Card>
             ))}
