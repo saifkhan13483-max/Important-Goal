@@ -52,6 +52,7 @@ const categoryIcons: Record<string, string> = {
 
 function DeadlineBadge({ deadline }: { deadline: string }) {
   const date = startOfDay(new Date(deadline));
+  if (isNaN(date.getTime())) return null;
   const now = new Date();
   const isOverdue = isPast(date) && !isWithinInterval(now, { start: date, end: new Date(date.getTime() + 86400000 - 1) });
   const isDueSoon = !isOverdue && isWithinInterval(date, { start: startOfDay(now), end: addDays(startOfDay(now), 7) });
@@ -59,7 +60,7 @@ function DeadlineBadge({ deadline }: { deadline: string }) {
     <span className={`text-xs flex items-center gap-1 flex-shrink-0 ${isOverdue ? "text-destructive font-medium" : isDueSoon ? "text-chart-4 font-medium" : "text-muted-foreground"}`}>
       <Calendar className="w-3 h-3" />
       {isOverdue ? "Overdue · " : isDueSoon ? "Due soon · " : ""}
-      {format(new Date(deadline), "MMM d, yyyy")}
+      {format(date, "MMM d, yyyy")}
     </span>
   );
 }
@@ -320,11 +321,11 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
             <label className="text-sm font-medium">Target Date</label>
             <Input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} autoFocus data-testid="input-goal-deadline" />
           </div>
-          {deadline && (
+          {deadline && !isNaN(new Date(deadline).getTime()) && (
             <div className="p-3 rounded-lg bg-primary/8 border border-primary/20 flex items-center gap-2">
               <Flag className="w-4 h-4 text-primary flex-shrink-0" />
               <p className="text-sm text-foreground">
-                You have <strong>{Math.max(0, Math.round((new Date(deadline).getTime() - Date.now()) / 86400000))} days</strong> to achieve this.
+                You have <strong>{Math.max(0, differenceInDays(new Date(deadline), startOfDay(new Date())))} days</strong> to achieve this.
               </p>
             </div>
           )}
@@ -344,18 +345,22 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
             <h3 className="font-semibold text-base mb-0.5">Break it into monthly wins</h3>
             <p className="text-xs text-muted-foreground">Add 2–4 checkpoints to track your progress along the way.</p>
           </div>
-          {(CATEGORY_EXAMPLES[category]?.milestones ?? []).length > 0 && milestones.every(m => !m.target.trim()) && (
+          {(CATEGORY_EXAMPLES[category]?.milestones ?? []).length > 0 && milestones.some(m => !m.target.trim()) && (
             <div className="space-y-1.5">
               <p className="text-xs font-medium text-muted-foreground">Suggestions for {category}:</p>
-              {(CATEGORY_EXAMPLES[category]?.milestones ?? CATEGORY_EXAMPLES.other.milestones).map((ex, i) => (
-                <button key={i} type="button"
-                  onClick={() => setMilestones(ms => ms.map((m, idx) => idx === i ? { ...m, target: ex } : m))}
-                  className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all text-muted-foreground hover:text-foreground"
-                  data-testid={`milestone-suggestion-${i}`}
-                >
-                  <span className="font-semibold text-primary mr-1">Month {i + 1}:</span>{ex}
-                </button>
-              ))}
+              {(CATEGORY_EXAMPLES[category]?.milestones ?? CATEGORY_EXAMPLES.other.milestones).map((ex, i) => {
+                const alreadyFilled = milestones[i]?.target.trim();
+                if (alreadyFilled) return null;
+                return (
+                  <button key={i} type="button"
+                    onClick={() => setMilestones(ms => ms.map((m, idx) => idx === i ? { ...m, target: ex } : m))}
+                    className="block w-full text-left text-xs px-3 py-2 rounded-lg border border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 transition-all text-muted-foreground hover:text-foreground"
+                    data-testid={`milestone-suggestion-${i}`}
+                  >
+                    <span className="font-semibold text-primary mr-1">Month {i + 1}:</span>{ex}
+                  </button>
+                );
+              })}
             </div>
           )}
           <div className="space-y-2">
@@ -430,7 +435,7 @@ function GoalForm({ goal, userId, onClose }: { goal?: Goal; userId: string; onCl
                 <Flag className="w-4 h-4 text-chart-4 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Deadline</p>
-                  <p className="text-sm text-foreground">{format(new Date(deadline), "MMMM d, yyyy")} · <span className="text-muted-foreground">{Math.max(0, Math.round((new Date(deadline).getTime() - Date.now()) / 86400000))} days away</span></p>
+                  <p className="text-sm text-foreground">{!isNaN(new Date(deadline).getTime()) ? format(new Date(deadline), "MMMM d, yyyy") : deadline} · <span className="text-muted-foreground">{Math.max(0, differenceInDays(new Date(deadline), startOfDay(new Date())))} days away</span></p>
                 </div>
               </div>
             )}

@@ -5,6 +5,7 @@ import { auth } from "@/lib/firebase";
 import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
 import { applyReferralCode } from "@/services/referral.service";
+import { sendSignupWelcome } from "@/lib/emailjs";
 import type { User } from "@/types/schema";
 import { useAppStore, type Theme } from "@/store/auth.store";
 
@@ -99,6 +100,7 @@ export function useAuth() {
         applyReferralCode(cred.user.uid, pendingRef).catch(() => {});
         try { localStorage.removeItem("strivo_pending_ref"); } catch {}
       }
+      sendSignupWelcome(data.name, data.email).catch(() => {});
       return cred;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["user"] }),

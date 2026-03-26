@@ -972,7 +972,7 @@ export default function Dashboard() {
   const analytics = useMemo(() => computeAnalytics(allCheckins, systems, goals), [allCheckins, systems, goals]);
 
   const activeGoals = goals.filter(g => g.status === "active");
-  const activeSystems = systems.filter(s => s.active);
+  const activeSystems = systems.filter(s => s.active !== false);
   const todayDone = todayCheckins.filter(c => c.status === "done").length;
   const todayTotal = activeSystems.length;
   const completionPct = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;

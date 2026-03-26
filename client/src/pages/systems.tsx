@@ -389,8 +389,8 @@ export default function SystemsPage() {
   const systemLimit = getPlanLimits(plan).systems;
   const atSystemLimit = isAtSystemLimit(plan, systems.length);
 
-  const activeSystems = systems.filter(s => s.active);
-  const pausedSystems = systems.filter(s => !s.active);
+  const activeSystems = systems.filter(s => s.active !== false);
+  const pausedSystems = systems.filter(s => s.active === false);
   const totalCheckins = allCheckins.length;
 
   const getGoalTitle = (goalId?: string | null) =>
@@ -423,7 +423,7 @@ export default function SystemsPage() {
     const matchSearch = !search || s.title.toLowerCase().includes(search.toLowerCase()) ||
       (s.identityStatement || "").toLowerCase().includes(search.toLowerCase()) ||
       (s.minimumAction || "").toLowerCase().includes(search.toLowerCase());
-    const matchTab = activeTab === "all" || (activeTab === "active" ? s.active : !s.active);
+    const matchTab = activeTab === "all" || (activeTab === "active" ? s.active !== false : s.active === false);
     return matchSearch && matchTab;
   }), [systems, search, activeTab]);
 

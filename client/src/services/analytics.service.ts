@@ -98,7 +98,7 @@ export function computeAnalytics(
   goals: Goal[],
 ): AnalyticsData {
   const today = getTodayKey();
-  const activeSystems = systems.filter(s => s.active);
+  const activeSystems = systems.filter(s => s.active !== false);
 
   /* ── Current streaks ── */
   const streaks: Record<string, number> = {};

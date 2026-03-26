@@ -184,17 +184,23 @@ function WeeklyReportChecker() {
       }
 
       const currentStreak = Math.max(0, ...Object.values(streakMap));
-      const activeSystems = systems.filter(s => s.isActive).length;
+      const activeSystems = systems.filter(s => s.active !== false).length;
+
+      let bestStreak = currentStreak;
+      try {
+        const { computeAnalytics } = await import("@/services/analytics.service");
+        const analytics = computeAnalytics(checkins, systems, []);
+        bestStreak = Math.max(currentStreak, analytics.topBestStreak);
+      } catch { /* fallback to currentStreak */ }
 
       await sendWeeklyReport({
         email: user.email ?? "",
         name: user.name ?? "there",
         completionRate,
         currentStreak,
-        bestStreak: (user as any).bestStreak ?? currentStreak,
+        bestStreak,
         checkinsThisWeek: done,
         activeSystems,
-        dashboardUrl: window.location.origin + "/dashboard",
       });
       markWeeklyReportSent();
     } catch {

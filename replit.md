@@ -26,6 +26,24 @@ Strivo is a React + Firebase web application that helps users turn goals into da
 4. **Contribution Heatmap in Analytics** — `ContributionHeatmap` component in `analytics.tsx` renders a 52-week GitHub-style grid; color intensity based on done check-ins per day; month labels, day-of-week labels, legend, active-day count, total check-in count; uses `date-fns` helpers
 5. **Streak Freeze Activation** — Toggle switch in Settings → Notifications tab; stores `streakFreezes` count in Firestore on the User document (was already complete)
 
+## Bug Fixes — Full Audit (Production-Ready Pass)
+
+The following bugs were identified and fixed during a full end-to-end codebase audit:
+
+1. **`s.isActive` typo → `s.active !== false`** (`App.tsx` WeeklyReportChecker): The `isActive` property doesn't exist on `System`. Active systems were always counted as 0 in weekly email reports.
+2. **`dashboardUrl` excess property** (`App.tsx`): `sendWeeklyReport` was called with `dashboardUrl` which is not in the `WeeklyReportData` interface — would cause a TypeScript build error. Removed; emailjs.ts already hardcodes the URL.
+3. **`(user as any).bestStreak`** (`App.tsx`): `bestStreak` does not exist on the `User` type. Fixed to dynamically compute the real best streak via `computeAnalytics()`.
+4. **Missing `sendSignupWelcome` call** (`use-auth.ts`): New user signup never triggered the welcome email. Now correctly calls `sendSignupWelcome(data.name, data.email)` after Firestore user doc creation.
+5. **AI rate limit inconsistency** (`ai.service.ts`): `DAILY_AI_LIMITS` had `free: 15`, `starter: 60`, `pro: Infinity` — contradicting `plan-limits.ts` which says free/starter have no AI access and pro gets 10/day. Corrected to `free: 0, starter: 0, pro: 10, elite: Infinity`.
+6. **`s.active` truthy filter** (7 locations across 4 files): Systems with `active: null` (e.g., older records before field was added) were incorrectly treated as paused because `null` is falsy. Fixed all 7 occurrences to use `s.active !== false` (active) or `s.active === false` (paused):
+   - `analytics.service.ts` line 101 — fixes analytics counts for activeSystems, streaks, and charts
+   - `dashboard.tsx` line 975 — fixes metric card, insight widget, recovery/retention banners
+   - `checkins.tsx` lines 975, 1336, 1357 — fixes calendar view, daily check-in list, achievement unlocking
+   - `systems.tsx` lines 392, 393, 426 — fixes active/paused counts and tab filtering
+7. **Crash-risk in `DeadlineBadge`** (`goals.tsx`): `format(new Date(deadline), ...)` would throw a `RangeError` if `deadline` is an empty/invalid string. Added `isNaN(date.getTime())` guard that returns null.
+8. **Inconsistent days-remaining calculation** (`goals.tsx`): Replaced two manual `Math.round((new Date(deadline).getTime() - Date.now()) / 86400000)` expressions with `differenceInDays` from date-fns for accuracy and timezone safety.
+9. **Milestone suggestions UX bug** (`goals.tsx`): Suggestion buttons disappeared the moment any milestone field was filled (`milestones.every`). Changed to `milestones.some` and added per-slot filtering so only unfilled slots show their suggestion — prevents accidental overwrites.
+
 ## Deployment Status
 - **Deployment target**: Static site (`npm run build` → `dist/`)
 - **Production build**: Verified working (3062+ modules, ~558KB gzip)

@@ -972,7 +972,7 @@ function CheckinConsistencyBanner({ bestStreak, activeSystems, yesterdayCheckins
 
 /* ─── Calendar View ─────────────────────────────────────────────── */
 function CalendarView({ allCheckins, systems }: { allCheckins: Checkin[]; systems: System[] }) {
-  const activeSystems = systems.filter(s => s.active);
+  const activeSystems = systems.filter(s => s.active !== false);
   const [viewDate, setViewDate] = useState(new Date());
   const monthStart  = startOfMonth(viewDate);
   const daysInMonth = getDaysInMonth(viewDate);
@@ -1333,7 +1333,7 @@ export default function Checkins() {
   });
 
   const analytics        = useMemo(() => computeAnalytics(allCheckins, systems, []), [allCheckins, systems]);
-  const allActiveSystems = systems.filter(s => s.active);
+  const allActiveSystems = systems.filter(s => s.active !== false);
   const activeSystems    = useMemo(() => allActiveSystems.filter(isScheduledToday), [allActiveSystems]);
   const skippedToday     = useMemo(() => allActiveSystems.filter(s => !isScheduledToday(s)), [allActiveSystems]);
   const doneCount     = todayCheckins.filter(c => c.status === "done").length;
@@ -1354,7 +1354,7 @@ export default function Checkins() {
       const latestCheckins: Checkin[] = qcMain.getQueryData(["checkins", userId]) ?? allCheckins;
       const latestSystems: System[] = qcMain.getQueryData(["systems", userId]) ?? systems;
       const doneCheckins = latestCheckins.filter(c => c.status === "done");
-      const activeSys = latestSystems.filter(s => s.active);
+      const activeSys = latestSystems.filter(s => s.active !== false);
       const maxStreak = Math.max(0, ...Object.values(analytics.streaks).map(Number));
       const maxBestStreak = Math.max(0, ...Object.values(analytics.bestStreaks).map(Number));
 

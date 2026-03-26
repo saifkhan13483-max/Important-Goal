@@ -2,12 +2,12 @@ const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 // ---------------------------------------------------------------------------
 // Rate limiting — stored in localStorage, keyed by UTC date.
-// Limits: free = 15 messages/day, starter = 60, pro/elite = unlimited.
+// Limits match plan-limits.ts: free/starter = no AI access, pro = 10/day, elite = unlimited.
 // ---------------------------------------------------------------------------
 const DAILY_AI_LIMITS: Record<string, number> = {
-  free: 15,
-  starter: 60,
-  pro: Infinity,
+  free: 0,
+  starter: 0,
+  pro: 10,
   elite: Infinity,
 };
 
