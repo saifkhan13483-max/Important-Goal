@@ -54,6 +54,7 @@ const plans = [
       "Advanced streak tracking",
       "Weekly reflection prompts",
       "Better analytics",
+      "Future self audio",
       "Dark mode",
       "Export basic reports",
     ],
@@ -77,10 +78,12 @@ const plans = [
     features: [
       "Unlimited goals",
       "Unlimited systems",
+      "AI Coach (10 messages/day)",
       "Advanced analytics dashboard",
       "Mood & habit correlation insights",
       "Premium templates",
       "Advanced journaling",
+      "Future self audio",
       "CSV / PDF exports",
       "Priority support",
     ],
@@ -154,6 +157,7 @@ const comparisonRows = [
   { feature: "Export Reports", free: false, starter: "Basic", pro: "CSV / PDF", elite: "CSV / PDF" },
   { feature: "Dark Mode", free: false, starter: true, pro: true, elite: true },
   { feature: "Priority Support", free: false, starter: false, pro: true, elite: "Dedicated" },
+  { feature: "Future Self Audio", free: false, starter: true, pro: true, elite: true },
   { feature: "AI Coach", free: false, starter: false, pro: "Limited", elite: "Unlimited" },
   { feature: "Team Workspace", free: false, starter: false, pro: false, elite: true },
 ];
@@ -221,7 +225,7 @@ export default function Pricing() {
       <Helmet>
         <title>Pricing — Free, Starter, Pro & Elite | Strivo</title>
         <link rel="canonical" href="https://strivo.life/pricing" />
-        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter ($9/mo), Pro ($19/mo), and Elite ($49/mo) plans." />
+        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter ($9/mo), Pro ($19/mo), and Elite ($39/mo) plans." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://strivo.life/pricing" />
         <meta property="og:site_name" content="Strivo" />

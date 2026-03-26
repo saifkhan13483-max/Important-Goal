@@ -63,7 +63,7 @@ export default function TermsOfService() {
         </Link>
 
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Terms of Service</h1>
-        <p className="text-muted-foreground text-sm mb-10">Last updated: March 16, 2026</p>
+        <p className="text-muted-foreground text-sm mb-10">Last updated: March 26, 2026</p>
 
         <div className="prose prose-sm max-w-none space-y-8 text-foreground">
 

@@ -215,7 +215,7 @@ function CheckInPreview() {
     <div className="bg-card border border-border rounded-2xl p-5 h-full">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="text-[10px] text-muted-foreground">Monday, March 16</p>
+          <p className="text-[10px] text-muted-foreground">Thursday, March 26</p>
           <p className="text-xs font-bold">Good morning, Alex! 👋</p>
         </div>
         <div className="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center">
@@ -323,7 +323,7 @@ function ProductPreview() {
             </div>
             <div className="rounded-lg sm:rounded-xl gradient-brand p-2 sm:p-3 text-white relative overflow-hidden flex-shrink-0">
               <div className="absolute inset-0 opacity-10 bg-white rounded-full scale-150 translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-              <p className="text-[9px] sm:text-[10px] text-white/70">Monday, March 16</p>
+              <p className="text-[9px] sm:text-[10px] text-white/70">Thursday, March 26</p>
               <p className="text-[11px] sm:text-sm font-bold">Good morning, Alex! 👋</p>
               <p className="text-[9px] sm:text-[10px] text-white/80 hidden sm:block">Ready to make progress today?</p>
             </div>
@@ -1233,7 +1233,7 @@ export default function Landing() {
             One email per week. Real strategies, no fluff — on identity, minimum actions, and recovering from missed days.
           </p>
           <EmailCaptureForm />
-          <p className="text-xs text-muted-foreground mt-4">No spam. Unsubscribe anytime. Used by 12,000+ habit builders.</p>
+          <p className="text-xs text-muted-foreground mt-4">No spam. Unsubscribe anytime. Used by 10,000+ habit builders.</p>
         </div>
       </section>
 
