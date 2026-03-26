@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
+import { applyReferralCode } from "@/services/referral.service";
 import type { User } from "@/types/schema";
 import { useAppStore, type Theme } from "@/store/auth.store";
 
@@ -93,6 +94,11 @@ export function useAuth() {
         preferredTheme: "system",
         timezone: "UTC",
       });
+      const pendingRef = (() => { try { return localStorage.getItem("strivo_pending_ref"); } catch { return null; } })();
+      if (pendingRef) {
+        applyReferralCode(cred.user.uid, pendingRef).catch(() => {});
+        try { localStorage.removeItem("strivo_pending_ref"); } catch {}
+      }
       return cred;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["user"] }),

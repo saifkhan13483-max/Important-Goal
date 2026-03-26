@@ -13,13 +13,14 @@ import { getSystems } from "@/services/systems.service";
 import { getCheckinsByDate, getCheckins, upsertCheckin } from "@/services/checkins.service";
 import { getJournals } from "@/services/journal.service";
 import { computeAnalytics } from "@/services/analytics.service";
+import { ensureReferralCode, getReferralShareUrl } from "@/services/referral.service";
 import { useToast } from "@/hooks/use-toast";
 import {
   Target, Zap, CheckSquare, TrendingUp, ArrowRight, Plus, Flame,
   Calendar, BookOpen, Check, Minus, X, BarChart2, PenLine, Sparkles,
   Lightbulb, Star, Loader2, AlertCircle, RefreshCw, Trophy, Heart,
   LayoutGrid, Flag, TrendingDown, Brain, Share2, Copy, ChevronRight,
-  Activity, Clock, Award,
+  Activity, Clock, Award, Gift,
 } from "lucide-react";
 import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/future-self-audio";
 import { format, parseISO, subDays } from "date-fns";
@@ -819,6 +820,108 @@ function EmptyStateCard({ icon: Icon, title, description, primaryAction, seconda
   );
 }
 
+/* ─── Referral Banner ──────────────────────────────────────────────── */
+function ReferralBanner({ user }: { user: import("@/types/schema").User | null }) {
+  const [code, setCode] = useState<string | null>(user?.referralCode ?? null);
+  const [copied, setCopied] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem("strivo_referral_dismissed") === "true"; } catch { return false; }
+  });
+  const { toast } = useToast();
+
+  const freezes = user?.streakFreezes ?? 0;
+  const referralCount = user?.referralCount ?? 0;
+
+  const loadCode = async () => {
+    if (!user || code) return;
+    try {
+      const c = await ensureReferralCode(user);
+      setCode(c);
+    } catch {}
+  };
+
+  const copyLink = async () => {
+    if (!code) { await loadCode(); return; }
+    const url = getReferralShareUrl(code);
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  if (dismissed) return null;
+
+  return (
+    <div className="relative flex items-start gap-3 p-4 rounded-xl bg-chart-4/8 border border-chart-4/20" data-testid="referral-banner">
+      <button
+        onClick={() => { localStorage.setItem("strivo_referral_dismissed", "true"); setDismissed(true); }}
+        className="absolute top-3 right-3 text-muted-foreground hover:text-foreground text-lg leading-none"
+        aria-label="Dismiss"
+      >×</button>
+      <Gift className="w-4 h-4 text-chart-4 flex-shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0 pr-5">
+        <p className="text-sm font-semibold mb-1 flex items-center gap-2">
+          Invite a friend, earn streak freezes
+          {freezes > 0 && <Badge variant="outline" className="text-chart-4 border-chart-4/30 text-[10px] gap-1"><Flame className="w-2.5 h-2.5" />{freezes} freeze{freezes !== 1 ? "s" : ""}</Badge>}
+        </p>
+        <p className="text-xs text-muted-foreground leading-relaxed mb-2.5">
+          Each friend who joins with your link gives you both a streak freeze.{referralCount > 0 && ` You've referred ${referralCount} friend${referralCount !== 1 ? "s" : ""} so far.`}
+        </p>
+        <Button
+          size="sm" variant="outline"
+          className="gap-1.5 h-7 text-xs"
+          onClick={copyLink}
+          onMouseEnter={loadCode}
+          data-testid="button-copy-referral"
+        >
+          {copied ? <><Check className="w-3 h-3 text-chart-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Copy invite link</>}
+        </Button>
+        {code && <p className="text-[10px] text-muted-foreground mt-1 font-mono">Code: {code}</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Smart Reminder Hint ──────────────────────────────────────────── */
+function SmartReminderHint({ allCheckins, user }: { allCheckins: Checkin[]; user: import("@/types/schema").User | null }) {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem("strivo_reminder_hint_dismissed") === "true"; } catch { return false; }
+  });
+  if (dismissed || !user || user.reminderEnabled) return null;
+  if (allCheckins.length < 5) return null;
+
+  const hourCounts: Record<number, number> = {};
+  allCheckins.forEach(c => {
+    if (!c.createdAt) return;
+    const h = new Date(c.createdAt).getHours();
+    hourCounts[h] = (hourCounts[h] ?? 0) + 1;
+  });
+  const bestHour = Object.entries(hourCounts).sort((a, b) => Number(b[1]) - Number(a[1]))[0];
+  if (!bestHour) return null;
+  const hour = Number(bestHour[0]);
+  const label = hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`;
+
+  return (
+    <div className="relative flex items-start gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15" data-testid="smart-reminder-hint">
+      <button
+        onClick={() => { localStorage.setItem("strivo_reminder_hint_dismissed", "true"); setDismissed(true); }}
+        className="absolute top-3 right-3 text-muted-foreground hover:text-foreground text-lg leading-none"
+        aria-label="Dismiss"
+      >×</button>
+      <Clock className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0 pr-5">
+        <p className="text-sm font-semibold mb-1">Your peak time is around {label}</p>
+        <p className="text-xs text-muted-foreground leading-relaxed mb-2">That's when you've been most consistent. Set a reminder for then and automate showing up.</p>
+        <Link href="/settings">
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" data-testid="button-set-reminder">
+            <Clock className="w-3 h-3" /> Set a reminder
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Loading Skeleton ─────────────────────────────────────────────── */
 function DashboardSkeleton() {
   return (
@@ -969,6 +1072,8 @@ export default function Dashboard() {
           const topSystem = systems.find(s => s.id === topSystemId);
           return topSystem ? <ShareStreakCard streak={topStreak as number} systemTitle={topSystem.title} userName={user?.name ?? ""} /> : null;
         })()}
+        <ReferralBanner user={user} />
+        <SmartReminderHint allCheckins={allCheckins} user={user} />
       </div>
 
       {/* ── Main 2-column grid (lg+) ── */}

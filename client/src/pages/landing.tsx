@@ -16,6 +16,7 @@ import {
   Calendar, Clock, Users, Menu, X,
   Repeat, Flag, Cog, CircleCheck, PenLine, Copy,
   UserCircle2, ChevronRight, Mail, Loader2, MessageSquare,
+  Camera, Globe, Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { captureEmailLead } from "@/services/user.service";
@@ -60,14 +61,14 @@ function useCountUp(target: number, duration = 1400) {
 
 // ─── Data ──────────────────────────────────────────────────────────────────
 const allFeatures = [
-  { icon: Target,     title: "Define what you want to achieve",       desc: "Set a goal with a category, priority, and timeline. See all your goals in one clear place.",                                                                                      color: "bg-primary/10 text-primary"         },
-  { icon: Cog,        title: "Turn your goal into a daily plan",       desc: "A guided wizard that builds your habit step by step — no guessing, no overwhelm.",                                                                                                   color: "bg-chart-2/10 text-chart-2"         },
-  { icon: CircleCheck,title: "Track how today went in seconds",        desc: "Mark each habit as done, partial, or missed. Takes less than 10 seconds per habit.",                                                                                                 color: "bg-chart-3/10 text-chart-3"         },
+  { icon: Target,     title: "Define what you want to achieve",             desc: "Set a goal with a category, priority, and timeline. See all your goals in one clear place.",                                                                                color: "bg-primary/10 text-primary"         },
+  { icon: Cog,        title: "Turn your goal into a daily plan",             desc: "A guided wizard that builds your habit step by step — no guessing, no overwhelm.",                                                                                           color: "bg-chart-2/10 text-chart-2"         },
+  { icon: CircleCheck,title: "Track how today went in seconds",              desc: "Mark each habit as done, partial, or missed. Add mood, difficulty, and a progress photo — in under 30 seconds.",                                                             color: "bg-chart-3/10 text-chart-3"         },
   { icon: Flame,      title: "Stay consistent — even when motivation drops", desc: "Chain Calendar shows your unbroken run of days. Consistency alerts warn you before a slump hits.",                                                                            color: "bg-chart-4/10 text-chart-4"         },
-  { icon: BarChart2,  title: "See what's working",                     desc: "Simple charts and plain-language insights — no confusing dashboards, just clarity.",                                                                                                 color: "bg-chart-5/10 text-chart-5"         },
-  { icon: PenLine,    title: "Reflect on your progress",               desc: "Daily, weekly, and freeform journaling with prompts to help you grow faster.",                                                                                                      color: "bg-primary/10 text-primary"         },
-  { icon: Copy,       title: "Start with proven systems",              desc: "Pre-built habit plans for fitness, study, wellness, morning routines, and more.",                                                                                                    color: "bg-chart-2/10 text-chart-2"         },
-  { icon: RefreshCw,  title: "Bounce back when life gets in the way",  desc: "Recovery Flow guides you after a missed day. Tomorrow Intention lets you pre-commit to the next one.",                                                                              color: "bg-chart-3/10 text-chart-3"         },
+  { icon: BarChart2,  title: "See what's working",                           desc: "Difficulty trend charts and plain-language insights — spot patterns and fix what's slowing you down.",                                                                       color: "bg-chart-5/10 text-chart-5"         },
+  { icon: Globe,      title: "Learn from the community",                     desc: "Browse habit systems shared by real users. Publish your own and help others build consistency.",                                                                              color: "bg-primary/10 text-primary"         },
+  { icon: Gift,       title: "Invite friends, earn streak freezes",          desc: "Share your referral link and you both get a streak freeze — a safety net for your next tough day.",                                                                          color: "bg-chart-2/10 text-chart-2"         },
+  { icon: RefreshCw,  title: "Bounce back when life gets in the way",        desc: "Recovery Flow guides you after a missed day. Tomorrow Intention lets you pre-commit to the next one.",                                                                        color: "bg-chart-3/10 text-chart-3"         },
 ];
 
 const steps = [

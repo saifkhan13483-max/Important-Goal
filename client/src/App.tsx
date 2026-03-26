@@ -223,11 +223,23 @@ function ScrollToTop() {
   return null;
 }
 
+function ReferralCapture() {
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get("ref");
+      if (ref) { localStorage.setItem("strivo_pending_ref", ref.toUpperCase().trim()); }
+    } catch {}
+  }, []);
+  return null;
+}
+
 function Router() {
   const [location] = useLocation();
   return (
     <Suspense fallback={<PageLoader />}>
       <ScrollToTop />
+      <ReferralCapture />
       <AnimatePresence mode="wait" initial={false}>
         <Switch key={location}>
           {/* Public routes */}

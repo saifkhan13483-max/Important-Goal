@@ -467,6 +467,21 @@ export default function AdminPage() {
                       {user.workspaceId ? "Joined" : "None"}
                     </span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Referral code</span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-mono text-xs">{user.referralCode ?? "—"}</span>
+                      {user.referralCode && <CopyButton text={user.referralCode} />}
+                    </div>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Friends referred</span>
+                    <span className="font-semibold">{user.referralCount ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Streak freezes</span>
+                    <span className="font-semibold">{user.streakFreezes ?? 0}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>

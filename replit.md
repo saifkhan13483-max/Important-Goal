@@ -465,3 +465,68 @@ All changes follow WCAG 2.1 AA guidelines.
 
 ### Motion Accessibility
 - `@media (prefers-reduced-motion: reduce)` collapses all animation/transition to `0.01ms`
+
+## Phase 9 — Growth & Engagement Features (implemented)
+
+### T002: Flexible Habit Frequency
+- Systems can now be set to Daily, 2×/week, 3×/week, 4×/week, or 5×/week (not just daily)
+- `System` type has `frequency: "daily" | "2x" | "3x" | "4x" | "5x"` field
+- System builder step: frequency selector with visual day-grid preview
+- Check-in page respects frequency — only counts days within the selected cadence
+
+### T003: Progress Photos in Check-Ins
+- Checkin type now has optional `photoUrl: string` field
+- `handlePhotoUpload` in `checkins.tsx` uploads to Cloudinary (`strivo/checkins` folder)
+- Photo preview shown below check-in form; clicking opens full-size in a lightbox
+- Photo upload button with camera icon added to `SystemCheckinCard`
+
+### T004: Community Templates
+- `CommunityTemplate` interface added to `schema.ts` — stored in Firestore `community_templates`
+- Templates tab has a "Community" sub-tab alongside the library
+- "Publish as Template" dialog: name, description, category, tags
+- Upvoting via Firestore `increment` — one upvote per user per template
+- `templates.service.ts` extended with `getCommunityTemplates`, `publishCommunityTemplate`, `upvoteCommunityTemplate`
+
+### T005: Goal-Based Onboarding Paths
+- New goal-area step (step 2 of onboarding) with 12 category tiles: Fitness, Sleep, Focus, Nutrition, Reading, Mindfulness, Productivity, Learning, Career, Relationships, Finance, Creativity
+- Selecting a category pre-fills identity statement and minimumAction in subsequent steps
+- `GOAL_AREAS` constant maps each category to suggested identity + action strings
+
+### T006: In-App Changelog / What's New Modal
+- `WhatsNewModal` component in `client/src/components/whats-new-modal.tsx`
+- Shows on first login after a version bump — version stored in `CURRENT_VERSION` constant
+- 7 feature cards with icons, tags (New/Improved/Pro), and descriptions
+- Dismissed state persisted in `localStorage` key `strivo_seen_whats_new`
+- Mounted in `App.tsx` inside the authenticated app wrapper
+
+### T007: Referral Rewards (Streak Freeze on Referral)
+- `referral.service.ts` — `generateReferralCode`, `applyReferralCode`, `awardStreakFreeze`
+- `ReferralBanner` component in `dashboard.tsx` — shows referral link, copy button, dismissible
+- `SmartReminderHint` component in `dashboard.tsx` — analyzes check-in timestamps to suggest optimal reminder time (only shown if 5+ check-ins, no reminder set)
+- `ReferralCapture` in `App.tsx` — reads `?ref=` URL param, stores in localStorage `strivo_pending_ref`
+- Signup mutation reads pending referral code and applies it via `applyReferralCode`
+
+### T008: PWA Offline Support
+- Service worker at `client/public/sw.js` with cache-first strategy for static assets
+- `manifest.json` configured with icons, theme color, standalone display, orientation
+- Registered in `index.html` via `navigator.serviceWorker.register('/sw.js')`
+
+### T009: Difficulty Trend Chart
+- `DifficultyTrendChart` component in system detail page using Recharts LineChart
+- Shows 30-day rolling average of difficulty rating per system
+- Stats summary cards: all-time completion rate, total done count, average difficulty, current streak
+- Difficulty data aggregated from check-in history per system
+
+### T010: Admin Dashboard Metrics (partial)
+- Admin page (`/admin`, gated by `ADMIN_EMAIL`) shows referral code, referral count, streak freeze count per user in account profile card
+- Full business metrics (DAU, revenue, churn) remain as future work
+
+### T011: Smart Reminder Suggestions
+- `SmartReminderHint` in `dashboard.tsx` buckets check-in timestamps by hour to find peak usage time
+- Suggests enabling a reminder at the most common check-in hour
+- Only shown to users with 5+ check-ins and no reminder currently enabled
+- Dismiss stores in `localStorage` key `strivo_reminder_hint_dismissed`
+
+### Landing Page Updates (T001)
+- `allFeatures` array updated to include Community Templates, Referral Rewards, and improved descriptions for Check-ins (progress photos) and Analytics (difficulty trends)
+- New icons: `Globe` (community), `Gift` (referral) added to imports
