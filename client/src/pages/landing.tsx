@@ -97,13 +97,13 @@ const pricingPlans = [
     name: "Starter", price: "$9", yearlyPrice: "$7", period: "/month",
     tagline: "For people building consistency", badge: null,
     features: ["Up to 10 active goals", "Unlimited systems", "Full template library", "Advanced streak tracking", "Weekly reflection prompts", "Better analytics", "Dark mode", "Export basic reports"],
-    cta: "Start Free Trial", ctaVariant: "outline" as const, href: "/signup",
+    cta: "Get Started", ctaVariant: "outline" as const, href: "/signup",
   },
   {
     name: "Pro", price: "$19", yearlyPrice: "$15", period: "/month",
     tagline: "For ambitious, data-driven users", badge: "Most Popular",
     features: ["Unlimited goals", "Unlimited systems", "Advanced analytics dashboard", "Mood & habit correlation insights", "Premium templates", "Advanced journaling", "CSV / PDF exports", "Priority support"],
-    cta: "Start Free Trial", ctaVariant: "default" as const, href: "/signup",
+    cta: "Get Started", ctaVariant: "default" as const, href: "/signup",
   },
   {
     name: "Elite", price: "$39", yearlyPrice: "$29", period: "/month",
