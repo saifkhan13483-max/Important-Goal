@@ -96,13 +96,13 @@ const pricingPlans = [
   {
     name: "Starter", price: "$9", yearlyPrice: "$7", period: "/month",
     tagline: "For people building consistency", badge: null,
-    features: ["Up to 10 active goals", "Unlimited systems", "Full template library", "Advanced streak tracking", "Weekly reflection prompts", "Better analytics", "Dark mode", "Export basic reports"],
+    features: ["Up to 10 active goals", "Unlimited systems", "Full template library", "Advanced streak tracking", "Weekly reflection prompts", "Better analytics", "Future self audio", "Dark mode", "Export basic reports"],
     cta: "Get Started", ctaVariant: "outline" as const, href: "/signup",
   },
   {
     name: "Pro", price: "$19", yearlyPrice: "$15", period: "/month",
     tagline: "For ambitious, data-driven users", badge: "Most Popular",
-    features: ["Unlimited goals", "Unlimited systems", "Advanced analytics dashboard", "Mood & habit correlation insights", "Premium templates", "Advanced journaling", "CSV / PDF exports", "Priority support"],
+    features: ["Unlimited goals", "Unlimited systems", "AI Coach (10 msgs/day)", "Advanced analytics dashboard", "Mood & habit correlation insights", "Premium templates", "Advanced journaling", "CSV / PDF exports", "Priority support"],
     cta: "Get Started", ctaVariant: "default" as const, href: "/signup",
   },
   {
@@ -360,7 +360,7 @@ function ProductPreview() {
 
 const TAB_META: Record<string, { heading: string; body: string; caption: string }> = {
   onboarding:       { heading: "Personalize in 2 minutes",         body: "Tell us what matters to you and we'll tailor your entire experience. No overwhelming options — just the essentials, set up in a few taps.",                                                                             caption: "Your personal setup — done in 2 minutes."               },
-  "system-builder": { heading: "Build any habit, step by step",    body: "A guided 5-step wizard turns a vague intention into a concrete daily action — complete with identity statement, trigger, minimum action, and a Structure Preview before you commit. No guesswork, no blank slate.",   caption: "A guided wizard that builds your habit step by step."    },
+  "system-builder": { heading: "Build any habit, step by step",    body: "A guided 7-step wizard turns a vague intention into a concrete daily action — complete with identity statement, trigger, minimum action, fallback plan, and a Structure Preview before you commit. No guesswork, no blank slate.",   caption: "A guided wizard that builds your habit step by step."    },
   checkin:          { heading: "Check in under 30 seconds",         body: "One tap per habit — Done, Partial, or Missed. No lengthy journaling, no friction. Just a quick, honest record that keeps you moving.",                                                                                 caption: "One tap to track each habit — under 30 seconds total."   },
   analytics:        { heading: "See patterns, not just numbers",    body: "Plain-language insights show which days you're strongest and where to focus next. No data science degree required.",                                                                                                   caption: "Plain-language insights, not confusing charts."          },
 };
