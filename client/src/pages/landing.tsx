@@ -84,6 +84,10 @@ const faqs = [
   { q: "Does it work on mobile?",                              a: "Yes. Strivo works great on phones and tablets. The daily check-in is designed to take under 30 seconds — perfect for a quick tap on your phone each morning." },
   { q: "What's included in the free plan?",                    a: "The free plan includes up to 2 active goals, 3 active systems, daily check-ins, streak tracking, starter templates, and basic analytics. It's plenty to get started and see real results." },
   { q: "How is this different from other habit trackers?",     a: "Most habit apps just let you check boxes. Strivo builds real systems — with an identity statement, a trigger, a minimum action, and a fallback plan. It also warns you before motivation slumps hit, visualises your unbroken chain on a Calendar, and guides you through a Recovery Flow when you miss a day. It's designed to survive real life, not just work when you're motivated." },
+  { q: "Can I cancel my paid plan at any time?",               a: "Yes, absolutely. There are no contracts or lock-in periods. You can cancel whenever you like from your account settings. You'll keep access until the end of your current billing period, then revert to the free plan automatically." },
+  { q: "Is my data private and secure?",                       a: "Your habits, journals, and personal data are private to you. We use Firebase's secure infrastructure, never sell your data, and don't show you ads. You can request a full export or deletion of your data at any time." },
+  { q: "What happens if I miss a day?",                        a: "Nothing bad. Strivo's Recovery Flow kicks in — it asks what got in the way, helps you lower the friction for tomorrow, and gets you back on track without guilt. Missing one day doesn't erase your progress or reset your mindset." },
+  { q: "How does the AI Coach work?",                          a: "The AI Coach (available on Pro and Elite plans) is a conversational coach that knows your habits, goals, and recent check-ins. You can ask it for motivation, accountability, advice on building tougher habits, or just a pep talk. It's powered by a large language model with habit-science context built in." },
 ];
 
 const pricingPlans = [
@@ -939,14 +943,85 @@ export default function Landing() {
 
           </div>
 
-          {/* Mobile: simple activity notification below buttons */}
+          {/* Mobile/tablet hero visual — replaces the desktop floating card composition */}
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="flex justify-center mt-8 lg:hidden"
+            transition={{ duration: 0.6, delay: 0.65 }}
+            className="lg:hidden mt-10 pb-6 w-full max-w-sm mx-auto relative"
           >
-            <HeroNotification />
+            {/* Live activity notification */}
+            <div className="flex justify-center mb-3">
+              <HeroNotification />
+            </div>
+
+            {/* Main check-in card */}
+            <div className="relative bg-card border border-border rounded-2xl shadow-2xl shadow-primary/10 p-5">
+              {/* Card header */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-medium">Today's Systems</p>
+                  <p className="text-sm font-bold">2 of 3 complete</p>
+                </div>
+                <div className="gradient-brand rounded-xl px-2.5 py-1 text-white text-xs font-bold shadow-sm">2/3 done</div>
+              </div>
+
+              {/* Habit rows */}
+              <div className="space-y-2 mb-4">
+                {[
+                  { name: "Morning Movement", streak: 12, done: true  },
+                  { name: "Daily Reading",    streak: 7,  done: true  },
+                  { name: "Focus Block",      streak: 4,  done: false },
+                ].map((h) => (
+                  <div key={h.name} className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl border",
+                    h.done ? "bg-chart-3/5 border-chart-3/20" : "bg-muted/40 border-border"
+                  )}>
+                    <div className={cn(
+                      "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
+                      h.done ? "gradient-brand shadow-sm" : "bg-muted border border-border"
+                    )}>
+                      {h.done && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold leading-none mb-0.5 truncate">{h.name}</p>
+                      <p className="text-[10px] text-muted-foreground">🔥 {h.streak}d streak</p>
+                    </div>
+                    {!h.done && (
+                      <span className="text-[9px] text-chart-4 font-semibold bg-chart-4/10 rounded-md px-1.5 py-0.5 flex-shrink-0">Pending</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress bar */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                  <div className="h-1.5 rounded-full gradient-brand" style={{ width: "67%" }} />
+                </div>
+                <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">67%</span>
+              </div>
+
+              {/* Floating streak badge */}
+              <div className="absolute -top-4 -right-3 bg-card border border-border rounded-2xl px-3 py-2.5 shadow-lg">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xl leading-none">🔥</span>
+                  <div>
+                    <p className="text-sm font-extrabold leading-none">12-day streak</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Personal best!</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating recovery card */}
+              <div className="absolute -bottom-4 -left-3 bg-card border border-border rounded-xl px-3 py-2 shadow-lg max-w-[160px]">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <RefreshCw className="w-3 h-3 text-chart-3" />
+                  <p className="text-[10px] font-semibold">Missed yesterday?</p>
+                </div>
+                <p className="text-[9px] text-muted-foreground leading-snug">Recovery flow activated — back on track 💪</p>
+              </div>
+            </div>
           </motion.div>
         </div>
 
@@ -1086,7 +1161,7 @@ export default function Landing() {
             {steps.map((s, i) => (
               <div key={s.step} className="relative text-center">
                 {i < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-9 left-[calc(50%+3.5rem)] right-[-1rem] h-px border-t-2 border-dashed border-primary/25" />
+                  <div className="hidden sm:block absolute top-9 left-[calc(50%+3.5rem)] right-[-1rem] h-px border-t-2 border-dashed border-primary/25" />
                 )}
                 <div className="relative w-18 h-18 mx-auto mb-5">
                   <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center mx-auto shadow-lg shadow-primary/20">
@@ -1159,7 +1234,22 @@ export default function Landing() {
               </TabsTrigger>
             </TabsList>
 
-            <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-14 lg:items-center max-w-4xl mx-auto">
+            {/* Mobile text — shown above preview on smaller screens */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab + "-mobile"}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden text-center mb-6 px-2"
+            >
+              <h3 className="text-xl sm:text-2xl font-bold mb-2 leading-snug">{TAB_META[activeTab].heading}</h3>
+              <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-md mx-auto">{TAB_META[activeTab].body}</p>
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-14 lg:items-center max-w-4xl mx-auto">
               <div className="hidden lg:block">
                 <AnimatePresence mode="wait">
                   <motion.div key={activeTab} initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
@@ -1169,10 +1259,10 @@ export default function Landing() {
                 </AnimatePresence>
               </div>
               <div className="w-full max-w-xs sm:max-w-sm mx-auto lg:max-w-none">
-                <TabsContent value="onboarding"     className="mt-0"><OnboardingPreview /><p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">{TAB_META.onboarding.caption}</p></TabsContent>
-                <TabsContent value="system-builder" className="mt-0"><SystemBuilderPreview /><p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">{TAB_META["system-builder"].caption}</p></TabsContent>
-                <TabsContent value="checkin"        className="mt-0"><CheckInPreview /><p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">{TAB_META.checkin.caption}</p></TabsContent>
-                <TabsContent value="analytics"      className="mt-0"><AnalyticsPreview /><p className="text-center text-sm text-muted-foreground mt-4 lg:hidden">{TAB_META.analytics.caption}</p></TabsContent>
+                <TabsContent value="onboarding"     className="mt-0"><OnboardingPreview /></TabsContent>
+                <TabsContent value="system-builder" className="mt-0"><SystemBuilderPreview /></TabsContent>
+                <TabsContent value="checkin"        className="mt-0"><CheckInPreview /></TabsContent>
+                <TabsContent value="analytics"      className="mt-0"><AnalyticsPreview /></TabsContent>
               </div>
             </div>
           </Tabs>
@@ -1307,46 +1397,15 @@ export default function Landing() {
               ))}
             </div>
           </div>
-          {/* Mobile: horizontal scroll; md+: 3-col grid */}
-          <div className="flex md:hidden gap-4 overflow-x-auto pb-4 -mx-4 px-4 snap-x snap-mandatory scrollbar-hide">
-            {testimonials.map((t) => (
-              <div key={t.name} className="flex-shrink-0 w-72 snap-start">
-                <Card className="border-border/60 h-full">
-                  <CardContent className="p-5 flex flex-col h-full">
-                    <div className="flex items-center gap-2 mb-3">
-                      {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />)}
-                      {t.verified && (
-                        <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5 gap-0.5 flex-shrink-0">
-                          <Check className="w-2.5 h-2.5" /> Strivo user
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-foreground leading-relaxed flex-1 mb-4">&ldquo;{t.quote}&rdquo;</p>
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(t.name)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`}
-                        alt={`${t.name} profile photo`} loading="lazy" width={36} height={36}
-                        className="w-9 h-9 rounded-full flex-shrink-0 object-cover bg-muted border border-border/40"
-                      />
-                      <div>
-                        <p className="text-sm font-semibold leading-none mb-0.5">{t.name}</p>
-                        <p className="text-xs text-muted-foreground">{t.role} · {t.goal}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
-          </div>
-          {/* Desktop: 3-col grid */}
-          <div className="hidden md:grid md:grid-cols-3 gap-5">
+          {/* Responsive grid: 1-col mobile, 2-col tablet, 3-col desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
             {testimonials.map((t) => (
               <Card key={t.name} className="border-border/60 flex flex-col">
                 <CardContent className="p-5 flex flex-col flex-1">
                   <div className="flex items-center gap-2 mb-3">
                     {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />)}
                     {t.verified && (
-                      <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5 gap-0.5">
+                      <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5 gap-0.5 flex-shrink-0">
                         <Check className="w-2.5 h-2.5" /> Strivo user
                       </Badge>
                     )}
