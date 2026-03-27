@@ -97,19 +97,19 @@ const pricingPlans = [
     name: "Starter", price: "$5", yearlyPrice: "$4", period: "/month",
     tagline: "For people building consistency", badge: null,
     features: ["Up to 10 active goals", "Unlimited systems", "Full template library", "Advanced streak tracking", "Weekly reflection prompts", "Better analytics", "Future self audio", "Dark mode", "Export basic reports"],
-    cta: "Get Started", ctaVariant: "outline" as const, href: "/signup",
+    cta: "Get Started", ctaVariant: "outline" as const, href: "/pricing",
   },
   {
     name: "Pro", price: "$12", yearlyPrice: "$9", period: "/month",
     tagline: "For ambitious, data-driven users", badge: "Most Popular",
     features: ["Unlimited goals", "Unlimited systems", "AI Coach (10 msgs/day)", "Advanced analytics dashboard", "Mood & habit correlation insights", "Premium templates", "Advanced journaling", "CSV / PDF exports", "Priority support"],
-    cta: "Get Started", ctaVariant: "default" as const, href: "/signup",
+    cta: "Get Started", ctaVariant: "default" as const, href: "/pricing",
   },
   {
     name: "Elite", price: "$25", yearlyPrice: "$19", period: "/month",
     tagline: "For power users who want everything", badge: "All-Inclusive",
     features: ["Unlimited goals & systems", "AI Coach (unlimited msgs/day)", "Advanced analytics & AI insights", "Full template library", "AI journal prompts", "CSV / PDF exports", "Future self audio", "Priority support", "Team workspace", "Coach dashboard"],
-    cta: "Go Elite", ctaVariant: "outline" as const, href: "/signup",
+    cta: "Go Elite", ctaVariant: "outline" as const, href: "/pricing",
   },
 ];
 
@@ -119,6 +119,7 @@ const navLinks = [
   { label: "Templates",   href: "#templates"   },
   { label: "Pricing",     href: "#pricing"     },
   { label: "FAQ",         href: "#faq"         },
+  { label: "Support",     href: "/support"     },
 ];
 
 const testimonials = [
@@ -515,10 +516,10 @@ function SocialProofRow() {
 
 // ─── Hero floating notification ─────────────────────────────────────────────
 const ACTIVITY_NOTIFICATIONS = [
-  { name: "Sophie L.", action: "hit a 21-day streak 🔥", time: "2 min ago" },
-  { name: "Marcus R.", action: "completed Morning Movement ✅", time: "4 min ago" },
-  { name: "Aisha K.",  action: "bounced back after a missed day 💪", time: "7 min ago" },
-  { name: "Tom W.",    action: "built their first system 🎯", time: "11 min ago" },
+  { name: "Sophie L.", action: "hit a 21-day streak 🔥" },
+  { name: "Marcus R.", action: "completed Morning Movement ✅" },
+  { name: "Aisha K.",  action: "bounced back after a missed day 💪" },
+  { name: "Tom W.",    action: "built their first system 🎯" },
 ];
 
 function HeroNotification() {
@@ -554,7 +555,6 @@ function HeroNotification() {
           />
           <span className="font-semibold text-foreground">{n.name}</span>
           <span className="text-muted-foreground">{n.action}</span>
-          <span className="text-muted-foreground/50 text-[10px] flex-shrink-0">{n.time}</span>
         </motion.div>
       )}
     </AnimatePresence>
@@ -1265,7 +1265,7 @@ export default function Landing() {
             </Card>
             <div className="space-y-4">
               {[
-                { icon: Shield, title: "No inflated numbers", body: "Every testimonial and stat you see is real. We'd rather earn your trust than manufacture it."            },
+                { icon: Shield, title: "Honest about what we are", body: "We're early-stage and growing. Our testimonials reflect real experiences. We'd rather earn your trust than overpromise."            },
                 { icon: Brain,  title: "Grounded in research", body: "The builder is based on BJ Fogg's Tiny Habits, identity theory, and implementation intentions."         },
                 { icon: Heart,  title: "Privacy-first",        body: "Your habits and journals are private to you. We don't sell data or show ads."                          },
               ].map(item => (
@@ -1317,7 +1317,7 @@ export default function Landing() {
                       {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />)}
                       {t.verified && (
                         <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5 gap-0.5 flex-shrink-0">
-                          <Check className="w-2.5 h-2.5" /> Verified
+                          <Check className="w-2.5 h-2.5" /> Strivo user
                         </Badge>
                       )}
                     </div>
@@ -1347,7 +1347,7 @@ export default function Landing() {
                     {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 text-chart-4 fill-chart-4" />)}
                     {t.verified && (
                       <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5 gap-0.5">
-                        <Check className="w-2.5 h-2.5" /> Verified
+                        <Check className="w-2.5 h-2.5" /> Strivo user
                       </Badge>
                     )}
                   </div>
