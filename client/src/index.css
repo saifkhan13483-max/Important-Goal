@@ -599,4 +599,18 @@
     max-width: 65ch;
     line-height: 1.6;
   }
+
+  /* ------ iOS safe-area bottom padding (notch support) ------ */
+  .safe-area-pb {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  /* ------ Hide scrollbars while keeping scroll functionality ------ */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

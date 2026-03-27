@@ -491,8 +491,8 @@ const AVATAR_SEEDS = ["Marcus Rivera", "Priya Sharma", "Tom Whitfield", "Aisha K
 
 function SocialProofRow() {
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-      <div className="flex -space-x-2.5">
+    <div className="flex items-center gap-3">
+      <div className="flex -space-x-2.5 flex-shrink-0">
         {AVATAR_SEEDS.map((seed, i) => (
           <img
             key={seed}
@@ -507,9 +507,9 @@ function SocialProofRow() {
           +
         </div>
       </div>
-      <div className="text-center sm:text-left">
+      <div>
         <p className="text-sm font-semibold text-foreground">Join 10,000+ habit builders</p>
-        <div className="flex items-center justify-center sm:justify-start gap-1 mt-0.5">
+        <div className="flex items-center gap-1 mt-0.5">
           {[1,2,3,4,5].map(s => <Star key={s} className="w-3 h-3 text-chart-4 fill-chart-4" />)}
           <span className="text-xs text-muted-foreground ml-1">4.8 / 5</span>
         </div>
@@ -1157,22 +1157,32 @@ export default function Landing() {
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3">How Strivo works</h2>
             <p className="text-muted-foreground text-base md:text-lg">Set up in 60 seconds. Designed to keep working when motivation disappears.</p>
           </div>
-          <div className="grid sm:grid-cols-3 gap-8 sm:gap-10">
+          <div className="grid sm:grid-cols-3 gap-0 sm:gap-10">
             {steps.map((s, i) => (
-              <div key={s.step} className="relative text-center">
-                {i < steps.length - 1 && (
-                  <div className="hidden sm:block absolute top-9 left-[calc(50%+3.5rem)] right-[-1rem] h-px border-t-2 border-dashed border-primary/25" />
-                )}
-                <div className="relative w-18 h-18 mx-auto mb-5">
-                  <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center mx-auto shadow-lg shadow-primary/20">
-                    <s.icon className="w-7 h-7 text-white" />
+              <div key={s.step}>
+                <div className="relative text-center pb-2 sm:pb-0">
+                  {/* Desktop horizontal connector */}
+                  {i < steps.length - 1 && (
+                    <div className="hidden sm:block absolute top-9 left-[calc(50%+3.5rem)] right-[-1rem] h-px border-t-2 border-dashed border-primary/25" />
+                  )}
+                  <div className="relative w-18 h-18 mx-auto mb-5">
+                    <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center mx-auto shadow-lg shadow-primary/20">
+                      <s.icon className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-background border-2 border-primary text-primary text-xs font-extrabold flex items-center justify-center shadow-sm">
+                      {s.step}
+                    </div>
                   </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-background border-2 border-primary text-primary text-xs font-extrabold flex items-center justify-center shadow-sm">
-                    {s.step}
-                  </div>
+                  <h3 className="font-bold text-lg mb-2">{s.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
                 </div>
-                <h3 className="font-bold text-lg mb-2">{s.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
+                {/* Mobile vertical connector */}
+                {i < steps.length - 1 && (
+                  <div className="flex flex-col items-center gap-1 py-4 sm:hidden">
+                    <div className="w-px h-5 bg-primary/25" />
+                    <ChevronDown className="w-4 h-4 text-primary/40" />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1459,7 +1469,7 @@ export default function Landing() {
                 key={plan.name}
                 className={cn(
                   "relative flex flex-col hover-elevate transition-all duration-200",
-                  plan.badge ? "border-primary/50 shadow-xl shadow-primary/20 scale-[1.03] bg-primary/[0.025]" : "border-border/60",
+                  plan.badge ? "border-primary/50 shadow-xl shadow-primary/20 sm:scale-[1.03] bg-primary/[0.025]" : "border-border/60",
                 )}
               >
                 {plan.badge && (
@@ -1509,10 +1519,60 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Quick comparison strip */}
+          {/* Quick comparison — mobile: 2-card side-by-side; desktop: full table */}
           <div className="mt-8 max-w-3xl mx-auto">
             <p className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-4">Quick comparison</p>
-            <div className="overflow-x-auto rounded-2xl border border-border">
+
+            {/* Mobile version — 2-column card (Free vs Pro) */}
+            <div className="md:hidden grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-border p-4">
+                <p className="text-xs font-bold mb-3">Free</p>
+                <ul className="space-y-2">
+                  {[
+                    ["Goals",       "2"],
+                    ["Systems",     "3"],
+                    ["AI Coach",    "✗"],
+                    ["Analytics",   "Basic"],
+                    ["Templates",   "3 starter"],
+                    ["Support",     "Community"],
+                  ].map(([label, value]) => (
+                    <li key={label} className="flex items-center justify-between gap-1 text-xs">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className={cn("font-semibold", value === "✗" ? "text-muted-foreground/40" : "text-foreground")}>{value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-2xl border border-primary/40 bg-primary/[0.025] p-4">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <p className="text-xs font-bold text-primary">Pro</p>
+                  <Badge className="gradient-brand text-white text-[9px] px-1.5 py-0 border-0 h-4">Popular</Badge>
+                </div>
+                <ul className="space-y-2">
+                  {[
+                    ["Goals",       "Unlimited"],
+                    ["Systems",     "Unlimited"],
+                    ["AI Coach",    "✓ 10/day"],
+                    ["Analytics",   "Advanced"],
+                    ["Templates",   "Full library"],
+                    ["Support",     "Priority"],
+                  ].map(([label, value]) => (
+                    <li key={label} className="flex items-center justify-between gap-1 text-xs">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className={cn("font-semibold", value.startsWith("✓") ? "text-primary" : "text-foreground")}>{value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="col-span-2 text-center">
+                <Link href="/pricing" className="text-xs text-primary hover:underline underline-offset-2">
+                  See all 4 plans and full feature list →
+                </Link>
+              </div>
+            </div>
+
+            {/* Desktop version — full table */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-border">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border bg-muted/40">
@@ -1625,9 +1685,9 @@ export default function Landing() {
       {/* ── Footer ───────────────────────────────────────────────── */}
       <footer className="py-8 sm:py-12 px-4 border-t border-border bg-muted/20">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-10">
+          <div className="flex flex-col sm:flex-row gap-8 sm:gap-12 mb-8 sm:mb-10">
             {/* Brand */}
-            <div className="col-span-2 sm:col-span-1">
+            <div className="sm:w-52 flex-shrink-0">
               <div className="flex items-center mb-3">
                 <SiteLogo className="h-7" />
               </div>
@@ -1635,7 +1695,7 @@ export default function Landing() {
                 Built for people who are tired of starting over.
               </p>
               <p className="text-[11px] text-muted-foreground/70 mb-4">
-                Not another habit tracker.<br />A system that survives real life.
+                Not another habit tracker — a system that survives real life.
               </p>
               <div className="flex items-center gap-3">
                 <a
@@ -1656,40 +1716,44 @@ export default function Landing() {
                 </a>
               </div>
             </div>
-            {/* Product links */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Product</p>
-              <div className="flex flex-col gap-2">
-                <a href="#features"    className="text-xs text-muted-foreground hover:text-foreground transition-colors">Features</a>
-                <a href="#how-it-works"className="text-xs text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
-                <a href="#templates"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Templates</a>
-                <a href="#pricing"     className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
-                <a href="#faq"         className="text-xs text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+
+            {/* Nav links — 3 equal columns on mobile + desktop */}
+            <div className="flex-1 grid grid-cols-3 gap-4 sm:gap-8">
+              {/* Product links */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Product</p>
+                <div className="flex flex-col gap-2">
+                  <a href="#features"    className="text-xs text-muted-foreground hover:text-foreground transition-colors">Features</a>
+                  <a href="#how-it-works"className="text-xs text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+                  <a href="#templates"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Templates</a>
+                  <a href="#pricing"     className="text-xs text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+                  <a href="#faq"         className="text-xs text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
+                </div>
               </div>
-            </div>
-            {/* Account links */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Account</p>
-              <div className="flex flex-col gap-2">
-                <Link href="/signup"    className="text-xs text-muted-foreground hover:text-foreground transition-colors">Get Started Free</Link>
-                <Link href="/login"     className="text-xs text-muted-foreground hover:text-foreground transition-colors">Sign In</Link>
-                <Link href="/dashboard" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
-                <Link href="/pricing"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Compare Plans</Link>
+              {/* Account links */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Account</p>
+                <div className="flex flex-col gap-2">
+                  <Link href="/signup"    className="text-xs text-muted-foreground hover:text-foreground transition-colors">Start Free</Link>
+                  <Link href="/login"     className="text-xs text-muted-foreground hover:text-foreground transition-colors">Sign In</Link>
+                  <Link href="/dashboard" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>
+                  <Link href="/pricing"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Plans</Link>
+                </div>
               </div>
-            </div>
-            {/* Legal */}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Legal</p>
-              <div className="flex flex-col gap-2">
-                <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
-                <Link href="/terms"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
-                <Link href="/support" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</Link>
+              {/* Legal */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Legal</p>
+                <div className="flex flex-col gap-2">
+                  <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
+                  <Link href="/terms"   className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
+                  <Link href="/support" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Support</Link>
+                </div>
               </div>
             </div>
           </div>
-          <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Strivo. All rights reserved.</p>
-            <p className="text-xs text-muted-foreground">Not another habit tracker. A system that survives real life.</p>
+            <p className="text-xs text-muted-foreground text-center sm:text-right">Not another habit tracker. A system that survives real life.</p>
           </div>
         </div>
       </footer>
