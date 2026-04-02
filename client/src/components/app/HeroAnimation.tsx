@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
 
 const PURPLE = "#8b5cf6";
 const CYAN = "#06b6d4";
@@ -31,6 +32,7 @@ const CHART_BARS = [38, 52, 45, 68, 62, 82, 88, 75, 85, 95];
 export function HeroAnimation({ className = "" }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cycle, setCycle] = useState(0);
+  const [, navigate] = useLocation();
 
   // Auto-loop the full animation every 31s
   useEffect(() => {
@@ -423,12 +425,14 @@ export function HeroAnimation({ className = "" }: { className?: string }) {
         </div>
 
         {/* CTA */}
-        <div style={{ opacity: 0, animation: "ha-ctaIn 0.8s cubic-bezier(0.16,1,0.3,1) 29.5s both, ha-ctaGlow 2s ease-in-out 30s infinite",
-          background: `linear-gradient(135deg,${PURPLE},${CYAN})`, borderRadius: "50px",
-          padding: "10px 28px", fontSize: "12px", fontWeight: 600, color: "#fff", letterSpacing: "0.03em",
-          boxShadow: `0 0 20px rgba(139,92,246,0.5)`, cursor: "pointer" }}>
+        <button
+          onClick={() => navigate("/signup")}
+          style={{ opacity: 0, animation: "ha-ctaIn 0.8s cubic-bezier(0.16,1,0.3,1) 29.5s both, ha-ctaGlow 2s ease-in-out 30s infinite",
+            background: `linear-gradient(135deg,${PURPLE},${CYAN})`, borderRadius: "50px", border: "none",
+            padding: "10px 28px", fontSize: "12px", fontWeight: 600, color: "#fff", letterSpacing: "0.03em",
+            boxShadow: `0 0 20px rgba(139,92,246,0.5)`, cursor: "pointer" }}>
           Start Free →
-        </div>
+        </button>
       </div>
     </div>
   );

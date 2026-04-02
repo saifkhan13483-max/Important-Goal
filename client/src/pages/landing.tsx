@@ -707,172 +707,24 @@ export default function Landing() {
       <section
         id="main-content"
         aria-label="Hero"
-        className="relative min-h-[100svh] flex items-center overflow-hidden px-4 pt-16"
+        className="relative w-full overflow-hidden"
+        style={{ height: "100svh" }}
       >
-        {/* ── Background: dot grid + gradient blobs ── */}
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          {/* Subtle dot grid */}
-          <div
-            className="absolute inset-0 opacity-[0.035]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)",
-              backgroundSize: "28px 28px",
-            }}
-          />
-          {/* Colour blobs */}
-          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/[0.18] rounded-full blur-[120px]" />
-          <div className="absolute top-1/3 right-0 w-[500px] h-[500px] bg-chart-2/[0.10] rounded-full blur-[100px]" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[350px] bg-chart-5/[0.08] rounded-full blur-[80px]" />
-        </div>
-
-        <div className="max-w-7xl mx-auto w-full py-12 sm:py-16 lg:py-0">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
-            {/* ── LEFT: Copy ──────────────────────────────────────── */}
-            <motion.div
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-col items-start text-left"
-            >
-              {/* Social proof pill */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="mb-6"
-              >
-                <SocialProofRow />
-              </motion.div>
-
-              {/* Headline */}
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.65, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                className="text-[2.1rem] leading-[1.1] sm:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-extrabold tracking-tight mb-5"
-              >
-                Stop starting over.{" "}
-                <span className="gradient-text">Build something that survives hard days.</span>
-              </motion.h1>
-
-              {/* Sub-headline */}
-              <motion.p
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                className="text-base sm:text-lg text-muted-foreground max-w-lg mb-6 leading-relaxed"
-              >
-                Turn any goal into a daily system with a minimum action and a recovery plan — so you keep going even when motivation doesn't.
-              </motion.p>
-
-              {/* Trust bullets */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.38 }}
-                className="flex flex-col gap-2 mb-8"
-              >
-                {[
-                  "No perfect routines — just a minimum that still counts",
-                  "No guilt spirals — recovery flow gets you back on track",
-                  "No 'start again Monday' — the system survives one missed day",
-                ].map((item) => (
-                  <span key={item} className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                    <span className="w-5 h-5 rounded-full bg-chart-3/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-chart-3" />
-                    </span>
-                    {item}
-                  </span>
-                ))}
-              </motion.div>
-
-              {/* CTA buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, delay: 0.46 }}
-                className="flex flex-col sm:flex-row gap-3 mb-4 w-full sm:w-auto"
-              >
-                <Link href="/signup" className="w-full sm:w-auto">
-                  <Button
-                    size="lg"
-                    className="btn-scale gap-2 h-13 px-8 text-base font-semibold rounded-full w-full shadow-lg shadow-primary/25"
-                    data-testid="button-hero-cta"
-                    data-cta-variant={ctaVariant}
-                    onClick={() => track("hero_cta_click", { variant: ctaVariant })}
-                  >
-                    {ctaVariant === "A" ? "Build My System Free" : "Start Building — It's Free"}
-                    <ArrowRight className="w-4 h-4 flex-shrink-0" />
-                  </Button>
-                </Link>
-                <a href="#how-it-works" className="w-full sm:w-auto">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="btn-scale h-13 px-7 text-base rounded-full w-full"
-                    data-testid="button-hero-how-it-works"
-                  >
-                    See How It Works
-                  </Button>
-                </a>
-              </motion.div>
-
-              {/* Trust micro-line */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.56 }}
-                className="text-xs text-muted-foreground/70"
-              >
-                Free forever · No credit card needed · 73% still active after 30 days
-              </motion.p>
-            </motion.div>
-
-            {/* ── RIGHT: Cinematic hero animation ──────────────── */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="relative hidden lg:block"
-            >
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/20" style={{ aspectRatio: "16/10" }}>
-                {/* Outer glow ring */}
-                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/30 via-transparent to-chart-2/20 z-10 pointer-events-none" />
-                <HeroAnimation className="absolute inset-0 w-full h-full" />
-              </div>
-            </motion.div>
-
-          </div>
-
-          {/* Mobile/tablet hero visual */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.65 }}
-            className="lg:hidden mt-10 pb-6 w-full max-w-sm mx-auto"
-          >
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/20" style={{ aspectRatio: "16/10" }}>
-              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/30 via-transparent to-chart-2/20 z-10 pointer-events-none" />
-              <HeroAnimation className="absolute inset-0 w-full h-full" />
-            </div>
-          </motion.div>
-        </div>
+        <HeroAnimation className="absolute inset-0 w-full h-full" />
 
         {/* Scroll hint */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.4, duration: 0.5 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-1.5"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 z-10"
         >
-          <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Scroll</p>
+          <p className="text-[10px] text-white/30 tracking-widest uppercase">Scroll</p>
           <motion.div
             animate={{ y: [0, 5, 0] }}
             transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
           >
-            <ChevronDown className="w-4 h-4 text-muted-foreground/30" />
+            <ChevronDown className="w-4 h-4 text-white/20" />
           </motion.div>
         </motion.div>
       </section>
