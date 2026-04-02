@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { captureEmailLead } from "@/services/user.service";
 import { track } from "@/lib/track";
 import { Helmet } from "react-helmet-async";
+import { HeroAnimation } from "@/components/app/HeroAnimation";
 
 // ─── A/B variant ───────────────────────────────────────────────────────────
 function useCtaVariant(): "A" | "B" {
@@ -829,198 +830,32 @@ export default function Landing() {
               </motion.p>
             </motion.div>
 
-            {/* ── RIGHT: Floating card composition ──────────────── */}
+            {/* ── RIGHT: Cinematic hero animation ──────────────── */}
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="relative hidden lg:flex items-center justify-center min-h-[480px]"
+              className="relative hidden lg:block"
             >
-              {/* Glow behind cards */}
-              <div className="absolute inset-0 bg-primary/[0.07] rounded-3xl blur-3xl -z-10" />
-
-              {/* ── Main check-in card ── */}
-              <motion.div
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="relative z-10 bg-card border border-border rounded-2xl shadow-2xl shadow-primary/10 p-5 w-72"
-              >
-                {/* Card header */}
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground font-medium">Thursday, March 26</p>
-                    <p className="text-sm font-bold">Today's Systems</p>
-                  </div>
-                  <div className="gradient-brand rounded-xl px-2.5 py-1 text-white text-xs font-bold shadow-sm">
-                    2/3 done
-                  </div>
-                </div>
-
-                {/* Habit rows */}
-                <div className="space-y-2 mb-4">
-                  {[
-                    { name: "Morning Movement", streak: 12, done: true  },
-                    { name: "Daily Reading",    streak: 7,  done: true  },
-                    { name: "Focus Block",      streak: 4,  done: false },
-                  ].map((h) => (
-                    <div key={h.name} className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all",
-                      h.done ? "bg-chart-3/5 border-chart-3/20" : "bg-muted/40 border-border"
-                    )}>
-                      <div className={cn(
-                        "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
-                        h.done ? "gradient-brand shadow-sm" : "bg-muted border border-border"
-                      )}>
-                        {h.done && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold leading-none mb-0.5 truncate">{h.name}</p>
-                        <p className="text-[10px] text-muted-foreground">🔥 {h.streak}d streak</p>
-                      </div>
-                      {!h.done && (
-                        <span className="text-[9px] text-chart-4 font-semibold bg-chart-4/10 rounded-md px-1.5 py-0.5 flex-shrink-0">
-                          Pending
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Progress bar */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
-                    <motion.div
-                      className="h-1.5 rounded-full gradient-brand"
-                      initial={{ width: 0 }}
-                      animate={{ width: "67%" }}
-                      transition={{ duration: 1.2, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">67%</span>
-                </div>
-              </motion.div>
-
-              {/* ── Floating: Streak badge (top-right) ── */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute top-4 -right-2 z-20 bg-card border border-border rounded-2xl px-4 py-3 shadow-lg"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl leading-none">🔥</span>
-                  <div>
-                    <p className="text-sm font-extrabold leading-none">12-day streak</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Personal best!</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* ── Floating: Recovery card (bottom-left) ── */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, x: -20 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 1.05, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute -bottom-2 -left-6 z-20 bg-card border border-border rounded-2xl px-3.5 py-3 shadow-lg max-w-[180px]"
-              >
-                <div className="flex items-center gap-1.5 mb-1">
-                  <RefreshCw className="w-3.5 h-3.5 text-chart-3" />
-                  <p className="text-xs font-semibold text-foreground">Missed yesterday?</p>
-                </div>
-                <p className="text-[10px] text-muted-foreground leading-snug">Recovery flow activated — back on track 💪</p>
-              </motion.div>
-
-              {/* ── Floating: Live activity (top-left) ── */}
-              <motion.div
-                initial={{ opacity: 0, y: -16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 1.2 }}
-                className="absolute top-[-16px] left-2 z-20"
-              >
-                <HeroNotification />
-              </motion.div>
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/20" style={{ aspectRatio: "16/10" }}>
+                {/* Outer glow ring */}
+                <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/30 via-transparent to-chart-2/20 z-10 pointer-events-none" />
+                <HeroAnimation className="absolute inset-0 w-full h-full" />
+              </div>
             </motion.div>
 
           </div>
 
-          {/* Mobile/tablet hero visual — replaces the desktop floating card composition */}
+          {/* Mobile/tablet hero visual */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.65 }}
-            className="lg:hidden mt-10 pb-6 w-full max-w-sm mx-auto relative"
+            className="lg:hidden mt-10 pb-6 w-full max-w-sm mx-auto"
           >
-            {/* Live activity notification */}
-            <div className="flex justify-center mb-3">
-              <HeroNotification />
-            </div>
-
-            {/* Main check-in card */}
-            <div className="relative bg-card border border-border rounded-2xl shadow-2xl shadow-primary/10 p-5">
-              {/* Card header */}
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-[10px] text-muted-foreground font-medium">Today's Systems</p>
-                  <p className="text-sm font-bold">2 of 3 complete</p>
-                </div>
-                <div className="gradient-brand rounded-xl px-2.5 py-1 text-white text-xs font-bold shadow-sm">2/3 done</div>
-              </div>
-
-              {/* Habit rows */}
-              <div className="space-y-2 mb-4">
-                {[
-                  { name: "Morning Movement", streak: 12, done: true  },
-                  { name: "Daily Reading",    streak: 7,  done: true  },
-                  { name: "Focus Block",      streak: 4,  done: false },
-                ].map((h) => (
-                  <div key={h.name} className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl border",
-                    h.done ? "bg-chart-3/5 border-chart-3/20" : "bg-muted/40 border-border"
-                  )}>
-                    <div className={cn(
-                      "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
-                      h.done ? "gradient-brand shadow-sm" : "bg-muted border border-border"
-                    )}>
-                      {h.done && <Check className="w-3 h-3 text-white" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold leading-none mb-0.5 truncate">{h.name}</p>
-                      <p className="text-[10px] text-muted-foreground">🔥 {h.streak}d streak</p>
-                    </div>
-                    {!h.done && (
-                      <span className="text-[9px] text-chart-4 font-semibold bg-chart-4/10 rounded-md px-1.5 py-0.5 flex-shrink-0">Pending</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Progress bar */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
-                  <div className="h-1.5 rounded-full gradient-brand" style={{ width: "67%" }} />
-                </div>
-                <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">67%</span>
-              </div>
-
-              {/* Floating streak badge */}
-              <div className="absolute -top-4 -right-3 bg-card border border-border rounded-2xl px-3 py-2.5 shadow-lg">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xl leading-none">🔥</span>
-                  <div>
-                    <p className="text-sm font-extrabold leading-none">12-day streak</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Personal best!</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating recovery card */}
-              <div className="absolute -bottom-4 -left-3 bg-card border border-border rounded-xl px-3 py-2 shadow-lg max-w-[160px]">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <RefreshCw className="w-3 h-3 text-chart-3" />
-                  <p className="text-[10px] font-semibold">Missed yesterday?</p>
-                </div>
-                <p className="text-[9px] text-muted-foreground leading-snug">Recovery flow activated — back on track 💪</p>
-              </div>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-primary/20" style={{ aspectRatio: "16/10" }}>
+              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-primary/30 via-transparent to-chart-2/20 z-10 pointer-events-none" />
+              <HeroAnimation className="absolute inset-0 w-full h-full" />
             </div>
           </motion.div>
         </div>
