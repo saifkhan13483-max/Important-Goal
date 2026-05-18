@@ -625,8 +625,8 @@ export default function Landing() {
       <nav
         aria-label="Main navigation"
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-          scrolled ? "border-b border-border bg-background/90 backdrop-blur-xl shadow-sm" : "bg-transparent border-transparent",
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white border-b border-gray-200",
+          scrolled ? "shadow-sm" : "shadow-none",
         )}
       >
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -634,7 +634,7 @@ export default function Landing() {
             <SiteLogo className="h-9" />
           </div>
 
-          <div className="hidden md:flex items-center gap-7 text-sm text-muted-foreground font-medium">
+          <div className="hidden md:flex items-center gap-7 text-sm text-gray-600 font-medium">
             {navLinks.map((link) => {
               const sectionId = link.href.replace("#", "");
               const isActive = activeSection === sectionId;
@@ -645,8 +645,8 @@ export default function Landing() {
                   className={cn(
                     "transition-colors relative pb-0.5",
                     isActive
-                      ? "text-foreground font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-primary"
-                      : "hover:text-foreground"
+                      ? "text-gray-900 font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-primary"
+                      : "hover:text-gray-900"
                   )}
                 >
                   {link.label}
