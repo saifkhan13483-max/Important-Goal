@@ -76,3 +76,4 @@ VITE_CLOUDINARY_UPLOAD_PRESET = "FutureSelfAudio"
 
 [agent]
 expertMode = true
+stack = "FULLSTACK_JS"
