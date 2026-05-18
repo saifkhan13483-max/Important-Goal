@@ -31,7 +31,7 @@ import {
 import { generateAnalyticsInsights, type AnalyticsInsight } from "@/services/ai.service";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
-import { PlanGate } from "@/components/plan-gate";
+import { PlanGate } from "@/components/features/plan-gate";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 

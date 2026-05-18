@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteLogo } from "@/components/app/site-logo";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useAppStore } from "@/store/auth.store";

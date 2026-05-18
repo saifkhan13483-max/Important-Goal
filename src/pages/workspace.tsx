@@ -4,7 +4,7 @@ import { useSearch, useLocation } from "wouter";
 import { Helmet } from "react-helmet-async";
 import { useAppStore } from "@/store/auth.store";
 import { getPlanFeatures } from "@/lib/plan-limits";
-import { PlanGate } from "@/components/plan-gate";
+import { PlanGate } from "@/components/features/plan-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteLogo } from "@/components/app/site-logo";
 import { z } from "zod";
 import { Link, useLocation } from "wouter";
 import { useState } from "react";

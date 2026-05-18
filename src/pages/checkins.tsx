@@ -3,7 +3,7 @@ import { track } from "@/lib/track";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAppStore } from "@/store/auth.store";
 import type { System, Checkin } from "@/types/schema";
-import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/future-self-audio";
+import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/features/future-self-audio";
 import { getSystems } from "@/services/systems.service";
 import { getCheckinsByDate, getCheckins, upsertCheckin } from "@/services/checkins.service";
 import { computeAnalytics } from "@/services/analytics.service";
@@ -25,7 +25,7 @@ import {
   ChevronLeft, ChevronRight, TrendingUp, Star, Award, Timer, Loader2, Camera, ImageIcon,
 } from "lucide-react";
 import { uploadImage } from "@/lib/cloudinary";
-import { FocusTimer } from "@/components/focus-timer";
+import { FocusTimer } from "@/components/features/focus-timer";
 import { format, parseISO, startOfMonth, getDaysInMonth, getDay, subMonths, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";

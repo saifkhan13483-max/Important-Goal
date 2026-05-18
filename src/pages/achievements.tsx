@@ -8,13 +8,13 @@ import { getJournals } from "@/services/journal.service";
 import { updateUser } from "@/services/user.service";
 import { addNotification } from "@/services/notifications.service";
 import type { System, Goal, Checkin, JournalEntry } from "@/types/schema";
-import { AchievementsPanel } from "@/components/achievements-panel";
+import { AchievementsPanel } from "@/components/features/achievements-panel";
 import { computeAchievements, type AchievementStats } from "@/lib/achievements";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteLogo } from "@/components/app/site-logo";
 import { Separator } from "@/components/ui/separator";
 import { Helmet } from "react-helmet-async";
-import { AnimatedPage } from "@/components/animated-page";
+import { AnimatedPage } from "@/components/app/animated-page";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react";
 

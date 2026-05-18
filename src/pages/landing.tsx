@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteLogo } from "@/components/app/site-logo";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { captureEmailLead } from "@/services/user.service";
 import { track } from "@/lib/track";
 import { Helmet } from "react-helmet-async";
-import { HeroAnimation } from "@/components/app/HeroAnimation";
+import { HeroAnimation } from "@/components/app/hero-animation";
 
 // ─── A/B variant ───────────────────────────────────────────────────────────
 function useCtaVariant(): "A" | "B" {

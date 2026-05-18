@@ -23,7 +23,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { HabitStackBuilder } from "@/components/habit-stack-builder";
+import { HabitStackBuilder } from "@/components/features/habit-stack-builder";
 import { isAtSystemLimit, getPlanLimits, planDisplayName } from "@/lib/plan-limits";
 import { subDays, format } from "date-fns";
 

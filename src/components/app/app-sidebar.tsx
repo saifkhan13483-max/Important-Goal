@@ -19,14 +19,14 @@ import { getCheckinsByDate } from "@/services/checkins.service";
 import type { System, Checkin } from "@/types/schema";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteLogo } from "@/components/app/site-logo";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { NotificationsCenter } from "@/components/notifications-center";
+import { NotificationsCenter } from "@/components/app/notifications-center";
 
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];

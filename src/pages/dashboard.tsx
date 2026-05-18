@@ -22,7 +22,7 @@ import {
   LayoutGrid, Flag, TrendingDown, Brain, Share2, Copy, ChevronRight,
   Activity, Clock, Award, Gift,
 } from "lucide-react";
-import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/future-self-audio";
+import { FutureSelfAudioPlayer, hasFutureSelfAudio } from "@/components/features/future-self-audio";
 import { format, parseISO, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useQuery } from "@tanstack/react-query";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteLogo } from "@/components/app/site-logo";
 import { useAppStore } from "@/store/auth.store";
 import { updateUser } from "@/services/user.service";
 import { getGoals } from "@/services/goals.service";

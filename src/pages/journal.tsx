@@ -29,7 +29,7 @@ import { Link } from "wouter";
 import { format, getDaysInMonth, startOfMonth, getDay, subMonths, addMonths, isSameMonth } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { PlanGate } from "@/components/plan-gate";
+import { PlanGate } from "@/components/features/plan-gate";
 
 // ─────────────────────────────────────────────────────
 // Constants

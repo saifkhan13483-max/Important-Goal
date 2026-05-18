@@ -28,10 +28,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider, Helmet } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/app/theme-provider";
 import { ProtectedRoute, PublicOnlyRoute, OnboardingRoute } from "@/components/auth/protected-route";
 import { useAuth } from "@/hooks/use-auth";
-import { ErrorBoundary } from "@/components/error-boundary";
+import { ErrorBoundary } from "@/components/app/error-boundary";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /* ── Eagerly loaded (critical path / small pages) ── */

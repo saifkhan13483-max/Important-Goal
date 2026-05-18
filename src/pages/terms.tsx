@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteLogo } from "@/components/app/site-logo";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 

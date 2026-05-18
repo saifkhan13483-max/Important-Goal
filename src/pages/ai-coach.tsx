@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPlanFeatures } from "@/lib/plan-limits";
-import { PlanGate } from "@/components/plan-gate";
+import { PlanGate } from "@/components/features/plan-gate";
 
 const PROMPT_CATEGORIES = [
   {

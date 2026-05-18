@@ -14,12 +14,12 @@
 
 import { Helmet } from "react-helmet-async";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/app/app-sidebar";
 import { AiChatWidget } from "@/components/ai/ai-chat";
-import { WhatsNewModal } from "@/components/whats-new-modal";
+import { WhatsNewModal } from "@/components/app/whats-new-modal";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Monitor } from "lucide-react";
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/app/theme-provider";
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();

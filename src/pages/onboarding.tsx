@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Zap, RefreshCw, CheckSquare, LayoutDashboard, Mic } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/auth.store";
-import { FutureSelfAudioSetup } from "@/components/future-self-audio";
+import { FutureSelfAudioSetup } from "@/components/features/future-self-audio";
 
 const GOAL_AREAS = [
   { value: "fitness",     label: "Get Fit",          emoji: "💪", identity: "fit",        minAction: "Do 5 push-ups or walk for 5 minutes" },
