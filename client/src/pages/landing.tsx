@@ -712,21 +712,6 @@ export default function Landing() {
       >
         <HeroAnimation className="absolute inset-0 w-full h-full" />
 
-        {/* Scroll hint */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4, duration: 0.5 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 z-10"
-        >
-          <p className="text-[10px] text-white/30 tracking-widest uppercase">Scroll</p>
-          <motion.div
-            animate={{ y: [0, 5, 0] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ChevronDown className="w-4 h-4 text-white/20" />
-          </motion.div>
-        </motion.div>
       </section>
 
       {/* ── Social proof stats strip ───────────────────────────── */}
