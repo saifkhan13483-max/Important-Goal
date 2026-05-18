@@ -433,6 +433,12 @@ The `vercel.json` handles:
 
 ---
 
+## Author
+
+**Saif Khan** — Founder & Developer of Strivo
+
+---
+
 ## License
 
 This project is private and proprietary. All rights reserved.
