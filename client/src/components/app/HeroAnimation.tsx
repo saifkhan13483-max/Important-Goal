@@ -426,33 +426,32 @@ function Scene3({ mobile }: { mobile?: boolean }) {
 
         {/* Top stat */}
         <FadeUp delay={0.1}>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: mobile ? 10 : 16, marginBottom: mobile ? 16 : 24 }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: mobile ? 8 : 12, marginBottom: mobile ? 10 : 14 }}>
             <div>
-              <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted, letterSpacing: "0.08em",
-                textTransform: "uppercase", marginBottom: 6 }}>
+              <div style={{ fontFamily: FONT, fontSize: 10, color: C.muted, letterSpacing: "0.08em",
+                textTransform: "uppercase", marginBottom: 4 }}>
                 Current streak
               </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                 <span style={{
                   fontFamily: FONT, fontWeight: 800,
-                  fontSize: mobile ? "clamp(2rem, 12vw, 3.5rem)" : 56, lineHeight: 1,
+                  fontSize: mobile ? "clamp(1.6rem, 10vw, 2.4rem)" : 38, lineHeight: 1,
                   letterSpacing: "-0.04em", ...gradText,
                   animation: "ha2-countUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.3s both",
                 }}>47</span>
-                <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: mobile ? 15 : 20, color: C.muted }}>days</span>
+                <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: mobile ? 13 : 15, color: C.muted }}>days</span>
               </div>
             </div>
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontFamily: FONT, fontSize: mobile ? 22 : 28, animation: "ha2-pulse 2s ease-in-out 0.5s infinite" }}>🔥</div>
+            <div style={{ marginBottom: 4 }}>
+              <div style={{ fontFamily: FONT, fontSize: mobile ? 18 : 20, animation: "ha2-pulse 2s ease-in-out 0.5s infinite" }}>🔥</div>
             </div>
             <div style={{ flex: 1 }} />
-            {/* Mini bars chart — hidden on very small screens */}
             {!mobile && (
               <FadeIn delay={0.6}>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 40 }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 30 }}>
                   {[30, 45, 38, 55, 50, 62, 70, 65, 78, 85, 90, 95].map((h, i) => (
                     <div key={i} style={{
-                      width: 5, borderRadius: 3,
+                      width: 4, borderRadius: 3,
                       background: i >= 9 ? C.purpleHex : `${C.purpleHex}50`,
                       height: `${h}%`, alignSelf: "flex-end",
                       transformOrigin: "bottom",
@@ -467,16 +466,16 @@ function Scene3({ mobile }: { mobile?: boolean }) {
 
         {/* Habit grid */}
         <FadeIn delay={0.4}>
-          <div style={{ ...glass({ padding: 18 }) }}>
-            <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 600, color: C.muted,
-              marginBottom: 12, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          <div style={{ ...glass({ padding: 12 }) }}>
+            <div style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, color: C.muted,
+              marginBottom: 8, letterSpacing: "0.06em", textTransform: "uppercase" }}>
               Read 20 pages · last 49 days
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
               {days.map((d, i) => (
                 <div key={i} style={{
                   aspectRatio: "1",
-                  borderRadius: 4,
+                  borderRadius: 3,
                   background: d.filled
                     ? `rgba(139, 92, 246, ${d.intensity * 0.85 + 0.1})`
                     : "rgba(255,255,255,0.05)",
@@ -488,13 +487,13 @@ function Scene3({ mobile }: { mobile?: boolean }) {
             </div>
             {/* Legend */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end",
-              gap: 6, marginTop: 10 }}>
-              <span style={{ fontFamily: FONT, fontSize: 10, color: C.dim }}>Less</span>
+              gap: 4, marginTop: 7 }}>
+              <span style={{ fontFamily: FONT, fontSize: 9, color: C.dim }}>Less</span>
               {[0.15, 0.35, 0.6, 0.85, 1].map((o, i) => (
-                <div key={i} style={{ width: 10, height: 10, borderRadius: 3,
+                <div key={i} style={{ width: 8, height: 8, borderRadius: 2,
                   background: `rgba(139,92,246,${o})` }} />
               ))}
-              <span style={{ fontFamily: FONT, fontSize: 10, color: C.dim }}>More</span>
+              <span style={{ fontFamily: FONT, fontSize: 9, color: C.dim }}>More</span>
             </div>
           </div>
         </FadeIn>
@@ -502,16 +501,16 @@ function Scene3({ mobile }: { mobile?: boolean }) {
         {/* Achievement badge */}
         <FadeUp delay={1.0}>
           <div style={{
-            ...glass({ padding: "10px 16px", marginTop: 12,
+            ...glass({ padding: "8px 12px", marginTop: 8,
               background: `${C.orangeHex}12`, borderColor: `${C.orangeHex}35` }),
-            display: "flex", alignItems: "center", gap: 12,
+            display: "flex", alignItems: "center", gap: 9,
           }}>
-            <span style={{ fontSize: 20, animation: "ha2-pulse 2s ease-in-out 1.2s infinite" }}>🏆</span>
+            <span style={{ fontSize: 16, animation: "ha2-pulse 2s ease-in-out 1.2s infinite" }}>🏆</span>
             <div>
-              <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text }}>
+              <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 700, color: C.text }}>
                 7-week milestone unlocked!
               </div>
-              <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted }}>
+              <div style={{ fontFamily: FONT, fontSize: 10, color: C.muted }}>
                 You've crossed the habit formation threshold
               </div>
             </div>
