@@ -31,7 +31,7 @@ import {
   BellRing, BellOff, Mic, ExternalLink, Download, Trash2,
   KeyRound, Camera, ChevronRight, Heart, CheckCircle2,
   AlertTriangle, Target, BookOpen, Users, Gift, Calendar,
-  Snowflake, Copy, Share2, BarChart2, Languages,
+  Snowflake, Copy, Share2, BarChart2,
 } from "lucide-react";
 import { STRIPE_CUSTOMER_PORTAL_URL } from "@/lib/stripe";
 import type { PlanTier } from "@/types/schema";
@@ -44,7 +44,6 @@ import { linkAccountabilityPartner, unlinkAccountabilityPartner, getPartnerPubli
 import { updateUser } from "@/services/user.service";
 import { getReferralCode, ensureReferralCode } from "@/services/referral.service";
 import { generateCalendarICS, downloadICS } from "@/lib/calendar-export";
-import { LANGUAGES, setLanguage, getLanguage, type Language } from "@/lib/i18n";
 import { sendWeeklyReport, isEmailJsConfigured } from "@/lib/emailjs";
 
 const TIMEZONES = [
@@ -233,7 +232,6 @@ export default function Settings() {
   const [publicProfile, setPublicProfile] = useState(user?.publicProfile ?? false);
   const [weeklyReport, setWeeklyReport] = useState(user?.weeklyReportEnabled ?? false);
   const [streakFreezeEnabled, setStreakFreezeEnabled] = useState((user?.streakFreezes ?? 0) > 0);
-  const [currentLang, setCurrentLang] = useState<Language>(getLanguage());
   const [calendarSyncing, setCalendarSyncing] = useState(false);
   const [weeklyReportSending, setWeeklyReportSending] = useState(false);
   const qc = useQueryClient();
@@ -438,19 +436,6 @@ export default function Settings() {
       setStreakFreezeEnabled(!val);
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
-  };
-
-  const handleLanguageChange = (lang: Language) => {
-    setCurrentLang(lang);
-    setLanguage(lang);
-    if (user?.id) {
-      updateUser(user.id, { language: lang }).catch(() => {});
-    }
-    toast({
-      title: "Language updated!",
-      description: "Reloading to apply the new language…",
-    });
-    setTimeout(() => window.location.reload(), 1200);
   };
 
   const handleCalendarSync = async () => {
@@ -924,40 +909,6 @@ export default function Settings() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Languages className="w-4 h-4 text-primary" />
-                      <SectionTitle>Language</SectionTitle>
-                    </div>
-                    <p className="text-xs text-muted-foreground -mt-2">
-                      Choose your preferred display language for the Strivo interface.
-                    </p>
-                    <div className="grid grid-cols-3 gap-3">
-                      {LANGUAGES.map(lang => (
-                        <button
-                          key={lang.code}
-                          onClick={() => handleLanguageChange(lang.code)}
-                          data-testid={`button-lang-${lang.code}`}
-                          className={cn(
-                            "relative flex flex-col items-center gap-1.5 p-4 rounded-xl border transition-all",
-                            currentLang === lang.code
-                              ? "border-primary bg-primary/10 text-foreground shadow-sm"
-                              : "border-border text-muted-foreground hover:border-primary/40 hover:bg-muted/30",
-                          )}
-                        >
-                          {currentLang === lang.code && (
-                            <div className="absolute top-2 right-2">
-                              <div className="w-2 h-2 rounded-full bg-primary" />
-                            </div>
-                          )}
-                          <span className="text-lg">{lang.flag}</span>
-                          <span className="text-xs font-semibold">{lang.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             )}
 

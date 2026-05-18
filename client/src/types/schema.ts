@@ -35,7 +35,6 @@ export interface User {
   referredBy?: string | null;
   referralCount?: number | null;
   weeklyReportEnabled?: boolean | null;
-  language?: string | null;
   unlockedAchievements?: string[] | null;
 }
 
