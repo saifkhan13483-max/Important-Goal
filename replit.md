@@ -7,22 +7,22 @@ Strivo is a React + Firebase web application that helps users turn goals into da
 **Pre-existing (4):** Google Login, CSV/JSON Export, Calendar Heat Map in Check-ins, Daily Reminders
 
 **Newly Added (11):**
-1. **Achievements & Badges** — 23 achievements with XP tiers; `client/src/lib/achievements.ts`, `client/src/components/achievements-panel.tsx`, `client/src/pages/achievements.tsx` (routed `/achievements`)
+1. **Achievements & Badges** — 23 achievements with XP tiers; `src/lib/achievements.ts`, `src/components/achievements-panel.tsx`, `src/pages/achievements.tsx` (routed `/achievements`)
 2. **Streak Freeze** — Toggle in Settings → Notifications tab; saves `streakFreezes` field on User in Firestore
-3. **In-App Notifications Center** — Bell icon in sidebar with popover; `client/src/components/notifications-center.tsx`, `client/src/services/notifications.service.ts`
-4. **Focus Timer (Pomodoro)** — 25/5/15 min modes; `client/src/components/focus-timer.tsx`; launched from "Focus" button in Check-ins header
-5. **Public Profile** — Toggle in Settings → Social tab; shareable URL `/profile/:code`; `client/src/pages/public-profile.tsx`, `client/src/services/public-profile.service.ts`
-6. **Accountability Partner** — Link by email in Settings → Social tab; `client/src/services/accountability.service.ts`
+3. **In-App Notifications Center** — Bell icon in sidebar with popover; `src/components/notifications-center.tsx`, `src/services/notifications.service.ts`
+4. **Focus Timer (Pomodoro)** — 25/5/15 min modes; `src/components/focus-timer.tsx`; launched from "Focus" button in Check-ins header
+5. **Public Profile** — Toggle in Settings → Social tab; shareable URL `/profile/:code`; `src/pages/public-profile.tsx`, `src/services/public-profile.service.ts`
+6. **Accountability Partner** — Link by email in Settings → Social tab; `src/services/accountability.service.ts`
 7. **Referral Program** — Referral code + copy/share in Settings → Social tab; deterministic code from userId
-8. **Google Calendar Sync (.ics)** — Download .ics of all systems; `client/src/lib/calendar-export.ts`; button in Settings → Social tab
+8. **Google Calendar Sync (.ics)** — Download .ics of all systems; `src/lib/calendar-export.ts`; button in Settings → Social tab
 9. **Weekly Email Progress Report** — Toggle in Settings → Social tab; stores `weeklyReportEnabled` on User
-10. **Habit Stacking** — Drag-to-order systems; `client/src/components/habit-stack-builder.tsx`; appears in Systems page when user has 2+ systems
-11. **Multi-language Support (EN/ES/FR)** — Language switcher in Settings → Appearance tab; `client/src/lib/i18n.ts` with translations and localStorage persistence
+10. **Habit Stacking** — Drag-to-order systems; `src/components/habit-stack-builder.tsx`; appears in Systems page when user has 2+ systems
+11. **Multi-language Support (EN/ES/FR)** — Language switcher in Settings → Appearance tab; `src/lib/i18n.ts` with translations and localStorage persistence
 
 ## Features Completed in Latest Session
-1. **Profile Photo Upload** — Avatar in Settings now has a clickable photo that opens a file picker; uploads to Cloudinary (`strivo/avatars` folder) via `uploadImage()` from `client/src/lib/cloudinary.ts`; spinner shown during upload; URL auto-populated in the avatar field after success
+1. **Profile Photo Upload** — Avatar in Settings now has a clickable photo that opens a file picker; uploads to Cloudinary (`strivo/avatars` folder) via `uploadImage()` from `src/lib/cloudinary.ts`; spinner shown during upload; URL auto-populated in the avatar field after success
 2. **Achievement Auto-Unlock on Check-in** — `checkins.tsx` fires `checkAndUnlockAchievements` via `onDone` callback on `SystemCheckinCard` completion; saves newly earned achievements to Firestore and sends in-app notifications + toasts
-3. **Weekly Report Emails via EmailJS** — `WeeklyReportChecker` component in `App.tsx` runs on mount and every hour; reads `user.weeklyReportEnabled`; computes last-7-days completion rate, current streak, active systems; calls `sendWeeklyReport()` from `client/src/lib/emailjs.ts`; uses `VITE_EMAILJS_WEEKLY_TEMPLATE` env var
+3. **Weekly Report Emails via EmailJS** — `WeeklyReportChecker` component in `App.tsx` runs on mount and every hour; reads `user.weeklyReportEnabled`; computes last-7-days completion rate, current streak, active systems; calls `sendWeeklyReport()` from `src/lib/emailjs.ts`; uses `VITE_EMAILJS_WEEKLY_TEMPLATE` env var
 4. **Contribution Heatmap in Analytics** — `ContributionHeatmap` component in `analytics.tsx` renders a 52-week GitHub-style grid; color intensity based on done check-ins per day; month labels, day-of-week labels, legend, active-day count, total check-in count; uses `date-fns` helpers
 5. **Streak Freeze Activation** — Toggle switch in Settings → Notifications tab; stores `streakFreezes` count in Firestore on the User document (was already complete)
 
@@ -92,7 +92,7 @@ Every public page has unique title, meta description, canonical URL, Open Graph 
 - `404` — `noindex, follow`
 
 ### Protected Routes (noindex)
-`AppLayout` (`client/src/components/app/app-layout.tsx`) injects `<meta name="robots" content="noindex, nofollow">` for all authenticated app routes, ensuring they are never indexed.
+`AppLayout` (`src/components/app/app-layout.tsx`) injects `<meta name="robots" content="noindex, nofollow">` for all authenticated app routes, ensuring they are never indexed.
 
 ### JSON-LD Structured Data
 Consolidated into a single `@graph` block in `index.html` to avoid duplicate entity warnings in Google's Rich Results Test:
@@ -119,7 +119,7 @@ Consolidated into a single `@graph` block in `index.html` to avoid duplicate ent
 
 ## EmailJS Integration
 - **Package**: `@emailjs/browser`
-- **Lib**: `client/src/lib/emailjs.ts`
+- **Lib**: `src/lib/emailjs.ts`
 - **Triggers**:
   - New account signup → `sendSignupWelcome(name, email)`
   - Newsletter email capture → `sendNewsletterWelcome(email)`
@@ -150,12 +150,12 @@ Consolidated into a single `@graph` block in `index.html` to avoid duplicate ent
 - **Success page**: `/checkout/success?plan=starter|pro|elite` — saves plan to Firestore `users/{uid}.plan`
 - **Plan stored on**: `User.plan` field (PlanTier: "free" | "starter" | "pro" | "elite")
 - **Settings page**: Shows real plan from Firestore + "Manage billing" link to Stripe Customer Portal
-- **Stripe lib**: `client/src/lib/stripe.ts`
+- **Stripe lib**: `src/lib/stripe.ts`
 
 ## Plan-Based Feature Gating
 - **Plan tiers**: free | starter | pro | elite
-- **Feature flags**: `client/src/lib/plan-limits.ts` — `getPlanFeatures(plan)` returns a `PlanFeatures` object
-- **PlanGate component**: `client/src/components/plan-gate.tsx` — full-wall and compact upgrade prompts
+- **Feature flags**: `src/lib/plan-limits.ts` — `getPlanFeatures(plan)` returns a `PlanFeatures` object
+- **PlanGate component**: `src/components/plan-gate.tsx` — full-wall and compact upgrade prompts
 - **Enforcement by page**:
   - **AI Coach** (`/ai-coach`): Free/Starter → full wall; Pro → 10 msgs/day via localStorage + banner; Elite → unlimited
   - **Analytics** (`/analytics`): Free → 4 stat cards only; Starter+ → charts, streaks, consistency, goal breakdown; Pro/Elite → AI insights + mood correlation
@@ -166,8 +166,8 @@ Consolidated into a single `@graph` block in `index.html` to avoid duplicate ent
 
 ## Elite Plan Features (Team Workspace)
 - **Route**: `/workspace` — protected, lazy-loaded
-- **Service**: `client/src/services/workspace.service.ts` — Firestore `workspaces` collection
-- **Types**: `Workspace`, `WorkspaceMember` added to `client/src/types/schema.ts`
+- **Service**: `src/services/workspace.service.ts` — Firestore `workspaces` collection
+- **Types**: `Workspace`, `WorkspaceMember` added to `src/types/schema.ts`
 - **Features**:
   - Create workspace with custom name + auto-generated 6-char invite code
   - Join workspace by entering invite code (any plan can join)
@@ -233,10 +233,10 @@ AI features use the **Groq API** (`llama-3.3-70b-versatile`) via a server-side p
 - **Note**: Set `GROQ_API_KEY` (without VITE_ prefix) so the key is never exposed to the browser.
 
 ### Files
-- `client/src/services/ai.service.ts` — Core service: `callGroq`, `suggestSystemField`, `generateFullSystem`, `chatWithCoach`, `generateJournalPrompt`, `generateAnalyticsInsights`
-- `client/src/hooks/use-ai.ts` — `useAi<T>(fn)` hook that wraps any AI call with `loading`/`error` state
-- `client/src/components/ai/ai-system-generator.tsx` — Modal dialog: describe a goal → AI fills all system builder fields
-- `client/src/components/ai/ai-chat.tsx` — `<AiChatWidget />` floating bottom-right chat bubble (mounted in `AppLayout`)
+- `src/services/ai.service.ts` — Core service: `callGroq`, `suggestSystemField`, `generateFullSystem`, `chatWithCoach`, `generateJournalPrompt`, `generateAnalyticsInsights`
+- `src/hooks/use-ai.ts` — `useAi<T>(fn)` hook that wraps any AI call with `loading`/`error` state
+- `src/components/ai/ai-system-generator.tsx` — Modal dialog: describe a goal → AI fills all system builder fields
+- `src/components/ai/ai-chat.tsx` — `<AiChatWidget />` floating bottom-right chat bubble (mounted in `AppLayout`)
 
 ### Integration points
 - **System Builder** — "Generate System with AI" banner on step 1 opens `AiSystemGenerator`; per-field "AI Suggest" buttons on trigger/action/fallback steps
@@ -274,7 +274,7 @@ All AI calls throw with message `"AI assistant is temporarily unavailable."` on 
 - 6 testimonials with distinct avatar color per person
 
 ### 6. Cookie Consent / GDPR Banner
-- `CookieConsent` component (`client/src/components/cookie-consent.tsx`)
+- `CookieConsent` component (`src/components/cookie-consent.tsx`)
 - Animated bottom-right banner with Accept / Decline buttons
 - Consent stored in `localStorage` key `sf_cookie_consent`
 - Added to `App.tsx` at app root level
@@ -308,19 +308,19 @@ All AI calls throw with message `"AI assistant is temporarily unavailable."` on 
 - `manifest.json` already configured with icons, theme color, standalone display
 
 ### 15. Analytics Event Tracking
-- `client/src/lib/track.ts` — lightweight event tracker
+- `src/lib/track.ts` — lightweight event tracker
 - Events stored in Firestore `analyticsEvents` collection + forwarded to `window.gtag` if configured
 - Tracked events: `signup_completed`, `login`, `goal_created`, `system_created`, `checkin_completed`, `checkin_missed`, `newsletter_subscribed`
 - Wired into: `signup.tsx`, `goals.tsx`, `system-builder.tsx`, `checkins.tsx`, `landing.tsx`
 
 ### 16. Error Boundary & 404 Handling
-- `ErrorBoundary` class component (`client/src/components/error-boundary.tsx`)
+- `ErrorBoundary` class component (`src/components/error-boundary.tsx`)
 - Wraps entire app in `App.tsx` — catches any runtime crash with user-friendly error screen
 - Shows error message and "Back to Home" reset button
 - `NotFound` page already exists and handles 404s
 
 ## Phase 4 — Visual Design System (implemented)
-All design tokens are defined in `client/src/index.css` and exposed to Tailwind via `tailwind.config.ts`.
+All design tokens are defined in `src/index.css` and exposed to Tailwind via `tailwind.config.ts`.
 
 ### Color Tokens
 - **Primary**: `hsl(258, 84%, 62%)` / dark `hsl(258, 84%, 68%)`
@@ -357,7 +357,7 @@ Timing: `cubic-bezier(0.22, 1, 0.36, 1)` for entrances; `ease-out` for hover; `e
 A personal audio feature that lets users record or upload a message from their future self, played back as a motivational reminder.
 
 ### Feature components
-- `client/src/components/future-self-audio.tsx` — all audio components in one file:
+- `src/components/future-self-audio.tsx` — all audio components in one file:
   - `FutureSelfAudioSetup` — record/upload UI (used in onboarding + settings)
   - `FutureSelfAudioPlayer` — playback widget with autoplay logic (used in dashboard + recovery)
   - `FutureSelfAudioSettings` — playback preference toggles (used in settings)
@@ -522,7 +522,7 @@ All changes follow WCAG 2.1 AA guidelines.
 - `GOAL_AREAS` constant maps each category to suggested identity + action strings
 
 ### T006: In-App Changelog / What's New Modal
-- `WhatsNewModal` component in `client/src/components/whats-new-modal.tsx`
+- `WhatsNewModal` component in `src/components/whats-new-modal.tsx`
 - Shows on first login after a version bump — version stored in `CURRENT_VERSION` constant
 - 7 feature cards with icons, tags (New/Improved/Pro), and descriptions
 - Dismissed state persisted in `localStorage` key `strivo_seen_whats_new`

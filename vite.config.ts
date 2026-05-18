@@ -119,12 +119,11 @@ export default defineConfig(async () => {
     plugins: [suppressPostCSSFromWarning(), apiPlugin(), react(), ...replitPlugins],
     resolve: {
       alias: {
-        "@": path.resolve(import.meta.dirname, "client", "src"),
-        "@shared": path.resolve(import.meta.dirname, "client", "src", "types"),
+        "@": path.resolve(import.meta.dirname, "src"),
+        "@shared": path.resolve(import.meta.dirname, "src", "types"),
         "@assets": path.resolve(import.meta.dirname, "attached_assets"),
       },
     },
-    root: path.resolve(import.meta.dirname, "client"),
     build: {
       outDir: path.resolve(import.meta.dirname, "dist"),
       emptyOutDir: true,
