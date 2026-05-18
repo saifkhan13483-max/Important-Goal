@@ -412,101 +412,112 @@ function Scene2({ mobile }: { mobile?: boolean }) {
    SCENE 3 — Streak & momentum: 47-day streak visualization
 ════════════════════════════════════════════════════════════════ */
 function Scene3({ mobile }: { mobile?: boolean }) {
-  // Build a 7×7 grid (49 days), last 47 are filled
   const days = Array.from({ length: 49 }, (_, i) => {
     const filled = i >= 2;
     const intensity = filled ? (i > 40 ? 1 : i > 30 ? 0.8 : i > 20 ? 0.6 : 0.4) : 0;
     return { filled, intensity };
   });
 
+  const statItems = [
+    { label: "Current streak", value: "47", unit: "days", color: C.purpleHex, icon: "🔥" },
+    { label: "Completion", value: "96%", unit: "this week", color: C.greenHex, icon: "✓" },
+    { label: "Best habit", value: "#1", unit: "read 20 pages", color: C.cyanHex, icon: "📖" },
+  ];
+
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
       alignItems: "center", justifyContent: "center", padding: mobile ? "0 16px" : "0 28px" }}>
       <div style={{ width: "100%", maxWidth: 520 }}>
 
-        {/* Top stat */}
-        <FadeUp delay={0.1}>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: mobile ? 8 : 12, marginBottom: mobile ? 10 : 14 }}>
-            <div>
-              <div style={{ fontFamily: FONT, fontSize: 10, color: C.muted, letterSpacing: "0.08em",
-                textTransform: "uppercase", marginBottom: 4 }}>
-                Current streak
-              </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                <span style={{
-                  fontFamily: FONT, fontWeight: 800,
-                  fontSize: mobile ? "clamp(1.6rem, 10vw, 2.4rem)" : 38, lineHeight: 1,
-                  letterSpacing: "-0.04em", ...gradText,
-                  animation: "ha2-countUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.3s both",
-                }}>47</span>
-                <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: mobile ? 13 : 15, color: C.muted }}>days</span>
-              </div>
+        {/* Title row */}
+        <FadeUp delay={0.05}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: C.muted,
+              letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Streak tracker
             </div>
-            <div style={{ marginBottom: 4 }}>
-              <div style={{ fontFamily: FONT, fontSize: mobile ? 18 : 20, animation: "ha2-pulse 2s ease-in-out 0.5s infinite" }}>🔥</div>
-            </div>
-            <div style={{ flex: 1 }} />
-            {!mobile && (
-              <FadeIn delay={0.6}>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 30 }}>
-                  {[30, 45, 38, 55, 50, 62, 70, 65, 78, 85, 90, 95].map((h, i) => (
-                    <div key={i} style={{
-                      width: 4, borderRadius: 3,
-                      background: i >= 9 ? C.purpleHex : `${C.purpleHex}50`,
-                      height: `${h}%`, alignSelf: "flex-end",
-                      transformOrigin: "bottom",
-                      animation: `ha2-barGrow 0.5s cubic-bezier(0.22,1,0.36,1) ${0.6 + i * 0.04}s both`,
-                    }} />
-                  ))}
-                </div>
-              </FadeIn>
-            )}
+            <div style={{ ...pill(C.purpleHex) }}>47-day streak 🔥</div>
           </div>
         </FadeUp>
 
-        {/* Habit grid */}
-        <FadeIn delay={0.4}>
-          <div style={{ ...glass({ padding: 12 }) }}>
-            <div style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, color: C.muted,
-              marginBottom: 8, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Read 20 pages · last 49 days
+        {/* Main card — two columns */}
+        <FadeIn delay={0.2}>
+          <div style={{ ...glass({ padding: 14 }), display: "flex", gap: 14, alignItems: "stretch" }}>
+
+            {/* Left — habit grid */}
+            <div style={{ flexShrink: 0 }}>
+              <div style={{ fontFamily: FONT, fontSize: 9, fontWeight: 600, color: C.muted,
+                marginBottom: 7, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Read 20 pages · 49 days
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3, width: mobile ? 140 : 180 }}>
+                {days.map((d, i) => (
+                  <div key={i} style={{
+                    aspectRatio: "1",
+                    borderRadius: 3,
+                    background: d.filled
+                      ? `rgba(139,92,246,${d.intensity * 0.85 + 0.1})`
+                      : "rgba(255,255,255,0.05)",
+                    border: `1px solid ${d.filled ? `${C.purpleHex}40` : C.border}`,
+                    animation: d.filled ? `ha2-streakIn 0.3s ease ${0.5 + i * 0.018}s both` : undefined,
+                    opacity: d.filled ? 1 : 0.35,
+                  }} />
+                ))}
+              </div>
+              {/* Legend */}
+              <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 6 }}>
+                <span style={{ fontFamily: FONT, fontSize: 8, color: C.dim }}>Less</span>
+                {[0.15, 0.4, 0.7, 1].map((o, i) => (
+                  <div key={i} style={{ width: 7, height: 7, borderRadius: 2,
+                    background: `rgba(139,92,246,${o})` }} />
+                ))}
+                <span style={{ fontFamily: FONT, fontSize: 8, color: C.dim }}>More</span>
+              </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 22px)", gap: 3 }}>
-              {days.map((d, i) => (
-                <div key={i} style={{
-                  aspectRatio: "1",
-                  borderRadius: 3,
-                  background: d.filled
-                    ? `rgba(139, 92, 246, ${d.intensity * 0.85 + 0.1})`
-                    : "rgba(255,255,255,0.05)",
-                  border: `1px solid ${d.filled ? `${C.purpleHex}40` : C.border}`,
-                  animation: d.filled ? `ha2-streakIn 0.3s ease ${0.5 + i * 0.018}s both` : undefined,
-                  opacity: d.filled ? 1 : 0.35,
-                }} />
+
+            {/* Divider */}
+            <div style={{ width: 1, background: C.border, flexShrink: 0 }} />
+
+            {/* Right — stats */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 8 }}>
+              {statItems.map((s, i) => (
+                <FadeUp key={i} delay={0.35 + i * 0.15}>
+                  <div style={{
+                    background: `${s.color}12`, border: `1px solid ${s.color}25`,
+                    borderRadius: 10, padding: "8px 10px",
+                    display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    <span style={{ fontSize: 14 }}>{s.icon}</span>
+                    <div>
+                      <div style={{ fontFamily: FONT, fontSize: 9, color: C.muted,
+                        textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 1 }}>
+                        {s.label}
+                      </div>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                        <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: 18,
+                          ...gradText, animation: `ha2-countUp 0.6s ease ${0.4 + i * 0.15}s both` }}>
+                          {s.value}
+                        </span>
+                        <span style={{ fontFamily: FONT, fontSize: 10, color: C.muted }}>{s.unit}</span>
+                      </div>
+                    </div>
+                  </div>
+                </FadeUp>
               ))}
             </div>
-            {/* Legend */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end",
-              gap: 4, marginTop: 7 }}>
-              <span style={{ fontFamily: FONT, fontSize: 9, color: C.dim }}>Less</span>
-              {[0.15, 0.35, 0.6, 0.85, 1].map((o, i) => (
-                <div key={i} style={{ width: 8, height: 8, borderRadius: 2,
-                  background: `rgba(139,92,246,${o})` }} />
-              ))}
-              <span style={{ fontFamily: FONT, fontSize: 9, color: C.dim }}>More</span>
-            </div>
+
           </div>
         </FadeIn>
 
         {/* Achievement badge */}
-        <FadeUp delay={1.0}>
+        <FadeUp delay={0.9}>
           <div style={{
             ...glass({ padding: "8px 12px", marginTop: 8,
               background: `${C.orangeHex}12`, borderColor: `${C.orangeHex}35` }),
             display: "flex", alignItems: "center", gap: 9,
           }}>
-            <span style={{ fontSize: 16, animation: "ha2-pulse 2s ease-in-out 1.2s infinite" }}>🏆</span>
-            <div>
+            <span style={{ fontSize: 15, animation: "ha2-pulse 2s ease-in-out 1.2s infinite" }}>🏆</span>
+            <div style={{ flex: 1 }}>
               <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 700, color: C.text }}>
                 7-week milestone unlocked!
               </div>
@@ -514,8 +525,10 @@ function Scene3({ mobile }: { mobile?: boolean }) {
                 You've crossed the habit formation threshold
               </div>
             </div>
+            <div style={{ ...pill(C.orangeHex) }}>New</div>
           </div>
         </FadeUp>
+
       </div>
     </div>
   );
