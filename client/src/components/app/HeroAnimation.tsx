@@ -29,6 +29,16 @@ const FONT = "Inter, -apple-system, BlinkMacSystemFont, sans-serif";
 /* ── Particles (canvas) ─────────────────────────────────────── */
 type Particle = { x: number; y: number; vx: number; vy: number; r: number; color: string; opacity: number };
 
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 640);
+  useEffect(() => {
+    const handler = () => setMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return mobile;
+}
+
 function useParticleCanvas(canvasRef: React.RefObject<HTMLCanvasElement>) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -213,10 +223,11 @@ function Ring({ pct, color, size = 52, delay = 0, label }: {
 /* ════════════════════════════════════════════════════════════════
    SCENE 1 — Brand intro: "Build habits that last."
 ════════════════════════════════════════════════════════════════ */
-function Scene1() {
+function Scene1({ mobile }: { mobile?: boolean }) {
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", display: "flex",
-      flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20 }}>
+      flexDirection: "column", alignItems: "center", justifyContent: "center", gap: mobile ? 14 : 20,
+      padding: mobile ? "0 16px" : "0 28px" }}>
 
       {/* Animated blob background */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
@@ -264,7 +275,7 @@ function Scene1() {
       {/* Sub */}
       <FadeUp delay={0.75} dur={0.7}>
         <p style={{
-          fontFamily: FONT, fontSize: 17, lineHeight: 1.55,
+          fontFamily: FONT, fontSize: mobile ? 14 : 17, lineHeight: 1.55,
           color: C.muted, textAlign: "center", maxWidth: 400, margin: 0,
         }}>
           Minimum actions · Recovery flows · Identity-based progress
@@ -273,7 +284,7 @@ function Scene1() {
 
       {/* Floating stat pills */}
       <FadeIn delay={1.1} dur={0.7}>
-        <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: mobile ? 8 : 12, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
           {[
             { icon: "🔥", label: "47-day streak", color: C.orangeHex },
             { icon: "✓", label: "3 of 4 habits done", color: C.greenHex },
@@ -299,7 +310,7 @@ function Scene1() {
 /* ════════════════════════════════════════════════════════════════
    SCENE 2 — Dashboard mockup: Today's habits
 ════════════════════════════════════════════════════════════════ */
-function Scene2() {
+function Scene2({ mobile }: { mobile?: boolean }) {
   const habits = [
     { name: "Morning run", done: true,  streak: 12, color: C.greenHex,  time: "7:00 AM" },
     { name: "Read 20 pages", done: true,  streak: 47, color: C.purpleHex, time: "8:30 AM" },
@@ -309,23 +320,23 @@ function Scene2() {
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
-      alignItems: "center", justifyContent: "center", padding: "0 28px" }}>
+      alignItems: "center", justifyContent: "center", padding: mobile ? "0 16px" : "0 28px" }}>
       <div style={{ width: "100%", maxWidth: 520 }}>
 
         {/* Header */}
         <FadeUp delay={0.1}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: mobile ? 14 : 20 }}>
             <div>
               <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 600, color: C.muted,
                 letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
                 Wednesday · Apr 2
               </div>
-              <div style={{ fontFamily: FONT, fontSize: 22, fontWeight: 700, color: C.text, letterSpacing: "-0.02em" }}>
+              <div style={{ fontFamily: FONT, fontSize: mobile ? 18 : 22, fontWeight: 700, color: C.text, letterSpacing: "-0.02em" }}>
                 Today's Habits
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <Ring pct={75} color={C.purpleHex} size={50} delay={0.6} />
+              <Ring pct={75} color={C.purpleHex} size={mobile ? 40 : 50} delay={0.6} />
               <div>
                 <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: 800, color: C.text, animation: "ha2-countUp 0.7s ease 0.8s both" }}>
                   3/4
@@ -400,7 +411,7 @@ function Scene2() {
 /* ════════════════════════════════════════════════════════════════
    SCENE 3 — Streak & momentum: 47-day streak visualization
 ════════════════════════════════════════════════════════════════ */
-function Scene3() {
+function Scene3({ mobile }: { mobile?: boolean }) {
   // Build a 7×7 grid (49 days), last 47 are filled
   const days = Array.from({ length: 49 }, (_, i) => {
     const filled = i >= 2;
@@ -410,12 +421,12 @@ function Scene3() {
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
-      alignItems: "center", justifyContent: "center", padding: "0 28px" }}>
+      alignItems: "center", justifyContent: "center", padding: mobile ? "0 16px" : "0 28px" }}>
       <div style={{ width: "100%", maxWidth: 520 }}>
 
         {/* Top stat */}
         <FadeUp delay={0.1}>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 16, marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: mobile ? 10 : 16, marginBottom: mobile ? 16 : 24 }}>
             <div>
               <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted, letterSpacing: "0.08em",
                 textTransform: "uppercase", marginBottom: 6 }}>
@@ -423,31 +434,34 @@ function Scene3() {
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                 <span style={{
-                  fontFamily: FONT, fontWeight: 800, fontSize: 56, lineHeight: 1,
+                  fontFamily: FONT, fontWeight: 800,
+                  fontSize: mobile ? "clamp(2rem, 12vw, 3.5rem)" : 56, lineHeight: 1,
                   letterSpacing: "-0.04em", ...gradText,
                   animation: "ha2-countUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.3s both",
                 }}>47</span>
-                <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: 20, color: C.muted }}>days</span>
+                <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: mobile ? 15 : 20, color: C.muted }}>days</span>
               </div>
             </div>
             <div style={{ marginBottom: 8 }}>
-              <div style={{ fontFamily: FONT, fontSize: 28, animation: "ha2-pulse 2s ease-in-out 0.5s infinite" }}>🔥</div>
+              <div style={{ fontFamily: FONT, fontSize: mobile ? 22 : 28, animation: "ha2-pulse 2s ease-in-out 0.5s infinite" }}>🔥</div>
             </div>
             <div style={{ flex: 1 }} />
-            {/* Mini bars chart */}
-            <FadeIn delay={0.6}>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 40 }}>
-                {[30, 45, 38, 55, 50, 62, 70, 65, 78, 85, 90, 95].map((h, i) => (
-                  <div key={i} style={{
-                    width: 5, borderRadius: 3,
-                    background: i >= 9 ? C.purpleHex : `${C.purpleHex}50`,
-                    height: `${h}%`, alignSelf: "flex-end",
-                    transformOrigin: "bottom",
-                    animation: `ha2-barGrow 0.5s cubic-bezier(0.22,1,0.36,1) ${0.6 + i * 0.04}s both`,
-                  }} />
-                ))}
-              </div>
-            </FadeIn>
+            {/* Mini bars chart — hidden on very small screens */}
+            {!mobile && (
+              <FadeIn delay={0.6}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 40 }}>
+                  {[30, 45, 38, 55, 50, 62, 70, 65, 78, 85, 90, 95].map((h, i) => (
+                    <div key={i} style={{
+                      width: 5, borderRadius: 3,
+                      background: i >= 9 ? C.purpleHex : `${C.purpleHex}50`,
+                      height: `${h}%`, alignSelf: "flex-end",
+                      transformOrigin: "bottom",
+                      animation: `ha2-barGrow 0.5s cubic-bezier(0.22,1,0.36,1) ${0.6 + i * 0.04}s both`,
+                    }} />
+                  ))}
+                </div>
+              </FadeIn>
+            )}
           </div>
         </FadeUp>
 
@@ -511,7 +525,7 @@ function Scene3() {
 /* ════════════════════════════════════════════════════════════════
    SCENE 4 — Recovery flow: "You missed a day."
 ════════════════════════════════════════════════════════════════ */
-function Scene4() {
+function Scene4({ mobile }: { mobile?: boolean }) {
   const steps = [
     { icon: "😌", title: "One miss is fine", body: "Your streak is still alive. One skip is built into the system." },
     { icon: "⚡", title: "Do the minimum", body: "Just 2 minutes of meditation — enough to count." },
@@ -520,7 +534,7 @@ function Scene4() {
 
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
-      alignItems: "center", justifyContent: "center", padding: "0 28px" }}>
+      alignItems: "center", justifyContent: "center", padding: mobile ? "0 16px" : "0 28px" }}>
       <div style={{ width: "100%", maxWidth: 520 }}>
 
         <FadeUp delay={0.1}>
@@ -588,11 +602,11 @@ function Scene4() {
 /* ════════════════════════════════════════════════════════════════
    SCENE 5 — CTA: "Identity over outcomes."
 ════════════════════════════════════════════════════════════════ */
-function Scene5({ onCta }: { onCta: () => void }) {
+function Scene5({ onCta, mobile }: { onCta: () => void; mobile?: boolean }) {
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
       flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "0 28px", gap: 20, textAlign: "center" }}>
+      padding: mobile ? "0 16px" : "0 28px", gap: mobile ? 14 : 20, textAlign: "center" }}>
 
       {/* Ambient glow */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
@@ -685,6 +699,7 @@ export function HeroAnimation({ className = "" }: { className?: string }) {
   const [scene, setScene] = useState(0);
   const [fading, setFading] = useState(false);
   const [, navigate] = useLocation();
+  const mobile = useIsMobile();
 
   useParticleCanvas(canvasRef);
 
@@ -704,11 +719,11 @@ export function HeroAnimation({ className = "" }: { className?: string }) {
   }, [scene]);
 
   const scenes = [
-    <Scene1 key={`s1-${scene}`} />,
-    <Scene2 key={`s2-${scene}`} />,
-    <Scene3 key={`s3-${scene}`} />,
-    <Scene4 key={`s4-${scene}`} />,
-    <Scene5 key={`s5-${scene}`} onCta={() => navigate("/signup")} />,
+    <Scene1 key={`s1-${scene}`} mobile={mobile} />,
+    <Scene2 key={`s2-${scene}`} mobile={mobile} />,
+    <Scene3 key={`s3-${scene}`} mobile={mobile} />,
+    <Scene4 key={`s4-${scene}`} mobile={mobile} />,
+    <Scene5 key={`s5-${scene}`} mobile={mobile} onCta={() => navigate("/signup")} />,
   ];
 
   return (
