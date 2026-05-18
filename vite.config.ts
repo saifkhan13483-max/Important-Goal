@@ -27,25 +27,44 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     if (method !== "POST") { res.statusCode = 405; res.end("Method Not Allowed"); return; }
     const key = process.env.GEMINI_API_KEY;
     if (!key) { jsonRes(res, 503, { error: "AI unavailable" }); return; }
-    const body = await new Promise<string>((resolve) => {
+    const rawBody = await new Promise<string>((resolve) => {
       let b = "";
       req.on("data", (c: Buffer) => { b += c.toString(); });
       req.on("end", () => resolve(b));
       req.on("error", () => resolve(""));
     });
     try {
-      const upstream = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-          body,
+      const parsed = JSON.parse(rawBody);
+      const model = parsed.model ?? "gemini-2.5-flash";
+
+      // Separate system messages from chat messages
+      const systemMessages = (parsed.messages ?? []).filter((m: any) => m.role === "system");
+      const chatMessages = (parsed.messages ?? []).filter((m: any) => m.role !== "system");
+      const contents = chatMessages.map((m: any) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
+      const geminiBody: Record<string, unknown> = {
+        contents,
+        generationConfig: {
+          ...(parsed.max_tokens ? { maxOutputTokens: parsed.max_tokens } : {}),
+          ...(parsed.temperature !== undefined ? { temperature: parsed.temperature } : {}),
         },
+      };
+      if (systemMessages.length > 0) {
+        geminiBody.system_instruction = {
+          parts: [{ text: systemMessages.map((m: any) => m.content).join("\n") }],
+        };
+      }
+
+      const upstream = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(geminiBody) },
       );
-      const data = await upstream.json();
-      res.statusCode = upstream.status;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(data));
+      const data = await upstream.json() as any;
+      if (!upstream.ok) { jsonRes(res, upstream.status, { error: data?.error?.message ?? "Gemini error" }); return; }
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      jsonRes(res, 200, { choices: [{ message: { role: "assistant", content: text } }] });
     } catch { jsonRes(res, 502, { error: "AI unavailable" }); }
     return;
   }

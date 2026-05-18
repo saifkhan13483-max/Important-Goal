@@ -1,4 +1,4 @@
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 
 // ---------------------------------------------------------------------------
 // Rate limiting — stored in localStorage, keyed by UTC date.

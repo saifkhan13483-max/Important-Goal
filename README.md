@@ -48,7 +48,7 @@ Strivo is a React + Firebase SaaS application that helps users convert vague amb
 | **System Builder** | 7-step guided builder — Identity → Outcome → Trigger → Action → Reward → Fallback → Review |
 | **Daily Check-ins** | Today view + 30-day history; done / partial / missed; mood & difficulty ratings; streak badges |
 | **Analytics** | Completion charts, streak history, heatmap, consistency scores, goal breakdown, AI insights |
-| **AI Coach** | Full-page chat powered by Gemini (gemini-2.0-flash) with user system context |
+| **AI Coach** | Full-page chat powered by Gemini (gemini-2.5-flash) with user system context |
 | **Journal** | Guided daily / weekly reflections with AI prompt generation |
 | **Templates Library** | 9+ pre-built habit templates with search, filters, preview, and one-click import |
 | **Achievements & Badges** | 23 achievements across XP tiers; auto-unlocked on check-in completion |
@@ -83,7 +83,7 @@ Strivo is a React + Firebase SaaS application that helps users convert vague amb
 | **Forms** | React Hook Form + Zod |
 | **Authentication** | Firebase Authentication (Email/Password + Google) |
 | **Database** | Firebase Firestore |
-| **AI** | Google Gemini API — `gemini-2.0-flash` via a Vercel serverless proxy |
+| **AI** | Google Gemini API — `gemini-2.5-flash` via a Vercel serverless proxy |
 | **Emails** | EmailJS (welcome emails, weekly reports) |
 | **Media Uploads** | Cloudinary (unsigned upload preset) |
 | **Payments** | Stripe Payment Links + Customer Portal (no server secret required) |
