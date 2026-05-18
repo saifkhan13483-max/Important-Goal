@@ -471,7 +471,7 @@ function Scene3({ mobile }: { mobile?: boolean }) {
               marginBottom: 8, letterSpacing: "0.06em", textTransform: "uppercase" }}>
               Read 20 pages · last 49 days
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 22px)", gap: 3 }}>
               {days.map((d, i) => (
                 <div key={i} style={{
                   aspectRatio: "1",
