@@ -289,8 +289,8 @@ export default function AiCoach() {
   });
 
   const analytics = useMemo(
-    () => computeAnalytics(allCheckins, systems, []),
-    [allCheckins, systems]
+    () => computeAnalytics(allCheckins, systems, [], { streakFreezeUsedDate: user?.streakFreezeUsedDate }),
+    [allCheckins, systems, user?.streakFreezeUsedDate],
   );
 
   const activeSystems = systems.filter((s) => s.active);

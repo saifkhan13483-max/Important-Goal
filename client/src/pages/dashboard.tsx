@@ -969,7 +969,10 @@ export default function Dashboard() {
     queryKey: ["journal", userId], queryFn: () => getJournals(userId), enabled: !!userId,
   });
 
-  const analytics = useMemo(() => computeAnalytics(allCheckins, systems, goals), [allCheckins, systems, goals]);
+  const analytics = useMemo(
+    () => computeAnalytics(allCheckins, systems, goals, { streakFreezeUsedDate: user?.streakFreezeUsedDate }),
+    [allCheckins, systems, goals, user?.streakFreezeUsedDate],
+  );
 
   const activeGoals = goals.filter(g => g.status === "active");
   const activeSystems = systems.filter(s => s.active !== false);

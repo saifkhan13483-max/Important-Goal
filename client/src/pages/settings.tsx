@@ -188,7 +188,7 @@ function AccountabilityPartnerCard({
 }
 
 export default function Settings() {
-  const { user } = useAppStore();
+  const { user, setUser } = useAppStore();
   const features = getPlanFeatures(user?.plan);
   const { updateProfile, updatePending, logout } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -353,6 +353,14 @@ export default function Settings() {
       const result = await linkAccountabilityPartner(user.id, partnerEmail.trim());
       if (result.success) {
         toast({ title: "Partner linked!", description: result.message });
+        if (result.partner) {
+          const updated = await updateUser(user.id, {
+            accountabilityPartnerId: result.partner.id,
+            accountabilityPartnerEmail: result.partner.email,
+            accountabilityPartnerName: result.partner.name,
+          });
+          setUser(updated);
+        }
         qc.invalidateQueries({ queryKey: ["user"] });
         setPartnerEmail("");
       } else {
@@ -368,7 +376,12 @@ export default function Settings() {
   const handleUnlinkPartner = async () => {
     if (!user?.id) return;
     try {
-      await unlinkAccountabilityPartner(user.id);
+      const updated = await updateUser(user.id, {
+        accountabilityPartnerId: null,
+        accountabilityPartnerEmail: null,
+        accountabilityPartnerName: null,
+      });
+      setUser(updated);
       toast({ title: "Partner unlinked" });
       qc.invalidateQueries({ queryKey: ["user"] });
     } catch (err: any) {
@@ -381,10 +394,12 @@ export default function Settings() {
     if (!user?.id) return;
     try {
       const code = referralCode;
-      await updateUser(user.id, { publicProfile: val, referralCode: code });
+      const updated = await updateUser(user.id, { publicProfile: val, referralCode: code });
+      setUser(updated);
       qc.invalidateQueries({ queryKey: ["user"] });
       toast({ title: val ? "Public profile enabled!" : "Profile is now private." });
     } catch (err: any) {
+      setPublicProfile(!val);
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
@@ -393,10 +408,12 @@ export default function Settings() {
     setWeeklyReport(val);
     if (!user?.id) return;
     try {
-      await updateUser(user.id, { weeklyReportEnabled: val });
+      const updated = await updateUser(user.id, { weeklyReportEnabled: val });
+      setUser(updated);
       qc.invalidateQueries({ queryKey: ["user"] });
       toast({ title: val ? "Weekly reports enabled!" : "Weekly reports disabled." });
     } catch (err: any) {
+      setWeeklyReport(!val);
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
@@ -405,10 +422,12 @@ export default function Settings() {
     setStreakFreezeEnabled(val);
     if (!user?.id) return;
     try {
-      await updateUser(user.id, { streakFreezes: val ? 1 : 0 });
+      const updated = await updateUser(user.id, { streakFreezes: val ? 1 : 0 });
+      setUser(updated);
       qc.invalidateQueries({ queryKey: ["user"] });
       toast({ title: val ? "Streak freeze activated!" : "Streak freeze removed." });
     } catch (err: any) {
+      setStreakFreezeEnabled(!val);
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
   };
@@ -1182,6 +1201,56 @@ export default function Settings() {
                     <p className="text-xs text-muted-foreground">
                       Note: You'll need to configure EmailJS templates to enable email delivery. See <Link href="/support" className="underline">support</Link> for setup instructions.
                     </p>
+                  </CardContent>
+                </Card>
+
+                {/* Google Calendar Sync */}
+                <Card>
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <SectionTitle>Google Calendar Sync</SectionTitle>
+                    </div>
+                    <p className="text-xs text-muted-foreground -mt-2 leading-relaxed">
+                      Export your active habit systems as a calendar file (.ics) and import it into Google Calendar, Apple Calendar, or any calendar app.
+                    </p>
+                    {systemsForCalendar.filter(s => s.active !== false).length === 0 ? (
+                      <div className="p-4 rounded-xl bg-muted/40 border border-border/40 text-center">
+                        <p className="text-xs text-muted-foreground">You have no active systems to export yet.</p>
+                        <Link href="/systems/new">
+                          <Button size="sm" variant="outline" className="mt-3 gap-1.5 text-xs" data-testid="button-create-system-for-calendar">
+                            Build a system first
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 rounded-xl border border-border/60 bg-muted/20">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Calendar className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">
+                            {systemsForCalendar.filter(s => s.active !== false).length} active system{systemsForCalendar.filter(s => s.active !== false).length !== 1 ? "s" : ""} ready to export
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Downloads a .ics file — open it to import into your calendar app
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCalendarSync}
+                          disabled={calendarSyncing}
+                          className="flex-shrink-0 gap-1.5"
+                          data-testid="button-calendar-sync"
+                        >
+                          {calendarSyncing
+                            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                            : <><Download className="w-3.5 h-3.5" /> Download .ics</>
+                          }
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 

@@ -96,9 +96,11 @@ export function computeAnalytics(
   checkins: Checkin[],
   systems: System[],
   goals: Goal[],
+  options?: { streakFreezeUsedDate?: string | null },
 ): AnalyticsData {
   const today = getTodayKey();
   const activeSystems = systems.filter(s => s.active !== false);
+  const frozenDate = options?.streakFreezeUsedDate ?? null;
 
   /* ── Current streaks ── */
   const streaks: Record<string, number> = {};
@@ -111,6 +113,8 @@ export function computeAnalytics(
       .sort((a, b) => b.localeCompare(a));
 
     const doneSet = new Set(doneCheckins);
+    // Streak freeze: treat the frozen date as a "done" day so the streak is protected
+    if (frozenDate) doneSet.add(frozenDate);
 
     /* Current streak — count backwards from today */
     let current = 0;

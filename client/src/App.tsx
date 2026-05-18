@@ -189,7 +189,7 @@ function WeeklyReportChecker() {
       let bestStreak = currentStreak;
       try {
         const { computeAnalytics } = await import("@/services/analytics.service");
-        const analytics = computeAnalytics(checkins, systems, []);
+        const analytics = computeAnalytics(checkins, systems, [], { streakFreezeUsedDate: user.streakFreezeUsedDate });
         bestStreak = Math.max(currentStreak, analytics.topBestStreak);
       } catch { /* fallback to currentStreak */ }
 

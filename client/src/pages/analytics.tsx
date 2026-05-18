@@ -759,7 +759,10 @@ export default function Analytics() {
 
   const isLoading = systemsLoading || goalsLoading || checkinsLoading;
 
-  const analytics = useMemo(() => computeAnalytics(checkins, systems, goals), [checkins, systems, goals]);
+  const analytics = useMemo(
+    () => computeAnalytics(checkins, systems, goals, { streakFreezeUsedDate: user?.streakFreezeUsedDate }),
+    [checkins, systems, goals, user?.streakFreezeUsedDate],
+  );
 
   const {
     streaks, bestStreaks, topBestStreak,

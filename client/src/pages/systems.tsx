@@ -333,8 +333,8 @@ export default function SystemsPage() {
 
   const streaks = useMemo(() => {
     if (!allCheckins.length || !systems.length) return {} as Record<string, number>;
-    return computeAnalytics(allCheckins, systems, []).streaks;
-  }, [allCheckins, systems]);
+    return computeAnalytics(allCheckins, systems, [], { streakFreezeUsedDate: user?.streakFreezeUsedDate }).streaks;
+  }, [allCheckins, systems, user?.streakFreezeUsedDate]);
 
   const qc = useQueryClient();
   const { toast } = useToast();

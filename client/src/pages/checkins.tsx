@@ -1332,7 +1332,7 @@ export default function Checkins() {
     enabled: !!userId,
   });
 
-  const analytics        = useMemo(() => computeAnalytics(allCheckins, systems, []), [allCheckins, systems]);
+  const analytics        = useMemo(() => computeAnalytics(allCheckins, systems, [], { streakFreezeUsedDate: user?.streakFreezeUsedDate }), [allCheckins, systems, user?.streakFreezeUsedDate]);
   const allActiveSystems = systems.filter(s => s.active !== false);
   const activeSystems    = useMemo(() => allActiveSystems.filter(isScheduledToday), [allActiveSystems]);
   const skippedToday     = useMemo(() => allActiveSystems.filter(s => !isScheduledToday(s)), [allActiveSystems]);
