@@ -708,7 +708,7 @@ export default function Landing() {
         id="main-content"
         aria-label="Hero"
         className="relative w-full overflow-hidden"
-        style={{ height: "75svh", minHeight: 480 }}
+        style={{ height: "82svh", minHeight: 520 }}
       >
         <HeroAnimation className="absolute inset-0 w-full h-full" />
 

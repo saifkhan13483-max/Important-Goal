@@ -224,10 +224,86 @@ function Ring({ pct, color, size = 52, delay = 0, label }: {
    SCENE 1 — Brand intro: "Build habits that last."
 ════════════════════════════════════════════════════════════════ */
 function Scene1({ mobile }: { mobile?: boolean }) {
+  if (!mobile) return (
+    <div style={{ position: "relative", width: "100%", height: "100%", display: "flex",
+      flexDirection: "column", alignItems: "center", justifyContent: "center",
+      gap: 28, padding: "0 48px" }}>
+
+      {/* Blobs */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: "5%", left: "10%", width: 480, height: 480,
+          background: `radial-gradient(circle, ${C.purpleHex}28 0%, transparent 70%)`,
+          borderRadius: "50%", animation: "ha2-bgBlob 8s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", bottom: "10%", right: "10%", width: 360, height: 360,
+          background: `radial-gradient(circle, ${C.cyanHex}1a 0%, transparent 70%)`,
+          borderRadius: "50%", animation: "ha2-bgBlob 11s ease-in-out 2s infinite" }} />
+      </div>
+
+      {/* Logo mark */}
+      <FadeIn delay={0.15} dur={0.8}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 16,
+            background: `linear-gradient(135deg, ${C.purpleHex}, ${C.cyanHex})`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: "ha2-glow 3s ease-in-out 0.5s infinite" }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M3 17l4-8 4 5 3-3 4 6" stroke="white" strokeWidth="2.2"
+                strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: 28, color: C.text, letterSpacing: "-0.02em" }}>Strivo</span>
+        </div>
+      </FadeIn>
+
+      {/* Headline */}
+      <FadeUp delay={0.35} dur={0.85}>
+        <h1 style={{ fontFamily: FONT, fontWeight: 800, fontSize: "clamp(3.2rem,5.2vw,4.6rem)",
+          lineHeight: 1.05, letterSpacing: "-0.035em", textAlign: "center",
+          margin: 0, color: C.text, maxWidth: 720 }}>
+          Build habits<br />
+          <span style={{ ...gradText }}>that actually last.</span>
+        </h1>
+      </FadeUp>
+
+      {/* Sub */}
+      <FadeUp delay={0.6} dur={0.7}>
+        <p style={{ fontFamily: FONT, fontSize: 18, lineHeight: 1.65, color: C.muted,
+          textAlign: "center", maxWidth: 500, margin: 0 }}>
+          Track streaks, recover from slips, and build your identity — one minimum action at a time.
+        </p>
+      </FadeUp>
+
+      {/* Feature cards */}
+      <FadeIn delay={0.85} dur={0.7}>
+        <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
+          {[
+            { icon: "⚡", title: "Smart Minimums", desc: "One action keeps your streak alive", color: C.purpleHex },
+            { icon: "🔥", title: "Streak Recovery", desc: "Built-in forgiveness for off days", color: C.orangeHex },
+            { icon: "📈", title: "Identity Growth", desc: "Become who you want to be", color: C.cyanHex },
+          ].map((f, i) => (
+            <FadeUp key={i} delay={0.95 + i * 0.12}>
+              <div style={{ ...glass({ padding: "18px 22px" }),
+                display: "flex", flexDirection: "column", gap: 9, minWidth: 190,
+                animation: `ha2-float 5s ease-in-out ${i * 1.3}s infinite` }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10,
+                  background: `${f.color}20`, display: "flex", alignItems: "center",
+                  justifyContent: "center", fontSize: 18 }}>
+                  {f.icon}
+                </div>
+                <div style={{ fontFamily: FONT, fontSize: 14, fontWeight: 700, color: C.text }}>{f.title}</div>
+                <div style={{ fontFamily: FONT, fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{f.desc}</div>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+      </FadeIn>
+    </div>
+  );
+
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", display: "flex",
-      flexDirection: "column", alignItems: "center", justifyContent: "center", gap: mobile ? 14 : 20,
-      padding: mobile ? "0 16px" : "0 28px" }}>
+      flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14,
+      padding: "0 16px" }}>
 
       {/* Animated blob background */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
@@ -239,66 +315,49 @@ function Scene1({ mobile }: { mobile?: boolean }) {
           borderRadius: "50%", animation: "ha2-bgBlob 10s ease-in-out 2s infinite" }} />
       </div>
 
-      {/* Logo mark */}
       <FadeIn delay={0.2} dur={0.8}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 12,
+          <div style={{ width: 40, height: 40, borderRadius: 12,
             background: `linear-gradient(135deg, ${C.purpleHex}, ${C.cyanHex})`,
             display: "flex", alignItems: "center", justifyContent: "center",
-            animation: "ha2-glow 3s ease-in-out 0.5s infinite",
-          }}>
+            animation: "ha2-glow 3s ease-in-out 0.5s infinite" }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path d="M3 17l4-8 4 5 3-3 4 6" stroke="white" strokeWidth="2.2"
                 strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: 22, color: C.text, letterSpacing: "-0.02em" }}>
-            Strivo
-          </span>
+          <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: 22, color: C.text, letterSpacing: "-0.02em" }}>Strivo</span>
         </div>
       </FadeIn>
 
-      {/* Headline */}
       <FadeUp delay={0.45} dur={0.8}>
-        <h1 style={{
-          fontFamily: FONT, fontWeight: 800, fontSize: "clamp(2.4rem,5.5vw,3.8rem)",
+        <h1 style={{ fontFamily: FONT, fontWeight: 800, fontSize: "clamp(2.4rem,5.5vw,3.8rem)",
           lineHeight: 1.05, letterSpacing: "-0.03em", textAlign: "center",
-          margin: 0, color: C.text, maxWidth: 560,
-        }}>
-          Build habits
-          <br />
+          margin: 0, color: C.text, maxWidth: 560 }}>
+          Build habits<br />
           <span style={{ ...gradText }}>that actually last.</span>
         </h1>
       </FadeUp>
 
-      {/* Sub */}
       <FadeUp delay={0.75} dur={0.7}>
-        <p style={{
-          fontFamily: FONT, fontSize: mobile ? 14 : 17, lineHeight: 1.55,
-          color: C.muted, textAlign: "center", maxWidth: 400, margin: 0,
-        }}>
+        <p style={{ fontFamily: FONT, fontSize: 14, lineHeight: 1.55,
+          color: C.muted, textAlign: "center", maxWidth: 400, margin: 0 }}>
           Minimum actions · Recovery flows · Identity-based progress
         </p>
       </FadeUp>
 
-      {/* Floating stat pills */}
       <FadeIn delay={1.1} dur={0.7}>
-        <div style={{ display: "flex", gap: mobile ? 8 : 12, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
           {[
             { icon: "🔥", label: "47-day streak", color: C.orangeHex },
             { icon: "✓", label: "3 of 4 habits done", color: C.greenHex },
             { icon: "📈", label: "+340k habits tracked", color: C.purpleHex },
           ].map((s, i) => (
-            <div key={i} style={{
-              ...glass({ padding: "7px 14px" }),
+            <div key={i} style={{ ...glass({ padding: "7px 14px" }),
               display: "flex", alignItems: "center", gap: 7,
-              animation: `ha2-float 4s ease-in-out ${i * 0.8 + 1.2}s infinite`,
-            }}>
+              animation: `ha2-float 4s ease-in-out ${i * 0.8 + 1.2}s infinite` }}>
               <span style={{ fontSize: 13 }}>{s.icon}</span>
-              <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 500, color: C.text }}>
-                {s.label}
-              </span>
+              <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 500, color: C.text }}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -312,94 +371,144 @@ function Scene1({ mobile }: { mobile?: boolean }) {
 ════════════════════════════════════════════════════════════════ */
 function Scene2({ mobile }: { mobile?: boolean }) {
   const habits = [
-    { name: "Morning run", done: true,  streak: 12, color: C.greenHex,  time: "7:00 AM" },
-    { name: "Read 20 pages", done: true,  streak: 47, color: C.purpleHex, time: "8:30 AM" },
+    { name: "Morning run",    done: true,  streak: 12, color: C.greenHex,  time: "7:00 AM" },
+    { name: "Read 20 pages",  done: true,  streak: 47, color: C.purpleHex, time: "8:30 AM" },
     { name: "Meditate 10min", done: false, streak: 8,  color: C.cyanHex,   time: "9:00 AM" },
     { name: "No sugar",       done: true,  streak: 5,  color: C.orangeHex, time: "All day" },
   ];
 
+  if (!mobile) return (
+    <div style={{ width: "100%", height: "100%", display: "flex",
+      alignItems: "center", justifyContent: "center", padding: "0 52px" }}>
+      <div style={{ width: "100%", maxWidth: 960, display: "grid",
+        gridTemplateColumns: "1fr 1.5fr", gap: 48, alignItems: "center" }}>
+
+        {/* Left — copy + progress */}
+        <div>
+          <FadeUp delay={0.1}>
+            <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: C.muted,
+              letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 14 }}>
+              Wednesday · Apr 2
+            </div>
+            <h2 style={{ fontFamily: FONT, fontWeight: 800, fontSize: "2.6rem",
+              lineHeight: 1.1, letterSpacing: "-0.03em", color: C.text, margin: "0 0 16px" }}>
+              Today's<br />
+              <span style={{ ...gradText }}>Habits</span>
+            </h2>
+            <p style={{ fontFamily: FONT, fontSize: 15, color: C.muted, lineHeight: 1.6, margin: "0 0 28px" }}>
+              See every habit, track your progress, and let the system do the rest.
+            </p>
+          </FadeUp>
+
+          <FadeUp delay={0.4}>
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <Ring pct={75} color={C.purpleHex} size={72} delay={0.6} />
+              <div>
+                <div style={{ fontFamily: FONT, fontSize: 36, fontWeight: 800, color: C.text,
+                  letterSpacing: "-0.03em", animation: "ha2-countUp 0.7s ease 0.8s both" }}>
+                  3 / 4
+                </div>
+                <div style={{ fontFamily: FONT, fontSize: 13, color: C.muted, marginTop: 2 }}>habits complete today</div>
+              </div>
+            </div>
+          </FadeUp>
+        </div>
+
+        {/* Right — habit list */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {habits.map((h, i) => (
+            <FadeUp key={h.name} delay={0.2 + i * 0.12}>
+              <div style={{ ...glass({ padding: "14px 18px" }),
+                display: "flex", alignItems: "center", gap: 14,
+                opacity: h.done ? 1 : 0.6 }}>
+                <CheckBox done={h.done} color={h.color} delay={0.35 + i * 0.12} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: FONT, fontSize: 15, fontWeight: 600, color: C.text }}>{h.name}</div>
+                  <div style={{ fontFamily: FONT, fontSize: 12, color: C.muted, marginTop: 2 }}>{h.time}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5,
+                  background: `${h.color}18`, borderRadius: 20, padding: "4px 10px" }}>
+                  <span style={{ fontSize: 12 }}>🔥</span>
+                  <span style={{ fontFamily: FONT, fontSize: 12, fontWeight: 700, color: h.color }}>{h.streak}d</span>
+                </div>
+              </div>
+            </FadeUp>
+          ))}
+
+          <FadeIn delay={1.0}>
+            <div style={{ ...glass({ padding: "12px 18px",
+              background: `${C.cyanHex}10`, borderColor: `${C.cyanHex}28` }),
+              display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: `${C.cyanHex}22`,
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 16 }}>⚡</div>
+              <div>
+                <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 600, color: C.cyanHex }}>Minimum: 2-min meditation</div>
+                <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted }}>Keeps your streak alive — no pressure</div>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
-      alignItems: "center", justifyContent: "center", padding: mobile ? "0 16px" : "0 28px" }}>
+      alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
       <div style={{ width: "100%", maxWidth: 520 }}>
 
-        {/* Header */}
         <FadeUp delay={0.1}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: mobile ? 14 : 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div>
               <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 600, color: C.muted,
                 letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
                 Wednesday · Apr 2
               </div>
-              <div style={{ fontFamily: FONT, fontSize: mobile ? 18 : 22, fontWeight: 700, color: C.text, letterSpacing: "-0.02em" }}>
+              <div style={{ fontFamily: FONT, fontSize: 18, fontWeight: 700, color: C.text, letterSpacing: "-0.02em" }}>
                 Today's Habits
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <Ring pct={75} color={C.purpleHex} size={mobile ? 40 : 50} delay={0.6} />
+              <Ring pct={75} color={C.purpleHex} size={40} delay={0.6} />
               <div>
-                <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: 800, color: C.text, animation: "ha2-countUp 0.7s ease 0.8s both" }}>
-                  3/4
-                </div>
+                <div style={{ fontFamily: FONT, fontSize: 20, fontWeight: 800, color: C.text, animation: "ha2-countUp 0.7s ease 0.8s both" }}>3/4</div>
                 <div style={{ fontFamily: FONT, fontSize: 10, color: C.muted }}>done</div>
               </div>
             </div>
           </div>
         </FadeUp>
 
-        {/* Habit list */}
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           {habits.map((h, i) => (
             <FadeUp key={h.name} delay={0.25 + i * 0.13}>
-              <div style={{
-                ...glass({ padding: "13px 16px" }),
-                display: "flex", alignItems: "center", gap: 13,
-                opacity: h.done ? 1 : 0.65,
-              }}>
+              <div style={{ ...glass({ padding: "13px 16px" }),
+                display: "flex", alignItems: "center", gap: 13, opacity: h.done ? 1 : 0.65 }}>
                 <CheckBox done={h.done} color={h.color} delay={0.4 + i * 0.13} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: C.text,
-                    textDecoration: h.done ? "none" : "none" }}>
-                    {h.name}
-                  </div>
-                  <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted, marginTop: 2 }}>
-                    {h.time}
-                  </div>
+                  <div style={{ fontFamily: FONT, fontSize: 14, fontWeight: 600, color: C.text }}>{h.name}</div>
+                  <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted, marginTop: 2 }}>{h.time}</div>
                 </div>
-                {/* Streak badge */}
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 4,
-                  background: `${h.color}18`, borderRadius: 20,
-                  padding: "3px 8px",
-                }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 4,
+                  background: `${h.color}18`, borderRadius: 20, padding: "3px 8px" }}>
                   <span style={{ fontSize: 11 }}>🔥</span>
-                  <span style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: h.color }}>
-                    {h.streak}d
-                  </span>
+                  <span style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: h.color }}>{h.streak}d</span>
                 </div>
               </div>
             </FadeUp>
           ))}
         </div>
 
-        {/* Minimum action nudge */}
         <FadeIn delay={1.1}>
-          <div style={{
-            ...glass({ padding: "10px 14px", marginTop: 12,
-              background: `${C.cyanHex}12`, borderColor: `${C.cyanHex}30` }),
-            display: "flex", alignItems: "center", gap: 10,
-          }}>
+          <div style={{ ...glass({ padding: "10px 14px", marginTop: 12,
+            background: `${C.cyanHex}12`, borderColor: `${C.cyanHex}30` }),
+            display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: `${C.cyanHex}22`,
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ fontSize: 14 }}>⚡</span>
             </div>
             <div>
-              <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 600, color: C.cyanHex }}>
-                Minimum: 2-min meditation
-              </div>
-              <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted }}>
-                Keeps your streak alive — no pressure
-              </div>
+              <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 600, color: C.cyanHex }}>Minimum: 2-min meditation</div>
+              <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted }}>Keeps your streak alive — no pressure</div>
             </div>
           </div>
         </FadeIn>
@@ -424,111 +533,171 @@ function Scene3({ mobile }: { mobile?: boolean }) {
     { label: "Best habit", value: "#1", unit: "read 20 pages", color: C.cyanHex, icon: "📖" },
   ];
 
+  if (!mobile) return (
+    <div style={{ width: "100%", height: "100%", display: "flex",
+      alignItems: "center", justifyContent: "center", padding: "0 52px" }}>
+      <div style={{ width: "100%", maxWidth: 960, display: "grid",
+        gridTemplateColumns: "1fr 1fr", gap: 52, alignItems: "center" }}>
+
+        {/* Left — big streak number + grid */}
+        <div>
+          <FadeUp delay={0.05}>
+            <div style={{ ...pill(C.purpleHex), marginBottom: 18 }}>Streak tracker</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
+              <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: "5.5rem",
+                letterSpacing: "-0.04em", ...gradText,
+                animation: "ha2-countUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.2s both" }}>47</span>
+              <span style={{ fontFamily: FONT, fontWeight: 600, fontSize: "1.4rem", color: C.muted }}>day streak</span>
+            </div>
+            <p style={{ fontFamily: FONT, fontSize: 15, color: C.muted, lineHeight: 1.6, margin: "0 0 24px" }}>
+              You've built a rock-solid habit. Keep your momentum going — one day at a time.
+            </p>
+          </FadeUp>
+
+          <FadeIn delay={0.35}>
+            <div style={{ fontFamily: FONT, fontSize: 10, fontWeight: 600, color: C.muted,
+              marginBottom: 10, letterSpacing: "0.07em", textTransform: "uppercase" }}>
+              Read 20 pages · 49 days tracked
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, maxWidth: 260 }}>
+              {days.map((d, i) => (
+                <div key={i} style={{
+                  aspectRatio: "1", borderRadius: 4,
+                  background: d.filled ? `rgba(139,92,246,${d.intensity * 0.85 + 0.1})` : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${d.filled ? `${C.purpleHex}40` : C.border}`,
+                  animation: d.filled ? `ha2-streakIn 0.3s ease ${0.5 + i * 0.016}s both` : undefined,
+                  opacity: d.filled ? 1 : 0.3,
+                }} />
+              ))}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
+              <span style={{ fontFamily: FONT, fontSize: 9, color: C.dim }}>Less</span>
+              {[0.15, 0.4, 0.7, 1].map((o, i) => (
+                <div key={i} style={{ width: 8, height: 8, borderRadius: 2, background: `rgba(139,92,246,${o})` }} />
+              ))}
+              <span style={{ fontFamily: FONT, fontSize: 9, color: C.dim }}>More</span>
+            </div>
+          </FadeIn>
+        </div>
+
+        {/* Right — stat cards */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {statItems.map((s, i) => (
+            <FadeUp key={i} delay={0.3 + i * 0.15}>
+              <div style={{ background: `${s.color}10`, border: `1px solid ${s.color}25`,
+                borderRadius: 16, padding: "18px 22px",
+                display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 12, background: `${s.color}20`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22, flexShrink: 0 }}>{s.icon}</div>
+                <div>
+                  <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted,
+                    textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 4 }}>{s.label}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                    <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: 28, ...gradText,
+                      animation: `ha2-countUp 0.6s ease ${0.4 + i * 0.15}s both` }}>{s.value}</span>
+                    <span style={{ fontFamily: FONT, fontSize: 13, color: C.muted }}>{s.unit}</span>
+                  </div>
+                </div>
+              </div>
+            </FadeUp>
+          ))}
+
+          <FadeUp delay={0.85}>
+            <div style={{ ...glass({ padding: "14px 18px",
+              background: `${C.orangeHex}10`, borderColor: `${C.orangeHex}30` }),
+              display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 20, animation: "ha2-pulse 2s ease-in-out 1.2s infinite" }}>🏆</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: FONT, fontSize: 13, fontWeight: 700, color: C.text }}>7-week milestone unlocked!</div>
+                <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted }}>You've crossed the habit formation threshold</div>
+              </div>
+              <div style={{ ...pill(C.orangeHex) }}>New</div>
+            </div>
+          </FadeUp>
+        </div>
+
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
-      alignItems: "center", justifyContent: "center", padding: mobile ? "0 16px" : "0 28px" }}>
-      <div style={{ width: "100%", maxWidth: mobile ? 520 : 560 }}>
+      alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
+      <div style={{ width: "100%", maxWidth: 520 }}>
 
-        {/* Title row */}
         <FadeUp delay={0.05}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: mobile ? 10 : 12 }}>
-            <div style={{ fontFamily: FONT, fontSize: mobile ? 11 : 12, fontWeight: 700, color: C.muted,
-              letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Streak tracker
-            </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: C.muted,
+              letterSpacing: "0.08em", textTransform: "uppercase" }}>Streak tracker</div>
             <div style={{ ...pill(C.purpleHex) }}>47-day streak 🔥</div>
           </div>
         </FadeUp>
 
-        {/* Main card — two columns */}
         <FadeIn delay={0.2}>
-          <div style={{ ...glass({ padding: mobile ? 14 : 18 }), display: "flex", gap: mobile ? 14 : 18, alignItems: "stretch" }}>
-
-            {/* Left — habit grid */}
+          <div style={{ ...glass({ padding: 14 }), display: "flex", gap: 14, alignItems: "stretch" }}>
             <div style={{ flexShrink: 0 }}>
-              <div style={{ fontFamily: FONT, fontSize: mobile ? 9 : 10, fontWeight: 600, color: C.muted,
-                marginBottom: mobile ? 7 : 9, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              <div style={{ fontFamily: FONT, fontSize: 9, fontWeight: 600, color: C.muted,
+                marginBottom: 7, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                 Read 20 pages · 49 days
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: mobile ? 3 : 4, width: mobile ? 140 : 200 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3, width: 140 }}>
                 {days.map((d, i) => (
                   <div key={i} style={{
-                    aspectRatio: "1",
-                    borderRadius: 3,
-                    background: d.filled
-                      ? `rgba(139,92,246,${d.intensity * 0.85 + 0.1})`
-                      : "rgba(255,255,255,0.05)",
+                    aspectRatio: "1", borderRadius: 3,
+                    background: d.filled ? `rgba(139,92,246,${d.intensity * 0.85 + 0.1})` : "rgba(255,255,255,0.05)",
                     border: `1px solid ${d.filled ? `${C.purpleHex}40` : C.border}`,
                     animation: d.filled ? `ha2-streakIn 0.3s ease ${0.5 + i * 0.018}s both` : undefined,
                     opacity: d.filled ? 1 : 0.35,
                   }} />
                 ))}
               </div>
-              {/* Legend */}
               <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 6 }}>
                 <span style={{ fontFamily: FONT, fontSize: 8, color: C.dim }}>Less</span>
                 {[0.15, 0.4, 0.7, 1].map((o, i) => (
-                  <div key={i} style={{ width: 7, height: 7, borderRadius: 2,
-                    background: `rgba(139,92,246,${o})` }} />
+                  <div key={i} style={{ width: 7, height: 7, borderRadius: 2, background: `rgba(139,92,246,${o})` }} />
                 ))}
                 <span style={{ fontFamily: FONT, fontSize: 8, color: C.dim }}>More</span>
               </div>
             </div>
 
-            {/* Divider */}
             <div style={{ width: 1, background: C.border, flexShrink: 0 }} />
 
-            {/* Right — stats */}
             <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 8 }}>
               {statItems.map((s, i) => (
                 <FadeUp key={i} delay={0.35 + i * 0.15}>
-                  <div style={{
-                    background: `${s.color}12`, border: `1px solid ${s.color}25`,
-                    borderRadius: 10, padding: mobile ? "8px 10px" : "10px 12px",
-                    display: "flex", alignItems: "center", gap: mobile ? 8 : 10,
-                  }}>
-                    <span style={{ fontSize: mobile ? 14 : 16 }}>{s.icon}</span>
+                  <div style={{ background: `${s.color}12`, border: `1px solid ${s.color}25`,
+                    borderRadius: 10, padding: "8px 10px",
+                    display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14 }}>{s.icon}</span>
                     <div>
-                      <div style={{ fontFamily: FONT, fontSize: mobile ? 9 : 10, color: C.muted,
-                        textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 1 }}>
-                        {s.label}
-                      </div>
+                      <div style={{ fontFamily: FONT, fontSize: 9, color: C.muted,
+                        textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 1 }}>{s.label}</div>
                       <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                        <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: mobile ? 18 : 22,
-                          ...gradText, animation: `ha2-countUp 0.6s ease ${0.4 + i * 0.15}s both` }}>
-                          {s.value}
-                        </span>
-                        <span style={{ fontFamily: FONT, fontSize: mobile ? 10 : 11, color: C.muted }}>{s.unit}</span>
+                        <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: 18, ...gradText,
+                          animation: `ha2-countUp 0.6s ease ${0.4 + i * 0.15}s both` }}>{s.value}</span>
+                        <span style={{ fontFamily: FONT, fontSize: 10, color: C.muted }}>{s.unit}</span>
                       </div>
                     </div>
                   </div>
                 </FadeUp>
               ))}
             </div>
-
           </div>
         </FadeIn>
 
-        {/* Achievement badge */}
         <FadeUp delay={0.9}>
-          <div style={{
-            ...glass({ padding: "8px 12px", marginTop: 8,
-              background: `${C.orangeHex}12`, borderColor: `${C.orangeHex}35` }),
-            display: "flex", alignItems: "center", gap: 9,
-          }}>
+          <div style={{ ...glass({ padding: "8px 12px", marginTop: 8,
+            background: `${C.orangeHex}12`, borderColor: `${C.orangeHex}35` }),
+            display: "flex", alignItems: "center", gap: 9 }}>
             <span style={{ fontSize: 15, animation: "ha2-pulse 2s ease-in-out 1.2s infinite" }}>🏆</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 700, color: C.text }}>
-                7-week milestone unlocked!
-              </div>
-              <div style={{ fontFamily: FONT, fontSize: 10, color: C.muted }}>
-                You've crossed the habit formation threshold
-              </div>
+              <div style={{ fontFamily: FONT, fontSize: 12, fontWeight: 700, color: C.text }}>7-week milestone unlocked!</div>
+              <div style={{ fontFamily: FONT, fontSize: 10, color: C.muted }}>You've crossed the habit formation threshold</div>
             </div>
             <div style={{ ...pill(C.orangeHex) }}>New</div>
           </div>
         </FadeUp>
-
       </div>
     </div>
   );
@@ -544,9 +713,71 @@ function Scene4({ mobile }: { mobile?: boolean }) {
     { icon: "✅", title: "Back on track", body: "You never started over. You just paused." },
   ];
 
+  if (!mobile) return (
+    <div style={{ width: "100%", height: "100%", display: "flex",
+      alignItems: "center", justifyContent: "center", padding: "0 52px" }}>
+      <div style={{ width: "100%", maxWidth: 960, display: "grid",
+        gridTemplateColumns: "1fr 1.2fr", gap: 56, alignItems: "center" }}>
+
+        {/* Left — headline + badge */}
+        <div>
+          <FadeUp delay={0.08}>
+            <div style={{ ...pill(C.orangeHex), marginBottom: 20 }}>Recovery mode</div>
+            <h2 style={{ fontFamily: FONT, fontWeight: 800, fontSize: "clamp(2.2rem,3.5vw,3rem)",
+              lineHeight: 1.1, letterSpacing: "-0.03em", color: C.text, margin: "0 0 18px" }}>
+              Missed a day?<br />
+              <span style={{ ...gradText }}>That's already handled.</span>
+            </h2>
+            <p style={{ fontFamily: FONT, fontSize: 15, color: C.muted, lineHeight: 1.65, margin: "0 0 32px" }}>
+              Strivo is built with forgiveness in mind. Recovery is part of the system — not an exception to it.
+            </p>
+          </FadeUp>
+
+          <FadeIn delay={0.7}>
+            <div style={{ ...glass({ padding: "16px 20px",
+              background: `${C.greenHex}10`, borderColor: `${C.greenHex}28` }),
+              display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: `${C.greenHex}20`,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🔥</div>
+                <div>
+                  <div style={{ fontFamily: FONT, fontSize: 14, fontWeight: 700, color: C.text }}>Streak preserved</div>
+                  <div style={{ fontFamily: FONT, fontSize: 12, color: C.muted }}>47 days · still counting</div>
+                </div>
+              </div>
+              <div style={{ ...pill(C.greenHex) }}>Protected</div>
+            </div>
+          </FadeIn>
+        </div>
+
+        {/* Right — 3 steps */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {steps.map((s, i) => (
+            <FadeUp key={i} delay={0.25 + i * 0.17}>
+              <div style={{ ...glass({ padding: "18px 22px" }),
+                display: "flex", gap: 18, alignItems: "flex-start" }}>
+                <div style={{ width: 46, height: 46, borderRadius: 13, flexShrink: 0,
+                  background: `${C.purpleHex}1a`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22, animation: `ha2-float 4.5s ease-in-out ${i * 1.1}s infinite` }}>
+                  {s.icon}
+                </div>
+                <div style={{ paddingTop: 2 }}>
+                  <div style={{ fontFamily: FONT, fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 5 }}>{s.title}</div>
+                  <div style={{ fontFamily: FONT, fontSize: 13, color: C.muted, lineHeight: 1.55 }}>{s.body}</div>
+                </div>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
-      alignItems: "center", justifyContent: "center", padding: mobile ? "0 16px" : "0 28px" }}>
+      alignItems: "center", justifyContent: "center", padding: "0 16px" }}>
       <div style={{ width: "100%", maxWidth: 520 }}>
 
         <FadeUp delay={0.1}>
@@ -554,8 +785,7 @@ function Scene4({ mobile }: { mobile?: boolean }) {
             <div style={{ ...pill(C.orangeHex), marginBottom: 10 }}>Recovery mode</div>
             <h2 style={{ fontFamily: FONT, fontWeight: 800, fontSize: "clamp(1.6rem,3.5vw,2.2rem)",
               lineHeight: 1.15, letterSpacing: "-0.025em", color: C.text, margin: 0 }}>
-              Missed a day?
-              <br />
+              Missed a day?<br />
               <span style={{ ...gradText }}>That's already handled.</span>
             </h2>
           </div>
@@ -564,38 +794,27 @@ function Scene4({ mobile }: { mobile?: boolean }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
           {steps.map((s, i) => (
             <FadeUp key={i} delay={0.3 + i * 0.18}>
-              <div style={{
-                ...glass({ padding: "14px 16px" }),
-                display: "flex", gap: 14, alignItems: "flex-start",
-              }}>
-                <div style={{
-                  width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+              <div style={{ ...glass({ padding: "14px 16px" }),
+                display: "flex", gap: 14, alignItems: "flex-start" }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, flexShrink: 0,
                   background: `${C.purpleHex}20`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 18, animation: `ha2-float 4s ease-in-out ${i}s infinite`,
-                }}>
+                  fontSize: 18, animation: `ha2-float 4s ease-in-out ${i}s infinite` }}>
                   {s.icon}
                 </div>
                 <div>
-                  <div style={{ fontFamily: FONT, fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3 }}>
-                    {s.title}
-                  </div>
-                  <div style={{ fontFamily: FONT, fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
-                    {s.body}
-                  </div>
+                  <div style={{ fontFamily: FONT, fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3 }}>{s.title}</div>
+                  <div style={{ fontFamily: FONT, fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{s.body}</div>
                 </div>
               </div>
             </FadeUp>
           ))}
         </div>
 
-        {/* Streak preserved indicator */}
         <FadeIn delay={1.1}>
-          <div style={{
-            ...glass({ padding: "12px 16px", marginTop: 14,
-              background: `${C.greenHex}10`, borderColor: `${C.greenHex}30` }),
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
+          <div style={{ ...glass({ padding: "12px 16px", marginTop: 14,
+            background: `${C.greenHex}10`, borderColor: `${C.greenHex}30` }),
+            display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 16 }}>🔥</span>
               <div>
@@ -615,21 +834,96 @@ function Scene4({ mobile }: { mobile?: boolean }) {
    SCENE 5 — CTA: "Identity over outcomes."
 ════════════════════════════════════════════════════════════════ */
 function Scene5({ onCta, mobile }: { onCta: () => void; mobile?: boolean }) {
-  return (
-    <div style={{ width: "100%", height: "100%", display: "flex",
+  const stats = [
+    { val: "10k+", label: "Active users", icon: "👥" },
+    { val: "73%", label: "Still active after 30d", icon: "📅" },
+    { val: "4.9★", label: "Average rating", icon: "⭐" },
+  ];
+
+  if (!mobile) return (
+    <div style={{ position: "relative", width: "100%", height: "100%", display: "flex",
       flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: mobile ? "0 16px" : "0 28px", gap: mobile ? 14 : 20, textAlign: "center" }}>
+      padding: "0 52px", gap: 28, textAlign: "center" }}>
 
       {/* Ambient glow */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-        <div style={{
-          position: "absolute", top: "50%", left: "50%",
+        <div style={{ position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%,-50%)",
+          width: 700, height: 700,
+          background: `radial-gradient(circle, ${C.purpleHex}22 0%, ${C.cyanHex}0d 45%, transparent 70%)`,
+          borderRadius: "50%", animation: "ha2-pulse 4s ease-in-out infinite" }} />
+      </div>
+
+      <FadeIn delay={0.15} dur={0.6}>
+        <div style={{ ...pill(C.purpleHex) }}>Built on Atomic Habits principles</div>
+      </FadeIn>
+
+      <FadeUp delay={0.35} dur={0.9}>
+        <h1 style={{ fontFamily: FONT, fontWeight: 800,
+          fontSize: "clamp(3rem,5.5vw,4.8rem)",
+          lineHeight: 1.05, letterSpacing: "-0.04em",
+          color: C.text, margin: 0 }}>
+          Identity<br />
+          <span style={{ ...gradText }}>over outcomes.</span>
+        </h1>
+      </FadeUp>
+
+      <FadeUp delay={0.6} dur={0.7}>
+        <p style={{ fontFamily: FONT, fontSize: 18, lineHeight: 1.65, color: C.muted,
+          maxWidth: 460, margin: 0 }}>
+          Stop chasing motivation. Build the system that builds you — one minimum action at a time.
+        </p>
+      </FadeUp>
+
+      {/* Social proof cards */}
+      <FadeIn delay={0.85}>
+        <div style={{ display: "flex", gap: 16 }}>
+          {stats.map((s, i) => (
+            <FadeUp key={i} delay={0.9 + i * 0.1}>
+              <div style={{ ...glass({ padding: "16px 24px" }), textAlign: "center", minWidth: 140 }}>
+                <div style={{ fontSize: 20, marginBottom: 6 }}>{s.icon}</div>
+                <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 22, ...gradText }}>{s.val}</div>
+                <div style={{ fontFamily: FONT, fontSize: 11, color: C.muted, marginTop: 4, lineHeight: 1.4 }}>{s.label}</div>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+      </FadeIn>
+
+      <FadeUp delay={1.2} dur={0.7}>
+        <button
+          onClick={onCta}
+          data-touch-target="compact"
+          style={{
+            fontFamily: FONT, fontWeight: 700, fontSize: 17, color: "#fff",
+            background: `linear-gradient(135deg, ${C.purpleHex}, ${C.cyanHex})`,
+            border: "none", borderRadius: 999,
+            padding: "16px 40px",
+            cursor: "pointer", letterSpacing: "-0.01em",
+            animation: "ha2-ctaPulse 2.5s ease-out 1.8s infinite",
+            display: "inline-flex", alignItems: "center", gap: 10,
+          }}>
+          Start Free — No card needed
+          <svg width="16" height="16" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="white" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </FadeUp>
+    </div>
+  );
+
+  return (
+    <div style={{ width: "100%", height: "100%", display: "flex",
+      flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: "0 16px", gap: 14, textAlign: "center" }}>
+
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%,-50%)",
           width: 500, height: 500,
           background: `radial-gradient(circle, ${C.purpleHex}25 0%, ${C.cyanHex}10 40%, transparent 70%)`,
-          borderRadius: "50%",
-          animation: "ha2-pulse 4s ease-in-out infinite",
-        }} />
+          borderRadius: "50%", animation: "ha2-pulse 4s ease-in-out infinite" }} />
       </div>
 
       <FadeIn delay={0.2} dur={0.6}>
@@ -637,33 +931,24 @@ function Scene5({ onCta, mobile }: { onCta: () => void; mobile?: boolean }) {
       </FadeIn>
 
       <FadeUp delay={0.4} dur={0.9}>
-        <h1 style={{
-          fontFamily: FONT, fontWeight: 800,
+        <h1 style={{ fontFamily: FONT, fontWeight: 800,
           fontSize: "clamp(2.2rem,5vw,3.4rem)",
           lineHeight: 1.1, letterSpacing: "-0.03em",
-          color: C.text, margin: 0,
-        }}>
-          Identity
-          <br />
+          color: C.text, margin: 0 }}>
+          Identity<br />
           <span style={{ ...gradText }}>over outcomes.</span>
         </h1>
       </FadeUp>
 
       <FadeUp delay={0.7} dur={0.7}>
-        <p style={{ fontFamily: FONT, fontSize: 16, lineHeight: 1.6, color: C.muted,
-          maxWidth: 380, margin: 0 }}>
+        <p style={{ fontFamily: FONT, fontSize: 14, lineHeight: 1.6, color: C.muted, maxWidth: 340, margin: 0 }}>
           Stop chasing motivation. Build the system that builds you — one minimum action at a time.
         </p>
       </FadeUp>
 
-      {/* Social proof row */}
       <FadeIn delay={1.0}>
         <div style={{ display: "flex", gap: 24, alignItems: "center" }}>
-          {[
-            { val: "10k+", label: "Active users" },
-            { val: "73%", label: "Active after 30d" },
-            { val: "4.9★", label: "Avg rating" },
-          ].map((s, i) => (
+          {stats.map((s, i) => (
             <div key={i} style={{ textAlign: "center" }}>
               <div style={{ fontFamily: FONT, fontWeight: 800, fontSize: 18, ...gradText }}>{s.val}</div>
               <div style={{ fontFamily: FONT, fontSize: 10, color: C.muted, marginTop: 2 }}>{s.label}</div>
@@ -672,7 +957,6 @@ function Scene5({ onCta, mobile }: { onCta: () => void; mobile?: boolean }) {
         </div>
       </FadeIn>
 
-      {/* CTA button */}
       <FadeUp delay={1.25} dur={0.7}>
         <button
           onClick={onCta}
@@ -680,14 +964,11 @@ function Scene5({ onCta, mobile }: { onCta: () => void; mobile?: boolean }) {
           style={{
             fontFamily: FONT, fontWeight: 700, fontSize: 15, color: "#fff",
             background: `linear-gradient(135deg, ${C.purpleHex}, ${C.cyanHex})`,
-            border: "none", borderRadius: 999,
-            padding: "13px 32px",
-            cursor: "pointer",
-            letterSpacing: "-0.01em",
+            border: "none", borderRadius: 999, padding: "13px 32px",
+            cursor: "pointer", letterSpacing: "-0.01em",
             animation: "ha2-ctaPulse 2.5s ease-out 1.8s infinite",
             display: "inline-flex", alignItems: "center", gap: 8,
-          }}
-        >
+          }}>
           Start Free — No card needed
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M2 7h10M8 3l4 4-4 4" stroke="white" strokeWidth="1.8"
