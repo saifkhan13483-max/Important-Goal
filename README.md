@@ -4,7 +4,7 @@
 
 ### Turn Goals into Daily Systems You Actually Follow
 
-**[Live App](https://strivo.vercel.app) · [Pricing](https://strivo.vercel.app/pricing) · [Sign Up](https://strivo.vercel.app/signup)**
+**[Live App](https://www.strivo.life) · [Pricing](https://www.strivo.life/pricing) · [Sign Up](https://www.strivo.life/signup)**
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
