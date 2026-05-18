@@ -23,9 +23,9 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (method === "OPTIONS") { res.statusCode = 204; res.end(); return; }
 
-  if (url === "/api/groq-proxy") {
+  if (url === "/api/ai-proxy") {
     if (method !== "POST") { res.statusCode = 405; res.end("Method Not Allowed"); return; }
-    const key = process.env.GROQ_API_KEY;
+    const key = process.env.GEMINI_API_KEY;
     if (!key) { jsonRes(res, 503, { error: "AI unavailable" }); return; }
     const body = await new Promise<string>((resolve) => {
       let b = "";
@@ -34,11 +34,14 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       req.on("error", () => resolve(""));
     });
     try {
-      const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-        body,
-      });
+      const upstream = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+          body,
+        },
+      );
       const data = await upstream.json();
       res.statusCode = upstream.status;
       res.setHeader("Content-Type", "application/json");
@@ -89,7 +92,7 @@ function apiPlugin() {
       return {
         server: {
           proxy: {
-            "/api/groq-proxy": {
+            "/api/ai-proxy": {
               target: `http://127.0.0.1:${API_PORT}`,
               changeOrigin: false,
               secure: false,

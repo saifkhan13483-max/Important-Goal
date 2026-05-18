@@ -1,4 +1,4 @@
-const GROQ_MODEL = "llama-3.3-70b-versatile";
+const GEMINI_MODEL = "gemini-2.0-flash";
 
 // ---------------------------------------------------------------------------
 // Rate limiting — stored in localStorage, keyed by UTC date.
@@ -56,11 +56,11 @@ async function callGroq(
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
   maxTokens = 512,
 ): Promise<string> {
-  const response = await fetch("/api/groq-proxy", {
+  const response = await fetch("/api/ai-proxy", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model: GEMINI_MODEL,
       messages,
       max_tokens: maxTokens,
       temperature: 0.7,
