@@ -24,8 +24,12 @@ const WELCOME_TPL = import.meta.env.VITE_EMAILJS_WELCOME_TEMPLATE as string | un
 const SIGNUP_TPL  = import.meta.env.VITE_EMAILJS_SIGNUP_TEMPLATE  as string | undefined;
 const WEEKLY_TPL  = import.meta.env.VITE_EMAILJS_WEEKLY_TEMPLATE  as string | undefined;
 
-function isConfigured(): boolean {
+export function isEmailJsConfigured(): boolean {
   return !!(SERVICE_ID && PUBLIC_KEY);
+}
+
+function isConfigured(): boolean {
+  return isEmailJsConfigured();
 }
 
 function init() {

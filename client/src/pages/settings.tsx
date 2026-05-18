@@ -13,8 +13,12 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { deleteUser, GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import {
+  deleteUser, GoogleAuthProvider, reauthenticateWithPopup,
+  reauthenticateWithCredential, EmailAuthProvider,
+} from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { collection, getDocs, query as fbQuery, where, writeBatch, doc as fbDoc } from "firebase/firestore";
 import * as AuthService from "@/services/auth.service";
 import { getGoals } from "@/services/goals.service";
 import { getSystems } from "@/services/systems.service";
@@ -41,7 +45,7 @@ import { updateUser } from "@/services/user.service";
 import { getReferralCode, ensureReferralCode } from "@/services/referral.service";
 import { generateCalendarICS, downloadICS } from "@/lib/calendar-export";
 import { LANGUAGES, setLanguage, getLanguage, type Language } from "@/lib/i18n";
-import { sendWeeklyReport } from "@/lib/emailjs";
+import { sendWeeklyReport, isEmailJsConfigured } from "@/lib/emailjs";
 
 const TIMEZONES = [
   "UTC",
@@ -246,9 +250,12 @@ export default function Settings() {
   const [showLogout, setShowLogout] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
   const [deletePending, setDeletePending] = useState(false);
   const [exportPending, setExportPending] = useState(false);
   const [passwordResetSent, setPasswordResetSent] = useState(false);
+
+  const isGoogleAccount = auth.currentUser?.providerData.some(p => p.providerId === "google.com") ?? false;
 
   useEffect(() => {
     if (typeof Notification !== "undefined") setNotifPermission(Notification.permission);
@@ -301,7 +308,7 @@ export default function Settings() {
 
   const handleSaveProfile = async () => {
     try {
-      await updateProfile({ name, avatarUrl: avatarUrl || null, timezone, preferredTheme: theme, identityStatement: identityStatement.trim() || null } as any);
+      await updateProfile({ name, avatarUrl: avatarUrl || null, identityStatement: identityStatement.trim() || null });
       toast({ title: "Profile saved!", description: "Your changes have been applied." });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -310,7 +317,7 @@ export default function Settings() {
 
   const handleSaveAppearance = async () => {
     try {
-      await updateProfile({ preferredTheme: theme, timezone } as any);
+      await updateProfile({ preferredTheme: theme, timezone });
       toast({ title: "Preferences saved!" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -319,7 +326,7 @@ export default function Settings() {
 
   const handleSaveReminder = async () => {
     try {
-      await updateProfile({ reminderEnabled, reminderTime } as any);
+      await updateProfile({ reminderEnabled, reminderTime });
       if (reminderEnabled) {
         localStorage.setItem("strivo_reminder_enabled", "true");
         localStorage.setItem("strivo_reminder_time", reminderTime);
@@ -340,7 +347,7 @@ export default function Settings() {
         futureAudioPlayAfterMissed:  audioPrefs.playAfterMissed,
         futureAudioAutoplay:         audioPrefs.autoplay,
         futureAudioMuted:            audioPrefs.muted,
-      } as any);
+      });
       toast({ title: "Audio preferences saved!" });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -436,6 +443,9 @@ export default function Settings() {
   const handleLanguageChange = (lang: Language) => {
     setCurrentLang(lang);
     setLanguage(lang);
+    if (user?.id) {
+      updateUser(user.id, { language: lang }).catch(() => {});
+    }
     toast({
       title: "Language updated!",
       description: "Reloading to apply the new language…",
@@ -475,6 +485,14 @@ export default function Settings() {
 
   const handleSendTestReport = async () => {
     if (!user?.id || !user?.email) return;
+    if (!isEmailJsConfigured()) {
+      toast({
+        title: "EmailJS not configured",
+        description: "Set VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_PUBLIC_KEY, and VITE_EMAILJS_WEEKLY_TEMPLATE in your environment to send reports.",
+        variant: "destructive",
+      });
+      return;
+    }
     setWeeklyReportSending(true);
     try {
       const [checkins, systems] = await Promise.all([getCheckins(user.id), getSystems(user.id)]);
@@ -548,30 +566,52 @@ export default function Settings() {
     }
   };
 
+  const deleteAllUserFirestoreData = async (uid: string) => {
+    const colNames = ["goals", "systems", "checkins", "journals", "analyticsEvents", "emailLeads"];
+    for (const colName of colNames) {
+      try {
+        const snap = await getDocs(fbQuery(collection(db, colName), where("userId", "==", uid)));
+        if (snap.empty) continue;
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      } catch {}
+    }
+    try {
+      const batch = writeBatch(db);
+      batch.delete(fbDoc(db, "users", uid));
+      await batch.commit();
+    } catch {}
+  };
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "DELETE") return;
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
     setDeletePending(true);
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Not authenticated");
-
-      const isGoogleUser = currentUser.providerData.some(p => p.providerId === "google.com");
-      if (isGoogleUser) {
+      if (isGoogleAccount) {
         const provider = new GoogleAuthProvider();
         await reauthenticateWithPopup(currentUser, provider);
+      } else {
+        if (!deletePassword) {
+          toast({ title: "Password required", description: "Enter your password to confirm account deletion.", variant: "destructive" });
+          setDeletePending(false);
+          return;
+        }
+        const credential = EmailAuthProvider.credential(currentUser.email!, deletePassword);
+        await reauthenticateWithCredential(currentUser, credential);
       }
 
+      await deleteAllUserFirestoreData(currentUser.uid);
       await deleteUser(currentUser);
       logout().catch(() => {});
       navigate("/");
-      toast({ title: "Account deleted", description: "Your account has been permanently removed." });
+      toast({ title: "Account deleted", description: "Your account and all data have been permanently removed." });
     } catch (err: any) {
-      if (err.code === "auth/requires-recent-login") {
-        toast({
-          title: "Re-authentication required",
-          description: "For security, please sign out and sign back in, then try deleting your account again.",
-          variant: "destructive",
-        });
+      if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        toast({ title: "Incorrect password", description: "The password you entered is wrong. Please try again.", variant: "destructive" });
       } else if (err.code === "auth/popup-closed-by-user") {
         toast({ title: "Cancelled", description: "Account deletion was cancelled." });
       } else {
@@ -581,6 +621,7 @@ export default function Settings() {
       setDeletePending(false);
       setShowDeleteAccount(false);
       setDeleteConfirmText("");
+      setDeletePassword("");
     }
   };
 
@@ -1499,7 +1540,7 @@ export default function Settings() {
                       { label: "AI Habit Coach",     value: features.aiCoachUnlimited ? "Unlimited" : features.aiCoach ? "10/day" : "Not included" },
                       { label: "Future Self Audio",  value: features.futureSelfAudio ? "Included" : "Starter+" },
                       { label: "Advanced Analytics", value: features.betterAnalytics ? "Included" : "Starter+" },
-                      { label: "Data Export",        value: canExport ? "Included" : "Pro+" },
+                      { label: "Data Export",        value: canExport ? "Included" : "Starter+" },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
                         <span className="text-sm text-muted-foreground">{row.label}</span>
@@ -1651,35 +1692,53 @@ export default function Settings() {
       </AlertDialog>
 
       {/* Delete account dialog */}
-      <AlertDialog open={showDeleteAccount} onOpenChange={open => { setShowDeleteAccount(open); if (!open) setDeleteConfirmText(""); }}>
+      <AlertDialog open={showDeleteAccount} onOpenChange={open => { setShowDeleteAccount(open); if (!open) { setDeleteConfirmText(""); setDeletePassword(""); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="w-4 h-4" /> Delete Account
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <span className="block">
-                This will <strong>permanently delete</strong> your account, goals, habit systems, check-ins, and all data. This cannot be undone.
-              </span>
-              <span className="block mt-3">
-                Type <strong>DELETE</strong> to confirm:
-              </span>
+            <AlertDialogDescription>
+              This will <strong>permanently delete</strong> your account, goals, habit systems, check-ins, journals, and all data. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="px-6 pb-2">
-            <Input
-              value={deleteConfirmText}
-              onChange={e => setDeleteConfirmText(e.target.value)}
-              placeholder="Type DELETE to confirm"
-              className="border-destructive/40 focus-visible:ring-destructive/40"
-              data-testid="input-delete-confirm"
-            />
+          <div className="px-6 pb-2 space-y-3">
+            <div className="space-y-1.5">
+              <p className="text-sm text-muted-foreground">
+                Type <strong className="text-foreground">DELETE</strong> to confirm:
+              </p>
+              <Input
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE to confirm"
+                className="border-destructive/40 focus-visible:ring-destructive/40"
+                data-testid="input-delete-confirm"
+              />
+            </div>
+            {!isGoogleAccount && (
+              <div className="space-y-1.5">
+                <p className="text-sm text-muted-foreground">Enter your password to verify:</p>
+                <Input
+                  type="password"
+                  value={deletePassword}
+                  onChange={e => setDeletePassword(e.target.value)}
+                  placeholder="Your account password"
+                  className="border-destructive/40 focus-visible:ring-destructive/40"
+                  data-testid="input-delete-password"
+                />
+              </div>
+            )}
+            {isGoogleAccount && (
+              <p className="text-xs text-muted-foreground">
+                You'll be asked to confirm with Google before deletion.
+              </p>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <Button
               variant="destructive"
-              disabled={deleteConfirmText !== "DELETE" || deletePending}
+              disabled={deleteConfirmText !== "DELETE" || (!isGoogleAccount && !deletePassword) || deletePending}
               onClick={handleDeleteAccount}
               data-testid="button-confirm-delete"
             >
