@@ -198,8 +198,8 @@ client/
     services/      # Firebase service layer
     constants/     # App constants
 api/
-  groq-proxy.ts   # Vercel serverless function — proxies Groq API requests
-vite.config.ts     # Vite configuration (root: client/, serves on port 5000; also runs local Groq proxy for dev)
+  ai-proxy.ts     # Vercel serverless function — proxies Gemini API requests
+vite.config.ts     # Vite configuration (root: client/, serves on port 5000; also runs local Gemini proxy for dev)
 vercel.json        # Vercel deployment config (static build + SPA rewrites)
 package.json       # Dependencies and scripts
 ```
@@ -224,13 +224,13 @@ Firebase credentials are stored in the `.replit` userenv section and are prefixe
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
 
-## AI Integration (Groq)
+## AI Integration (Gemini)
 
-AI features use the **Groq API** (`llama-3.3-70b-versatile`) via a server-side proxy (`/api/groq-proxy`) embedded in `vite.config.ts`. The proxy is served on port 35001 internally and proxied through the Vite dev server.
+AI features use the **Google Gemini API** (`gemini-2.0-flash`) via a server-side proxy (`/api/ai-proxy`) embedded in `vite.config.ts`. The proxy is served on port 35001 internally and proxied through the Vite dev server.
 
 ### Environment variable
-- `GROQ_API_KEY` — Groq API key (server-only, **no VITE_ prefix**). Read by `vite.config.ts` apiPlugin (dev) and `api/groq-proxy.ts` (Vercel serverless).
-- **Note**: Set `GROQ_API_KEY` (without VITE_ prefix) so the key is never exposed to the browser.
+- `GEMINI_API_KEY` — Gemini API key (server-only, **no VITE_ prefix**). Read by `vite.config.ts` apiPlugin (dev) and `api/ai-proxy.ts` (Vercel serverless).
+- **Note**: Set `GEMINI_API_KEY` (without VITE_ prefix) so the key is never exposed to the browser.
 
 ### Files
 - `src/services/ai.service.ts` — Core service: `callGroq`, `suggestSystemField`, `generateFullSystem`, `chatWithCoach`, `generateJournalPrompt`, `generateAnalyticsInsights`

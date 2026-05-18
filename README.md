@@ -48,7 +48,7 @@ Strivo is a React + Firebase SaaS application that helps users convert vague amb
 | **System Builder** | 7-step guided builder — Identity → Outcome → Trigger → Action → Reward → Fallback → Review |
 | **Daily Check-ins** | Today view + 30-day history; done / partial / missed; mood & difficulty ratings; streak badges |
 | **Analytics** | Completion charts, streak history, heatmap, consistency scores, goal breakdown, AI insights |
-| **AI Coach** | Full-page chat powered by Groq (llama-3.3-70b) with user system context |
+| **AI Coach** | Full-page chat powered by Gemini (gemini-2.0-flash) with user system context |
 | **Journal** | Guided daily / weekly reflections with AI prompt generation |
 | **Templates Library** | 9+ pre-built habit templates with search, filters, preview, and one-click import |
 | **Achievements & Badges** | 23 achievements across XP tiers; auto-unlocked on check-in completion |
@@ -83,11 +83,11 @@ Strivo is a React + Firebase SaaS application that helps users convert vague amb
 | **Forms** | React Hook Form + Zod |
 | **Authentication** | Firebase Authentication (Email/Password + Google) |
 | **Database** | Firebase Firestore |
-| **AI** | Groq API — `llama-3.3-70b-versatile` via a Vercel serverless proxy |
+| **AI** | Google Gemini API — `gemini-2.0-flash` via a Vercel serverless proxy |
 | **Emails** | EmailJS (welcome emails, weekly reports) |
 | **Media Uploads** | Cloudinary (unsigned upload preset) |
 | **Payments** | Stripe Payment Links + Customer Portal (no server secret required) |
-| **Deployment** | Vercel (static SPA + `/api/groq-proxy` serverless function) |
+| **Deployment** | Vercel (static SPA + `/api/ai-proxy` serverless function) |
 
 ---
 
@@ -96,7 +96,7 @@ Strivo is a React + Firebase SaaS application that helps users convert vague amb
 ```
 strivo/
 ├── api/
-│   └── groq-proxy.ts              # Vercel serverless function — proxies Groq API requests
+│   └── ai-proxy.ts                # Vercel serverless function — proxies Gemini API requests
 │
 ├── public/
 │   ├── favicon.ico
@@ -223,7 +223,7 @@ strivo/
 │
 ├── firestore.rules                # Firestore security rules
 ├── vercel.json                    # Vercel deploy config — SPA rewrites + API route
-├── vite.config.ts                 # Vite — port 5000, path aliases, dev Groq proxy
+├── vite.config.ts                 # Vite — port 5000, path aliases, dev Gemini proxy
 ├── tailwind.config.ts             # Tailwind configuration + design tokens
 ├── tsconfig.json                  # TypeScript configuration
 ├── components.json                # shadcn/ui configuration
@@ -238,7 +238,7 @@ strivo/
 
 - Node.js 18+
 - A [Firebase](https://console.firebase.google.com/) project with Firestore and Authentication enabled
-- A [Groq](https://console.groq.com/) API key (free tier available)
+- A [Google Gemini](https://aistudio.google.com/apikey) API key (free tier available)
 - Optional: [Cloudinary](https://cloudinary.com/) account for profile photo uploads
 - Optional: [EmailJS](https://www.emailjs.com/) account for transactional emails
 - Optional: [Stripe](https://stripe.com/) account for payment processing
@@ -255,7 +255,7 @@ npm install
 npm run dev
 ```
 
-The app runs on **port 5000**. The `/api/groq-proxy` endpoint is handled by a Vite middleware plugin in development and by `api/groq-proxy.ts` as a Vercel serverless function in production.
+The app runs on **port 5000**. The `/api/ai-proxy` endpoint is handled by a Vite middleware plugin in development and by `api/ai-proxy.ts` as a Vercel serverless function in production.
 
 ### Build
 
@@ -280,8 +280,8 @@ VITE_FIREBASE_STORAGE_BUCKET=
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 
-# Groq — server-side ONLY, never prefix with VITE_
-GROQ_API_KEY=
+# Google Gemini — server-side ONLY, never prefix with VITE_
+GEMINI_API_KEY=
 
 # Cloudinary — unsigned upload, no server secret required (optional)
 VITE_CLOUDINARY_CLOUD_NAME=
@@ -312,7 +312,7 @@ VITE_GA_MEASUREMENT_ID=
 VITE_DEMO_VIDEO_ID=
 ```
 
-> **Important:** `GROQ_API_KEY` is a server-only secret. `VITE_*` variables are embedded into the client bundle at build time — never store secrets in them.
+> **Important:** `GEMINI_API_KEY` is a server-only secret. `VITE_*` variables are embedded into the client bundle at build time — never store secrets in them.
 
 ---
 
@@ -321,9 +321,9 @@ VITE_DEMO_VIDEO_ID=
 ```
 Browser
   │
-  ├── /api/groq-proxy (POST)
+  ├── /api/ai-proxy (POST)
   │     ├── [dev]  Vite middleware plugin in vite.config.ts
-  │     └── [prod] Vercel serverless function → api/groq-proxy.ts → Groq API
+  │     └── [prod] Vercel serverless function → api/ai-proxy.ts → Gemini API
   │
   └── All other routes → React SPA (wouter client-side routing)
         ├── Firebase Auth  — email/password + Google sign-in, persistent sessions
@@ -360,11 +360,11 @@ Feature flags are centralised in `src/lib/plan-limits.ts` via `getPlanFeatures(p
 
 ## AI Integration
 
-AI features use **Groq** (`llama-3.3-70b-versatile`) routed through a server-side proxy so the API key is never exposed to the browser.
+AI features use **Google Gemini** (`gemini-2.0-flash`) routed through a server-side proxy so the API key is never exposed to the browser.
 
 | File | Purpose |
 |---|---|
-| `api/groq-proxy.ts` | Vercel serverless function — receives requests from the client and forwards them to Groq |
+| `api/ai-proxy.ts` | Vercel serverless function — receives requests from the client and forwards them to Gemini |
 | `src/services/ai.service.ts` | `callGroq`, `suggestSystemField`, `generateFullSystem`, `chatWithCoach`, `generateJournalPrompt`, `generateAnalyticsInsights` |
 | `src/hooks/use-ai.ts` | `useAi<T>(fn)` — wraps any AI call with `loading` / `error` state |
 | `src/components/ai/ai-system-generator.tsx` | Modal: describe a goal → AI fills all system builder fields |
@@ -398,10 +398,10 @@ This project is configured for **Vercel** with zero additional setup beyond envi
 
 1. Import the repository into Vercel
 2. Add all environment variables in **Project Settings → Environment Variables**
-3. Deploy — Vercel automatically routes `/api/groq-proxy` to the serverless function and all other paths to the SPA
+3. Deploy — Vercel automatically routes `/api/ai-proxy` to the serverless function and all other paths to the SPA
 
 The `vercel.json` handles:
-- `/api/groq-proxy` → `api/groq-proxy.ts` serverless function
+- `/api/ai-proxy` → `api/ai-proxy.ts` serverless function
 - All other routes → `dist/index.html` (SPA fallback)
 
 ---

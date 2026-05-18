@@ -50,7 +50,7 @@ export function checkAiRateLimit(plan: string | null | undefined): { allowed: bo
 }
 
 // ---------------------------------------------------------------------------
-// Proxy call — routes through /api/groq-proxy so the API key stays server-side.
+// Proxy call — routes through /api/ai-proxy so the API key stays server-side.
 // ---------------------------------------------------------------------------
 async function callGroq(
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>,
