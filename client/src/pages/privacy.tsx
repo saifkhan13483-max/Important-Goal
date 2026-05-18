@@ -16,6 +16,8 @@ export default function PrivacyPolicy() {
         <meta property="og:site_name" content="Strivo" />
         <meta property="og:title" content="Privacy Policy | Strivo" />
         <meta property="og:description" content="Read Strivo's privacy policy to understand how we collect, use, and protect your personal data." />
+        <meta property="og:image" content="https://strivo.life/og-image.png" />
+        <meta property="og:image:alt" content="Strivo Privacy Policy" />
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Privacy Policy | Strivo" />

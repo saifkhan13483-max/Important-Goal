@@ -120,11 +120,29 @@ export default function Signup() {
         <meta property="og:title" content="Sign Up Free | Strivo" />
         <meta property="og:description" content="Create your free account and start building habits that actually stick. No credit card required." />
         <meta property="og:image" content="https://strivo.life/og-image.png" />
+        <meta property="og:image:alt" content="Strivo — Build Habits That Survive Real Life" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Sign Up Free | Strivo" />
         <meta name="twitter:description" content="Create your free account and start building habits that actually stick. No credit card required." />
         <meta name="twitter:image" content="https://strivo.life/og-image.png" />
+        <meta name="twitter:image:alt" content="Strivo — Build Habits That Survive Real Life" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "@id": "https://strivo.life/signup#webpage",
+          "url": "https://strivo.life/signup",
+          "name": "Sign Up Free | Strivo",
+          "description": "Create your free Strivo account and start building habits that actually stick.",
+          "isPartOf": { "@id": "https://strivo.life/#website" },
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://strivo.life/" },
+              { "@type": "ListItem", "position": 2, "name": "Sign Up", "item": "https://strivo.life/signup" }
+            ]
+          }
+        })}</script>
       </Helmet>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">

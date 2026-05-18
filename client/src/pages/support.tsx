@@ -168,11 +168,13 @@ export default function Support() {
         <meta property="og:title" content="Help & Support | Strivo" />
         <meta property="og:description" content="Get help with Strivo. Browse FAQs, learn how the app works, and contact our support team." />
         <meta property="og:image" content="https://strivo.life/og-image.png" />
+        <meta property="og:image:alt" content="Strivo Help & Support" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Help & Support | Strivo" />
         <meta name="twitter:description" content="Get help with Strivo. Browse FAQs and contact our support team." />
         <meta name="twitter:image" content="https://strivo.life/og-image.png" />
+        <meta name="twitter:image:alt" content="Strivo Help & Support" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "FAQPage",

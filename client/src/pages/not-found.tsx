@@ -8,6 +8,7 @@ export default function NotFound() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <Helmet>
         <title>Page Not Found | Strivo</title>
+        <meta name="description" content="The page you're looking for doesn't exist or has been moved. Return to Strivo and keep building your habits." />
         <meta name="robots" content="noindex, follow" />
       </Helmet>
       <div className="text-center max-w-sm">

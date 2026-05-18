@@ -42,8 +42,8 @@ const plans = [
   {
     name: "Starter",
     planKey: "starter",
-    monthlyPrice: 5,
-    yearlyPrice: 4,
+    monthlyPrice: 9,
+    yearlyPrice: 7,
     tagline: "Build real consistency",
     idealFor: "Individuals building lasting habits",
     badge: null,
@@ -70,8 +70,8 @@ const plans = [
   {
     name: "Pro",
     planKey: "pro",
-    monthlyPrice: 12,
-    yearlyPrice: 9,
+    monthlyPrice: 19,
+    yearlyPrice: 15,
     tagline: "Deep insights, unlimited potential",
     idealFor: "Ambitious users who want full control",
     badge: "Most Popular",
@@ -98,8 +98,8 @@ const plans = [
   {
     name: "Elite",
     planKey: "elite",
-    monthlyPrice: 25,
-    yearlyPrice: 19,
+    monthlyPrice: 49,
+    yearlyPrice: 39,
     tagline: "For serious systems builders",
     idealFor: "Power users & high-performance individuals",
     badge: "Best Value",
@@ -225,7 +225,7 @@ export default function Pricing() {
       <Helmet>
         <title>Pricing — Free, Starter, Pro & Elite | Strivo</title>
         <link rel="canonical" href="https://strivo.life/pricing" />
-        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter ($5/mo), Pro ($12/mo), and Elite ($25/mo) plans." />
+        <meta name="description" content="Simple, transparent pricing for every level. Start free, upgrade when you're ready. Strivo Starter ($9/mo), Pro ($19/mo), and Elite ($49/mo) plans." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://strivo.life/pricing" />
         <meta property="og:site_name" content="Strivo" />
@@ -234,11 +234,13 @@ export default function Pricing() {
         <meta property="og:image" content="https://strivo.life/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Strivo pricing plans — Free, Starter, Pro, Elite" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Pricing — Free, Starter, Pro & Elite | Strivo" />
         <meta name="twitter:description" content="Simple, transparent pricing for Strivo. Start free — upgrade when you're ready." />
         <meta name="twitter:image" content="https://strivo.life/og-image.png" />
+        <meta name="twitter:image:alt" content="Strivo pricing plans — Free, Starter, Pro, Elite" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebPage",
@@ -259,9 +261,9 @@ export default function Pricing() {
             "name": "Strivo",
             "offers": [
               { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock", "url": "https://strivo.life/signup" },
-              { "@type": "Offer", "name": "Starter", "price": "5", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
-              { "@type": "Offer", "name": "Pro", "price": "12", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
-              { "@type": "Offer", "name": "Elite", "price": "25", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" }
+              { "@type": "Offer", "name": "Starter", "price": "9", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
+              { "@type": "Offer", "name": "Pro", "price": "19", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" },
+              { "@type": "Offer", "name": "Elite", "price": "49", "priceCurrency": "USD", "billingDuration": "P1M", "availability": "https://schema.org/InStock" }
             ]
           }
         })}</script>

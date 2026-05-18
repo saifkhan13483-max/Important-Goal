@@ -16,6 +16,8 @@ export default function TermsOfService() {
         <meta property="og:site_name" content="Strivo" />
         <meta property="og:title" content="Terms of Service | Strivo" />
         <meta property="og:description" content="Read Strivo's terms of service governing your use of the platform." />
+        <meta property="og:image" content="https://strivo.life/og-image.png" />
+        <meta property="og:image:alt" content="Strivo Terms of Service" />
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:site" content="@strivoapp" />
         <meta name="twitter:title" content="Terms of Service | Strivo" />

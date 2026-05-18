@@ -617,6 +617,7 @@ export default function Landing() {
         <meta name="twitter:title" content="Strivo — Build Habits That Survive Real Life" />
         <meta name="twitter:description" content="Stop starting over. Turn any goal into a daily system with a minimum action and recovery plan. Free to start." />
         <meta name="twitter:image" content="https://strivo.life/og-image.png" />
+        <meta name="twitter:image:alt" content="Strivo — Build Habits That Survive Real Life" />
       </Helmet>
 
       <a href="#main-content" className="skip-to-content">Skip to main content</a>
