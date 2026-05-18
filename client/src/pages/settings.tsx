@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { deleteUser } from "firebase/auth";
+import { deleteUser, GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import * as AuthService from "@/services/auth.service";
 import { getGoals } from "@/services/goals.service";
@@ -41,6 +41,7 @@ import { updateUser } from "@/services/user.service";
 import { getReferralCode, ensureReferralCode } from "@/services/referral.service";
 import { generateCalendarICS, downloadICS } from "@/lib/calendar-export";
 import { LANGUAGES, setLanguage, getLanguage, type Language } from "@/lib/i18n";
+import { sendWeeklyReport } from "@/lib/emailjs";
 
 const TIMEZONES = [
   "UTC",
@@ -435,7 +436,11 @@ export default function Settings() {
   const handleLanguageChange = (lang: Language) => {
     setCurrentLang(lang);
     setLanguage(lang);
-    toast({ title: "Language updated!", description: "Refresh the page to see all changes." });
+    toast({
+      title: "Language updated!",
+      description: "Reloading to apply the new language…",
+    });
+    setTimeout(() => window.location.reload(), 1200);
   };
 
   const handleCalendarSync = async () => {
@@ -457,6 +462,46 @@ export default function Settings() {
     navigator.clipboard.writeText(link).then(() => {
       toast({ title: "Referral link copied!", description: "Share it with friends to invite them to Strivo." });
     });
+  };
+
+  const handleTestNotification = () => {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    new Notification("Strivo reminder", {
+      body: "Don't forget to check in on your habits today! 🎯",
+      icon: "/icons/icon-192.png",
+    });
+    toast({ title: "Test notification sent!", description: "Check your system notifications." });
+  };
+
+  const handleSendTestReport = async () => {
+    if (!user?.id || !user?.email) return;
+    setWeeklyReportSending(true);
+    try {
+      const [checkins, systems] = await Promise.all([getCheckins(user.id), getSystems(user.id)]);
+      const { computeAnalytics } = await import("@/services/analytics.service");
+      const analytics = computeAnalytics(checkins, systems, [], { streakFreezeUsedDate: user.streakFreezeUsedDate });
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const checkinsThisWeek = checkins.filter(c => c.status === "done" && c.dateKey >= sevenDaysAgo).length;
+      const weekCheckins = checkins.filter(c => c.dateKey >= sevenDaysAgo);
+      const weekDone = weekCheckins.filter(c => c.status === "done").length;
+      const weekTotal = weekCheckins.length;
+      const completionRate = weekTotal > 0 ? Math.round((weekDone / weekTotal) * 100) : 0;
+      const currentStreak = Math.max(0, ...Object.values(analytics.streaks));
+      await sendWeeklyReport({
+        name: user.name ?? "there",
+        email: user.email,
+        completionRate,
+        currentStreak,
+        bestStreak: analytics.topBestStreak,
+        checkinsThisWeek,
+        activeSystems: analytics.activeSystems,
+      });
+      toast({ title: "Test report sent!", description: `A sample weekly report was sent to ${user.email}.` });
+    } catch (err: any) {
+      toast({ title: "Could not send report", description: err.message ?? "Check your EmailJS configuration.", variant: "destructive" });
+    } finally {
+      setWeeklyReportSending(false);
+    }
   };
 
   const handleSendPasswordReset = async () => {
@@ -509,6 +554,13 @@ export default function Settings() {
     try {
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("Not authenticated");
+
+      const isGoogleUser = currentUser.providerData.some(p => p.providerId === "google.com");
+      if (isGoogleUser) {
+        const provider = new GoogleAuthProvider();
+        await reauthenticateWithPopup(currentUser, provider);
+      }
+
       await deleteUser(currentUser);
       logout().catch(() => {});
       navigate("/");
@@ -520,6 +572,8 @@ export default function Settings() {
           description: "For security, please sign out and sign back in, then try deleting your account again.",
           variant: "destructive",
         });
+      } else if (err.code === "auth/popup-closed-by-user") {
+        toast({ title: "Cancelled", description: "Account deletion was cancelled." });
       } else {
         toast({ title: "Error", description: err.message, variant: "destructive" });
       }
@@ -542,7 +596,7 @@ export default function Settings() {
   const plan = (user?.plan as PlanTier | null | undefined) || "free";
   const planDetails = PLAN_DETAILS[plan] || PLAN_DETAILS.free;
   const isPaid = plan !== "free";
-  const canExport = features.aiCoach || plan === "pro" || plan === "elite";
+  const canExport = features.exportReports;
 
   return (
     <div className="min-h-full bg-background">
@@ -711,8 +765,13 @@ export default function Settings() {
                           placeholder="https://example.com/photo.jpg"
                           data-testid="input-settings-avatar"
                         />
-                        <p className="text-xs text-muted-foreground">Paste a direct image URL to use as your avatar.</p>
+                        <p className="text-xs text-muted-foreground">Paste a direct image URL or click your photo above to upload one.</p>
                       </div>
+
+                      <Button onClick={handleSaveProfile} disabled={updatePending} size="sm" data-testid="button-save-personal-info">
+                        {updatePending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        Save Changes
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -902,9 +961,21 @@ export default function Settings() {
 
                   {notifPermission === "granted" && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-xs text-chart-3 font-medium mb-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Notifications are enabled
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-chart-3 font-medium">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Notifications are enabled
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleTestNotification}
+                          className="text-xs gap-1.5"
+                          data-testid="button-test-notification"
+                        >
+                          <BellRing className="w-3 h-3" />
+                          Send test
+                        </Button>
                       </div>
 
                       <SettingRow
@@ -1193,14 +1264,26 @@ export default function Settings() {
                       />
                     </SettingRow>
                     {weeklyReport && (
-                      <p className="text-xs text-chart-3 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Weekly reports enabled — sent to {user?.email}
-                      </p>
+                      <div className="space-y-3">
+                        <p className="text-xs text-chart-3 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Weekly reports enabled — sent to {user?.email}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleSendTestReport}
+                          disabled={weeklyReportSending}
+                          className="gap-1.5"
+                          data-testid="button-send-test-report"
+                        >
+                          {weeklyReportSending
+                            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sending…</>
+                            : <><BarChart2 className="w-3.5 h-3.5" /> Send test report now</>
+                          }
+                        </Button>
+                      </div>
                     )}
-                    <p className="text-xs text-muted-foreground">
-                      Note: You'll need to configure EmailJS templates to enable email delivery. See <Link href="/support" className="underline">support</Link> for setup instructions.
-                    </p>
                   </CardContent>
                 </Card>
 
@@ -1297,7 +1380,7 @@ export default function Settings() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">Data export</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Available on Pro and Elite plans</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Available on Starter and above</p>
                         </div>
                         <Link href="/pricing">
                           <Button size="sm" variant="outline" className="flex-shrink-0 gap-1.5" data-testid="button-upgrade-export">
