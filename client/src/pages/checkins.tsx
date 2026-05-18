@@ -560,8 +560,13 @@ function SystemCheckinCard({
         qc.invalidateQueries({ queryKey: ["checkins", userId, today] });
         toast({ title: "Photo saved!" });
       }
-    } catch {
-      toast({ title: "Upload failed", description: "Couldn't upload photo. Try again.", variant: "destructive" });
+    } catch (err: any) {
+      const isConfig = err?.message?.toLowerCase().includes("cloudinary") || err?.message?.toLowerCase().includes("environment");
+      toast({
+        title: "Upload failed",
+        description: isConfig ? "Photo uploads are not configured on this server." : (err?.message ?? "Couldn't upload photo. Try again."),
+        variant: "destructive",
+      });
     } finally {
       setUploadingPhoto(false);
     }

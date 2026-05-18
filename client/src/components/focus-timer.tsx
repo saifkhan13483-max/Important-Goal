@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Play, Pause, RotateCcw, Timer, X, CheckCircle2 } from "lucide-react";
+import { Play, Pause, RotateCcw, Timer, CheckCircle2 } from "lucide-react";
 
 type TimerMode = "focus" | "short_break" | "long_break";
 
@@ -12,6 +12,30 @@ const MODE_CONFIG: Record<TimerMode, { label: string; seconds: number; color: st
   short_break: { label: "Short Break", seconds: 5 * 60, color: "text-chart-3", emoji: "☕" },
   long_break: { label: "Long Break", seconds: 15 * 60, color: "text-chart-2", emoji: "🛋️" },
 };
+
+const SESSION_KEY = "strivo_focus_sessions";
+
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadTodaySessions(): number {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return 0;
+    const data = JSON.parse(raw);
+    if (data.date === getTodayKey()) return data.count ?? 0;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveSessions(count: number) {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ date: getTodayKey(), count }));
+  } catch {}
+}
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -29,12 +53,19 @@ export function FocusTimer({ open, onClose, systemName }: FocusTimerProps) {
   const [mode, setMode] = useState<TimerMode>("focus");
   const [timeLeft, setTimeLeft] = useState(MODE_CONFIG.focus.seconds);
   const [running, setRunning] = useState(false);
-  const [sessions, setSessions] = useState(0);
+  const [sessions, setSessions] = useState(loadTodaySessions);
   const [finished, setFinished] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const config = MODE_CONFIG[mode];
   const total = config.seconds;
   const pct = Math.round(((total - timeLeft) / total) * 100);
+
+  // Reload persisted sessions when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSessions(loadTodaySessions());
+    }
+  }, [open]);
 
   const stop = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -47,7 +78,13 @@ export function FocusTimer({ open, onClose, systemName }: FocusTimerProps) {
       if (prev <= 1) {
         stop();
         setFinished(true);
-        if (mode === "focus") setSessions(s => s + 1);
+        if (mode === "focus") {
+          setSessions(s => {
+            const next = s + 1;
+            saveSessions(next);
+            return next;
+          });
+        }
         try {
           if ("Notification" in window && Notification.permission === "granted") {
             new Notification("Strivo", {
@@ -186,7 +223,7 @@ export function FocusTimer({ open, onClose, systemName }: FocusTimerProps) {
 
           {sessions > 0 && (
             <p className="text-center text-xs text-muted-foreground">
-              🍅 {sessions} Pomodoro session{sessions !== 1 ? "s" : ""} completed
+              🍅 {sessions} Pomodoro session{sessions !== 1 ? "s" : ""} completed today
             </p>
           )}
         </div>

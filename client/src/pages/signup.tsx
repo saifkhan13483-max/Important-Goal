@@ -20,6 +20,7 @@ import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { sendSignupWelcome } from "@/lib/emailjs";
+import { applyReferralCode } from "@/services/referral.service";
 
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -51,7 +52,6 @@ export default function Signup() {
     try {
       await signup({ name: data.name, email: data.email, password: data.password });
       track("signup_completed", { method: "email" });
-      sendSignupWelcome(data.name, data.email).catch(() => {});
       navigate("/onboarding");
     } catch (err: any) {
       setAuthError(err);
@@ -70,11 +70,13 @@ export default function Signup() {
         // Firestore offline or unavailable — treat as new user and onboard
       }
       if (!existing) {
+        const newName = cred.user.displayName || "User";
+        const newEmail = cred.user.email || "";
         try {
           await UserService.createUser(cred.user.uid, {
             id: cred.user.uid,
-            email: cred.user.email || "",
-            name: cred.user.displayName || "User",
+            email: newEmail,
+            name: newName,
             avatarUrl: cred.user.photoURL || null,
             onboardingCompleted: false,
             preferredTheme: "system",
@@ -83,6 +85,12 @@ export default function Signup() {
         } catch {
           // If offline, still navigate — user can retry later
         }
+        const pendingRef = (() => { try { return localStorage.getItem("strivo_pending_ref"); } catch { return null; } })();
+        if (pendingRef) {
+          applyReferralCode(cred.user.uid, pendingRef).catch(() => {});
+          try { localStorage.removeItem("strivo_pending_ref"); } catch {}
+        }
+        sendSignupWelcome(newName, newEmail).catch(() => {});
         qc.invalidateQueries({ queryKey: ["user"] });
         track("signup_completed", { method: "google" });
         navigate("/onboarding");

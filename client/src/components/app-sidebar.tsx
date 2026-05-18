@@ -125,7 +125,7 @@ export function AppSidebar() {
     enabled: !!userId,
   });
 
-  const activeSystems = systems.filter(s => s.active);
+  const activeSystems = systems.filter(s => s.active !== false);
   const todayDone = todayCheckins.filter(c => c.status === "done").length;
   const todayTotal = activeSystems.length;
   const completionPct = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : null;

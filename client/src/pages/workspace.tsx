@@ -67,7 +67,7 @@ function isRecent(iso?: string): boolean {
 }
 
 function computeStats(systems: System[], checkins: Checkin[]): MemberStats {
-  const activeSystems = systems.filter((s) => s.active);
+  const activeSystems = systems.filter((s) => s.active !== false);
   const today = new Date().toISOString().split("T")[0];
   const totalCheckins = checkins.length;
   const doneCheckins = checkins.filter((c) => c.status === "done").length;

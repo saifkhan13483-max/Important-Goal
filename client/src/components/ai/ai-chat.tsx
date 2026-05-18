@@ -121,7 +121,7 @@ export function AiChatWidget() {
     enabled: !!userId && open,
   });
 
-  const activeSystems = systems.filter((s) => s.active);
+  const activeSystems = systems.filter((s) => s.active !== false);
   const systemNames = activeSystems.map((s) => s.title);
 
   const bestStreak = useMemo(() => {

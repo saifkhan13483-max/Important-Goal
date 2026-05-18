@@ -124,7 +124,7 @@ function exportToCsv(opts: {
   const doneCount    = opts.checkins.filter(c => c.status === "done").length;
   const partialCount = opts.checkins.filter(c => c.status === "partial").length;
   const missedCount  = opts.checkins.filter(c => c.status === "missed").length;
-  const activeSystems = opts.systems.filter(s => s.active).length;
+  const activeSystems = opts.systems.filter(s => s.active !== false).length;
 
   const sortedDates = opts.checkins.map(c => c.dateKey).sort();
   const firstDate = sortedDates[0] ?? "";
@@ -955,7 +955,7 @@ export default function Analytics() {
   } = useQuery<AnalyticsInsight[]>({
     queryKey: aiInsightsKey,
     queryFn: () => generateAnalyticsInsights({
-      systemNames: systems.filter(s => s.active).map(s => s.title),
+      systemNames: systems.filter(s => s.active !== false).map(s => s.title),
       avgCompletion, bestStreak: topBestStreak,
       totalCheckins: analytics.totalCheckins,
       topSystem: topSystemForAi, weakestSystem: weakestSystemForAi,
@@ -1200,14 +1200,14 @@ export default function Analytics() {
         )}
 
         {/* Per-system consistency metrics — Starter+ */}
-        {features.betterAnalytics && hasData && systems.filter(s => s.active).length > 0 && (
+        {features.betterAnalytics && hasData && systems.filter(s => s.active !== false).length > 0 && (
           <Card className="overflow-hidden">
             <CardHeader className="pb-3">
               <SectionTitle icon={TrendingUp} color="bg-chart-2/10 text-chart-2" title="Consistency Metrics" subtitle="Beyond raw streaks — how reliably you show up over time" />
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-3">
-                {systems.filter(s => s.active).map(sys => {
+                {systems.filter(s => s.active !== false).map(sys => {
                   const consistency = consistencyScores[sys.id] ?? 0;
                   const votes      = weeklyVotes[sys.id] ?? 0;
                   const comeback   = comebackStreaks[sys.id] ?? 0;

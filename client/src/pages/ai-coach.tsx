@@ -293,7 +293,7 @@ export default function AiCoach() {
     [allCheckins, systems, user?.streakFreezeUsedDate],
   );
 
-  const activeSystems = systems.filter((s) => s.active);
+  const activeSystems = systems.filter((s) => s.active !== false);
   const bestStreak = Math.max(0, ...Object.values(analytics.streaks).map(Number));
   const systemNames = activeSystems.map((s) => s.title);
   const totalCheckins = allCheckins.length;

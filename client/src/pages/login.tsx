@@ -15,6 +15,9 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import * as AuthService from "@/services/auth.service";
 import * as UserService from "@/services/user.service";
+import { applyReferralCode } from "@/services/referral.service";
+import { sendSignupWelcome } from "@/lib/emailjs";
+import { track } from "@/lib/track";
 import { useQueryClient } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
 
@@ -57,11 +60,13 @@ export default function Login() {
         // Firestore offline or unavailable — treat as new user and onboard
       }
       if (!existing) {
+        const newName = cred.user.displayName || "User";
+        const newEmail = cred.user.email || "";
         try {
           await UserService.createUser(cred.user.uid, {
             id: cred.user.uid,
-            email: cred.user.email || "",
-            name: cred.user.displayName || "User",
+            email: newEmail,
+            name: newName,
             avatarUrl: cred.user.photoURL || null,
             onboardingCompleted: false,
             preferredTheme: "system",
@@ -70,6 +75,13 @@ export default function Login() {
         } catch {
           // If offline, still navigate — user can retry later
         }
+        const pendingRef = (() => { try { return localStorage.getItem("strivo_pending_ref"); } catch { return null; } })();
+        if (pendingRef) {
+          applyReferralCode(cred.user.uid, pendingRef).catch(() => {});
+          try { localStorage.removeItem("strivo_pending_ref"); } catch {}
+        }
+        sendSignupWelcome(newName, newEmail).catch(() => {});
+        track("signup_completed", { method: "google" });
         qc.invalidateQueries({ queryKey: ["user"] });
         navigate("/onboarding");
       } else {

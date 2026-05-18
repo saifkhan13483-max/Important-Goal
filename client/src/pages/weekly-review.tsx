@@ -111,7 +111,7 @@ export default function WeeklyReview() {
 
   const isLoading = sysLoading || chkLoading;
 
-  const activeSystems = useMemo(() => systems.filter(s => s.active), [systems]);
+  const activeSystems = useMemo(() => systems.filter(s => s.active !== false), [systems]);
   const systemNames = useMemo(() => activeSystems.map(s => s.title), [activeSystems]);
 
   const weekCheckins = useMemo(() =>
