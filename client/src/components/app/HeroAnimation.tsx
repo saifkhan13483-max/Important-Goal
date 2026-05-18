@@ -427,12 +427,12 @@ function Scene3({ mobile }: { mobile?: boolean }) {
   return (
     <div style={{ width: "100%", height: "100%", display: "flex",
       alignItems: "center", justifyContent: "center", padding: mobile ? "0 16px" : "0 28px" }}>
-      <div style={{ width: "100%", maxWidth: 520 }}>
+      <div style={{ width: "100%", maxWidth: mobile ? 520 : 560 }}>
 
         {/* Title row */}
         <FadeUp delay={0.05}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-            <div style={{ fontFamily: FONT, fontSize: 11, fontWeight: 700, color: C.muted,
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: mobile ? 10 : 12 }}>
+            <div style={{ fontFamily: FONT, fontSize: mobile ? 11 : 12, fontWeight: 700, color: C.muted,
               letterSpacing: "0.08em", textTransform: "uppercase" }}>
               Streak tracker
             </div>
@@ -442,15 +442,15 @@ function Scene3({ mobile }: { mobile?: boolean }) {
 
         {/* Main card — two columns */}
         <FadeIn delay={0.2}>
-          <div style={{ ...glass({ padding: 14 }), display: "flex", gap: 14, alignItems: "stretch" }}>
+          <div style={{ ...glass({ padding: mobile ? 14 : 18 }), display: "flex", gap: mobile ? 14 : 18, alignItems: "stretch" }}>
 
             {/* Left — habit grid */}
             <div style={{ flexShrink: 0 }}>
-              <div style={{ fontFamily: FONT, fontSize: 9, fontWeight: 600, color: C.muted,
-                marginBottom: 7, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              <div style={{ fontFamily: FONT, fontSize: mobile ? 9 : 10, fontWeight: 600, color: C.muted,
+                marginBottom: mobile ? 7 : 9, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                 Read 20 pages · 49 days
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3, width: mobile ? 140 : 180 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: mobile ? 3 : 4, width: mobile ? 140 : 200 }}>
                 {days.map((d, i) => (
                   <div key={i} style={{
                     aspectRatio: "1",
@@ -484,21 +484,21 @@ function Scene3({ mobile }: { mobile?: boolean }) {
                 <FadeUp key={i} delay={0.35 + i * 0.15}>
                   <div style={{
                     background: `${s.color}12`, border: `1px solid ${s.color}25`,
-                    borderRadius: 10, padding: "8px 10px",
-                    display: "flex", alignItems: "center", gap: 8,
+                    borderRadius: 10, padding: mobile ? "8px 10px" : "10px 12px",
+                    display: "flex", alignItems: "center", gap: mobile ? 8 : 10,
                   }}>
-                    <span style={{ fontSize: 14 }}>{s.icon}</span>
+                    <span style={{ fontSize: mobile ? 14 : 16 }}>{s.icon}</span>
                     <div>
-                      <div style={{ fontFamily: FONT, fontSize: 9, color: C.muted,
+                      <div style={{ fontFamily: FONT, fontSize: mobile ? 9 : 10, color: C.muted,
                         textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 1 }}>
                         {s.label}
                       </div>
                       <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                        <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: 18,
+                        <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: mobile ? 18 : 22,
                           ...gradText, animation: `ha2-countUp 0.6s ease ${0.4 + i * 0.15}s both` }}>
                           {s.value}
                         </span>
-                        <span style={{ fontFamily: FONT, fontSize: 10, color: C.muted }}>{s.unit}</span>
+                        <span style={{ fontFamily: FONT, fontSize: mobile ? 10 : 11, color: C.muted }}>{s.unit}</span>
                       </div>
                     </div>
                   </div>
